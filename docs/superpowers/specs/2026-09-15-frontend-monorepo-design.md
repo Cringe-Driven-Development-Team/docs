@@ -98,6 +98,7 @@ BFF рендерит HTML на каждый HTML-запрос:
 | флаги и канарейка | Unleash SDK, вычисление локально | периодическая загрузка правил SDK, не на запрос |
 | `current.json` | S3 | кэш в памяти с коротким TTL |
 | `index.html` релиза | S3 `releases/{sha}/index.html` | кэш в памяти по `{sha}`, файл релиза не меняется |
+| `robots.txt` релиза | S3 `releases/{sha}/robots.txt` | кэш в памяти по `{sha}` |
 | сессия | Go API по сети кластера | на каждый HTML-запрос |
 | данные для `sitemap.xml` | Go API | кэш с TTL, не на каждый запрос бота |
 
@@ -113,8 +114,14 @@ BFF рендерит HTML на каждый HTML-запрос:
 | `site.ru` `/api/trpc/*` | BFF |
 | `site.ru` `/sitemap.xml` | BFF |
 | `site.ru` `/payment-callback` | BFF, как сейчас |
-| `site.ru` остальные пути (HTML) | BFF |
+| `site.ru` остальные пути (HTML, `/robots.txt`) | BFF |
 | `static.site.ru` | CDN перед S3 |
+
+`robots.txt` лежит в `apps/client/public/` и попадает в сборку релиза.
+Поисковики читают его только из корня хоста (RFC 9309), а ассеты релиза
+лежат на `static.site.ru/releases/{sha}/`. Поэтому `/robots.txt` на
+`site.ru` отдаёт BFF из текущего релиза, как `index.html`. В файле есть
+строка `Sitemap: https://site.ru/sitemap.xml`.
 
 Ассеты клиент грузит напрямую со `static.site.ru`: в Vite `base` равен
 `https://static.site.ru/releases/{sha}/`. Проксирование статики через вход
@@ -217,6 +224,9 @@ Staging есть только у фронта и BFF: превью PR на VPS 7
 - Cookie сессии на `site.ru` выдаётся только для этого хоста, без
   атрибута `Domain`: код ветки на поддомене превью не получает боевые
   сессии. На превью пользователь входит отдельно.
+- Превью не индексируются: BFF в режиме превью отдаёт на `/robots.txt`
+  `Disallow: /` и добавляет заголовок `X-Robots-Tag: noindex` ко всем
+  ответам.
 - Превью работают с боевыми данными. Риск принят (§11).
 
 ## 6. CI монорепы
