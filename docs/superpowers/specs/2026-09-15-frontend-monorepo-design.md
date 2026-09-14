@@ -339,18 +339,23 @@ BFF, контракт tRPC, модель релизов».
 - Новые связи: Contract check → S3 «current.json»; Upload release → S3
   «releases/{sha}/»; Push image → `reg-bff`. Связь Send bundle stats →
   Relative CI остаётся.
+- Группа `fe-ci` становится выше на 100 под второй ряд шагов; всё, что
+  ниже монорепы, и узлы справа от неё (Docker Registry, S3, Telegram)
+  сдвигаются вниз на 100.
 
 ### 8.3 `diagrams/cd.json`
 
 - Удаляются группы `bff-cd` (с `ansible-playbook`), `frontend-cd`,
   `frontend-rollback`, их шаги и связи, узел Relative CI.
-- Новая группа «Monorepo CD» в `vps5`: Commit bff:{sha} to Deployments
-  repo → Wait Argo CD: Healthy → Register as canary → Health check
-  (canary) → Наблюдение → Promote to stable → Health check → Retention:
-  последние 5 релизов → Send to tg.
+- Новая группа «Monorepo CD» в `vps5`: Commit bff:{sha} → Wait Argo CD:
+  Healthy → Register as canary → Health check (canary) → Наблюдение →
+  Promote to stable → Health check → Retention: 5 релизов → Send to tg.
+  Куда коммит, показывает стрелка в Deployments repo.
 - Новая группа «Monorepo Rollback» в `vps5`: Switch release pointer →
-  Health check → Revert bff tag (если нужно) → Wait Argo CD: Healthy →
-  Send to tg.
+  Health check → Revert bff tag → Wait Argo CD: Healthy → Send to tg.
+  Условие отката BFF описано в §5.7.
+- Группа E2E, узлы moon и ReportPortal и группа `vps7` поднимаются на
+  200 на место удалённых групп, высота `vps5` становится 600.
 - Новая группа `github` (purple) с узлом «Deployments repo» (`github`) и
   узел «Argo CD (прод-кластер)» (`argo`) вне групп: где он работает,
   решает спека 3.
@@ -377,8 +382,13 @@ BFF, контракт tRPC, модель релизов».
   | `vps1-gateway` | `vps1-bff` | | вместо `vps1-caddy → vps1-bff` |
   | `vps1-caddy` | `cdn` | proxy pass static | удаляется |
   | `vps1-bff` | `vps2-go` | S2S: сессия, данные, sitemap | подпись |
-  | `vps1-bff` | `s3` | index.html, current.json | подпись |
-  | `vps1-bff` | `vps8-unleash` | SDK: флаги, канарейка | подпись |
+  | `vps1-bff` | `s3` | index.html релиза | без изменений |
+  | `vps1-bff` | `vps8-unleash` | | без изменений |
+
+  Подписи BFF → S3 и BFF → Unleash на обзорной схеме остаются прежними:
+  при раскладке `deployment` обе стрелки идут вертикально, и длинные
+  подписи налезают на соседние узлы (проверено рендером). Полные подписи
+  есть на `frontend-monorepo`.
   | `vps7-coolify` | `vps2-go` | превью | новая |
   | `vps7-coolify` | `vps8-unleash` | превью: env preview | новая |
 
