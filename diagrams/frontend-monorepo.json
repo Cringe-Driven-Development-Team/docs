@@ -36,7 +36,7 @@
     { "tag": "Icon", "id": "go-api", "x": 1100, "y": 920, "containerId": "vps2", "icon": "go", "texts": [{ "text": "Go API" }] },
     { "tag": "Icon", "id": "unleash", "x": 1100, "y": 1080, "containerId": "ours", "icon": "package", "texts": [{ "text": "Unleash" }] },
 
-    { "tag": "Textbox", "id": "rules", "x": 1360, "y": 700, "width": 480, "text": "**Правила выкатки**\n\n1. BFF N+1 выкатывается первым, клиент N+1 после Healthy\n2. BFF N+1 обслуживает клиентов N и N+1\n3. Contract check: stable-клиент против новых AppRouter и BootstrapData\n4. Ответ BFF несёт x-release, при несовпадении клиент перезагружается\n5. Канарейка липкая по userId или sessionId\n6. В S3 последние 5 релизов, откат: сначала клиент, потом BFF" },
+    { "tag": "Textbox", "id": "rules", "x": 1360, "y": 700, "width": 480, "text": "**Правила выкатки**\n\n1. BFF N+1 выкатывается первым, клиент N+1 после Healthy\n2. BFF N+1 обслуживает клиентов N и N+1\n3. Contract check: stable-клиент против новых AppRouter и BootstrapData\n4. Ответ BFF несёт x-release; при ошибке контракта перезагрузка сразу, иначе мягко, не чаще раза в 10 минут\n5. Канарейка липкая по userId или sessionId\n6. В S3 последние 5 релизов; откат: выключить канарейку, клиент, потом BFF" },
 
     { "tag": "Legend", "id": "legend", "x": 1900, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
@@ -50,7 +50,7 @@
     { "tag": "Relationship", "from": "t-bff-compile", "to": "t-image" },
 
     { "tag": "Relationship", "from": "t-contract", "to": "s3", "label": "current.json: stable sha", "color": "black", "lineStyle": "dashed" },
-    { "tag": "Relationship", "from": "t-vite-build", "to": "s3", "label": "releases/{sha}/", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "t-vite-build", "to": "s3", "label": "releases/{sha}/ (main)", "color": "black", "lineStyle": "dashed" },
     { "tag": "Relationship", "from": "t-image", "to": "reg-bff", "color": "black", "lineStyle": "dashed" },
 
     { "tag": "Relationship", "from": "client", "to": "gateway", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
