@@ -1,7 +1,8 @@
 # Монорепа фронта и BFF, модель релизов
 
 Дата: 2026-09-15. Репозиторий: `Cringe-Driven-Development-Team/docs`.
-Статус: на ревью. После утверждения план пишется скиллом `writing-plans`.
+Статус: утверждена, реализована в схемах (план
+`docs/superpowers/plans/2026-09-15-frontend-monorepo.md`).
 
 ## 1. Цель и рамки
 
@@ -33,7 +34,7 @@
 | tRPC | 11.18.0 | пакет `@trpc/tanstack-react-query`; `httpLink` принимает `FormData`, `File`, `Blob` (`www/docs/server/non-json-content-types.md`) |
 | TanStack Router | релиз 2026-09-14 | описание репозитория: «client-first, server-capable»; SSR даёт отдельный TanStack Start |
 | Unleash Node SDK | 6.12.1 | правила забираются в фоне, по умолчанию раз в 15 с (`refreshInterval = 15_000`); флаги вычисляются в процессе |
-| ingress-nginx | | объявлен к выводу 2025-11-11, поддержка прекращена в марте 2026; рекомендация Kubernetes: Gateway API |
+| ingress-nginx | | объявлен к выводу 2025-11-11, поддержка прекращена в марте 2026; рекомендация Kubernetes: Gateway API (https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/) |
 | Traefik в k3s | Traefik v3 | Gateway API поддерживается, по умолчанию выключен, включается через `HelmChartConfig` (`providers.kubernetesGateway.enabled: true`) |
 
 Контекст индустрии для модели релизов (§5): платформы, где фронт и сервер
@@ -42,6 +43,11 @@
 `__vdpl`, перезагрузка при несовпадении) и Cloudflare Workers version
 affinity (`Cloudflare-Workers-Version-Key`). Основой в больших продуктах
 остаётся совместимость контракта между соседними версиями.
+
+Источники:
+
+- https://vercel.com/docs/skew-protection
+- https://developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/version-affinity/
 
 ## 3. Принятые решения
 
@@ -83,22 +89,25 @@ bun.lock
 
 BFF рендерит HTML на каждый HTML-запрос:
 
-1. Определяет релиз клиента для пользователя (§5.4): вариант канарейки из
-   Unleash или релиз из `current.json`.
-2. Берёт `index.html` этого релиза.
-3. Проверяет сессию в Go API.
-4. Вычисляет флаги.
-5. Вставляет в страницу `window.__BOOTSTRAP__ = { user, flags, release }`
+1. Проверяет сессию в Go API.
+2. Вычисляет флаги и определяет релиз клиента для пользователя (§5.4):
+   вариант канарейки из Unleash или `stable` из `current.json`.
+3. Берёт `index.html` этого релиза.
+4. Вставляет в страницу `window.__BOOTSTRAP__ = { user, flags, release }`
    и отдаёт ответ с заголовком `x-release` (§5.3).
+
+На первый HTML-ответ BFF ставит first-party cookie с идентификатором
+посетителя. Cookie получают все посетители, до входа и после него. Этот
+идентификатор ключ липкости канарейки (§5.4).
 
 Кэширование и цена запроса:
 
 | Данные | Откуда | Как часто сетевой вызов |
 | --- | --- | --- |
 | флаги и канарейка | Unleash SDK, вычисление локально | периодическая загрузка правил SDK, не на запрос |
-| `current.json` | S3 | кэш в памяти с коротким TTL |
+| `current.json` | S3 | кэш в памяти, TTL не больше 10 с: меньше периода загрузки правил Unleash SDK (15 с) |
 | `index.html` релиза | S3 `releases/{sha}/index.html` | кэш в памяти по `{sha}`, файл релиза не меняется |
-| `robots.txt` релиза | S3 `releases/{sha}/robots.txt` | кэш в памяти по `{sha}` |
+| `robots.txt` текущего stable-релиза | S3 `releases/{sha}/robots.txt`, `{sha}` это `stable` из `current.json` | кэш в памяти по `{sha}` |
 | сессия | Go API по сети кластера | на каждый HTML-запрос |
 | данные для `sitemap.xml` | Go API | кэш с TTL, не на каждый запрос бота |
 
@@ -120,13 +129,20 @@ BFF рендерит HTML на каждый HTML-запрос:
 `robots.txt` лежит в `apps/client/public/` и попадает в сборку релиза.
 Поисковики читают его только из корня хоста (RFC 9309), а ассеты релиза
 лежат на `static.site.ru/releases/{sha}/`. Поэтому `/robots.txt` на
-`site.ru` отдаёт BFF из текущего релиза, как `index.html`. В файле есть
-строка `Sitemap: https://site.ru/sitemap.xml`.
+`site.ru` отдаёт BFF из текущего stable-релиза (`stable` в `current.json`),
+а не из релиза, назначенного пользователю. В файле есть строка
+`Sitemap: https://site.ru/sitemap.xml`.
 
 Ассеты клиент грузит напрямую со `static.site.ru`: в Vite `base` равен
 `https://static.site.ru/releases/{sha}/`. Проксирование статики через вход
 кластера убирается. Маршруты `site.ru` задаются ресурсами `HTTPRoute`
 Gateway API.
+
+`releases/*` на `static.site.ru` отдаются с заголовками
+`Access-Control-Allow-Origin: https://site.ru` и
+`Cache-Control: public, max-age=31536000, immutable`: Vite подключает
+модули с атрибутом `crossorigin`, без CORS-заголовка браузер их не
+загрузит.
 
 ## 5. Модель релизов
 
@@ -144,42 +160,57 @@ Gateway API.
 
 ### 5.2 Проверка контракта в CI
 
-Шаг «Contract check» на каждом PR и на `main`:
+Шаг «Contract check» на PR и на `main` запускается, только если затронут
+`apps/bff`:
 
-1. Прочитать `current.json` из S3 и взять SHA stable-релиза.
+1. Прочитать `current.json` из S3 и взять SHA `stable`. Если канарейка
+   активна, взять и SHA канарейки из варианта флага в Unleash.
 2. Если `current.json` нет (релизов ещё не было), шаг пропускается и пишет
    об этом в лог.
-3. Выписать `apps/client` на stable SHA и прогнать его typecheck против
-   `apps/bff` из текущего коммита.
-4. Ошибка typecheck роняет сборку. Сообщение называет, какой контракт
+3. Для каждого SHA из шага 1 создать отдельный `git worktree` на этом SHA
+   и выполнить в нём свой `bun install --frozen-lockfile`.
+4. В worktree подменить только `apps/bff` на версию из HEAD вместе с его
+   зависимостями и прогнать typecheck `apps/client` этого релиза.
+5. Ошибка typecheck роняет сборку. Сообщение называет, какой контракт
    сломан.
 
-Если stable SHA нет в истории git, шаг падает. Для `--affected` и выписки
-stable-коммита checkout в CI делается с полной историей (`fetch-depth: 0`).
+Если SHA из шага 1 нет в истории git, шаг падает. Для `--affected` и
+worktree на коммитах релизов checkout в CI делается с полной историей
+(`fetch-depth: 0`).
 
 Шаг проверяет то, что stable-клиент реально использует, а не всю форму
 роутера. Изменения поведения при прежних типах он не ловит (§11).
+
+Обновление tRPC делается в два шага: сначала версия, совместимая со
+stable-клиентом, потом остальное. Иначе клиент stable-релиза в worktree
+не пройдёт typecheck против нового `apps/bff`.
 
 ### 5.3 Версия релиза
 
 - Сборка клиента получает `VITE_APP_RELEASE` = git SHA коммита и
   отправляет его в каждом запросе tRPC заголовком `x-client-release`.
+  Заголовок нужен для логов и метрик: какие релизы клиента ещё ходят
+  в BFF.
 - BFF в каждом ответе отдаёт `x-release`: SHA релиза, который он
   назначил бы этому пользователю сейчас (§5.4).
 - Сравнивается релиз клиента с `x-release`, а не с версией образа BFF:
-  коммит, затронувший только клиент, BFF не пересобирает, и SHA образа
-  BFF с релизом клиента совпадать не обязан.
+  коммит, затронувший только клиент, BFF не выкатывает (§7), и SHA
+  выкаченного образа BFF с релизом клиента совпадать не обязан.
 - Логика сравнения живёт в одном собственном tRPC-link.
 
 ### 5.4 Канарейка
 
 - Флаг Unleash канарейки клиента содержит вариант с payload
   `{ "release": "{sha}" }` и постепенную выкатку на процент пользователей.
-- Липкость по userId, для анонимных по sessionId из cookie: пользователь
-  не прыгает между релизами при перезагрузках.
+- Липкость по идентификатору посетителя из first-party cookie (§4.2):
+  пользователь не прыгает между релизами при перезагрузках. Вход в
+  аккаунт релиз не меняет.
 - BFF назначает релиз: если флаг канарейки включён для пользователя,
-  релиз из payload, иначе релиз из `current.json`.
-- Promote: записать `{sha}` в `current.json` и выключить флаг канарейки.
+  релиз из payload, иначе `stable` из `current.json`.
+- Health check канарейки загружает один чанк релиза со `static.site.ru`:
+  так ловится ошибка CORS (§4.3). Превью с `base: /` эту ошибку не ловят.
+- Promote: записать `{sha}` в `current.json` как `stable`, прежний `stable`
+  перенести в `previous` (§5.6), выключить флаг канарейки.
 - Прерывание канарейки: выключить флаг, пайплайн падает и пишет в Telegram.
 
 ### 5.5 Перезагрузка клиента
@@ -190,6 +221,9 @@ stable-коммита checkout в CI делается с полной истор
 | `x-release` отличается, запрос успешен | мягкая перезагрузка: при следующем переходе по маршруту и не во время воспроизведения |
 | lazy-чанк не загрузился (`vite:preloadError`) | перезагрузка сразу |
 
+- Автоматическая перезагрузка не чаще одного раза на релиз за 10 минут:
+  отметка в `sessionStorage`. При повторе клиент не перезагружается, а
+  показывает пользователю предложение обновить страницу.
 - Состояние плеера (очередь, трек, позиция) хранится через `persist` в
   zustand и переживает перезагрузку.
 - TanStack Query перезапрашивает данные при возврате фокуса, поэтому
@@ -197,19 +231,30 @@ stable-коммита checkout в CI делается с полной истор
 
 ### 5.6 Хранение релизов в S3
 
-В `releases/` остаются последние 5 релизов. Текущий, предыдущий и релиз
-активной канарейки не удаляются никогда. Старые вкладки догружают чанки
-своего релиза, поэтому релиз не удаляется сразу после promote.
+- `current.json` хранит `{ "stable": "{sha}", "previous": "{sha}" }`.
+  Promote записывает новый `stable` и переносит прежний в `previous`.
+- Каждый релиз пишет `releases/{sha}/release.json` с SHA BFF, против
+  которого прошёл Contract check.
+
+В `releases/` остаются последние 5 релизов. Релизы `stable` и `previous`
+из `current.json` и релиз активной канарейки не удаляются никогда. Старые
+вкладки догружают чанки своего релиза, поэтому релиз не удаляется сразу
+после promote.
 
 ### 5.7 Откат
 
-Порядок: сначала клиент, потом BFF. BFF N не обслуживает клиента N+1, а
-BFF N+1 клиента N обслуживает.
+Порядок: сначала канарейка, потом клиент, потом BFF. BFF N не обслуживает
+клиента N+1, а BFF N+1 клиента N обслуживает.
 
-1. Переключить `current.json` на предыдущий релиз, health check.
-2. Если нужно откатить BFF: `git revert` коммита с тегом образа в
+1. Выключить флаг канарейки.
+2. Переключить `current.json` на `previous`, health check.
+3. Если нужно откатить BFF: `git revert` коммита с тегом образа в
    Deployments repo, дождаться Healthy в Argo CD.
-3. Сообщение в Telegram.
+4. Сообщение в Telegram.
+
+После отката BFF в монорепе делается revert-PR изменения BFF. Пока
+выкаченный тег `bff` отличается от последнего SHA `apps/bff` на `main`,
+Monorepo CD падает с понятным сообщением и ничего не выкатывает.
 
 ### 5.8 Превью PR
 
@@ -221,9 +266,14 @@ Staging есть только у фронта и BFF: превью PR на VPS 7
   Vite `base` для превью `/`.
 - BFF превью ходит в боевой Go API и в Unleash с токеном окружения
   `preview`: флаги превью не влияют на боевые флаги и канарейку.
-- Cookie сессии на `site.ru` выдаётся только для этого хоста, без
-  атрибута `Domain`: код ветки на поддомене превью не получает боевые
-  сессии. На превью пользователь входит отдельно.
+- Превью получают собственный S2S-ключ к Go API с ограниченными правами.
+- Боевая cookie сессии с префиксом `__Host-`: `Secure`, `Path=/`, без
+  атрибута `Domain`. Код ветки на поддомене превью не получает боевые
+  сессии и не может подменить их своей cookie на `site.ru`. На превью
+  пользователь входит отдельно.
+- BFF проверяет `Origin` и `Sec-Fetch-Site` на мутациях: поддомены превью
+  same-site с `site.ru`, и `SameSite` от CSRF с них не спасает.
+- Более сильная альтернатива: превью на отдельном регистрируемом домене.
 - Превью не индексируются: BFF в режиме превью отдаёт на `/robots.txt`
   `Disallow: /` и добавляет заголовок `X-Robots-Tag: noindex` ко всем
   ответам.
@@ -232,35 +282,56 @@ Staging есть только у фронта и BFF: превью PR на VPS 7
 ## 6. CI монорепы
 
 Группа в `ci.json`: «Frontend monorepo · bun workspaces · Turborepo».
-Артефакты собираются один раз в CI, CD выкатывает готовое.
+Артефакты собираются один раз в CI, CD выкатывает готовое. Исключение:
+превью PR, для них Coolify собирает свой образ BFF + клиент из ветки
+(§5.8).
 
 | Шаг | PR | `main` |
 | --- | --- | --- |
 | `bun install --frozen-lockfile` | да | да |
 | `turbo run lint typecheck test --affected` | да | да |
-| Contract check (§5.2) | да | да |
-| клиент: `vite build`, Send bundle stats в Relative CI | да | да |
-| BFF: `bun build --compile`, Build image | да | да |
-| Upload release: клиент в S3 `releases/{sha}/` | | да |
-| Push image `bff:{sha}` в Docker Registry | | да |
+| Contract check (§5.2) | если затронут `apps/bff` | если затронут `apps/bff` |
+| клиент: `vite build`, Send bundle stats в Relative CI | если пакет затронут | всегда |
+| BFF: `bun build --compile`, Build image | если пакет затронут | всегда |
+| Upload release: клиент и `release.json` в S3 `releases/{sha}/` | | всегда |
+| Push image `bff:{sha}` в Docker Registry | | всегда |
 | Send to tg | да | да |
 
-Сборки клиента и BFF запускаются только для затронутых пакетов. Релиз в
-`releases/{sha}/` не живой, пока на него не указывает `current.json` или
-канарейка.
+На PR `turbo run ... --affected` сравнивает с `main`, и сборки клиента и
+BFF запускаются только для затронутых пакетов. На `main` CI всегда
+собирает и публикует оба артефакта: релиз клиента в `releases/{sha}/` и
+образ `bff:{sha}`. Приложений два, а упавший или отменённый прогон не
+должен терять изменение. Что из этого выкатывать, решает CD (§7).
+
+Релиз в `releases/{sha}/` не живой, пока на него не указывает
+`current.json` или канарейка.
 
 ## 7. CD монорепы
 
 Выполняется на ARC-раннерах CI-кластера после зелёного CI на `main`.
 Заменяет группы BFF CD, Frontend CD и Frontend Rollback.
 
+Monorepo CD идёт в одной concurrency-группе: запуски встают в очередь,
+без cancel-in-progress. Пока канарейка наблюдается, следующий запуск ждёт.
+
+CD решает, что выкатывать, сравнением с выкаченным, а не с предыдущим
+коммитом:
+
+- BFF выкатывается, если `apps/bff` в HEAD отличается от коммита
+  выкаченного тега `bff`.
+- Канарейка клиента запускается, если `apps/client` или `apps/bff`
+  отличаются от stable SHA из `current.json`.
+- После отката BFF CD падает и ничего не выкатывает до revert-PR в
+  монорепе (условие в §5.7).
+
 **Monorepo CD**
 
-1. Если затронут BFF: коммит тега `bff:{sha}` в Deployments repo; Argo CD
-   синхронизирует; ждать статус Healthy. Выкатка без простоя и проверка
-   готовности обеспечиваются rolling update с readiness-пробой.
-2. Если затронут клиент, строго после шага 1: регистрация канарейки
-   (§5.4), health check канарейки, наблюдение, promote, health check.
+1. Если BFF выкатывается: коммит тега `bff:{sha}` в Deployments repo;
+   Argo CD синхронизирует; ждать статус Healthy. Выкатка без простоя и
+   проверка готовности обеспечиваются rolling update с readiness-пробой.
+2. Если канарейка клиента запускается, строго после шага 1: регистрация
+   канарейки (§5.4), health check канарейки, наблюдение, promote, health
+   check.
 3. Хранение релизов (§5.6).
 4. Send to tg.
 
@@ -301,8 +372,10 @@ Backend CD и E2E в этой спеке не меняются.
 - `registry` (green, «Docker Registry»): узел «bff:{sha}» (`docker`)
 - узел `client` «Client (браузер)» вне групп
 - `Textbox` с правилами выкатки: BFF первым; контракт совместим на релиз
-  назад; Contract check в CI; `x-release` и перезагрузка по §5.5; липкая
-  канарейка; последние 5 релизов в S3
+  назад; Contract check в CI; `x-release`: при ошибке контракта
+  перезагрузка сразу, иначе мягко, не чаще раза в 10 минут (§5.5);
+  липкая канарейка; последние 5 релизов в S3; откат: выключить канарейку,
+  клиент, потом BFF
 
 **Связи**
 
@@ -315,7 +388,7 @@ Backend CD и E2E в этой спеке не меняются.
 | Contract check | bun build --compile | |
 | bun build --compile | Build image | |
 | Contract check | S3 | current.json: stable sha |
-| vite build | S3 | releases/{sha}/ |
+| vite build | S3 | releases/{sha}/ (main) |
 | Build image | bff:{sha} | |
 | `client` | Traefik | https://site.ru: HTML, /api/trpc |
 | `client` | CDN | https://static.site.ru |
@@ -351,19 +424,21 @@ BFF, контракт tRPC, модель релизов».
   Healthy → Register as canary → Health check (canary) → Наблюдение →
   Promote to stable → Health check → Retention: 5 релизов → Send to tg.
   Куда коммит, показывает стрелка в Deployments repo.
-- Новая группа «Monorepo Rollback» в `vps5`: Switch release pointer →
-  Health check → Revert bff tag → Wait Argo CD: Healthy → Send to tg.
-  Условие отката BFF описано в §5.7.
+- Новая группа «Monorepo Rollback» в `vps5`: Disable canary flag →
+  Switch release pointer → Health check → Revert bff tag → Wait Argo CD:
+  Healthy → Send to tg. Условие отката BFF описано в §5.7.
 - Группа E2E, узлы moon и ReportPortal и группа `vps7` поднимаются на
   200 на место удалённых групп, высота `vps5` становится 600.
 - Новая группа `github` (purple) с узлом «Deployments repo» (`github`) и
   узел «Argo CD (прод-кластер)» (`argo`) вне групп: где он работает,
-  решает спека 3.
+  решает спека 3. Ширина группы `github` 280, чтобы подпись «Deployments
+  repo» не обрезалась.
 - Связи: Commit bff:{sha} → Deployments repo; Wait Argo CD → Argo CD;
   Argo CD → Deployments repo «sync»; Register as canary → Unleash
   «variant: {sha}»; Promote → S3 «current.json»; Retention → S3
-  «releases/»; Switch release pointer → S3 «current.json»; Revert bff tag
-  → Deployments repo «git revert»; Wait Argo CD (откат) → Argo CD.
+  «releases/»; Disable canary flag → Unleash «flag off»; Switch release
+  pointer → S3 «current.json»; Revert bff tag → Deployments repo «git
+  revert»; Wait Argo CD (откат) → Argo CD.
 - Группы превью в `vps7`: заголовки «PR монорепы открыт» и «PR монорепы
   закрыт», шаг «Build image (BFF + client)».
 
@@ -384,13 +459,13 @@ BFF, контракт tRPC, модель релизов».
   | `vps1-bff` | `vps2-go` | S2S: сессия, данные, sitemap | подпись |
   | `vps1-bff` | `s3` | index.html релиза | без изменений |
   | `vps1-bff` | `vps8-unleash` | | без изменений |
+  | `vps7-coolify` | `vps2-go` | превью | новая |
+  | `vps7-coolify` | `vps8-unleash` | превью: env preview | новая |
 
   Подписи BFF → S3 и BFF → Unleash на обзорной схеме остаются прежними:
   при раскладке `deployment` обе стрелки идут вертикально, и длинные
   подписи налезают на соседние узлы (проверено рендером). Полные подписи
   есть на `frontend-monorepo`.
-  | `vps7-coolify` | `vps2-go` | превью | новая |
-  | `vps7-coolify` | `vps8-unleash` | превью: env preview | новая |
 
 ### 8.5 `diagrams/integrations.json`
 
@@ -421,9 +496,15 @@ BFF, контракт tRPC, модель релизов».
 
 ## 11. Риски
 
-- **Превью на боевых данных.** Код любой ветки работает с боевым Go API.
-  Смягчение: cookie только для хоста `site.ru`, отдельный вход на превью,
-  отдельное окружение Unleash.
+- **Превью на боевых данных.** Код любой ветки работает с боевым Go API
+  с поддомена `site.ru`. Возможны подброс cookie на `site.ru` (cookie
+  tossing), CSRF с поддоменов превью, которые same-site с `site.ru`, и
+  злоупотребление S2S-ключом превью, который получает код ветки.
+  Смягчение: боевая cookie сессии с префиксом `__Host-`, проверка
+  `Origin` и `Sec-Fetch-Site` на мутациях в BFF, собственный S2S-ключ
+  превью с ограниченными правами, отдельный вход на превью, отдельное
+  окружение Unleash. Более сильная альтернатива: превью на отдельном
+  регистрируемом домене.
 - **Проверка контракта только по типам.** Смена смысла поля при прежнем
   типе проходит проверку. Смягчение: правило §5.1 и ревью.
 - **Вкладки старше предыдущего релиза** получают ошибку контракта и
