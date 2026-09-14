@@ -19,6 +19,7 @@
 | [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны и их цели |
 | [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD-пайплайны на VPS 5 / ARC и VPS 7 / Coolify |
 | [integrations](https://cringe-driven-development-team.github.io/docs/integrations.html) | Внешние сервисы и кто с ними говорит |
+| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frontend-monorepo.html) | Монорепа клиента и BFF, контракт tRPC, модель релизов |
 
 Таблица ведётся вручную: добавил файл в `diagrams/`, добавь строку сюда.
 `dist/index.html` собирается автоматически.
