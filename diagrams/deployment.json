@@ -4,13 +4,12 @@
 
     { "tag": "Group", "id": "selectel", "color": "blue", "x": 300, "y": 0, "width": 1660, "height": 720, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
 
-    { "tag": "Group", "id": "vps1", "color": "blue", "styleMode": "plain", "x": 320, "y": 40, "width": 420, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 1 · Docker Compose", "icon": "docker" } },
-    { "tag": "Icon", "id": "vps1-caddy", "x": 340, "y": 80, "containerId": "vps1", "icon": "server", "texts": [{ "text": "Caddy" }] },
-    { "tag": "Icon", "id": "vps1-bff", "x": 480, "y": 80, "containerId": "vps1", "icon": "hono", "texts": [{ "text": "BFF (Hono)" }] },
+    { "tag": "Group", "id": "vps1", "color": "blue", "styleMode": "plain", "x": 320, "y": 40, "width": 420, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 1 · k3s", "icon": "kubernetes" } },
+    { "tag": "Icon", "id": "vps1-gateway", "x": 340, "y": 80, "containerId": "vps1", "icon": "traefik", "texts": [{ "text": "Traefik · Gateway API" }] },
+    { "tag": "Icon", "id": "vps1-bff", "x": 480, "y": 80, "containerId": "vps1", "icon": "hono", "texts": [{ "text": "BFF (Hono · bun)" }] },
     { "tag": "Icon", "id": "vps1-node-exporter", "x": 620, "y": 80, "containerId": "vps1", "icon": "monitor", "texts": [{ "text": "Node Exporter" }] },
 
-    { "tag": "Group", "id": "vps2", "color": "blue", "styleMode": "plain", "x": 780, "y": 40, "width": 560, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 2 · Docker Compose", "icon": "docker" } },
-    { "tag": "Icon", "id": "vps2-caddy", "x": 800, "y": 80, "containerId": "vps2", "icon": "server", "texts": [{ "text": "Caddy" }] },
+    { "tag": "Group", "id": "vps2", "color": "blue", "styleMode": "plain", "x": 780, "y": 40, "width": 560, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 2 · k3s", "icon": "kubernetes" } },
     { "tag": "Icon", "id": "vps2-go", "x": 940, "y": 80, "containerId": "vps2", "icon": "go", "texts": [{ "text": "Go API" }] },
     { "tag": "Icon", "id": "vps2-postgres", "x": 1080, "y": 80, "containerId": "vps2", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
     { "tag": "Icon", "id": "vps2-node-exporter", "x": 1220, "y": 80, "containerId": "vps2", "icon": "monitor", "texts": [{ "text": "Node Exporter" }] },
@@ -48,19 +47,19 @@
     { "tag": "Legend", "id": "legend", "x": 2020, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
-    { "tag": "Relationship", "from": "client", "to": "vps1-caddy", "label": "https://site.ru, /api", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "vps1-gateway", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "client", "to": "vps3-caddy", "label": "grafana.site.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "client", "to": "vps4-caddy", "label": "kuma.site.ru", "color": "orange", "lineStyle": "solid" },
 
-    { "tag": "Relationship", "from": "vps1-caddy", "to": "vps1-bff" },
-    { "tag": "Relationship", "from": "vps1-caddy", "to": "cdn", "label": "proxy pass static" },
-    { "tag": "Relationship", "from": "vps1-bff", "to": "vps2-go", "label": "S2S, private network" },
+    { "tag": "Relationship", "from": "vps1-gateway", "to": "vps1-bff" },
+    { "tag": "Relationship", "from": "vps1-bff", "to": "vps2-go", "label": "S2S: сессия, данные, sitemap" },
     { "tag": "Relationship", "from": "vps1-bff", "to": "s3", "label": "index.html релиза" },
     { "tag": "Relationship", "from": "vps1-bff", "to": "vps8-unleash" },
+    { "tag": "Relationship", "from": "vps7-coolify", "to": "vps2-go", "label": "превью" },
+    { "tag": "Relationship", "from": "vps7-coolify", "to": "vps8-unleash", "label": "превью: env preview" },
     { "tag": "Relationship", "from": "s3", "to": "cdn", "label": "static" },
 
-    { "tag": "Relationship", "from": "vps2-caddy", "to": "vps2-go" },
     { "tag": "Relationship", "from": "vps2-go", "to": "vps2-postgres" },
     { "tag": "Relationship", "from": "vps2-go", "to": "vps6-posthog" },
 
