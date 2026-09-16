@@ -1,8 +1,10 @@
 # Монорепа фронта и BFF, модель релизов
 
 Дата: 2026-09-15. Репозиторий: `Cringe-Driven-Development-Team/docs`.
-Статус: утверждена, реализована в схемах (план
-`docs/superpowers/plans/2026-09-15-frontend-monorepo.md`).
+Статус: frozen. Архитектура k3s заморожена спекой
+`docs/superpowers/specs/2026-09-16-mvp-compose-design.md`, схемы лежат в
+`diagrams/frozen-k3s/` и не правятся. Была утверждена и реализована в
+схемах по плану `docs/superpowers/plans/2026-09-15-frontend-monorepo.md`.
 
 ## 1. Цель и рамки
 

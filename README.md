@@ -4,7 +4,8 @@
 
 ## Диаграммы
 
-Архитектурные схемы как код. Исходники в `diagrams/*.json` в формате
+Архитектурные схемы как код. Исходники в `diagrams/*.json` и
+`diagrams/<папка>/*.json` в формате
 [eraser-diagrams](https://github.com/eraserlabs/eraser-diagrams), рендер
 в HTML и PNG, публикация на GitHub Pages:
 **https://cringe-driven-development-team.github.io/docs/**
@@ -13,16 +14,34 @@
 (коммит `e8fd4bb`). Спеки и планы в `docs/superpowers/` написаны до переноса,
 адреса в них старые.
 
+Архитектур две. **MVP на Docker Compose** это рабочая, с ней идёт вся
+текущая работа. **Frozen: k3s** заморожена в `diagrams/frozen-k3s/`, её
+схемы не правятся; дизайн в
+`docs/superpowers/specs/2026-09-15-frontend-monorepo-design.md`.
+
+MVP (`diagrams/`):
+
 | Схема | Что показывает |
 | --- | --- |
-| [deployment](https://cringe-driven-development-team.github.io/docs/deployment.html) | VPS в Selectel, S3/CDN, клиент |
-| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны и их цели |
-| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD-пайплайны на VPS 5 / ARC и VPS 7 / Coolify |
-| [integrations](https://cringe-driven-development-team.github.io/docs/integrations.html) | Внешние сервисы и кто с ними говорит |
+| [deployment](https://cringe-driven-development-team.github.io/docs/deployment.html) | Два VPS в Selectel с Docker Compose, S3/CDN, клиент |
+| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, GHCR, S3 |
+| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD и откат через ansible-playbook из GitHub Actions |
 | [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frontend-monorepo.html) | Монорепа клиента и BFF, контракт tRPC, модель релизов |
 
-Таблица ведётся вручную: добавил файл в `diagrams/`, добавь строку сюда.
-`dist/index.html` собирается автоматически.
+Frozen: k3s (`diagrams/frozen-k3s/`):
+
+| Схема | Что показывает |
+| --- | --- |
+| [deployment](https://cringe-driven-development-team.github.io/docs/frozen-k3s/deployment.html) | VPS в Selectel, k3s, S3/CDN, клиент |
+| [ci](https://cringe-driven-development-team.github.io/docs/frozen-k3s/ci.html) | GitHub-репозитории, CI-пайплайны и их цели |
+| [cd](https://cringe-driven-development-team.github.io/docs/frozen-k3s/cd.html) | CD через Argo CD, канарейка, превью на Coolify |
+| [integrations](https://cringe-driven-development-team.github.io/docs/frozen-k3s/integrations.html) | Внешние сервисы и кто с ними говорит |
+| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
+
+Таблицы ведутся вручную: добавил файл в `diagrams/`, добавь строку сюда.
+`dist/index.html` собирается автоматически: схемы корня карточками, каждая
+подпапка отдельной секцией. Схема из подпапки рендерится в
+`dist/<папка>/<name>.html` и `.png`.
 
 ### Локально
 
@@ -92,4 +111,5 @@ Push в ветку запускает workflow Pages на `main`. Тот соб�
 
 Дизайн: `docs/superpowers/specs/2026-09-12-eraser-diagrams-pipeline-design.md`,
 `docs/superpowers/specs/2026-09-13-diagram-colors-and-bun-design.md`,
-`docs/superpowers/specs/2026-09-13-branch-previews-design.md`.
+`docs/superpowers/specs/2026-09-13-branch-previews-design.md`,
+`docs/superpowers/specs/2026-09-16-mvp-compose-design.md`.

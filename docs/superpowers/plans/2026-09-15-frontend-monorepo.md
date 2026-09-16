@@ -1,5 +1,9 @@
 # Frontend Monorepo Diagrams Implementation Plan
 
+> **Frozen.** План выполнен 2026-09-15. Архитектура k3s заморожена спекой
+> `docs/superpowers/specs/2026-09-16-mvp-compose-design.md`, его схемы лежат
+> в `diagrams/frozen-k3s/`. Повторно не выполнять.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Схемы показывают монорепу клиента и BFF, её CI, CD с GitOps и модель релизов: новая схема `frontend-monorepo` и правки `ci`, `cd`, `deployment`, `integrations`.

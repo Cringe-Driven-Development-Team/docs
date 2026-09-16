@@ -5,8 +5,11 @@ description: Use when creating or editing diagrams/*.json (eraser-diagrams JSON)
 
 # Правка диаграмм eraser-diagrams
 
-Применяй при любой правке `diagrams/*.json`. Один файл = одна диаграмма =
-одна страница на GitHub Pages. Схемы не сливать.
+Применяй при любой правке `diagrams/*.json` и `diagrams/<папка>/*.json`.
+Один файл = одна диаграмма = одна страница на GitHub Pages. Схемы не
+сливать. Новые схемы кладутся в корень `diagrams/`. Папка
+`diagrams/frozen-k3s/` заморожена: файлы в ней не правятся, для новой
+архитектуры на её основе заводится новая схема в корне.
 
 ## Формат, который принимает CLI 0.1.0
 
@@ -52,7 +55,8 @@ description: Use when creating or editing diagrams/*.json (eraser-diagrams JSON)
 2. `bun run validate` — схема и иконки, без браузера.
 3. `bun run check` — цветовая конвенция и легенда, без браузера. Сообщение
    называет id элемента и нужные значения.
-4. `bun run render` — `dist/<name>.html` и `dist/<name>.png`; рендерер
+4. `bun run render` — `dist/<name>.html` и `dist/<name>.png`, для схемы из
+   подпапки `dist/<папка>/<name>.html` и `.png`; рендерер
    запускается под Node ≥ 22.12 из PATH (под bun Chrome не стартует); нужен
    Chrome или другой Chromium; если автопоиск не находит его, задай
    переменную `CHROMIUM_PATH`.
