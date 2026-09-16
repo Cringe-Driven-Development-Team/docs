@@ -5,6 +5,7 @@
 // Схемы лежат в diagrams/ и в одном уровне подпапок (diagrams/frozen-k3s/). CLI именует
 // выход по basename входа, поэтому render вызывается по разу на папку со своим --out-dir
 // (docs/superpowers/specs/2026-09-16-mvp-compose-design.md §2, §9.2).
+// Свой --out-dir для render передавать нельзя: скрипт добавляет его сам для каждой папки.
 // Использование: bun scripts/eraser.ts <command> [cli options...]
 import { dirname, join, relative } from "node:path";
 

@@ -1,6 +1,6 @@
 ---
 name: eraser-diagrams
-description: Use when creating or editing diagrams/*.json (eraser-diagrams JSON) — required fields, absolute coordinates, icon lookup, color convention and legend, validate → check → render → inspect loop
+description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*.json (eraser-diagrams JSON) — required fields, absolute coordinates, icon lookup, color convention and legend, validate → check → render → inspect loop
 ---
 
 # Правка диаграмм eraser-diagrams

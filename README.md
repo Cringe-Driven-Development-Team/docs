@@ -57,7 +57,7 @@ bun ставится с https://bun.sh. Без настоящего Node в PATH
 bun install
 bun run validate   # схема и иконки, без браузера
 bun run check      # цветовая конвенция и легенды, без браузера
-bun run render     # dist/<name>.html и dist/<name>.png
+bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/
 bun run build      # validate + check + render + dist/index.html
 bun run site       # build + превью всех веток origin в dist/branches/
 bun run icons      # обновить icons.txt из каталога иконок Eraser
