@@ -1,8 +1,8 @@
-// Проверяет цветовую конвенцию во всех diagrams/*.json.
+// Проверяет цветовую конвенцию во всех схемах diagrams/, включая подпапки.
 // Спека: docs/superpowers/specs/2026-09-13-diagram-colors-and-bun-design.md §4.5.
 // Использование: bun scripts/check-colors.ts
-import { join } from "node:path";
 import { FLOW_BY_KEY, ZONES, expectedLegend, flowOf, indexById } from "./colors.ts";
+import { listDiagrams } from "./eraser.ts";
 import type { DiagramDoc, Entity, GroupEntity } from "./diagram.ts";
 
 const ZONE_COLORS: readonly string[] = ZONES.map((z) => z.color);
@@ -88,17 +88,17 @@ export function checkDiagram(doc: DiagramDoc): string[] {
 }
 
 async function main(): Promise<number> {
-  const names = [...new Bun.Glob("*.json").scanSync("diagrams")].sort();
+  const files = listDiagrams();
   let failures = 0;
-  for (const name of names) {
-    const doc = (await Bun.file(join("diagrams", name)).json()) as DiagramDoc;
+  for (const file of files) {
+    const doc = (await Bun.file(file).json()) as DiagramDoc;
     for (const problem of checkDiagram(doc)) {
-      console.error(`diagrams/${name} ${problem}`);
+      console.error(`${file} ${problem}`);
       failures += 1;
     }
   }
   if (failures > 0) return 1;
-  console.log(`colors ok: ${names.length} diagrams`);
+  console.log(`colors ok: ${files.length} diagrams`);
   return 0;
 }
 
