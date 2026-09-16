@@ -419,7 +419,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
     { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
 
     { "tag": "Relationship", "from": "vps1-caddy", "to": "vps1-bff" },
-    { "tag": "Relationship", "from": "vps1-bff", "to": "vps2-go", "label": "S2S: сессия, данные, sitemap" },
+    { "tag": "Relationship", "from": "vps1-bff", "to": "vps2-go", "label": "S2S: сессия, данные" },
     { "tag": "Relationship", "from": "vps1-bff", "to": "s3", "label": "index.html, current.json" },
     { "tag": "Relationship", "from": "s3", "to": "cdn", "label": "static" },
     { "tag": "Relationship", "from": "vps2-go", "to": "vps2-postgres" }
@@ -434,7 +434,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 Run: `bun run validate && bun run check && bun run render`
 Expected: `ok    diagrams/deployment.json`, `colors ok: 6 diagrams`, `dist/deployment.png` создан.
 
-Открыть `dist/deployment.png` через Read. Ожидаемая картинка: Client слева с двумя оранжевыми стрелками (в Caddy и в CDN), в группе Selectel сверху VPS 1 (Caddy → BFF) и VPS 2 (Go API → Postgres), снизу CDN, S3, site.ru; подписи «S2S: сессия, данные, sitemap» и «index.html, current.json» читаемы целиком, ничего не накладывается.
+Открыть `dist/deployment.png` через Read. Ожидаемая картинка: Client слева с двумя оранжевыми стрелками (в Caddy и в CDN), в группе Selectel сверху VPS 1 (Caddy → BFF) и VPS 2 (Go API → Postgres), снизу CDN, S3, site.ru; подписи «S2S: сессия, данные» и «index.html, current.json» читаемы целиком, ничего не накладывается.
 
 - [ ] **Step 3: Commit**
 
@@ -726,7 +726,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
     { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "s3", "to": "cdn", "label": "static" },
     { "tag": "Relationship", "from": "caddy", "to": "bff" },
-    { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "S2S: сессия, данные, sitemap" },
+    { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "S2S: сессия, данные" },
     { "tag": "Relationship", "from": "bff", "to": "s3", "label": "index.html, current.json" }
   ]
 }

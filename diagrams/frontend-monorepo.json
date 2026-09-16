@@ -53,7 +53,7 @@
     { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "s3", "to": "cdn", "label": "static" },
     { "tag": "Relationship", "from": "caddy", "to": "bff" },
-    { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "S2S: сессия, данные, sitemap" },
+    { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "S2S: сессия, данные" },
     { "tag": "Relationship", "from": "bff", "to": "s3", "label": "index.html, current.json" }
   ]
 }

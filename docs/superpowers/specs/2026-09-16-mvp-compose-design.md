@@ -75,7 +75,7 @@ Selectel: два VPS, S3, CDN, домен `site.ru`.
 
 | Хост и путь | Куда |
 | --- | --- |
-| `site.ru` `/api/trpc/*`, `/sitemap.xml`, остальные пути (HTML, `/robots.txt`) | Caddy (VPS 1) → BFF |
+| `site.ru` `/api/trpc/*`, остальные пути (HTML, `/robots.txt`) | Caddy (VPS 1) → BFF |
 | `static.site.ru` | CDN перед S3 |
 
 - Caddy на VPS 2 нет: снаружи туда никто не ходит. BFF ходит в Go API по
@@ -86,8 +86,8 @@ Selectel: два VPS, S3, CDN, домен `site.ru`.
   10 с), взять `index.html` релиза `stable` из `releases/{sha}/` (кэш по
   `{sha}`), вставить `window.__BOOTSTRAP__ = { user, release }`, отдать с
   `x-release` и `Cache-Control: private, no-store`.
-- `robots.txt` и `sitemap.xml` отдаёт BFF из `stable`-релиза и из Go API,
-  как в спеке 1 §4.3.
+- `robots.txt` отдаёт BFF из `stable`-релиза, как в спеке 1 §4.3.
+  `sitemap.xml` в MVP нет.
 - Ассеты клиент грузит напрямую со `static.site.ru`: Vite `base` равен
   `https://static.site.ru/releases/{sha}/`. `releases/*` отдаются с
   `Access-Control-Allow-Origin: https://site.ru` и
@@ -207,7 +207,7 @@ playbook, на схеме показаны отдельным шагом для 
 | `client` | `vps1-caddy` | https://site.ru: HTML, /api/trpc |
 | `client` | `cdn` | https://static.site.ru |
 | `vps1-caddy` | `vps1-bff` | |
-| `vps1-bff` | `vps2-go` | S2S: сессия, данные, sitemap |
+| `vps1-bff` | `vps2-go` | S2S: сессия, данные |
 | `vps1-bff` | `s3` | index.html, current.json |
 | `s3` | `cdn` | static |
 | `vps2-go` | `vps2-postgres` | |
@@ -300,7 +300,7 @@ S3 → `s3`; `github` → `telegram` «Send to tg».
 `vite build` → `s3` «releases/{sha}/ (main)»; Build image → `reg-bff`;
 `client` → `caddy` «https://site.ru: HTML, /api/trpc»; `client` → `cdn`
 «https://static.site.ru»; `s3` → `cdn` «static»; `caddy` → `bff`; `bff` →
-`go-api` «S2S: сессия, данные, sitemap»; `bff` → `s3` «index.html,
+`go-api` «S2S: сессия, данные»; `bff` → `s3` «index.html,
 current.json».
 
 ## 9. Структура репозитория и пайплайн схем
