@@ -9,13 +9,14 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-test("diagramNames: basenames of *.json without extension, sorted", async () => {
+test("diagramNames: names of *.json relative to the dir without extension, subfolders with /, sorted", async () => {
   const dir = mkdtempSync(join(tmpdir(), "index-"));
   tempDirs.push(dir);
   await Bun.write(join(dir, "cd.json"), "{}");
   await Bun.write(join(dir, "ci.json"), "{}");
   await Bun.write(join(dir, "README.md"), "");
-  expect(diagramNames(dir)).toEqual(["cd", "ci"]);
+  await Bun.write(join(dir, "frozen-k3s", "ci.json"), "{}");
+  expect(diagramNames(dir)).toEqual(["cd", "ci", "frozen-k3s/ci"]);
 });
 
 test("renderIndex: one card per diagram with html link, png link and preview", () => {
@@ -32,4 +33,15 @@ test("renderIndex: one card per diagram with html link, png link and preview", (
 test("renderIndex: links branch previews only when previewsHref is given", () => {
   expect(renderIndex(["ci"], { previewsHref: "branches/" })).toMatch(/<a href="branches\/">Превью веток<\/a>/);
   expect(renderIndex(["ci"])).not.toMatch(/Превью веток/);
+});
+
+test("renderIndex: a subfolder becomes its own section with h3 cards linking into the folder", () => {
+  const html = renderIndex(["ci", "frozen-k3s/cd", "frozen-k3s/ci"]);
+  expect(html).toMatch(/<h2>ci<\/h2>/);
+  expect(html).toMatch(/<h2 class="folder">frozen-k3s\/<\/h2>/);
+  expect(html).toMatch(/<h3>cd<\/h3>/);
+  expect(html).toMatch(/href="frozen-k3s\/cd\.html"/);
+  expect(html).toMatch(/<img src="frozen-k3s\/cd\.png" alt="frozen-k3s\/cd"/);
+  expect(html.indexOf("<h2>ci</h2>")).toBeLessThan(html.indexOf('<h2 class="folder">'));
+  expect(html).not.toMatch(/<h2>frozen-k3s\/ci<\/h2>/);
 });
