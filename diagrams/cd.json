@@ -1,6 +1,6 @@
 {
   "entities": [
-    { "tag": "Group", "id": "actions", "color": "purple", "x": 0, "y": 0, "width": 1000, "height": 460, "isContainer": true, "title": { "text": "GitHub Actions", "icon": "github-actions" } },
+    { "tag": "Group", "id": "actions", "color": "purple", "x": 0, "y": 0, "width": 1000, "height": 580, "isContainer": true, "title": { "text": "GitHub Actions", "icon": "github-actions" } },
 
     { "tag": "Group", "id": "monorepo-cd", "color": "purple", "styleMode": "plain", "x": 20, "y": 40, "width": 960, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Monorepo CD" } },
     { "tag": "Activity", "id": "md-playbook", "x": 40, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Run ansible playbook" }] },
@@ -10,18 +10,18 @@
     { "tag": "Activity", "id": "md-retention", "x": 680, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Retention: 5 релизов" }] },
     { "tag": "Activity", "id": "md-tg", "x": 840, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Send to tg" }] },
 
-    { "tag": "Group", "id": "monorepo-rollback", "color": "purple", "styleMode": "plain", "x": 20, "y": 180, "width": 800, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Monorepo Rollback" } },
-    { "tag": "Activity", "id": "mr-switch", "x": 40, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Switch release pointer" }] },
-    { "tag": "Activity", "id": "mr-health", "x": 200, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Health check" }] },
-    { "tag": "Activity", "id": "mr-playbook", "x": 360, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Run ansible playbook" }] },
-    { "tag": "Activity", "id": "mr-health-bff", "x": 520, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Health check BFF" }] },
-    { "tag": "Activity", "id": "mr-tg", "x": 680, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Send to tg" }] },
+    { "tag": "Group", "id": "monorepo-rollback", "color": "purple", "styleMode": "plain", "x": 20, "y": 240, "width": 800, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Monorepo Rollback" } },
+    { "tag": "Activity", "id": "mr-switch", "x": 40, "y": 280, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Switch release pointer" }] },
+    { "tag": "Activity", "id": "mr-health", "x": 200, "y": 280, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Health check" }] },
+    { "tag": "Activity", "id": "mr-playbook", "x": 360, "y": 280, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Run ansible playbook" }] },
+    { "tag": "Activity", "id": "mr-health-bff", "x": 520, "y": 280, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Health check BFF" }] },
+    { "tag": "Activity", "id": "mr-tg", "x": 680, "y": 280, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Send to tg" }] },
 
-    { "tag": "Group", "id": "backend-cd", "color": "purple", "styleMode": "plain", "x": 20, "y": 320, "width": 640, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Backend CD" } },
-    { "tag": "Activity", "id": "be-playbook", "x": 40, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Run ansible playbook" }] },
-    { "tag": "Activity", "id": "be-migrate", "x": 200, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Run migrations" }] },
-    { "tag": "Activity", "id": "be-health", "x": 360, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Health check" }] },
-    { "tag": "Activity", "id": "be-tg", "x": 520, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Send to tg" }] },
+    { "tag": "Group", "id": "backend-cd", "color": "purple", "styleMode": "plain", "x": 20, "y": 440, "width": 640, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Backend CD" } },
+    { "tag": "Activity", "id": "be-playbook", "x": 40, "y": 480, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Run ansible playbook" }] },
+    { "tag": "Activity", "id": "be-migrate", "x": 200, "y": 480, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Run migrations" }] },
+    { "tag": "Activity", "id": "be-health", "x": 360, "y": 480, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Health check" }] },
+    { "tag": "Activity", "id": "be-tg", "x": 520, "y": 480, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Send to tg" }] },
 
     { "tag": "Icon", "id": "deployments-repo", "x": 1200, "y": 60, "icon": "ansible", "texts": [{ "text": "Deployments repo" }] },
 
