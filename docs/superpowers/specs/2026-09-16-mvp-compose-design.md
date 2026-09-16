@@ -99,7 +99,8 @@ Selectel: два VPS, S3, CDN, домен `site.ru`.
 (Vite, React, TanStack Router и Query, zustand), `apps/bff` (bun, Hono,
 tRPC), bun workspaces, Turborepo с задачами `lint`, `typecheck`, `test`,
 `build`. Клиент импортирует из `bff` только типы `AppRouter` и
-`BootstrapData`. Образ BFF из `bun build --compile`.
+`BootstrapData`. Образ BFF из `bun build --compile`. В корне монорепы
+лежит `compose.dev.yml` для локальной разработки (§5.1).
 
 Контракты и версии:
 
@@ -123,6 +124,34 @@ tRPC), bun workspaces, Turborepo с задачами `lint`, `typecheck`, `test`
 Релиз в `releases/{sha}/` не живой, пока на него не указывает
 `current.json`.
 
+### 5.1 Локальная разработка
+
+Фронтендер запускает клиент и BFF из исходников, бэкенд из образа:
+
+| Компонент | Локально | Откуда |
+| --- | --- | --- |
+| client | Vite dev server с HMR | исходники монорепы |
+| bff | `bun --watch` | исходники монорепы |
+| Go API | контейнер | `backend:main` из GHCR |
+| Postgres | контейнер | официальный образ, миграции при старте |
+| Caddy, S3, CDN | не нужны | |
+
+- `turbo run dev` поднимает client и bff. `docker compose -f compose.dev.yml
+  up -d` в корне монорепы поднимает Go API и Postgres. `compose.dev.yml`
+  лежит в монорепе, а не в Deployments repo: это инструмент разработки,
+  он меняется вместе с кодом BFF, который в него ходит.
+- BFF в dev-режиме не читает `current.json` и S3: всё, кроме
+  `/api/trpc`, он проксирует в Vite dev server, вставляет
+  `window.__BOOTSTRAP__` в ответ и отдаёт на своём порту. Браузер ходит
+  только в BFF, как в проде, HMR работает через тот же прокси.
+- `docker login ghcr.io` с PAT `read:packages`: пакеты организации
+  приватные.
+- Dev-значение S2S-ключа в `.env.example` монорепы; в проде ключ из vault.
+- От бэкенда: тег `backend:main` (§6), миграции и сид тестовых данных при
+  старте контейнера или отдельной командой.
+
+Бэкендеру зеркально: `bff:main` из GHCR, Go из исходников.
+
 ## 6. Репозитории и CI
 
 Все пайплайны на GitHub-hosted раннерах, уведомление о результате в
@@ -130,14 +159,18 @@ Telegram.
 
 | Репо | CI | Артефакты |
 | --- | --- | --- |
-| Frontend monorepo | `bun install --frozen-lockfile` → `turbo run lint typecheck test` (на PR `--affected`, на `main` все пакеты) → клиент: `vite build` → Upload release (main); BFF: `bun build --compile` → Build image → Push image (main) → Send to tg | S3 `releases/{sha}/`, GHCR `bff:{sha}` |
-| Backend repo | Build → Units → Lint → Build image → Push image (main) → Send to tg | GHCR `backend:{sha}` |
+| Frontend monorepo | `bun install --frozen-lockfile` → `turbo run lint typecheck test` (на PR `--affected`, на `main` все пакеты) → клиент: `vite build` → Upload release (main); BFF: `bun build --compile` → Build image → Push image (main) → Send to tg | S3 `releases/{sha}/`, GHCR `bff:{sha}` и `bff:main` |
+| Backend repo | Build → Units → Lint → Build image → Push image (main) → Send to tg | GHCR `backend:{sha}` и `backend:main` |
 | React repo | Install deps → Lint → Build → Deploy to NPM → Send to tg | NPM `@my/react` |
 | Static repo | Deploy to S3 → Send to tg | S3 |
 | Deployments repo | нет пайплайна; хранит Pulumi configs, ansible roles и playbooks, ansible vault, `docker-compose.yml` и `Caddyfile` для VPS 1 и VPS 2 | |
 
 На `main` монорепы оба артефакта публикуются всегда, как в спеке 1 §6:
 упавший прогон не должен терять изменение. На PR превью нет.
+
+Push image кладёт образ под двумя тегами: `{sha}` и `main`. CD выкатывает
+только `{sha}`; тег `main` двигается на каждый зелёный `main` и нужен
+локальной разработке (§5.1).
 
 ## 7. CD и откат
 
@@ -237,7 +270,8 @@ playbook, на схеме показаны отдельным шагом для 
 
 Связи пайплайна с внешними системами (пунктир по конвенции): Deploy to
 NPM → `npm-react`; Upload release → `s3` «releases/{sha}/»; Push image
-(монорепа) → `reg-bff`; Push image (бэкенд) → `reg-backend`; Deploy to
+(монорепа) → `reg-bff` «tags: {sha}, main»; Push image (бэкенд) →
+`reg-backend` «tags: {sha}, main»; Deploy to
 S3 → `s3`; `github` → `telegram` «Send to tg».
 
 ### 8.3 `diagrams/cd.json`

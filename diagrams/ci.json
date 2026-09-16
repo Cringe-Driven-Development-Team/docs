@@ -76,8 +76,8 @@
 
     { "tag": "Relationship", "from": "react-deploy-npm", "to": "npm-react", "color": "black", "lineStyle": "dashed" },
     { "tag": "Relationship", "from": "fe-upload-release", "to": "s3", "label": "releases/{sha}/", "color": "black", "lineStyle": "dashed" },
-    { "tag": "Relationship", "from": "fe-push-image", "to": "reg-bff", "color": "black", "lineStyle": "dashed" },
-    { "tag": "Relationship", "from": "be-push-image", "to": "reg-backend", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "fe-push-image", "to": "reg-bff", "label": "tags: {sha}, main", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "be-push-image", "to": "reg-backend", "label": "tags: {sha}, main", "color": "black", "lineStyle": "dashed" },
     { "tag": "Relationship", "from": "static-deploy-s3", "to": "s3", "color": "black", "lineStyle": "dashed" },
     { "tag": "Relationship", "from": "github", "to": "telegram", "label": "Send to tg", "color": "red", "lineStyle": "dotted" }
   ]
