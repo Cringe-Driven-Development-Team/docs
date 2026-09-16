@@ -279,7 +279,7 @@ S3 → `s3`; `github` → `telegram` «Send to tg».
 Как текущая схема, минус Contract check, Unleash, Traefik и k3s:
 
 - `github` (purple) → `monorepo` с `ws-client` (React, TanStack Router ·
-  Query, zustand), `ws-bff` (Hono, tRPC · AppRouter, HTML bootstrap · SEO)
+  Query, zustand), `ws-bff` (Hono, tRPC · AppRouter, HTML bootstrap)
   и `turbo-pipeline` «turbo run --affected»: `bun install` → `lint ·
   typecheck · test` → `vite build`; `lint · typecheck · test` → `bun build
   --compile` → Build image.

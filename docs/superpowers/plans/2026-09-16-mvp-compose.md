@@ -684,7 +684,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
     { "tag": "Group", "id": "ws-bff", "color": "purple", "styleMode": "plain", "x": 740, "y": 80, "width": 420, "height": 160, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/bff", "icon": "bun" } },
     { "tag": "Icon", "id": "bff-hono", "x": 760, "y": 120, "containerId": "ws-bff", "icon": "hono", "texts": [{ "text": "Hono" }] },
     { "tag": "Icon", "id": "bff-trpc", "x": 900, "y": 120, "containerId": "ws-bff", "icon": "trpc", "texts": [{ "text": "tRPC · AppRouter" }] },
-    { "tag": "Icon", "id": "bff-bootstrap", "x": 1040, "y": 120, "containerId": "ws-bff", "icon": "file-code", "texts": [{ "text": "HTML bootstrap · SEO" }] },
+    { "tag": "Icon", "id": "bff-bootstrap", "x": 1040, "y": 120, "containerId": "ws-bff", "icon": "file-code", "texts": [{ "text": "HTML bootstrap" }] },
 
     { "tag": "Group", "id": "turbo-pipeline", "color": "purple", "styleMode": "plain", "x": 40, "y": 280, "width": 680, "height": 220, "containerId": "monorepo", "isContainer": true, "title": { "text": "turbo run --affected" } },
     { "tag": "Activity", "id": "t-install", "x": 60, "y": 320, "width": 120, "height": 60, "containerId": "turbo-pipeline", "texts": [{ "text": "bun install" }] },
