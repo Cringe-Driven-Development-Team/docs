@@ -250,9 +250,10 @@ S3 → `s3`; `github` → `telegram` «Send to tg».
   - «Backend CD»: Run ansible playbook → Run migrations → Health check →
     Send to tg
 - `deployments-repo` «Deployments repo» (`ansible`) вне групп
-- `selectel` (blue, «Selectel», `cloud`): `vps1` «VPS 1 · Docker Compose»
-  (`docker`), `vps2` «VPS 2 · Docker Compose» (`docker`), `s3` «S3»
-  (`database`)
+- `selectel` (blue, «Selectel», `cloud`): узлы `Icon` столбиком `vps1`
+  «VPS 1 · Docker Compose» (`docker`), `vps2` «VPS 2 · Docker Compose»
+  (`docker`), `s3` «S3» (`database`). VPS здесь узлы, а не вложенные
+  группы: показывать внутри них нечего, а стрелка к узлу читается лучше
 - `ghcr` «GHCR» (`docker`), `telegram` «Telegram» вне групп
 
 | От | К | Подпись |
@@ -268,10 +269,10 @@ S3 → `s3`; `github` → `telegram` «Send to tg».
 | Switch release pointer | `s3` | current.json |
 | `actions` | `telegram` | Send to tg |
 
-Стрелки от Activity к группе VPS и от группы VPS к GHCR: первая по
-конвенции пунктир, вторая «прочие связи». Если рендер покажет, что три
-стрелки playbook → VPS 1 и VPS 2 путаются, план объединяет их в одну
-подпись на стрелку.
+Стрелки от Activity к узлу VPS и от узла VPS к GHCR: первая по
+конвенции пунктир, вторая «прочие связи». Проверено рендером: при
+столбике VPS 1, VPS 2, S3 шесть пунктирных стрелок из пайплайнов не
+путаются, объединять подписи не нужно.
 
 ### 8.4 `diagrams/frontend-monorepo.json`
 
