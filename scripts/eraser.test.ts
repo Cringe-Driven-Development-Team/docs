@@ -2,20 +2,35 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildArgs, cliEntry, listDiagrams, nodeProbeVerdict, rendererCommand, spawnError } from "./eraser.ts";
+import { buildArgs, cliEntry, listDiagrams, nodeProbeVerdict, renderBatches, rendererCommand, spawnError } from "./eraser.ts";
 
 const tempDirs: string[] = [];
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-test("listDiagrams returns only *.json, sorted, with dir prefix", async () => {
+test("listDiagrams returns *.json from the root and one level of subfolders, sorted, with / separators", async () => {
   const dir = mkdtempSync(join(tmpdir(), "eraser-"));
   tempDirs.push(dir);
   await Bun.write(join(dir, "b.json"), "{}");
   await Bun.write(join(dir, "a.json"), "{}");
   await Bun.write(join(dir, "notes.md"), "");
-  expect(listDiagrams(dir)).toEqual([join(dir, "a.json"), join(dir, "b.json")]);
+  await Bun.write(join(dir, "frozen", "a.json"), "{}");
+  await Bun.write(join(dir, "frozen", "deep", "c.json"), "{}");
+  const prefix = dir.replaceAll("\\", "/");
+  expect(listDiagrams(dir)).toEqual([`${prefix}/a.json`, `${prefix}/b.json`, `${prefix}/frozen/a.json`]);
+});
+
+test("renderBatches groups files by folder: root into dist, a subfolder into dist/<folder>", () => {
+  const files = ["diagrams/ci.json", "diagrams/frozen-k3s/cd.json", "diagrams/cd.json", "diagrams/frozen-k3s/ci.json"];
+  expect(renderBatches(files)).toEqual([
+    { outDir: "dist", files: ["diagrams/ci.json", "diagrams/cd.json"] },
+    { outDir: "dist/frozen-k3s", files: ["diagrams/frozen-k3s/cd.json", "diagrams/frozen-k3s/ci.json"] },
+  ]);
+});
+
+test("renderBatches without subfolders is a single batch into dist", () => {
+  expect(renderBatches(["diagrams/ci.json"])).toEqual([{ outDir: "dist", files: ["diagrams/ci.json"] }]);
 });
 
 test("buildArgs: command, then files, then extra options", () => {

@@ -1,0 +1,59 @@
+{
+  "entities": [
+    { "tag": "Group", "id": "github", "color": "purple", "x": 0, "y": 0, "width": 1200, "height": 540, "isContainer": true, "title": { "text": "GitHub", "icon": "github" } },
+    { "tag": "Group", "id": "monorepo", "color": "purple", "styleMode": "plain", "x": 20, "y": 40, "width": 1160, "height": 480, "containerId": "github", "isContainer": true, "title": { "text": "Frontend monorepo · bun workspaces · Turborepo", "icon": "react" } },
+
+    { "tag": "Group", "id": "ws-client", "color": "purple", "styleMode": "plain", "x": 40, "y": 80, "width": 420, "height": 160, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/client", "icon": "vite" } },
+    { "tag": "Icon", "id": "client-react", "x": 60, "y": 120, "containerId": "ws-client", "icon": "react", "texts": [{ "text": "React" }] },
+    { "tag": "Icon", "id": "client-tanstack", "x": 200, "y": 120, "containerId": "ws-client", "icon": "layers", "texts": [{ "text": "TanStack Router · Query" }] },
+    { "tag": "Icon", "id": "client-zustand", "x": 340, "y": 120, "containerId": "ws-client", "icon": "package", "texts": [{ "text": "zustand" }] },
+
+    { "tag": "Group", "id": "ws-bff", "color": "purple", "styleMode": "plain", "x": 740, "y": 80, "width": 420, "height": 160, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/bff", "icon": "bun" } },
+    { "tag": "Icon", "id": "bff-hono", "x": 760, "y": 120, "containerId": "ws-bff", "icon": "hono", "texts": [{ "text": "Hono" }] },
+    { "tag": "Icon", "id": "bff-trpc", "x": 900, "y": 120, "containerId": "ws-bff", "icon": "trpc", "texts": [{ "text": "tRPC · AppRouter" }] },
+    { "tag": "Icon", "id": "bff-bootstrap", "x": 1040, "y": 120, "containerId": "ws-bff", "icon": "file-code", "texts": [{ "text": "HTML bootstrap" }] },
+
+    { "tag": "Group", "id": "turbo-pipeline", "color": "purple", "styleMode": "plain", "x": 40, "y": 280, "width": 680, "height": 220, "containerId": "monorepo", "isContainer": true, "title": { "text": "turbo run --affected" } },
+    { "tag": "Activity", "id": "t-install", "x": 60, "y": 320, "width": 120, "height": 60, "containerId": "turbo-pipeline", "texts": [{ "text": "bun install" }] },
+    { "tag": "Activity", "id": "t-check", "x": 220, "y": 320, "width": 120, "height": 60, "containerId": "turbo-pipeline", "texts": [{ "text": "lint · typecheck · test" }] },
+    { "tag": "Activity", "id": "t-vite-build", "x": 380, "y": 320, "width": 120, "height": 60, "containerId": "turbo-pipeline", "texts": [{ "text": "vite build" }] },
+    { "tag": "Activity", "id": "t-bff-compile", "x": 380, "y": 420, "width": 140, "height": 60, "containerId": "turbo-pipeline", "texts": [{ "text": "bun build --compile" }] },
+    { "tag": "Activity", "id": "t-image", "x": 540, "y": 420, "width": 120, "height": 60, "containerId": "turbo-pipeline", "texts": [{ "text": "Build image" }] },
+
+    { "tag": "Group", "id": "ghcr", "color": "green", "x": 1260, "y": 280, "width": 200, "height": 160, "isContainer": true, "title": { "text": "GHCR", "icon": "docker" } },
+    { "tag": "Icon", "id": "reg-bff", "x": 1280, "y": 320, "containerId": "ghcr", "icon": "docker", "texts": [{ "text": "bff:{sha}" }] },
+
+    { "tag": "Icon", "id": "client", "x": 0, "y": 920, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
+
+    { "tag": "Group", "id": "ours", "color": "blue", "x": 360, "y": 700, "width": 1040, "height": 360, "isContainer": true, "title": { "text": "Наша инфраструктура (Selectel)", "icon": "cloud" } },
+    { "tag": "Icon", "id": "cdn", "x": 400, "y": 740, "containerId": "ours", "icon": "cloud", "texts": [{ "text": "CDN static.site.ru" }] },
+    { "tag": "Icon", "id": "s3", "x": 960, "y": 740, "containerId": "ours", "icon": "database", "texts": [{ "text": "S3: releases/{sha}/, current.json" }] },
+    { "tag": "Group", "id": "vps1", "color": "blue", "styleMode": "plain", "x": 380, "y": 880, "width": 420, "height": 160, "containerId": "ours", "isContainer": true, "title": { "text": "VPS 1 · Docker Compose", "icon": "docker" } },
+    { "tag": "Icon", "id": "caddy", "x": 400, "y": 920, "containerId": "vps1", "icon": "server", "texts": [{ "text": "Caddy" }] },
+    { "tag": "Icon", "id": "bff", "x": 680, "y": 920, "containerId": "vps1", "icon": "hono", "texts": [{ "text": "BFF (Hono · bun)" }] },
+    { "tag": "Group", "id": "vps2", "color": "blue", "styleMode": "plain", "x": 1080, "y": 880, "width": 300, "height": 160, "containerId": "ours", "isContainer": true, "title": { "text": "VPS 2 · Docker Compose", "icon": "docker" } },
+    { "tag": "Icon", "id": "go-api", "x": 1180, "y": 920, "containerId": "vps2", "icon": "go", "texts": [{ "text": "Go API" }] },
+
+    { "tag": "Textbox", "id": "rules", "x": 1460, "y": 700, "width": 480, "text": "**Правила выкатки**\n\n1. BFF N+1 выкатывается первым, клиент после health check BFF\n2. BFF N+1 обслуживает клиентов N и N+1, проверка на ревью\n3. Ответ BFF несёт x-release; при ошибке контракта перезагрузка сразу, иначе мягко, не чаще раза в 10 минут\n4. В S3 последние 5 релизов, stable и previous не удаляются\n5. Откат: stable ← previous, потом BFF прежним тегом" },
+
+    { "tag": "Legend", "id": "legend", "x": 1900, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+  ],
+  "connections": [
+    { "tag": "Relationship", "from": "ws-client", "to": "ws-bff", "label": "import type AppRouter, BootstrapData" },
+
+    { "tag": "Relationship", "from": "t-install", "to": "t-check" },
+    { "tag": "Relationship", "from": "t-check", "to": "t-vite-build" },
+    { "tag": "Relationship", "from": "t-check", "to": "t-bff-compile" },
+    { "tag": "Relationship", "from": "t-bff-compile", "to": "t-image" },
+
+    { "tag": "Relationship", "from": "t-vite-build", "to": "s3", "label": "releases/{sha}/ (main)", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "t-image", "to": "reg-bff", "color": "black", "lineStyle": "dashed" },
+
+    { "tag": "Relationship", "from": "client", "to": "caddy", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "s3", "to": "cdn", "label": "static" },
+    { "tag": "Relationship", "from": "caddy", "to": "bff" },
+    { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "S2S: сессия, данные" },
+    { "tag": "Relationship", "from": "bff", "to": "s3", "label": "index.html, current.json" }
+  ]
+}
