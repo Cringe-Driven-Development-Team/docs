@@ -1,0 +1,65 @@
+{
+  "entities": [
+    { "tag": "Group", "id": "actions", "color": "purple", "x": 0, "y": 0, "width": 1000, "height": 460, "isContainer": true, "title": { "text": "GitHub Actions", "icon": "github-actions" } },
+
+    { "tag": "Group", "id": "monorepo-cd", "color": "purple", "styleMode": "plain", "x": 20, "y": 40, "width": 960, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Monorepo CD" } },
+    { "tag": "Activity", "id": "md-playbook", "x": 40, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Run ansible playbook" }] },
+    { "tag": "Activity", "id": "md-health-bff", "x": 200, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Health check BFF" }] },
+    { "tag": "Activity", "id": "md-promote", "x": 360, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Promote to stable" }] },
+    { "tag": "Activity", "id": "md-health", "x": 520, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Health check" }] },
+    { "tag": "Activity", "id": "md-retention", "x": 680, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Retention: 5 релизов" }] },
+    { "tag": "Activity", "id": "md-tg", "x": 840, "y": 80, "width": 120, "height": 60, "containerId": "monorepo-cd", "texts": [{ "text": "Send to tg" }] },
+
+    { "tag": "Group", "id": "monorepo-rollback", "color": "purple", "styleMode": "plain", "x": 20, "y": 180, "width": 800, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Monorepo Rollback" } },
+    { "tag": "Activity", "id": "mr-switch", "x": 40, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Switch release pointer" }] },
+    { "tag": "Activity", "id": "mr-health", "x": 200, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Health check" }] },
+    { "tag": "Activity", "id": "mr-playbook", "x": 360, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Run ansible playbook" }] },
+    { "tag": "Activity", "id": "mr-health-bff", "x": 520, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Health check BFF" }] },
+    { "tag": "Activity", "id": "mr-tg", "x": 680, "y": 220, "width": 120, "height": 60, "containerId": "monorepo-rollback", "texts": [{ "text": "Send to tg" }] },
+
+    { "tag": "Group", "id": "backend-cd", "color": "purple", "styleMode": "plain", "x": 20, "y": 320, "width": 640, "height": 120, "containerId": "actions", "isContainer": true, "title": { "text": "Backend CD" } },
+    { "tag": "Activity", "id": "be-playbook", "x": 40, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Run ansible playbook" }] },
+    { "tag": "Activity", "id": "be-migrate", "x": 200, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Run migrations" }] },
+    { "tag": "Activity", "id": "be-health", "x": 360, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Health check" }] },
+    { "tag": "Activity", "id": "be-tg", "x": 520, "y": 360, "width": 120, "height": 60, "containerId": "backend-cd", "texts": [{ "text": "Send to tg" }] },
+
+    { "tag": "Icon", "id": "deployments-repo", "x": 1200, "y": 60, "icon": "ansible", "texts": [{ "text": "Deployments repo" }] },
+
+    { "tag": "Group", "id": "selectel", "color": "blue", "x": 1180, "y": 200, "width": 180, "height": 400, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
+    { "tag": "Icon", "id": "vps1", "x": 1200, "y": 240, "containerId": "selectel", "icon": "docker", "texts": [{ "text": "VPS 1 · Docker Compose" }] },
+    { "tag": "Icon", "id": "vps2", "x": 1200, "y": 360, "containerId": "selectel", "icon": "docker", "texts": [{ "text": "VPS 2 · Docker Compose" }] },
+    { "tag": "Icon", "id": "s3", "x": 1200, "y": 480, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3" }] },
+
+    { "tag": "Icon", "id": "ghcr", "x": 1480, "y": 300, "icon": "docker", "texts": [{ "text": "GHCR" }] },
+    { "tag": "Icon", "id": "telegram", "x": 1200, "y": 700, "icon": "telegram", "texts": [{ "text": "Telegram" }] },
+
+    { "tag": "Legend", "id": "legend", "x": 1700, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Алерты и уведомления, точки", "color": "#bd413a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+  ],
+  "connections": [
+    { "tag": "Relationship", "from": "md-playbook", "to": "md-health-bff" },
+    { "tag": "Relationship", "from": "md-health-bff", "to": "md-promote" },
+    { "tag": "Relationship", "from": "md-promote", "to": "md-health" },
+    { "tag": "Relationship", "from": "md-health", "to": "md-retention" },
+    { "tag": "Relationship", "from": "md-retention", "to": "md-tg" },
+
+    { "tag": "Relationship", "from": "mr-switch", "to": "mr-health" },
+    { "tag": "Relationship", "from": "mr-health", "to": "mr-playbook" },
+    { "tag": "Relationship", "from": "mr-playbook", "to": "mr-health-bff" },
+    { "tag": "Relationship", "from": "mr-health-bff", "to": "mr-tg" },
+
+    { "tag": "Relationship", "from": "be-playbook", "to": "be-migrate" },
+    { "tag": "Relationship", "from": "be-migrate", "to": "be-health" },
+    { "tag": "Relationship", "from": "be-health", "to": "be-tg" },
+
+    { "tag": "Relationship", "from": "md-playbook", "to": "deployments-repo", "label": "playbook, vault", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "md-playbook", "to": "vps1", "label": "ssh: pull bff:{sha}, compose up", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "mr-playbook", "to": "vps1", "label": "ssh: prev tag", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "be-playbook", "to": "vps2", "label": "ssh: pull backend:{sha}, compose up", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "vps1", "to": "ghcr", "label": "pull" },
+    { "tag": "Relationship", "from": "vps2", "to": "ghcr", "label": "pull" },
+    { "tag": "Relationship", "from": "md-promote", "to": "s3", "label": "current.json", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "md-retention", "to": "s3", "label": "releases/", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "mr-switch", "to": "s3", "label": "current.json", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "actions", "to": "telegram", "label": "Send to tg", "color": "red", "lineStyle": "dotted" }
+  ]
+}
