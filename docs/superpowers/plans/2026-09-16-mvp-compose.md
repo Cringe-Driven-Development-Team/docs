@@ -398,21 +398,21 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
   "entities": [
     { "tag": "Icon", "id": "client", "x": 60, "y": 200, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
 
-    { "tag": "Group", "id": "selectel", "color": "blue", "x": 300, "y": 0, "width": 720, "height": 460, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
+    { "tag": "Group", "id": "selectel", "color": "blue", "x": 300, "y": 0, "width": 920, "height": 460, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
 
     { "tag": "Group", "id": "vps1", "color": "blue", "styleMode": "plain", "x": 320, "y": 40, "width": 300, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 1 · Docker Compose", "icon": "docker" } },
     { "tag": "Icon", "id": "vps1-caddy", "x": 340, "y": 80, "containerId": "vps1", "icon": "server", "texts": [{ "text": "Caddy" }] },
     { "tag": "Icon", "id": "vps1-bff", "x": 480, "y": 80, "containerId": "vps1", "icon": "hono", "texts": [{ "text": "BFF (Hono · bun)" }] },
 
-    { "tag": "Group", "id": "vps2", "color": "blue", "styleMode": "plain", "x": 660, "y": 40, "width": 300, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 2 · Docker Compose", "icon": "docker" } },
-    { "tag": "Icon", "id": "vps2-go", "x": 680, "y": 80, "containerId": "vps2", "icon": "go", "texts": [{ "text": "Go API" }] },
-    { "tag": "Icon", "id": "vps2-postgres", "x": 820, "y": 80, "containerId": "vps2", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
+    { "tag": "Group", "id": "vps2", "color": "blue", "styleMode": "plain", "x": 860, "y": 40, "width": 300, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 2 · Docker Compose", "icon": "docker" } },
+    { "tag": "Icon", "id": "vps2-go", "x": 880, "y": 80, "containerId": "vps2", "icon": "go", "texts": [{ "text": "Go API" }] },
+    { "tag": "Icon", "id": "vps2-postgres", "x": 1020, "y": 80, "containerId": "vps2", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
 
-    { "tag": "Icon", "id": "s3", "x": 760, "y": 300, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3: releases/{sha}/, current.json" }] },
+    { "tag": "Icon", "id": "s3", "x": 880, "y": 300, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3: releases/{sha}/, current.json" }] },
     { "tag": "Icon", "id": "cdn", "x": 340, "y": 300, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.site.ru" }] },
-    { "tag": "Icon", "id": "domain", "x": 900, "y": 300, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "site.ru" }] },
+    { "tag": "Icon", "id": "domain", "x": 1020, "y": 300, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "site.ru" }] },
 
-    { "tag": "Legend", "id": "legend", "x": 1080, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+    { "tag": "Legend", "id": "legend", "x": 1280, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
     { "tag": "Relationship", "from": "client", "to": "vps1-caddy", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
@@ -427,7 +427,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 }
 ```
 
-Раскладка проверена рендером: CDN слева, S3 под VPS 2, чтобы стрелка BFF → S3 имела горизонтальный ход и подпись «index.html, current.json» не рвалась по буквам, а стрелка Client → CDN не проходила через S3.
+Раскладка проверена рендером: между VPS 1 и VPS 2 зазор 240, иначе подпись «S2S: сессия, данные» закрывает всю линию стрелки и от неё остаётся один наконечник; CDN слева, S3 под VPS 2, чтобы стрелка BFF → S3 имела горизонтальный ход и подпись «index.html, current.json» не рвалась по буквам, а стрелка Client → CDN не проходила через S3.
 
 - [ ] **Step 2: Validate, check, render, inspect**
 
