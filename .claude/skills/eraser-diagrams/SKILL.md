@@ -1,6 +1,6 @@
 ---
 name: eraser-diagrams
-description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*.json (eraser-diagrams JSON) — required fields, absolute coordinates, icon lookup, color convention and legend, validate → check → render → inspect loop
+description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*.json (eraser-diagrams JSON) — required fields, absolute coordinates, icon lookup, color convention and legend, validate → check → warm → render → inspect loop
 ---
 
 # Правка диаграмм eraser-diagrams
@@ -52,20 +52,24 @@ description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*
 ## Цикл правки
 
 1. Измени JSON. Новые группы и стрелки сразу крась по разделу «Цвета».
-2. `bun run validate` — схема и иконки, без браузера.
+2. `bun run validate` — схема, без браузера. Имена иконок он не проверяет:
+   незагруженные иконки validate пропускает.
 3. `bun run check` — цветовая конвенция и легенда, без браузера. Сообщение
    называет id элемента и нужные значения.
-4. `bun run render` — `dist/<name>.html` и `dist/<name>.png`, для схемы из
+4. `bun run warm` — докачивает иконки всех схем в `.eraser/icons` с
+   повторами; неизвестное имя роняет с текстом `unknown icon`. Рендер
+   после прогрева в сеть не ходит.
+5. `bun run render` — `dist/<name>.html` и `dist/<name>.png`, для схемы из
    подпапки `dist/<папка>/<name>.html` и `.png`; рендерер
    запускается под Node ≥ 22.12 из PATH (под bun Chrome не стартует); нужен
    Chrome или другой Chromium; если автопоиск не находит его, задай
    переменную `CHROMIUM_PATH`.
-5. Открой `dist/<name>.png` через Read и проверь глазами: узлы не
+6. Открой `dist/<name>.png` через Read и проверь глазами: узлы не
    накладываются, все узлы внутри своих групп, заголовки групп не обрезаны,
    подписи читаемы, легенда ничего не перекрывает.
-6. Поправь координаты (кратно 20), повтори с шага 2.
-7. Перед коммитом: `bun run typecheck`, `bun run test` и `bun run build` (то же, что делает CI).
-8. После push ветки превью появится через несколько минут по адресу
+7. Поправь координаты (кратно 20), повтори с шага 2.
+8. Перед коммитом: `bun run typecheck`, `bun run test` и `bun run build` (то же, что делает CI).
+9. После push ветки превью появится через несколько минут по адресу
    `https://cringe-driven-development-team.github.io/docs/branches/<slug>/`, где slug это имя
    ветки, в котором всё, кроме латиницы, цифр, `.`, `_` и `-`, заменено на
    `-`. Ссылку можно дать в PR. Точный адрес в списке

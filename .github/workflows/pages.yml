@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .eraser/icons
-          key: icons-${{ hashFiles('diagrams/*.json') }}
+          key: icons-${{ hashFiles('diagrams/**/*.json') }}
           restore-keys: |
             icons-
       - run: bun install --frozen-lockfile
@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .eraser/icons
-          key: icons-${{ hashFiles('diagrams/*.json') }}
+          key: icons-${{ hashFiles('diagrams/**/*.json') }}
       - run: bun run site --main-built
       - uses: actions/upload-pages-artifact@v3
         with:

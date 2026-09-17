@@ -26,7 +26,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .eraser/icons
-          key: icons-${{ hashFiles('diagrams/*.json') }}
+          key: icons-${{ hashFiles('diagrams/**/*.json') }}
           restore-keys: |
             icons-
       - run: bun install --frozen-lockfile
