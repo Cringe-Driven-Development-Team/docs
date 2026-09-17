@@ -39,8 +39,9 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
 
 Таблицы ведутся вручную: добавил файл в `diagrams/`, добавь строку сюда.
-`dist/index.html` собирается автоматически: схемы корня карточками, каждая
-подпапка отдельной секцией. Схема из подпапки рендерится в
+`dist/index.html` собирается автоматически: внизу страницы табы, как листы
+в Google Sheets. Первый таб `mvp` это схемы корня, он открыт по умолчанию,
+дальше по табу на подпапку. Схема из подпапки рендерится в
 `dist/<папка>/<name>.html` и `.png`.
 
 ### Локально
