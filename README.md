@@ -55,10 +55,11 @@ bun ставится с https://bun.sh. Без настоящего Node в PATH
 
 ```bash
 bun install
-bun run validate   # схема и иконки, без браузера
+bun run validate   # схема, без браузера; имена иконок он не проверяет
 bun run check      # цветовая конвенция и легенды, без браузера
+bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
 bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/
-bun run build      # validate + check + render + dist/index.html
+bun run build      # validate + check + warm + render + dist/index.html
 bun run site       # build + превью всех веток origin в dist/branches/
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
