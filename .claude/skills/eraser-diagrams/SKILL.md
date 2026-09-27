@@ -60,10 +60,10 @@ description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*
    повторами; неизвестное имя роняет с текстом `unknown icon`. Рендер
    после прогрева в сеть не ходит.
 5. `bun run render` — `dist/<name>.html` и `dist/<name>.png`, для схемы из
-   подпапки `dist/<папка>/<name>.html` и `.png`; рендерер
-   запускается под Node ≥ 22.12 из PATH (под bun Chrome не стартует); нужен
-   Chrome или другой Chromium; если автопоиск не находит его, задай
-   переменную `CHROMIUM_PATH`.
+   подпапки `dist/<папка>/<name>.html` и `.png`. Рендер идёт в Docker-образе
+   из `Dockerfile`, как в CI: Docker Desktop должен быть запущен, иначе
+   команда остановится с подсказкой. Без Docker: `DIAGRAMS_NATIVE=1 bun run
+   render` (нужен Chrome на хосте или `CHROMIUM_PATH`).
 6. Открой `dist/<name>.png` через Read и проверь глазами: узлы не
    накладываются, все узлы внутри своих групп, заголовки групп не обрезаны,
    подписи читаемы, легенда ничего не перекрывает.

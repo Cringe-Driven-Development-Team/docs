@@ -13,26 +13,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      CHROMIUM_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
-          bun-version: 1.3.13
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+          context: .
+          load: true
+          tags: docs-render:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - uses: actions/cache@v4
         with:
           path: .eraser/icons
           key: icons-${{ hashFiles('diagrams/**/*.json') }}
           restore-keys: |
             icons-
-      - run: bun install --frozen-lockfile
-      - run: bun run typecheck
-      - run: bun run test
-      - run: bun run build
+      - run: >-
+          docker run --rm -v "$PWD:/work" -w /work docs-render:ci
+          bash -c "bun install --frozen-lockfile && bun run typecheck && bun run test && bun run build"
       - uses: actions/upload-artifact@v4
         with:
           name: diagrams
