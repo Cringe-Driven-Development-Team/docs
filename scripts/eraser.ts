@@ -6,8 +6,10 @@
 // выход по basename входа, поэтому render вызывается по разу на папку со своим --out-dir
 // (docs/superpowers/specs/2026-09-16-mvp-compose-design.md §2, §9.2).
 // Свой --out-dir для render передавать нельзя: скрипт добавляет его сам для каждой папки.
+// После render в html подписям стрелок добавляется запас ширины (scripts/label-slack.ts).
 // Использование: bun scripts/eraser.ts <command> [cli options...]
 import { dirname, join, relative } from "node:path";
+import { isHtmlRender, padHtmlOutputs } from "./label-slack.ts";
 
 export const DIAGRAMS_DIR = "diagrams";
 export const DIST_DIR = "dist";
@@ -111,6 +113,7 @@ async function main(argv: string[]): Promise<number> {
     try {
       const result = Bun.spawnSync([cmd, ...args], { stdio: ["inherit", "inherit", "inherit"] });
       if (result.exitCode !== 0) return result.exitCode ?? 1;
+      if (isHtmlRender(command, extra)) await padHtmlOutputs(batch);
     } catch (error) {
       const { code, message } = spawnError(error);
       if (code === "ENOENT") {
