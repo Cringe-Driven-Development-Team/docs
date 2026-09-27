@@ -48,8 +48,49 @@ export function dockerUnavailableMessage(script: DockerScript): string {
   return `Docker не запущен: запусти Docker Desktop или DIAGRAMS_NATIVE=1 bun run ${script}`;
 }
 
+// "\\" на "/": путь хоста идёт в -v <repoRoot>:/work, докеру нужны прямые слэши.
+export function repoRootOf(cwd: string): string {
+  return cwd.replaceAll("\\", "/");
+}
+
+const isScript = (value: string | undefined): value is DockerScript =>
+  (SCRIPTS as readonly string[]).includes(value ?? "");
+
 // Код выхода процесса; отсутствующая программа в bun приходит исключением.
-function run(cmd: string[], quiet = false): number | "missing" {
+export type Runner = (cmd: string[], quiet?: boolean) => number | "missing";
+
+export interface DockerDeps {
+  run: Runner;
+  env: Readonly<Record<string, string | undefined>>;
+  readDockerfile: () => Promise<string>;
+  cwd: string;
+  log: (line: string) => void;
+}
+
+// Вся логика выбора пути и кодов выхода — здесь, на внедрённом runner'е; main() ниже её не содержит.
+export async function runScript(argv: readonly string[], deps: DockerDeps): Promise<number> {
+  const [script, ...args] = argv;
+  if (!isScript(script)) {
+    deps.log(`usage: bun scripts/docker.ts <${SCRIPTS.join("|")}> [args...]`);
+    return 2;
+  }
+  if (runsNatively(deps.env)) {
+    const code = deps.run(nativeCommand(script, args));
+    return code === "missing" ? 1 : code;
+  }
+  const info = deps.run(["docker", "info"], true);
+  if (info !== 0) {
+    deps.log(dockerUnavailableMessage(script));
+    return 2;
+  }
+  const tag = imageTag(await deps.readDockerfile());
+  const built = deps.run(dockerBuildArgs(tag));
+  if (built !== 0) return built === "missing" ? 2 : built;
+  const ran = deps.run(dockerRunArgs(tag, repoRootOf(deps.cwd), script, args));
+  return ran === "missing" ? 2 : ran;
+}
+
+function spawnRunner(cmd: string[], quiet = false): number | "missing" {
   try {
     const io = quiet ? "ignore" : "inherit";
     return Bun.spawnSync(cmd, { stdio: ["inherit", io, io] }).exitCode ?? 1;
@@ -59,29 +100,14 @@ function run(cmd: string[], quiet = false): number | "missing" {
   }
 }
 
-const isScript = (value: string | undefined): value is DockerScript =>
-  (SCRIPTS as readonly string[]).includes(value ?? "");
-
 async function main(argv: string[]): Promise<number> {
-  const [script, ...args] = argv;
-  if (!isScript(script)) {
-    console.error(`usage: bun scripts/docker.ts <${SCRIPTS.join("|")}> [args...]`);
-    return 2;
-  }
-  if (runsNatively(process.env)) {
-    const code = run(nativeCommand(script, args));
-    return code === "missing" ? 1 : code;
-  }
-  const info = run(["docker", "info"], true);
-  if (info !== 0) {
-    console.error(dockerUnavailableMessage(script));
-    return 2;
-  }
-  const tag = imageTag(await Bun.file("Dockerfile").text());
-  const built = run(dockerBuildArgs(tag));
-  if (built !== 0) return built === "missing" ? 2 : built;
-  const ran = run(dockerRunArgs(tag, process.cwd().replaceAll("\\", "/"), script, args));
-  return ran === "missing" ? 2 : ran;
+  return runScript(argv, {
+    run: spawnRunner,
+    env: process.env,
+    readDockerfile: () => Bun.file("Dockerfile").text(),
+    cwd: process.cwd(),
+    log: (line) => console.error(line),
+  });
 }
 
 if (import.meta.main) {

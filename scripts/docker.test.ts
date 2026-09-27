@@ -1,14 +1,18 @@
 import { expect, test } from "bun:test";
 import {
   NODE_MODULES_VOLUME,
+  SCRIPTS,
   dockerBuildArgs,
   dockerRunArgs,
   dockerUnavailableMessage,
   imageTag,
   nativeCommand,
+  repoRootOf,
+  runScript,
   runsNatively,
   shellQuote,
 } from "./docker.ts";
+import type { DockerDeps } from "./docker.ts";
 
 test("Dockerfile base image tag equals the playwright-core version in bun.lock", async () => {
   const dockerfile = await Bun.file("Dockerfile").text();
@@ -74,4 +78,144 @@ test("package.json: render, build and site go through docker.ts, native variants
     expect(scripts[`${name}:native`]).not.toMatch(/bun run (render|build|site)(\s|&|$)/);
     expect(scripts[`${name}:native`]).not.toContain("docker.ts");
   }
+});
+
+test("repoRootOf: converts Windows backslashes to forward slashes, keeping a space inside one segment", () => {
+  expect(repoRootOf("F:\\Github\\a b")).toBe("F:/Github/a b");
+});
+
+function fakeDeps(run: DockerDeps["run"], overrides: Partial<DockerDeps> = {}): { deps: DockerDeps; logs: string[] } {
+  const logs: string[] = [];
+  return {
+    logs,
+    deps: {
+      run,
+      env: {},
+      readDockerfile: async () => "FROM x\n",
+      cwd: "F:/Github/x",
+      log: (line) => logs.push(line),
+      ...overrides,
+    },
+  };
+}
+
+test("runScript: unknown or missing script prints usage and returns 2 without calling the runner", async () => {
+  const calls: string[][] = [];
+  const { deps, logs } = fakeDeps((cmd) => {
+    calls.push(cmd);
+    return 0;
+  });
+  const usage = `usage: bun scripts/docker.ts <${SCRIPTS.join("|")}> [args...]`;
+  expect(await runScript([], deps)).toBe(2);
+  expect(await runScript(["bogus"], deps)).toBe(2);
+  expect(calls).toEqual([]);
+  expect(logs).toEqual([usage, usage]);
+});
+
+test("runScript: DIAGRAMS_NATIVE=1 runs only the native command and returns its exit code", async () => {
+  const calls: string[][] = [];
+  const { deps } = fakeDeps(
+    (cmd) => {
+      calls.push(cmd);
+      return 3;
+    },
+    { env: { DIAGRAMS_NATIVE: "1" } },
+  );
+  expect(await runScript(["render", "--foo"], deps)).toBe(3);
+  expect(calls).toEqual([["bun", "run", "render:native", "--foo"]]);
+});
+
+test("runScript: DIAGRAMS_IN_CONTAINER=1 runs only the native command and returns its exit code", async () => {
+  const calls: string[][] = [];
+  const { deps } = fakeDeps(
+    (cmd) => {
+      calls.push(cmd);
+      return 3;
+    },
+    { env: { DIAGRAMS_IN_CONTAINER: "1" } },
+  );
+  expect(await runScript(["render", "--foo"], deps)).toBe(3);
+  expect(calls).toEqual([["bun", "run", "render:native", "--foo"]]);
+});
+
+test("runScript: docker info non-zero logs the unavailable message and returns 2 without building or running", async () => {
+  const calls: string[][] = [];
+  const { deps, logs } = fakeDeps((cmd) => {
+    calls.push(cmd);
+    if (cmd[0] === "docker" && cmd[1] === "info") return 1;
+    throw new Error(`unexpected run: ${cmd.join(" ")}`);
+  });
+  expect(await runScript(["render"], deps)).toBe(2);
+  expect(calls).toEqual([["docker", "info"]]);
+  expect(logs).toEqual([dockerUnavailableMessage("render")]);
+});
+
+test("runScript: docker info missing (ENOENT) behaves like docker not running", async () => {
+  const calls: string[][] = [];
+  const { deps, logs } = fakeDeps((cmd) => {
+    calls.push(cmd);
+    return "missing";
+  });
+  expect(await runScript(["build"], deps)).toBe(2);
+  expect(calls).toEqual([["docker", "info"]]);
+  expect(logs).toEqual([dockerUnavailableMessage("build")]);
+});
+
+test("runScript: docker build failing returns its exit code without running the container", async () => {
+  const calls: string[][] = [];
+  const dockerfile = "FROM x\n";
+  const tag = imageTag(dockerfile);
+  const { deps } = fakeDeps(
+    (cmd) => {
+      calls.push(cmd);
+      if (cmd[0] === "docker" && cmd[1] === "info") return 0;
+      if (cmd[0] === "docker" && cmd[1] === "build") return 5;
+      throw new Error(`unexpected run: ${cmd.join(" ")}`);
+    },
+    { readDockerfile: async () => dockerfile },
+  );
+  expect(await runScript(["build"], deps)).toBe(5);
+  expect(calls).toEqual([["docker", "info"], dockerBuildArgs(tag)]);
+});
+
+test("runScript: docker run failing returns its exit code", async () => {
+  const calls: string[][] = [];
+  const dockerfile = "FROM x\n";
+  const tag = imageTag(dockerfile);
+  const { deps } = fakeDeps(
+    (cmd) => {
+      calls.push(cmd);
+      if (cmd[0] === "docker" && cmd[1] === "info") return 0;
+      if (cmd[0] === "docker" && cmd[1] === "build") return 0;
+      if (cmd[0] === "docker" && cmd[1] === "run") return 7;
+      throw new Error(`unexpected run: ${cmd.join(" ")}`);
+    },
+    { readDockerfile: async () => dockerfile },
+  );
+  expect(await runScript(["site", "--main-built"], deps)).toBe(7);
+  expect(calls).toEqual([
+    ["docker", "info"],
+    dockerBuildArgs(tag),
+    dockerRunArgs(tag, "F:/Github/x", "site", ["--main-built"]),
+  ]);
+});
+
+test("runScript: success returns 0, mounts the repo root derived from cwd, and tags the image from the Dockerfile", async () => {
+  const calls: string[][] = [];
+  const dockerfile = "FROM y\n";
+  const tag = imageTag(dockerfile);
+  const { deps } = fakeDeps(
+    (cmd) => {
+      calls.push(cmd);
+      return 0;
+    },
+    { readDockerfile: async () => dockerfile, cwd: "F:\\Github\\x" },
+  );
+  expect(await runScript(["render"], deps)).toBe(0);
+  expect(calls).toEqual([
+    ["docker", "info"],
+    dockerBuildArgs(tag),
+    dockerRunArgs(tag, "F:/Github/x", "render", []),
+  ]);
+  expect(calls[2]).toContain("F:/Github/x:/work");
 });
