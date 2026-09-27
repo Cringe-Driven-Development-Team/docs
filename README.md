@@ -27,6 +27,7 @@ MVP (`diagrams/`):
 | [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, GHCR, S3 |
 | [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD и откат через ansible-playbook из GitHub Actions |
 | [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frontend-monorepo.html) | Монорепа клиента и BFF, контракт tRPC, модель релизов |
+| [infra](https://cringe-driven-development-team.github.io/docs/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
 
 Frozen: k3s (`diagrams/frozen-k3s/`):
 

@@ -3,7 +3,7 @@
 // Спека: docs/superpowers/specs/2026-09-14-typescript-design.md §4.
 
 export type PaletteColor = "blue" | "purple" | "green" | "orange" | "red" | "black" | "yellow" | "white";
-export type ZoneColor = "blue" | "purple" | "green";
+export type ZoneColor = "blue" | "purple" | "green" | "white";
 export type LineStyle = "solid" | "dashed" | "dotted";
 export type StyleMode = "plain" | "shadow" | "watercolor";
 
