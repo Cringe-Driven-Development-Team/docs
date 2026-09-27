@@ -57,7 +57,9 @@ jobs:
         with:
           path: .eraser/icons
           key: icons-${{ hashFiles('diagrams/**/*.json') }}
-      - run: docker run --rm -v "$PWD:/work" -w /work docs-render:ci bash -c "bun run site --main-built"
+      - run: >-
+          docker run --rm -v "$PWD:/work" -v "$GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY"
+          -e GITHUB_STEP_SUMMARY -w /work docs-render:ci bash -c "bun run site --main-built"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
