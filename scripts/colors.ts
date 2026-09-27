@@ -2,7 +2,7 @@
 // Спека: docs/superpowers/specs/2026-09-13-diagram-colors-and-bun-design.md §4.
 import type { Entity, LegendEntry, LineStyle, Relationship, ZoneColor } from "./diagram.ts";
 
-export type PaletteName = "blue" | "purple" | "green" | "orange" | "red" | "black";
+export type PaletteName = "blue" | "purple" | "green" | "orange" | "red" | "black" | "white";
 
 export const PALETTE_HEX: Readonly<Record<PaletteName, string>> = {
   blue: "#2866c4",
@@ -11,6 +11,8 @@ export const PALETTE_HEX: Readonly<Record<PaletteName, string>> = {
   orange: "#c38424",
   red: "#bd413a",
   black: "#3a3a3a",
+  // В палитре движка "white" это тёмно-серый.
+  white: "#242424",
 };
 
 // Цвет стрелки без поля color в CLI 0.1.0.
@@ -37,6 +39,7 @@ export const ZONES: readonly Zone[] = [
   { key: "ours", color: "blue", legendText: "Наша инфраструктура", hex: PALETTE_HEX.blue },
   { key: "github", color: "purple", legendText: "GitHub", hex: PALETTE_HEX.purple },
   { key: "external", color: "green", legendText: "Внешние сервисы", hex: PALETTE_HEX.green },
+  { key: "workstation", color: "white", legendText: "Рабочее место", hex: PALETTE_HEX.white },
 ];
 
 const USER: Flow = { key: "user", color: "orange", lineStyle: "solid", legendText: "Пользовательский трафик", hex: PALETTE_HEX.orange };

@@ -65,6 +65,23 @@ test("expectedLegend: top-level zones in table order, then present flows in lege
   ]);
 });
 
+test("expectedLegend: a workstation group (white) is a zone listed after the other zones", () => {
+  const doc: LegendSource = {
+    entities: [
+      { tag: "Group", id: "laptop", color: "white" },
+      { tag: "Group", id: "ours", color: "blue" },
+      { tag: "Icon", id: "cli", containerId: "laptop" },
+      { tag: "Icon", id: "api", containerId: "ours" },
+    ],
+    connections: [{ from: "cli", to: "api" }],
+  };
+  expect(expectedLegend(doc)).toEqual([
+    { text: "Наша инфраструктура", color: "#2866c4" },
+    { text: "Рабочее место", color: "#242424" },
+    { text: "Прочие связи", color: "#1c1c1c" },
+  ]);
+});
+
 test("every zone and colored flow uses a palette color with its palette hex", () => {
   for (const item of [...ZONES, ...FLOWS]) {
     if (item.color) expect(item.hex).toBe(PALETTE_HEX[item.color]);

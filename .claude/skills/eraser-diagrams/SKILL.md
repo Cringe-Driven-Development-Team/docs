@@ -87,6 +87,7 @@ description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*
 | Наша инфраструктура: серверы и сервисы в Selectel | `blue` |
 | GitHub: репозитории и их пайплайны | `purple` |
 | Внешние сервисы: чужие SaaS и реестры | `green` |
+| Рабочее место: ноут, с которого запускают CLI | `white` (тёмно-серый) |
 
 - Вложенная группа: `color` родителя и `"styleMode": "plain"`. У верхней
   группы `styleMode` не задавай.
