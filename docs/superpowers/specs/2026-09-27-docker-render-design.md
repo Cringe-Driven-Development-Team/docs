@@ -74,8 +74,9 @@
    [args…]` здесь же, без Docker; код выхода пробрасывается.
 2. Иначе проверка `docker info`. Не отвечает — сообщение
    `Docker не запущен: запусти Docker Desktop или DIAGRAMS_NATIVE=1 bun run <script>` и код 2.
-3. `docker build -t docs-render:<первые 12 символов sha256 Dockerfile> - < Dockerfile` — тег по
+3. `docker build -t docs-render:<первые 12 символов sha256 Dockerfile> .` — тег по
    содержимому, смена `Dockerfile` даёт новый образ, повторная сборка берётся из кэша.
+   Контекст — корень репо, `.dockerignore` исключает всё.
 4. `docker run --rm -v <корень репо>:/work -v docs-render-node-modules:/work/node_modules -w /work
    <образ> bash -c "bun install --frozen-lockfile && bun run <script>:native <args…>"`.
    `node_modules` для Linux живут в именованном томе и не смешиваются с виндовыми; `.eraser/icons` и

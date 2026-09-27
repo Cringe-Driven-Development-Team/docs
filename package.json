@@ -8,11 +8,14 @@
     "typecheck": "tsc",
     "validate": "bun scripts/eraser.ts validate",
     "check": "bun scripts/check-colors.ts",
-    "render": "bun scripts/eraser.ts render -f html && bun scripts/eraser.ts render -f png",
+    "render": "bun scripts/docker.ts render",
+    "render:native": "bun scripts/eraser.ts render -f html && bun scripts/eraser.ts render -f png",
     "index": "bun scripts/build-index.ts",
     "warm": "bun scripts/warm-icons.ts",
-    "build": "bun run validate && bun run check && bun run warm && bun run render && bun run index",
-    "site": "bun scripts/build-site.ts",
+    "build": "bun scripts/docker.ts build",
+    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run index",
+    "site": "bun scripts/docker.ts site",
+    "site:native": "bun scripts/build-site.ts",
     "icons": "bun scripts/fetch-icons.ts"
   },
   "devDependencies": {
