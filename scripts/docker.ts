@@ -10,10 +10,15 @@ export const SCRIPTS = ["render", "build", "site"] as const;
 export type DockerScript = (typeof SCRIPTS)[number];
 
 export const IMAGE_REPO = "docs-render";
-export const NODE_MODULES_VOLUME = "docs-render-node-modules";
+const NODE_MODULES_VOLUME_PREFIX = "docs-render-node-modules";
 
 export function imageTag(dockerfile: string): string {
   return `${IMAGE_REPO}:${createHash("sha256").update(dockerfile).digest("hex").slice(0, 12)}`;
+}
+
+// Свой том на каждый клон/worktree — параллельные рендеры не гоняют bun install друг у друга.
+export function nodeModulesVolume(repoRoot: string): string {
+  return `${NODE_MODULES_VOLUME_PREFIX}-${createHash("sha256").update(repoRoot).digest("hex").slice(0, 8)}`;
 }
 
 export function runsNatively(env: Readonly<Record<string, string | undefined>>): boolean {
@@ -37,7 +42,7 @@ export function dockerRunArgs(tag: string, repoRoot: string, script: DockerScrip
   return [
     "docker", "run", "--rm",
     "-v", `${repoRoot}:/work`,
-    "-v", `${NODE_MODULES_VOLUME}:/work/node_modules`,
+    "-v", `${nodeModulesVolume(repoRoot)}:/work/node_modules`,
     "-w", "/work",
     tag,
     "bash", "-c", inner,

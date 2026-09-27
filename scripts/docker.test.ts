@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import {
-  NODE_MODULES_VOLUME,
   SCRIPTS,
   dockerBuildArgs,
   dockerRunArgs,
   dockerUnavailableMessage,
   imageTag,
   nativeCommand,
+  nodeModulesVolume,
   repoRootOf,
   runScript,
   runsNatively,
@@ -54,14 +54,27 @@ test("dockerBuildArgs builds the tag from the repo root context", () => {
 });
 
 test("dockerRunArgs mounts the repo and the node_modules volume and runs the native script after bun install", () => {
-  expect(dockerRunArgs("docs-render:abc", "F:/Github/2026_H2/docs", "site", ["--main-built", "a b"])).toEqual([
+  const repoRoot = "F:/Github/2026_H2/docs";
+  expect(dockerRunArgs("docs-render:abc", repoRoot, "site", ["--main-built", "a b"])).toEqual([
     "docker", "run", "--rm",
-    "-v", "F:/Github/2026_H2/docs:/work",
-    "-v", `${NODE_MODULES_VOLUME}:/work/node_modules`,
+    "-v", `${repoRoot}:/work`,
+    "-v", `${nodeModulesVolume(repoRoot)}:/work/node_modules`,
     "-w", "/work",
     "docs-render:abc",
     "bash", "-c", "bun install --frozen-lockfile && bun run site:native --main-built 'a b'",
   ]);
+});
+
+test("nodeModulesVolume: docs-render-node-modules plus the first 8 hex of the repo root's sha256", () => {
+  expect(nodeModulesVolume("F:/Github/2026_H2/docs")).toMatch(/^docs-render-node-modules-[0-9a-f]{8}$/);
+});
+
+test("nodeModulesVolume: different repo roots get different volume names", () => {
+  expect(nodeModulesVolume("F:/Github/2026_H2/docs")).not.toBe(nodeModulesVolume("F:/Github/2026_H2/docs-worktree"));
+});
+
+test("nodeModulesVolume: the same repo root always gets the same volume name", () => {
+  expect(nodeModulesVolume("F:/Github/2026_H2/docs")).toBe(nodeModulesVolume("F:/Github/2026_H2/docs"));
 });
 
 test("dockerUnavailableMessage names the native fallback for the script", () => {
