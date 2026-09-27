@@ -1,7 +1,7 @@
 # Рендер схем в Docker: локально как в CI
 
 Дата: 2026-09-27. Репозиторий: `Cringe-Driven-Development-Team/docs`, ветка `feature/docker-render`.
-Статус: на ревью. После утверждения план пишется скиллом `writing-plans`.
+Статус: утверждено. После утверждения план пишется скиллом `writing-plans`.
 
 ## 1. Цель
 
@@ -77,9 +77,10 @@
 3. `docker build -t docs-render:<первые 12 символов sha256 Dockerfile> .` — тег по
    содержимому, смена `Dockerfile` даёт новый образ, повторная сборка берётся из кэша.
    Контекст — корень репо, `.dockerignore` исключает всё.
-4. `docker run --rm -v <корень репо>:/work -v docs-render-node-modules:/work/node_modules -w /work
-   <образ> bash -c "bun install --frozen-lockfile && bun run <script>:native <args…>"`.
-   `node_modules` для Linux живут в именованном томе и не смешиваются с виндовыми; `.eraser/icons` и
+4. `docker run --rm -v <корень репо>:/work -v docs-render-node-modules-<8 hex sha256 корня репо>:/work/node_modules
+   -w /work <образ> bash -c "bun install --frozen-lockfile && bun run <script>:native <args…>"`.
+   `node_modules` для Linux живут в именованном томе и не смешиваются с виндовыми; том свой на каждый
+   клон/worktree, поэтому параллельные рендеры не гоняют друг у друга `bun install`. `.eraser/icons` и
    `dist/` — в смонтированном репо, общие с хостом. Код выхода контейнера пробрасывается.
 
 Аргументы в `bash -c` экранируются. Команды `docker.ts` строит чистыми функциями, спавн — тонкая
@@ -93,10 +94,13 @@
 - `docker/setup-buildx-action@v3`, затем `docker/build-push-action@v6` с `load: true`,
   `tags: docs-render:ci`, `cache-from: type=gha`, `cache-to: type=gha,mode=max`;
 - кэш `.eraser/icons` — как сейчас;
-- один шаг `docker run --rm -v "$PWD:/work" -w /work docs-render:ci bash -c "bun install
-  --frozen-lockfile && bun run typecheck && bun run test && bun run build"`; в Pages ещё
-  `&& bun run site --main-built`. Внутри `DIAGRAMS_IN_CONTAINER=1`, поэтому `build` и `site`
-  работают нативно;
+- шаг `docker run --rm -v "$PWD:/work" -w /work docs-render:ci bash -c "bun install
+  --frozen-lockfile && bun run typecheck && bun run test && bun run build"`. Внутри
+  `DIAGRAMS_IN_CONTAINER=1`, поэтому `build` работает нативно;
+- в Pages, после сохранения кэша иконок, второй `docker run` для `bun run site --main-built`
+  с проброшенным `GITHUB_STEP_SUMMARY`: `-v "$GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY"
+  -e GITHUB_STEP_SUMMARY` в дополнение к `-v "$PWD:/work" -w /work`, иначе сводка со списком
+  превью веток (§4 шаг 8 спеки branch-previews) не долетает до `$GITHUB_STEP_SUMMARY` раннера;
 - загрузка артефактов и деплой — как сейчас. Файлы в `dist/` принадлежат root, раннер одноразовый.
 
 Ветки без этой правки при сборке превью рендерятся своими старыми скриптами внутри того же
