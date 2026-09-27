@@ -3,7 +3,7 @@
     { "tag": "Textbox", "id": "laptop-note", "x": 0, "y": 0, "width": 420, "text": "**Ноут студента:** `~/.config/selectel.env` (личный сервисный пользователь, личный S3-ключ стейта, passphrase), `ansible/clouds.yaml`, `~/.ssh/selectel_release`" },
 
     { "tag": "Icon", "id": "stack-bootstrap", "x": 100, "y": 200, "icon": "pulumi", "texts": [{ "text": "pulumi/bootstrap · стек main" }] },
-    { "tag": "Icon", "id": "stack-main", "x": 100, "y": 320, "icon": "pulumi", "texts": [{ "text": "pulumi · стек dev" }] },
+    { "tag": "Icon", "id": "stack-main", "x": 100, "y": 320, "icon": "pulumi", "texts": [{ "text": "pulumi · стек prod" }] },
     { "tag": "Icon", "id": "ansible", "x": 100, "y": 660, "icon": "ansible", "texts": [{ "text": "Ansible" }] },
 
     { "tag": "Group", "id": "selectel", "color": "blue", "x": 560, "y": 60, "width": 680, "height": 720, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },

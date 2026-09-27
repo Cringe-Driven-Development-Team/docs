@@ -31,7 +31,7 @@ Pulumi и Ansible запускаются с ноута студента.
 - подпись: `~/.config/selectel.env` (личный сервисный пользователь, личный S3-ключ стейта,
   passphrase), `ansible/clouds.yaml`, `~/.ssh/selectel_release`;
 - Pulumi `pulumi/bootstrap` · стек `main`;
-- Pulumi `pulumi` · стек `dev`;
+- Pulumi `pulumi` · стек `prod` (переименование из `dev` предложено в infra#4);
 - Ansible.
 
 Группа «Selectel» (blue):
@@ -47,9 +47,9 @@ Pulumi и Ansible запускаются с ноута студента.
 |---|---|---|
 | стек bootstrap | группа infra-shared | pulumi up: проект, бакет, DNS-зона |
 | стек bootstrap | бакет стейта | стейт bootstrap/ |
-| стек dev | группа pulumi-cellestial | pulumi up: проект, сеть, VPS, бакет |
-| стек dev | бакет стейта | стейт main/ |
-| стек dev | DNS-зона | A-запись |
+| стек prod | группа pulumi-cellestial | pulumi up: проект, сеть, VPS, бакет |
+| стек prod | бакет стейта | стейт main/ |
+| стек prod | DNS-зона | A-запись |
 | регистрация домена | DNS-зона | NS |
 | DNS-зона | VPS 1 | cellestial.ru → floating IP |
 | Ansible | группа pulumi-cellestial | dynamic inventory (clouds.yaml) |
