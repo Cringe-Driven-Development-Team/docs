@@ -47,22 +47,23 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 
 ### Локально
 
-Нужны bun ≥ 1.3, Node ≥ 22.12 и Google Chrome (или другой Chromium; путь в
-переменной `CHROMIUM_PATH`). bun ставит зависимости и запускает скрипты и
-тесты. Рендерер eraser-diagrams запускается под Node: под bun он зависает
-на запуске Chrome.
+Нужны bun ≥ 1.3, Node ≥ 22.12 и запущенный Docker Desktop. `bun run render`,
+`bun run build` и `bun run site` работают в образе из `Dockerfile` (Chromium, шрифты
+и Node той же версии, что в CI), поэтому локальный `dist/` совпадает с CI. Первый
+запуск собирает образ, дальше он берётся из кэша. Остальные скрипты работают на хосте.
 
-bun ставится с https://bun.sh. Без настоящего Node в PATH `bun run render`
-и `bun run build` останавливаются с ошибкой, а не зависают.
+Docker не запущен — рендер остановится с подсказкой. Рендер на хосте, как раньше:
+`DIAGRAMS_NATIVE=1 bun run render`; для него нужен Google Chrome (или другой
+Chromium, путь в `CHROMIUM_PATH`) и настоящий Node в PATH.
 
 ```bash
 bun install
 bun run validate   # схема, без браузера; имена иконок он не проверяет
 bun run check      # цветовая конвенция и легенды, без браузера
 bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
-bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/
-bun run build      # validate + check + warm + render + dist/index.html
-bun run site       # build + превью всех веток origin в dist/branches/
+bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/; в Docker
+bun run build      # validate + check + warm + render + dist/index.html; в Docker
+bun run site       # build + превью всех веток origin в dist/branches/; в Docker
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
 bun run typecheck  # строгая проверка типов скриптов
