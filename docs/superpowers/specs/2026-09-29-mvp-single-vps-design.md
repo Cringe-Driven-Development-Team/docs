@@ -43,7 +43,8 @@ Docker Compose: Caddy, Go API, Postgres. Клиент ходит в Go API на�
   делает `make generate` из Apidog `main` и падает, если код разошёлся с контрактом.
 - `.github/workflows/ci.yml`: job `lint` (golangci-lint), `test` (`go mod tidy -diff`,
   `go build`, `go test -race`), `docker` (сборка; на push в `main` — публикация в
-  GHCR с тегами `sha-{short}` и `main`, `latest` нет). Шага Telegram в CI нет.
+  GHCR с тегами `sha-{short}` и `main`, `latest` нет). Шага Telegram в CI нет: на схемах шаг «Send to tg» у всех
+  пайплайнов — целевое состояние, как и в варианте с BFF.
 - `cmd/main/router.go`: базовый путь API `/api/v1`, health — `/health`.
 - `cmd/main/main.go`: миграции goose (`migrations.Up`) выполняются при старте Go API.
 - `docker-compose.yml`: сервисы `api` и `db` (`postgres:18-alpine`); авторизация — JWT
@@ -152,7 +153,7 @@ gateway.
 | --- | --- | --- |
 | Upload release (main) | `s3` | releases/{sha}/ |
 | Push image (main) | `backend:sha-{short}` | tags: sha-{short}, main |
-| make generate | `openapi.yaml` | export |
+| `openapi.yaml` | make generate | export |
 | Deploy to NPM | `@my/react` | — |
 | Deploy to S3 | `s3` | — |
 | группа GitHub | `telegram` | Send to tg |
