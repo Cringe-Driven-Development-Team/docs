@@ -14,20 +14,33 @@
 (коммит `e8fd4bb`). Спеки и планы в `docs/superpowers/` написаны до переноса,
 адреса в них старые.
 
-Архитектур две. **MVP на Docker Compose** это рабочая, с ней идёт вся
-текущая работа. **Frozen: k3s** заморожена в `diagrams/frozen-k3s/`, её
-схемы не правятся; дизайн в
+Архитектур три. **MVP: одна VPS** это рабочая, с ней идёт вся текущая
+работа: одна VPS с Caddy, Go API и Postgres, фронт ходит в Go API напрямую;
+дизайн в `docs/superpowers/specs/2026-09-29-mvp-single-vps-design.md`.
+**BFF: две VPS** заморожена в `diagrams/bff/`, её схемы не правятся; дизайн
+в `docs/superpowers/specs/2026-09-16-mvp-compose-design.md`. **Frozen: k3s**
+заморожена в `diagrams/frozen-k3s/`, её схемы не правятся; дизайн в
 `docs/superpowers/specs/2026-09-15-frontend-monorepo-design.md`.
 
 MVP (`diagrams/`):
 
 | Схема | Что показывает |
 | --- | --- |
-| [deployment](https://cringe-driven-development-team.github.io/docs/deployment.html) | Два VPS в Selectel с Docker Compose, S3/CDN, клиент |
-| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, GHCR, S3 |
-| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD и откат через ansible-playbook из GitHub Actions |
-| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frontend-monorepo.html) | Монорепа клиента и BFF, контракт tRPC, модель релизов |
+| [deployment](https://cringe-driven-development-team.github.io/docs/deployment.html) | Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
+| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, S3 |
+| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD фронта через S3, откат, CD бэка через ansible-playbook |
+| [frontend](https://cringe-driven-development-team.github.io/docs/frontend.html) | Репа клиента, контракт из Apidog, модель релизов |
 | [infra](https://cringe-driven-development-team.github.io/docs/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
+
+BFF: две VPS (`diagrams/bff/`):
+
+| Схема | Что показывает |
+| --- | --- |
+| [deployment](https://cringe-driven-development-team.github.io/docs/bff/deployment.html) | Два VPS в Selectel с Docker Compose, S3/CDN, клиент |
+| [ci](https://cringe-driven-development-team.github.io/docs/bff/ci.html) | GitHub-репозитории, CI-пайплайны, GHCR, S3 |
+| [cd](https://cringe-driven-development-team.github.io/docs/bff/cd.html) | CD и откат через ansible-playbook из GitHub Actions |
+| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/bff/frontend-monorepo.html) | Монорепа клиента и BFF, контракт tRPC, модель релизов |
+| [infra](https://cringe-driven-development-team.github.io/docs/bff/infra.html) | Проекты Selectel, стейт Pulumi, домен; две VPS |
 
 Frozen: k3s (`diagrams/frozen-k3s/`):
 

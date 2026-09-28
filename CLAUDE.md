@@ -7,7 +7,7 @@
 
 - Правь схемы только по скиллу `.claude/skills/eraser-diagrams/SKILL.md`: формат, цвета, раскладка,
   цикл validate → check → render → осмотр PNG.
-- Рабочие схемы MVP — в корне `diagrams/`. `diagrams/frozen-k3s/` заморожена, не правится.
+- Рабочие схемы MVP — в корне `diagrams/`. `diagrams/bff/` и `diagrams/frozen-k3s/` заморожены, не правятся.
 - Схемы описывают целевое состояние. Факты бери из кода, не из памяти: инфраструктура — репозиторий
   `Cringe-Driven-Development-Team/infra` (`pulumi/`, bootstrap-стек `pulumi/bootstrap/`, `ansible/`).
   Каждую подпись и связь сверяй с исходником, связи не выдумывай.
