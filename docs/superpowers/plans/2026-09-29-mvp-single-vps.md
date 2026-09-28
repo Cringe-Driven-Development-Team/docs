@@ -27,7 +27,7 @@
 
 ## Review Focus
 
-1. Перенос испортил замороженные схемы: файлы `diagrams/bff/*.json` должны быть побайтно равны прежним корневым — проверка `git diff --cached --stat -M` в Task 1 и `git diff -M --name-status main -- diagrams` (только `R100`) в Task 7.
+1. Перенос испортил замороженные схемы: файлы `diagrams/bff/*.json` должны быть побайтно равны прежним корневым — проверка `git diff --cached --stat -M` в Task 1 и сравнение `main:diagrams/<name>.json` с `HEAD:diagrams/bff/<name>.json` в Task 7.
 2. Остатки BFF и второй VPS в новых схемах корня: `grep -nE "BFF|bff|trpc|tRPC|VPS 1|VPS 2|vps1|vps2|monorepo|Hono" diagrams/*.json` должен ничего не найти — проверка в Task 7.
 3. Таб `mvp` не первый или не открыт: в `dist/index.html` первый radio `id="tab-0"` с `checked` и первая метка `mvp`, затем `bff`, затем `frozen-k3s` — проверка в Task 7.
 4. Подпись `/api/v1/*` со звёздочкой может уйти в markdown-курсив или пропасть: в PNG `deployment` и `frontend` подпись видна целиком со `*` — проверка в Task 2 и Task 6.
@@ -659,8 +659,16 @@ Expected: пустой вывод (код выхода 1). Любое попад
 
 - [ ] **Step 2: Замороженные схемы не тронуты**
 
-Run: `git diff -M --name-status main -- diagrams`
-Expected: ровно пять строк `R100	diagrams/<name>.json	diagrams/bff/<name>.json` и пять строк `A` для `diagrams/{deployment,ci,cd,frontend,infra}.json`; строк с `diagrams/frozen-k3s/` нет.
+Новые файлы корня носят те же имена, поэтому rename-детектор git тут не поможет — сравни содержимое напрямую:
+
+```bash
+for n in deployment ci cd frontend-monorepo infra; do
+  git diff --exit-code "main:diagrams/$n.json" "HEAD:diagrams/bff/$n.json" > /dev/null && echo "ok $n" || echo "DIFF $n"
+done
+git diff --exit-code --stat main HEAD -- diagrams/frozen-k3s && echo "ok frozen-k3s"
+```
+
+Expected: пять строк `ok <name>` и `ok frozen-k3s`, ни одного `DIFF`.
 
 - [ ] **Step 3: Полная проверка, как в CI**
 
