@@ -2,6 +2,7 @@
   "entities": [
     { "tag": "Group", "id": "laptop", "color": "white", "x": 0, "y": 0, "width": 300, "height": 860, "isContainer": true, "title": { "text": "Ноут студента", "icon": "laptop" } },
     { "tag": "Textbox", "id": "laptop-note", "x": 20, "y": 40, "width": 260, "containerId": "laptop", "text": "`~/.config/selectel.env` (личный сервисный пользователь, личный S3-ключ стейта, passphrase), `ansible/clouds.yaml`, `~/.ssh/selectel_release`" },
+
     { "tag": "Icon", "id": "stack-bootstrap", "x": 100, "y": 200, "containerId": "laptop", "icon": "pulumi", "texts": [{ "text": "pulumi/bootstrap · стек main" }] },
     { "tag": "Icon", "id": "stack-main", "x": 100, "y": 340, "containerId": "laptop", "icon": "pulumi", "texts": [{ "text": "pulumi · стек prod" }] },
     { "tag": "Icon", "id": "ansible", "x": 100, "y": 700, "containerId": "laptop", "icon": "ansible", "texts": [{ "text": "Ansible" }] },
@@ -15,7 +16,8 @@
     { "tag": "Icon", "id": "domain", "x": 1560, "y": 140, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru · регистрация" }] },
 
     { "tag": "Group", "id": "pulumi-cellestial", "color": "blue", "styleMode": "plain", "x": 820, "y": 460, "width": 900, "height": 520, "containerId": "selectel", "isContainer": true, "title": { "text": "Проект pulumi-cellestial" } },
-    { "tag": "Icon", "id": "vps", "x": 1120, "y": 600, "containerId": "pulumi-cellestial", "icon": "server", "texts": [{ "text": "VPS · floating IP, Caddy + Let’s Encrypt, Docker Compose" }] },
+    { "tag": "Icon", "id": "vps1", "x": 1120, "y": 600, "containerId": "pulumi-cellestial", "icon": "server", "texts": [{ "text": "VPS 1 · gateway: floating IP, Caddy + Let’s Encrypt" }] },
+    { "tag": "Icon", "id": "vps2", "x": 1560, "y": 600, "containerId": "pulumi-cellestial", "icon": "server", "texts": [{ "text": "VPS 2 · backend: только приватная сеть" }] },
     { "tag": "Icon", "id": "product-bucket", "x": 1560, "y": 800, "containerId": "pulumi-cellestial", "icon": "database", "texts": [{ "text": "Бакет продукта" }] },
 
     { "tag": "Legend", "id": "legend", "x": 1780, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
@@ -27,8 +29,9 @@
     { "tag": "Relationship", "from": "stack-main", "to": "state-bucket", "label": "стейт main/" },
     { "tag": "Relationship", "from": "stack-main", "to": "dns-zone", "label": "A-запись" },
     { "tag": "Relationship", "from": "domain", "to": "dns-zone", "label": "NS" },
-    { "tag": "Relationship", "from": "dns-zone", "to": "vps", "label": "cellestial.ru → floating IP" },
+    { "tag": "Relationship", "from": "dns-zone", "to": "vps1", "label": "cellestial.ru → floating IP" },
     { "tag": "Relationship", "from": "ansible", "to": "pulumi-cellestial", "label": "dynamic inventory (clouds.yaml)" },
-    { "tag": "Relationship", "from": "ansible", "to": "vps", "label": "ssh под deploy" }
+    { "tag": "Relationship", "from": "ansible", "to": "vps1", "label": "ssh под deploy" },
+    { "tag": "Relationship", "from": "vps1", "to": "vps2", "label": "ssh Ansible через VPS 1 (ProxyCommand)" }
   ]
 }
