@@ -147,6 +147,6 @@ ${body}
 
 if (import.meta.main) {
   const names = diagramNames();
-  await Bun.write(join("dist", "index.html"), renderIndex(names));
+  await Bun.write(join("dist", "index.html"), renderIndex(names, { sizes: await pngSizes(names) }));
   console.error(`dist/index.html: ${names.length} diagrams`);
 }
