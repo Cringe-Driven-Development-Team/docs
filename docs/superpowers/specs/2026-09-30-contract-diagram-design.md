@@ -124,7 +124,7 @@ openapi-typescript 7.13.0 (последний) строит типы через 
     models, embedded spec» (`go`); вложенная `be-drift` «Contract drift (nightly)»:
     `be-drift-generate` «make generate» → `be-drift-compare` «Compare with code»;
   - `repo-frontend` «Frontend repo» (`react`): `fe-schema` «src/api/schema.d.ts»
-    (`typescript`), `fe-client` «src/api/client.ts · createClient» (`file-code`);
+    (`typescript`), `fe-client` «src/api/client.ts» (`file-code`);
     вложенная `fe-drift` «Contract drift (nightly)»: `fe-drift-generate` «bun run
     generate» → `fe-drift-compare` «Compare with code»;
   - `repo-openapi` «OpenAPI repo» (`package`): `op-package` «@my/openapi: генератор и
@@ -152,7 +152,7 @@ openapi-typescript 7.13.0 (последний) строит типы через 
 | От | К | Подпись |
 | --- | --- | --- |
 | `apidog-branch` | `apidog-main` | Merge Request |
-| `apidog-main` | `apidog-docs` | https://vb78fyael1.apidog.io |
+| `apidog-main` | `apidog-docs` | — |
 | `apidog-main` | `apidog-export` | — |
 | `apidog-export` | `be-export` | YAML |
 | `apidog-export` | `fe-export` | JSON |
@@ -172,14 +172,16 @@ openapi-typescript 7.13.0 (последний) строит типы через 
 | `client` | `caddy` | https://site.ru/api/v1 |
 | `caddy` | `go-api` | /api/v1/* |
 
-Стрелку `fe-client` → `client` не рисуем: как бандл попадает в браузер, показывают
-`frontend` и `cd`.
+URL документации (`https://vb78fyael1.apidog.io`) на стрелку не ставим: участок между
+иконками короткий, URL ломается по буквам; адрес есть в README бэка. Стрелку
+`fe-client` → `client` не рисуем: как бандл попадает в браузер, показывают `frontend`
+и `cd`.
 
 ## 5. Правки `frontend`
 
 - `fe-api-client`: подпись «API-клиент · @my/openapi».
-- Новый узел `fe-schema` «schema.d.ts» (`typescript`) в «Frontend repo»; группа
-  расширяется под пятую иконку, соседние группы сдвигаются.
+- Новый узел `fe-schema` «schema.d.ts» (`typescript`) в «Frontend repo» перед
+  `fe-api-client`; группа и её «CI» расширяются, соседние группы сдвигаются.
 - `apidog-spec`: подпись «Контракт · OAS 3.1» вместо «openapi.yaml» (фронт берёт JSON,
   бэк YAML, общий у них контракт).
 - Стрелки: `apidog-spec` → `fe-schema` «bun run generate» и `fe-schema` →
@@ -199,8 +201,10 @@ openapi-typescript 7.13.0 (последний) строит типы через 
   `fe-generate` «bun run generate» → `fe-compare` «Compare with code», как у бэка;
   стрелка `apidog-spec` → `fe-generate` «export».
 - `apidog-spec`: подпись «Контракт · OAS 3.1», как на `frontend`.
-- Группы ниже сдвигаются, «GitHub» растёт по высоте. Стрелка к `telegram` остаётся
-  одна, от группы «GitHub».
+- Порядок реп сверху вниз: React, OpenAPI, Static, Frontend, Backend, Deployments.
+  Static поднимается над Frontend, чтобы стрелки в S3 и из Apidog не пересекали чужие
+  репы. «GitHub» растёт по высоте. Стрелка к `telegram` остаётся одна, от группы
+  «GitHub».
 
 ## 7. README
 
