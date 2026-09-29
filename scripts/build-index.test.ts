@@ -22,11 +22,11 @@ test("diagramNames: names of *.json relative to the dir without extension, subfo
 test("renderIndex: one card per diagram with html link, png link and preview", () => {
   const html = renderIndex(["deployment", "ci"]);
   expect(html).toMatch(/^<!doctype html>/i);
-  expect(html).toMatch(/<h2>deployment<\/h2>/);
+  expect(html).toMatch(/#<\/a>deployment<\/h2>/);
   expect(html).toMatch(/href="deployment\.html"/);
   expect(html).toMatch(/href="deployment\.png"/);
   expect(html).toMatch(/<img src="deployment\.png"/);
-  expect(html).toMatch(/<h2>ci<\/h2>/);
+  expect(html).toMatch(/#<\/a>ci<\/h2>/);
   expect(html).not.toMatch(/<link|<script/);
 });
 
@@ -51,10 +51,10 @@ test("renderIndex: each tab panel holds only its own cards, all with h2 titles a
   const html = renderIndex(["ci", "frozen-k3s/cd", "frozen-k3s/ci"]);
   const rootPanel = html.slice(html.indexOf('id="panel-0"'), html.indexOf('id="panel-1"'));
   const folderPanel = html.slice(html.indexOf('id="panel-1"'), html.indexOf('<nav class="tabs">'));
-  expect(rootPanel).toContain("<h2>ci</h2>");
+  expect(rootPanel).toContain("#</a>ci</h2>");
   expect(rootPanel).toContain('href="ci.html"');
   expect(rootPanel).not.toContain("frozen-k3s/");
-  expect(folderPanel).toContain("<h2>cd</h2>");
+  expect(folderPanel).toContain("#</a>cd</h2>");
   expect(folderPanel).toContain('href="frozen-k3s/cd.html"');
   expect(folderPanel).toContain('<img src="frozen-k3s/ci.png" alt="frozen-k3s/ci">');
   expect(html).not.toMatch(/<h3>|class="folder"/);
@@ -119,4 +119,26 @@ test("pngSizes: sizes only for diagrams whose PNG exists, subfolder names keep t
     ci: { width: 10, height: 20 },
     "bff/cd": { width: 30, height: 40 },
   });
+});
+
+test("renderIndex: each card has its path as id and a # link to it", () => {
+  const html = renderIndex(["contract", "frozen-k3s/ci"]);
+  expect(html).toContain('<section class="card" id="contract">');
+  expect(html).toContain('<h2><a class="anchor" href="#contract" aria-label="Ссылка на contract">#</a>contract</h2>');
+  expect(html).toContain('<section class="card" id="frozen-k3s/ci">');
+  expect(html).toContain('<h2><a class="anchor" href="#frozen-k3s/ci" aria-label="Ссылка на frozen-k3s/ci">#</a>ci</h2>');
+});
+
+test("renderIndex: img gets width and height only for diagrams with a known size", () => {
+  const html = renderIndex(["ci", "frozen-k3s/cd"], { sizes: { ci: { width: 3744, height: 3064 } } });
+  expect(html).toContain('<img src="ci.png" width="3744" height="3064" alt="ci">');
+  expect(html).toContain('<img src="frozen-k3s/cd.png" alt="frozen-k3s/cd">');
+  expect(renderIndex(["ci", "frozen-k3s/cd"])).not.toMatch(/width="/);
+});
+
+test("renderIndex: anchor styles, scroll margin and always-visible # without hover", () => {
+  const html = renderIndex(["ci"]);
+  expect(html).toContain("scroll-margin-top: 16px;");
+  expect(html).toContain(".card:hover .anchor, .anchor:focus-visible { opacity: 1; }");
+  expect(html).toContain("@media (hover: none) { .anchor { opacity: 1; } }");
 });

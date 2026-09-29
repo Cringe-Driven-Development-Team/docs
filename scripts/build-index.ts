@@ -59,12 +59,13 @@ export function indexTabs(names: readonly string[]): IndexTab[] {
   ];
 }
 
-function card(name: string): string {
+function card(name: string, size?: ImageSize): string {
   const title = name.slice(name.lastIndexOf("/") + 1);
-  return `    <section class="card">
-      <h2>${title}</h2>
+  const dimensions = size ? ` width="${size.width}" height="${size.height}"` : "";
+  return `    <section class="card" id="${name}">
+      <h2><a class="anchor" href="#${name}" aria-label="Ссылка на ${name}">#</a>${title}</h2>
       <p><a href="${name}.html">HTML</a> · <a href="${name}.png">PNG</a></p>
-      <a href="${name}.html"><img src="${name}.png" alt="${name}"></a>
+      <a href="${name}.html"><img src="${name}.png"${dimensions} alt="${name}"></a>
     </section>`;
 }
 
@@ -77,7 +78,7 @@ const TAB_BAR_CSS = `
     .tabs label:hover { background: #e4e7ea; }
     .tabs a { margin-left: auto; align-self: center; }`;
 
-function tabbedBody(tabs: readonly IndexTab[], previewsLink: string): { css: string; body: string } {
+function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Record<string, ImageSize>): { css: string; body: string } {
   const perTabCss = tabs
     .map(
       (_, i) => `
@@ -87,19 +88,23 @@ function tabbedBody(tabs: readonly IndexTab[], previewsLink: string): { css: str
     )
     .join("");
   const radios = tabs.map((_, i) => `  <input type="radio" name="tab" id="tab-${i}" class="tab-radio"${i === 0 ? " checked" : ""}>`);
-  const panels = tabs.map((tab, i) => [`  <div class="panel" id="panel-${i}">`, ...tab.names.map(card), "  </div>"].join("\n"));
+  const panels = tabs.map((tab, i) => [`  <div class="panel" id="panel-${i}">`, ...tab.names.map((name) => card(name, sizes[name])), "  </div>"].join("\n"));
   const labels = tabs.map((tab, i) => `    <label for="tab-${i}">${tab.label}</label>`);
   const nav = ['  <nav class="tabs">', ...labels, ...(previewsLink ? [`    ${previewsLink}`] : []), "  </nav>"];
   return { css: TAB_BAR_CSS + perTabCss, body: [...radios, ...panels, ...nav].join("\n") };
 }
 
-export function renderIndex(names: readonly string[], options: { previewsHref?: string } = {}): string {
+export function renderIndex(
+  names: readonly string[],
+  options: { previewsHref?: string; sizes?: Record<string, ImageSize> } = {},
+): string {
   const tabs = indexTabs(names);
+  const sizes = options.sizes ?? {};
   const previewsLink = options.previewsHref ? `<a href="${options.previewsHref}">Превью веток</a>` : "";
   const { css, body } =
     tabs.length > 1
-      ? tabbedBody(tabs, previewsLink)
-      : { css: "", body: [...names.map(card), ...(previewsLink ? [`  <p>${previewsLink}</p>`] : [])].join("\n") };
+      ? tabbedBody(tabs, previewsLink, sizes)
+      : { css: "", body: [...names.map((name) => card(name, sizes[name])), ...(previewsLink ? [`  <p>${previewsLink}</p>`] : [])].join("\n") };
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -109,8 +114,11 @@ export function renderIndex(names: readonly string[], options: { previewsHref?: 
   <style>
     body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: #fafafa; color: #111; }
     h1 { margin: 0 0 24px; }
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 24px; scroll-margin-top: 16px; }
     .card h2 { margin: 0 0 8px; font-size: 20px; }
+    .anchor { margin-right: 8px; color: #999; text-decoration: none; opacity: 0; }
+    .card:hover .anchor, .anchor:focus-visible { opacity: 1; }
+    @media (hover: none) { .anchor { opacity: 1; } }
     .card img { display: block; max-width: 100%; height: auto; border: 1px solid #eee; }${css}
   </style>
 </head>
