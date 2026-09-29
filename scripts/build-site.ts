@@ -5,7 +5,7 @@
 import { appendFileSync, cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diagramNames, renderIndex } from "./build-index.ts";
+import { diagramNames, pngSizes, renderIndex } from "./build-index.ts";
 
 const MAIN_BRANCH = "main";
 const BRANCH_STEP_TIMEOUT_MS = 5 * 60 * 1000;
@@ -239,7 +239,8 @@ async function main(argv: string[]): Promise<number> {
   }
 
   await Bun.write(join(previewsDir, "index.html"), renderPreviewsIndex(entries));
-  await Bun.write(join("dist", "index.html"), renderIndex(diagramNames(), { previewsHref: "branches/" }));
+  const names = diagramNames();
+  await Bun.write(join("dist", "index.html"), renderIndex(names, { previewsHref: "branches/", sizes: await pngSizes(names) }));
   if (process.env.GITHUB_STEP_SUMMARY) {
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderSummary(entries));
   }
