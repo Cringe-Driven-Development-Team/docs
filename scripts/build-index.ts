@@ -130,8 +130,8 @@ export function renderIndex(
     body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: #fafafa; color: #111; }
     h1 { margin: 0 0 24px; }
     .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 24px; scroll-margin-top: 16px; }
-    .card h2 { margin: 0 0 8px; font-size: 20px; }
-    .anchor { margin-right: 8px; color: #999; text-decoration: none; opacity: 0; }
+    .card h2 { position: relative; margin: 0 0 8px; font-size: 20px; }
+    .anchor { position: absolute; right: 100%; padding-right: 4px; color: #999; text-decoration: none; opacity: 0; }
     .card:hover .anchor, .anchor:focus-visible { opacity: 1; }
     @media (hover: none) { .anchor { opacity: 1; } }
     .card img { display: block; max-width: 100%; height: auto; border: 1px solid #eee; }${css}

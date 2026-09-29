@@ -141,6 +141,8 @@ test("renderIndex: anchor styles, scroll margin and always-visible # without hov
   expect(html).toContain("scroll-margin-top: 16px;");
   expect(html).toContain(".card:hover .anchor, .anchor:focus-visible { opacity: 1; }");
   expect(html).toContain("@media (hover: none) { .anchor { opacity: 1; } }");
+  expect(html).toContain(".card h2 { position: relative;");
+  expect(html).toContain(".anchor { position: absolute; right: 100%;");
 });
 
 test("renderIndex: the tabbed page opens the tab of the anchored card with an inline script after the tab bar", () => {
@@ -153,6 +155,8 @@ test("renderIndex: the tabbed page opens the tab of the anchored card with an in
   expect(script).toContain('card.closest(".panel")');
   expect(script).toContain('addEventListener("hashchange", openAnchor);');
   expect(script).toContain("card.scrollIntoView();");
+  expect(script).toContain('document.getElementById("tab-" + panel.id.slice("panel-".length)).checked = true;');
+  expect(script.trimEnd()).toMatch(/\n\s*openAnchor\(\);$/);
 });
 
 test("renderIndex: the page without tabs has no script", () => {
