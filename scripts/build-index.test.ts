@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diagramNames, renderIndex } from "./build-index.ts";
+import { diagramNames, pngSize, pngSizes, renderIndex } from "./build-index.ts";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -79,4 +79,44 @@ test("renderIndex: with only subfolders the first folder is the first, checked t
   expect(html).toContain('<label for="tab-0">a</label>');
   expect(html).toContain('<label for="tab-1">b</label>');
   expect(html).not.toContain(">mvp<");
+});
+
+// Минимальный заголовок PNG: сигнатура, длина и тип чанка IHDR, ширина, высота.
+function pngHeader(width: number, height: number): Uint8Array {
+  const bytes = new Uint8Array(24);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes;
+}
+
+test("pngSize: width and height from the IHDR chunk", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "index-"));
+  tempDirs.push(dir);
+  await Bun.write(join(dir, "ci.png"), pngHeader(3744, 3064));
+  expect(await pngSize(join(dir, "ci.png"))).toEqual({ width: 3744, height: 3064 });
+});
+
+test("pngSize: undefined for a missing file, a short file and a non-PNG", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "index-"));
+  tempDirs.push(dir);
+  await Bun.write(join(dir, "short.png"), pngHeader(1, 1).slice(0, 20));
+  await Bun.write(join(dir, "text.png"), "not a png at all, just some text");
+  await Bun.write(join(dir, "empty.png"), "");
+  expect(await pngSize(join(dir, "missing.png"))).toBeUndefined();
+  expect(await pngSize(join(dir, "short.png"))).toBeUndefined();
+  expect(await pngSize(join(dir, "text.png"))).toBeUndefined();
+  expect(await pngSize(join(dir, "empty.png"))).toBeUndefined();
+});
+
+test("pngSizes: sizes only for diagrams whose PNG exists, subfolder names keep the slash", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "index-"));
+  tempDirs.push(dir);
+  await Bun.write(join(dir, "ci.png"), pngHeader(10, 20));
+  await Bun.write(join(dir, "bff", "cd.png"), pngHeader(30, 40));
+  expect(await pngSizes(["ci", "bff/cd", "contract"], dir)).toEqual({
+    ci: { width: 10, height: 20 },
+    "bff/cd": { width: 30, height: 40 },
+  });
 });
