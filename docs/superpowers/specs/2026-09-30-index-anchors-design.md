@@ -95,7 +95,7 @@
   function openAnchor() {
     let card;
     try { card = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch { return; }
-    if (!card) return;
+    if (!card || !card.classList.contains("card")) return;
     const panel = card.closest(".panel");
     if (panel) document.getElementById("tab-" + panel.id.slice("panel-".length)).checked = true;
     card.scrollIntoView();
@@ -105,7 +105,8 @@
 </script>
 ```
 
-- Пустой, неизвестный или битый якорь (`#%E0`) — ничего не делает, открыт первый таб.
+- Пустой, неизвестный или битый якорь (`#%E0`), а также id не карточки (`#tab-1`,
+  `#panel-0`) — ничего не делает, открыт первый таб.
 - Клик по «#» меняет `hash` → `hashchange` → таб уже открыт, прокрутка к карточке.
 - Клик по табу якорь не трогает; после перезагрузки откроется таб из якоря.
 - Комментарий в шапке `build-index.ts`: «табы без JavaScript; JS только открывает таб
