@@ -1,8 +1,8 @@
 // Собирает dist/index.html: заголовок, ссылки на <name>.html и <name>.png,
 // превью PNG. Схемы корня diagrams/ и каждая подпапка (diagrams/frozen-k3s/)
 // это табы в липкой полосе внизу окна, как листы в Google Sheets; первый таб
-// активен. Табы без JavaScript: radio + label + :checked. Без подпапок табов
-// нет, страница это список карточек.
+// активен. Табы без JavaScript: radio + label + :checked; JS только открывает
+// таб по якорю. Без подпапок табов нет, страница это список карточек.
 // Один статичный файл, CSS встроен, зависимостей нет.
 // Использование: bun scripts/build-index.ts
 import { join } from "node:path";
@@ -78,6 +78,21 @@ const TAB_BAR_CSS = `
     .tabs label:hover { background: #e4e7ea; }
     .tabs a { margin-left: auto; align-self: center; }`;
 
+// Якорь #{name} в адресе: открыть таб карточки и прокрутить к ней. Битый якорь,
+// неизвестный id или id не карточки (tab-0, panel-1) — ничего не делать.
+const ANCHOR_SCRIPT = `  <script>
+    function openAnchor() {
+      let card;
+      try { card = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch { return; }
+      if (!card || !card.classList.contains("card")) return;
+      const panel = card.closest(".panel");
+      if (panel) document.getElementById("tab-" + panel.id.slice("panel-".length)).checked = true;
+      card.scrollIntoView();
+    }
+    addEventListener("hashchange", openAnchor);
+    openAnchor();
+  </script>`;
+
 function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Record<string, ImageSize>): { css: string; body: string } {
   const perTabCss = tabs
     .map(
@@ -91,7 +106,7 @@ function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Reco
   const panels = tabs.map((tab, i) => [`  <div class="panel" id="panel-${i}">`, ...tab.names.map((name) => card(name, sizes[name])), "  </div>"].join("\n"));
   const labels = tabs.map((tab, i) => `    <label for="tab-${i}">${tab.label}</label>`);
   const nav = ['  <nav class="tabs">', ...labels, ...(previewsLink ? [`    ${previewsLink}`] : []), "  </nav>"];
-  return { css: TAB_BAR_CSS + perTabCss, body: [...radios, ...panels, ...nav].join("\n") };
+  return { css: TAB_BAR_CSS + perTabCss, body: [...radios, ...panels, ...nav, ANCHOR_SCRIPT].join("\n") };
 }
 
 export function renderIndex(

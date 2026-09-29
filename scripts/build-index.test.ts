@@ -44,7 +44,7 @@ test("renderIndex: root diagrams and each subfolder become tabs, the root tab fi
   expect(html.indexOf('<label for="tab-0">')).toBeLessThan(html.indexOf('<label for="tab-1">'));
   expect(html).toContain("#tab-0:checked ~ #panel-0 { display: block; }");
   expect(html).toContain("#tab-1:checked ~ #panel-1 { display: block; }");
-  expect(html).not.toMatch(/<script|<link/);
+  expect(html).not.toMatch(/<link/);
 });
 
 test("renderIndex: each tab panel holds only its own cards, all with h2 titles and folder paths in links", () => {
@@ -141,4 +141,20 @@ test("renderIndex: anchor styles, scroll margin and always-visible # without hov
   expect(html).toContain("scroll-margin-top: 16px;");
   expect(html).toContain(".card:hover .anchor, .anchor:focus-visible { opacity: 1; }");
   expect(html).toContain("@media (hover: none) { .anchor { opacity: 1; } }");
+});
+
+test("renderIndex: the tabbed page opens the tab of the anchored card with an inline script after the tab bar", () => {
+  const html = renderIndex(["ci", "frozen-k3s/cd"]);
+  const script = html.slice(html.indexOf("<script>"), html.indexOf("</script>"));
+  expect(html.indexOf("</nav>")).toBeLessThan(html.indexOf("<script>"));
+  expect(script).toContain("decodeURIComponent(location.hash.slice(1))");
+  expect(script).toContain("catch { return; }");
+  expect(script).toContain('if (!card || !card.classList.contains("card")) return;');
+  expect(script).toContain('card.closest(".panel")');
+  expect(script).toContain('addEventListener("hashchange", openAnchor);');
+  expect(script).toContain("card.scrollIntoView();");
+});
+
+test("renderIndex: the page without tabs has no script", () => {
+  expect(renderIndex(["deployment", "ci"])).not.toMatch(/<script/);
 });
