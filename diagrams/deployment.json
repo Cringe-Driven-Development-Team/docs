@@ -9,15 +9,15 @@
     { "tag": "Icon", "id": "vps-go", "x": 580, "y": 80, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
     { "tag": "Icon", "id": "vps-postgres", "x": 740, "y": 80, "containerId": "vps", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
 
-    { "tag": "Icon", "id": "cdn", "x": 340, "y": 320, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.site.ru" }] },
+    { "tag": "Icon", "id": "cdn", "x": 340, "y": 320, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
     { "tag": "Icon", "id": "s3", "x": 580, "y": 320, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3: releases/{sha}/, index.html, current.json" }] },
-    { "tag": "Icon", "id": "domain", "x": 900, "y": 320, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "site.ru" }] },
+    { "tag": "Icon", "id": "domain", "x": 900, "y": 320, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru" }] },
 
     { "tag": "Legend", "id": "legend", "x": 1120, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
-    { "tag": "Relationship", "from": "client", "to": "vps-caddy", "label": "https://site.ru: HTML, /api/v1", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "vps-caddy", "label": "https://cellestial.ru: HTML, /api/v1", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://cdn.cellestial.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "vps-caddy", "to": "vps-go", "label": "/api/v1/*" },
     { "tag": "Relationship", "from": "vps-caddy", "to": "s3", "label": "index.html" },
     { "tag": "Relationship", "from": "vps-go", "to": "vps-postgres" },

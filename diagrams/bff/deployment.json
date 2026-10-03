@@ -13,14 +13,14 @@
     { "tag": "Icon", "id": "vps2-postgres", "x": 1020, "y": 80, "containerId": "vps2", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
 
     { "tag": "Icon", "id": "s3", "x": 880, "y": 300, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3: releases/{sha}/, current.json" }] },
-    { "tag": "Icon", "id": "cdn", "x": 340, "y": 300, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.site.ru" }] },
-    { "tag": "Icon", "id": "domain", "x": 1020, "y": 300, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "site.ru" }] },
+    { "tag": "Icon", "id": "cdn", "x": 340, "y": 300, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
+    { "tag": "Icon", "id": "domain", "x": 1020, "y": 300, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru" }] },
 
     { "tag": "Legend", "id": "legend", "x": 1280, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
-    { "tag": "Relationship", "from": "client", "to": "vps1-caddy", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "vps1-caddy", "label": "https://cellestial.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://cdn.cellestial.ru", "color": "orange", "lineStyle": "solid" },
 
     { "tag": "Relationship", "from": "vps1-caddy", "to": "vps1-bff" },
     { "tag": "Relationship", "from": "vps1-bff", "to": "vps2-go", "label": "S2S: сессия, данные" },

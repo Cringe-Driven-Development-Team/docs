@@ -27,7 +27,7 @@
     { "tag": "Icon", "id": "client", "x": 0, "y": 920, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
 
     { "tag": "Group", "id": "ours", "color": "blue", "x": 360, "y": 700, "width": 940, "height": 500, "isContainer": true, "title": { "text": "Наша инфраструктура (Selectel)", "icon": "cloud" } },
-    { "tag": "Icon", "id": "cdn", "x": 400, "y": 740, "containerId": "ours", "icon": "cloud", "texts": [{ "text": "CDN static.site.ru" }] },
+    { "tag": "Icon", "id": "cdn", "x": 400, "y": 740, "containerId": "ours", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
     { "tag": "Icon", "id": "s3", "x": 960, "y": 740, "containerId": "ours", "icon": "database", "texts": [{ "text": "S3: releases/{sha}/, current.json" }] },
     { "tag": "Group", "id": "vps1", "color": "blue", "styleMode": "plain", "x": 380, "y": 880, "width": 420, "height": 160, "containerId": "ours", "isContainer": true, "title": { "text": "VPS 1 · k3s", "icon": "kubernetes" } },
     { "tag": "Icon", "id": "gateway", "x": 400, "y": 920, "containerId": "vps1", "icon": "traefik", "texts": [{ "text": "Traefik · Gateway API" }] },
@@ -53,8 +53,8 @@
     { "tag": "Relationship", "from": "t-vite-build", "to": "s3", "label": "releases/{sha}/ (main)", "color": "black", "lineStyle": "dashed" },
     { "tag": "Relationship", "from": "t-image", "to": "reg-bff", "color": "black", "lineStyle": "dashed" },
 
-    { "tag": "Relationship", "from": "client", "to": "gateway", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "gateway", "label": "https://cellestial.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://cdn.cellestial.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "s3", "to": "cdn", "label": "static" },
     { "tag": "Relationship", "from": "gateway", "to": "bff" },
     { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "S2S: сессия, данные, sitemap" },
