@@ -25,7 +25,7 @@
 
     { "tag": "Icon", "id": "s3", "x": 340, "y": 340, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3" }] },
     { "tag": "Icon", "id": "cdn", "x": 480, "y": 340, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN" }] },
-    { "tag": "Icon", "id": "domain", "x": 620, "y": 340, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "site.ru" }] },
+    { "tag": "Icon", "id": "domain", "x": 620, "y": 340, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru" }] },
 
     { "tag": "Group", "id": "vps4", "color": "blue", "styleMode": "plain", "x": 780, "y": 340, "width": 280, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS 4 · Docker Compose", "icon": "docker" } },
     { "tag": "Icon", "id": "vps4-caddy", "x": 800, "y": 380, "containerId": "vps4", "icon": "server", "texts": [{ "text": "Caddy" }] },
@@ -47,10 +47,10 @@
     { "tag": "Legend", "id": "legend", "x": 2020, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
-    { "tag": "Relationship", "from": "client", "to": "vps1-gateway", "label": "https://site.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://static.site.ru", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "vps3-caddy", "label": "grafana.site.ru", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "vps4-caddy", "label": "kuma.site.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "vps1-gateway", "label": "https://cellestial.ru: HTML, /api/trpc", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://cdn.cellestial.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "vps3-caddy", "label": "grafana.cellestial.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "vps4-caddy", "label": "kuma.cellestial.ru", "color": "orange", "lineStyle": "solid" },
 
     { "tag": "Relationship", "from": "vps1-gateway", "to": "vps1-bff" },
     { "tag": "Relationship", "from": "vps1-bff", "to": "vps2-go", "label": "S2S: сессия, данные, sitemap" },

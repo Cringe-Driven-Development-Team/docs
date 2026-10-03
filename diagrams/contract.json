@@ -56,7 +56,7 @@
     { "tag": "Relationship", "from": "npm-openapi", "to": "fe-codegen", "label": "CLI", "color": "black", "lineStyle": "dashed" },
     { "tag": "Relationship", "from": "npm-openapi", "to": "fe-client", "label": "createClient" },
     { "tag": "Relationship", "from": "be-code", "to": "go-api", "label": "embedded spec" },
-    { "tag": "Relationship", "from": "client", "to": "caddy", "label": "https://site.ru/api/v1", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "caddy", "label": "https://cellestial.ru/api/v1", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "caddy", "to": "go-api", "label": "/api/v1/*" }
   ]
 }
