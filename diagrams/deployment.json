@@ -14,6 +14,8 @@
     { "tag": "Icon", "id": "cdn", "x": 400, "y": 320, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
     { "tag": "Icon", "id": "s3-front", "x": 640, "y": 320, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · фронт: releases/{sha}/, index.html, current.json" }] },
     { "tag": "Icon", "id": "s3-notebooks", "x": 880, "y": 320, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · ноутбуки (приватный)" }] },
+    { "tag": "Icon", "id": "cdn-static", "x": 400, "y": 540, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.cellestial.ru" }] },
+    { "tag": "Icon", "id": "s3-static", "x": 640, "y": 540, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · статика (публичный)" }] },
     { "tag": "Icon", "id": "s3-avatars", "x": 880, "y": 540, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · аватарки (публичный)" }] },
 
     { "tag": "Legend", "id": "legend", "x": 1260, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
@@ -21,12 +23,14 @@
   "connections": [
     { "tag": "Relationship", "from": "client", "to": "vps-caddy", "label": "https://cellestial.ru: HTML, /api/v1", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://cdn.cellestial.ru", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "client", "to": "cdn-static", "label": "https://static.cellestial.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "client", "to": "s3-avatars", "label": "https://{uuid}.selstorage.ru", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "vps-caddy", "to": "vps-go", "label": "/api/v1/*" },
     { "tag": "Relationship", "from": "vps-caddy", "to": "s3-front", "label": "index.html" },
     { "tag": "Relationship", "from": "vps-go", "to": "vps-postgres" },
     { "tag": "Relationship", "from": "vps-go", "to": "s3-notebooks" },
     { "tag": "Relationship", "from": "vps-go", "to": "s3-avatars" },
-    { "tag": "Relationship", "from": "s3-front", "to": "cdn", "label": "static" }
+    { "tag": "Relationship", "from": "s3-front", "to": "cdn", "label": "static" },
+    { "tag": "Relationship", "from": "s3-static", "to": "cdn-static", "label": "static" }
   ]
 }
