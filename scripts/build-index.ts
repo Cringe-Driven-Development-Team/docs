@@ -3,6 +3,7 @@
 // это табы в липкой полосе внизу окна, как листы в Google Sheets; первый таб
 // активен. Табы без JavaScript: radio + label + :checked; JS только открывает
 // таб по якорю. Без подпапок табов нет, страница это список карточек.
+// Подпапки из HIDDEN_FOLDERS на индекс не попадают.
 // Один статичный файл, CSS встроен, зависимостей нет.
 // Использование: bun scripts/build-index.ts
 import { join } from "node:path";
@@ -10,6 +11,14 @@ import { DIAGRAMS_DIR, listDiagrams } from "./eraser.ts";
 
 // Имя таба со схемами корня diagrams/.
 export const ROOT_TAB = "mvp";
+
+// Подпапки замороженных архитектур: схемы рендерятся и открываются по прямой ссылке, таба на индексе нет.
+export const HIDDEN_FOLDERS = ["bff", "frozen-k3s"];
+
+// Схемы для индекса: все, кроме схем из HIDDEN_FOLDERS.
+export function indexNames(names: readonly string[]): string[] {
+  return names.filter((name) => !HIDDEN_FOLDERS.some((folder) => name.startsWith(`${folder}/`)));
+}
 
 // Имена схем относительно diagrams/, без .json: "ci", "frozen-k3s/ci".
 export function diagramNames(dir = DIAGRAMS_DIR): string[] {
@@ -146,7 +155,7 @@ ${body}
 }
 
 if (import.meta.main) {
-  const names = diagramNames();
+  const names = indexNames(diagramNames());
   await Bun.write(join("dist", "index.html"), renderIndex(names, { sizes: await pngSizes(names) }));
   console.error(`dist/index.html: ${names.length} diagrams`);
 }
