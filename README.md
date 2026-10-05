@@ -27,8 +27,8 @@ MVP (`diagrams/`):
 | Схема | Что показывает |
 | --- | --- |
 | [deployment](https://cringe-driven-development-team.github.io/docs/deployment.html) | Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
-| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, NPM, S3 |
-| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD фронта через S3, откат, CD бэка через ansible-playbook |
+| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, S3 |
+| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD фронта через S3, откат, выкладка статики в бакет статики за CDN, CD бэка через ansible-playbook |
 | [frontend](https://cringe-driven-development-team.github.io/docs/frontend.html) | Репа клиента, контракт из Apidog, модель релизов |
 | [contract](https://cringe-driven-development-team.github.io/docs/contract.html) | Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
 | [infra](https://cringe-driven-development-team.github.io/docs/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
@@ -57,7 +57,10 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 `dist/index.html` собирается автоматически: внизу страницы табы, как листы
 в Google Sheets. Первый таб `mvp` это схемы корня, он открыт по умолчанию,
 дальше по табу на подпапку. Схема из подпапки рендерится в
-`dist/<папка>/<name>.html` и `.png`.
+`dist/<папка>/<name>.html` и `.png`. Замороженные `bff/` и `frozen-k3s/` на
+индекс не попадают (`HIDDEN_FOLDERS` в `scripts/build-index.ts`), их схемы
+открываются по ссылкам из таблиц выше. Пока других подпапок нет, табов на
+индексе нет, там список схем `mvp`.
 
 ### Локально
 

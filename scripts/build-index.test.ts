@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diagramNames, pngSize, pngSizes, renderIndex } from "./build-index.ts";
+import { diagramNames, indexNames, pngSize, pngSizes, renderIndex } from "./build-index.ts";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -17,6 +17,10 @@ test("diagramNames: names of *.json relative to the dir without extension, subfo
   await Bun.write(join(dir, "README.md"), "");
   await Bun.write(join(dir, "frozen-k3s", "ci.json"), "{}");
   expect(diagramNames(dir)).toEqual(["cd", "ci", "frozen-k3s/ci"]);
+});
+
+test("indexNames: drops diagrams of bff/ and frozen-k3s/, keeps the root and other folders", () => {
+  expect(indexNames(["cd", "bff/ci", "frozen-k3s/ci", "bff-next/ci", "other/ci"])).toEqual(["cd", "bff-next/ci", "other/ci"]);
 });
 
 test("renderIndex: one card per diagram with html link, png link and preview", () => {
