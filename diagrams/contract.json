@@ -22,7 +22,7 @@
     { "tag": "Activity", "id": "be-drift-generate", "x": 1280, "y": 240, "width": 120, "height": 60, "containerId": "be-drift", "texts": [{ "text": "make generate" }] },
     { "tag": "Activity", "id": "be-drift-compare", "x": 1440, "y": 240, "width": 120, "height": 60, "containerId": "be-drift", "texts": [{ "text": "Compare with code" }] },
     { "tag": "Group", "id": "repo-frontend", "color": "purple", "styleMode": "plain", "x": 1060, "y": 360, "width": 580, "height": 320, "containerId": "github", "isContainer": true, "title": { "text": "Frontend repo", "icon": "react" } },
-    { "tag": "Icon", "id": "fe-schema", "x": 1100, "y": 400, "containerId": "repo-frontend", "icon": "typescript", "texts": [{ "text": "src/api/schema.d.ts" }] },
+    { "tag": "Icon", "id": "fe-schema", "x": 1100, "y": 400, "containerId": "repo-frontend", "icon": "typescript", "texts": [{ "text": "src/api/schema.ts" }] },
     { "tag": "Icon", "id": "fe-client", "x": 1260, "y": 400, "containerId": "repo-frontend", "icon": "file-code", "texts": [{ "text": "src/api/client.ts" }] },
     { "tag": "Group", "id": "fe-drift", "color": "purple", "styleMode": "plain", "x": 1260, "y": 540, "width": 360, "height": 120, "containerId": "repo-frontend", "isContainer": true, "title": { "text": "Contract drift (nightly)" } },
     { "tag": "Activity", "id": "fe-drift-generate", "x": 1280, "y": 580, "width": 120, "height": 60, "containerId": "fe-drift", "texts": [{ "text": "bun run generate" }] },
@@ -34,7 +34,7 @@
     { "tag": "Icon", "id": "go-api", "x": 1800, "y": 80, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API · OapiRequestValidator" }] },
     { "tag": "Icon", "id": "caddy", "x": 1940, "y": 80, "containerId": "vps", "icon": "server", "texts": [{ "text": "Caddy" }] },
     { "tag": "Icon", "id": "client", "x": 2200, "y": 80, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
-    { "tag": "Textbox", "id": "rules", "x": 1740, "y": 300, "width": 500, "text": "**Правила контракта**\n\n1. Контракт правят только в sprint-ветке Apidog, `main` защищена, слияние через Merge Request\n2. В `main` репы попадает только код, сгенерированный из `main` Apidog: перед мержем PR перегенерировать без `APIDOG_BRANCH_ID`\n3. Сгенерированный код (`api.gen.go`, `schema.d.ts`) коммитится и руками не правится\n4. Слияние перезаписывает ресурс в `main` целиком: ревьюер Merge Request сверяет его с текущим `main`\n5. Генератор и клиент фронта — один пакет `@my/openapi`, одна версия" },
+    { "tag": "Textbox", "id": "rules", "x": 1740, "y": 300, "width": 500, "text": "**Правила контракта**\n\n1. Контракт правят только в sprint-ветке Apidog, `main` защищена, слияние через Merge Request\n2. В `main` репы попадает только код, сгенерированный из `main` Apidog: перед мержем PR перегенерировать без `APIDOG_BRANCH_ID`\n3. Сгенерированный код (`api.gen.go`, `schema.ts`) коммитится и руками не правится\n4. Слияние перезаписывает ресурс в `main` целиком: ревьюер Merge Request сверяет его с текущим `main`\n5. Генератор и клиент фронта — один пакет `@my/openapi`, одна версия" },
     { "tag": "Legend", "id": "legend", "x": 2360, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [

@@ -5,7 +5,7 @@
     { "tag": "Icon", "id": "fe-react", "x": 60, "y": 80, "containerId": "repo-frontend", "icon": "react", "texts": [{ "text": "React" }] },
     { "tag": "Icon", "id": "fe-router", "x": 200, "y": 80, "containerId": "repo-frontend", "icon": "layers", "texts": [{ "text": "TanStack Router" }] },
     { "tag": "Icon", "id": "fe-zustand", "x": 340, "y": 80, "containerId": "repo-frontend", "icon": "package", "texts": [{ "text": "zustand" }] },
-    { "tag": "Icon", "id": "fe-schema", "x": 480, "y": 80, "containerId": "repo-frontend", "icon": "typescript", "texts": [{ "text": "schema.d.ts" }] },
+    { "tag": "Icon", "id": "fe-schema", "x": 480, "y": 80, "containerId": "repo-frontend", "icon": "typescript", "texts": [{ "text": "schema.ts" }] },
     { "tag": "Icon", "id": "fe-api-client", "x": 680, "y": 80, "containerId": "repo-frontend", "icon": "file-code", "texts": [{ "text": "API-клиент · @my/openapi" }] },
     { "tag": "Group", "id": "fe-pipeline", "color": "purple", "styleMode": "plain", "x": 40, "y": 240, "width": 740, "height": 120, "containerId": "repo-frontend", "isContainer": true, "title": { "text": "CI" } },
     { "tag": "Activity", "id": "fe-install", "x": 60, "y": 280, "width": 120, "height": 60, "containerId": "fe-pipeline", "texts": [{ "text": "bun install" }] },
