@@ -46,7 +46,7 @@ Go становится серверным API для BFF, поэтому его
 Публичный контракт получается из `spec/openapi.json` действиями
 [OpenAPI Overlay](https://spec.openapis.org/overlay/v1.0.0.html) 1.0.0 из `spec/bff.overlay.yaml`:
 
-- удаляется `/auth/refresh`: refresh делает сам BFF;
+- удаляется `/auth/refresh`: refresh делает сам BFF (см. сценарий [«Access истёк»](/bff/auth#access-истек));
 - `/auth/register` и `/auth/login` отвечают схемой `User` и заголовком `Set-Cookie`;
 - `/auth/logout` без тела запроса, отвечает `204` и `Set-Cookie`;
 - `bearerAuth` заменяется схемами `sessionCookie` и `csrfHeader`: ручкам данных и `logout` нужны обе,

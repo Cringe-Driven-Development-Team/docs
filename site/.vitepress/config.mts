@@ -27,6 +27,7 @@ export default withMermaid(
             items: [
               { text: 'Обзор', link: '/bff/' },
               { text: 'Контракт', link: '/bff/contract' },
+              { text: 'Авторизация и CSRF', link: '/bff/auth' },
             ],
           },
         ],
