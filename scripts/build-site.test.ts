@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   assignSlugs,
+  branchSiteBase,
   branchSlug,
   escapeHtml,
   fetchArgs,
@@ -81,4 +82,14 @@ test("renderSummary lists every branch with its preview path or failed step", ()
   ]);
   expect(summary).toMatch(/- `feature\/x`: branches\/feature-x\//);
   expect(summary).toMatch(/- `old`: не собралась на шаге bun install/);
+});
+
+test("branchSiteBase: site base path of a branch preview", () => {
+  expect(branchSiteBase("docs-vitepress-csrf")).toBe("/docs/branches/docs-vitepress-csrf/");
+});
+
+test("renderPreviewsIndex: the back link leads to the main site", () => {
+  const html = renderPreviewsIndex([]);
+  expect(html).toContain('<a href="../">Сайт main</a>');
+  expect(html).not.toContain("Диаграммы main");
 });

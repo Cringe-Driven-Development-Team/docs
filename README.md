@@ -54,7 +54,7 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
 
 Таблицы ведутся вручную: добавил файл в `diagrams/`, добавь строку сюда.
-`dist/index.html` собирается автоматически: внизу страницы табы, как листы
+`dist/diagrams/index.html` собирается автоматически: внизу страницы табы, как листы
 в Google Sheets. Первый таб `mvp` это схемы корня, он открыт по умолчанию,
 дальше по табу на подпапку. Схема из подпапки рендерится в
 `dist/<папка>/<name>.html` и `.png`. Замороженные `bff/` и `frozen-k3s/` на
@@ -79,7 +79,8 @@ bun run validate   # схема, без браузера; имена иконо�
 bun run check      # цветовая конвенция и легенды, без браузера
 bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
 bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/; в Docker
-bun run build      # validate + check + warm + render + dist/index.html; в Docker
+bun run build      # validate + check + warm + render + индекс схем + VitePress + site:check; в Docker
+bun run site:dev   # VitePress локально: http://localhost:5173/docs/
 bun run site       # build + превью всех веток origin в dist/branches/; в Docker
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
@@ -105,9 +106,23 @@ CI на pull request валидирует и рендерит схемы, арт
 GitHub Actions, иначе job `deploy` падает с «Get Pages site failed»
 (для этой репы уже включено).
 
+### Сайт
+
+Главная `https://cringe-driven-development-team.github.io/docs/` — документация на
+[VitePress](https://vitepress.dev/): исходники страниц в `site/`, конфиг и меню в
+`site/.vitepress/config.mts`. Индекс схем открывается из меню «Архитектура»
+(`/docs/diagrams/`), сами схемы — по прежним адресам `/docs/<name>.html` и `.png`.
+Старые ссылки на карточки вида `/docs/#contract` главная переводит на `/docs/diagrams/#contract`.
+
+`bun run build` после рендера схем собирает VitePress (`bun run site:vitepress`) и переносит
+его в `dist/`: если файл VitePress совпал с файлом схемы, сборка падает, а не затирает схему.
+Затем `bun run site:check` проверяет ссылки, якоря и картинки страниц VitePress и индекса
+схем. Новая страница — файл в `site/` и пункт в `sidebar` конфига. Mermaid-схемы в Markdown:
+`sequenceDiagram`, участники с короткими ASCII-алиасами, без `;` и `#` в сообщениях.
+
 ### Превью веток
 
-Push в любую ветку публикует её схемы по адресу
+Push в любую ветку публикует её сайт и схемы по адресу
 `https://cringe-driven-development-team.github.io/docs/branches/<slug>/`, где slug это имя
 ветки, в котором всё, кроме латиницы, цифр, `.`, `_` и `-`, заменено на
 `-`: `feature/new-vps` становится `feature-new-vps`. Список всех превью:
