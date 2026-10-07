@@ -1,5 +1,9 @@
 # CSRF: как устроено
 
+::: tip
+Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/bff/auth).
+:::
+
 Как сервис [cellestial.ru](https://cellestial.ru) защищается от CSRF: какие cookie выдаёт бэк,
 что и где проверяется, что делает фронт. Код — на коммитах бэка
 [`4094350`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/tree/4094350) и фронта
