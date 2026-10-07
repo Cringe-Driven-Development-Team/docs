@@ -60,7 +60,10 @@ RFC 10017 «OAuth 2.0 for Browser-Based Applications» (BCP 212) перечис�
 > This architecture is strongly recommended for business applications, sensitive applications, and applications that handle personal data.
 
 У нас личные данные пользователей, так что рекомендация подходит. Практический выигрыш: access и
-refresh не доходят до браузера, а значит, XSS на странице не может их украсть.
+refresh не доходят до браузера, а значит, XSS на странице не может их украсть. Но XSS всё равно может
+слать запросы через BFF от имени пользователя: это сценарий «Proxying Requests via the User's Browser»
+в [RFC 10017 §6.1.4.1](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.4.1). BFF убирает кражу
+токенов, но не последствия XSS.
 
 ## Что меняется
 

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Страницы раздела «Миграция на BFF»; страницы 2 и 3 появляются в следующих задачах.
+// Страницы раздела «Миграция на BFF».
 export const BFF_PAGES = ["site/bff/index.md", "site/bff/contract.md", "site/bff/auth.md"];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const WARNING =

@@ -24,7 +24,9 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 | `Max-Age` | `refresh_expires_in` из ответа Go |
 
 Значение — `base64url(iv ‖ шифротекст ‖ тег)`: AES-256-GCM, ключ `SESSION_KEY` (32 байта), имя cookie
-служит AAD (дополнительные аутентифицируемые данные). Внутри — JSON:
+служит AAD (дополнительные аутентифицируемые данные). `iv` — 12 случайных байт из CSPRNG
+(`crypto.getRandomValues`), новые при каждом шифровании; повтор IV с тем же `SESSION_KEY` ломает GCM.
+Ошибка расшифровки или тега — `401 unauthorized`. Внутри — JSON:
 
 ```json
 { "access": "…", "refresh": "…", "accessExp": 1760000000, "refreshExp": 1762600000 }
@@ -58,15 +60,21 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 ## Как BFF проксирует запрос
 
-Для ручки, которой нужна cookie сессии (`sessionCookie` в [«Контракте»](./contract)):
+Порядок проверок один для всех запросов к `/api/v1`, включая `login`, `register` и `logout`:
 
-1. Проверки CSRF (раздел «CSRF» ниже) идут до расшифровки cookie. Не прошли — `403 csrf_invalid`,
-   в Go ничего не уходит.
-2. Расшифровать cookie. Cookie нет или она не расшифровывается — `401 unauthorized`.
-3. Если до `accessExp` меньше 30 с, обновить токены через refresh до запроса.
-4. Отправить запрос в Go (`http://api:8080/api/v1`) с `Authorization: Bearer`.
-5. Если Go ответил `401`, обновить токены и повторить запрос один раз.
-6. Ответить клиенту; если токены сменились, ответ несёт новую cookie.
+1. Проверки CSRF (раздел «CSRF» ниже). Не прошли — `403 csrf_invalid`, в Go ничего не уходит.
+2. Маршрута нет в списке разрешённых, то есть в публичном контракте ([«Контракт»](./contract#какие-запросы-bff-пропускает)), —
+   `404 not_found`.
+3. Дальше только для ручек с `sessionCookie` (см. [«Контракт»](./contract)): cookie нет или она не
+   расшифровывается — `401 unauthorized`.
+4. Если до `accessExp` меньше 30 с, обновить токены через refresh до запроса.
+5. Отправить запрос в Go (`http://api:8080/api/v1`) с `Authorization: Bearer`.
+6. Если Go ответил `401`, обновить токены и повторить запрос один раз.
+7. Ответить клиенту; если токены сменились, ответ несёт новую cookie.
+
+Исключение — `logout`: после проверок CSRF и списка он всегда отвечает `204`. Без cookie сессии Go не
+вызывается; cookie сессии и три старые cookie (`access_token` с `Path=/api/v1`, `refresh_token` с
+`Path=/api/v1/auth`, `__Host-csrf` с `Path=/`) стираются в любом случае.
 
 В Go уходят только `Content-Type`, `Accept`, `X-Request-ID` и тело. `Cookie` и `X-CSRF` не уходят.
 `Set-Cookie` из ответа Go клиенту не пропускается: cookie выставляет только BFF.
@@ -77,7 +85,8 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 ## CSRF
 
-Три правила, все на стороне BFF. Проверки идут раньше всего остального, до расшифровки cookie:
+Три правила, все на стороне BFF. Проверки идут первыми, раньше списка разрешённых маршрутов и расшифровки
+cookie, и для каждого запроса, включая вход, регистрацию и выход:
 
 1. Каждый запрос к `/api/v1` без `X-CSRF: 1` получает `403 csrf_invalid` и в Go не уходит. Чужой
    origin не может поставить такой заголовок без preflight, а CORS BFF не разрешает никому: клиент
@@ -189,8 +198,12 @@ sequenceDiagram
   P->>A: POST /api/v1/auth/refresh, refresh_token
   Note over P: вторая вкладка ждёт тот же результат по SHA-256 refresh-токена
   A-->>P: 200 TokenPair
+  P->>A: запрос вкладки 1, Bearer новый access
+  A-->>P: 200
+  P->>A: запрос вкладки 2, Bearer новый access
+  A-->>P: 200
   P-->>B: ответ вкладки 1, Set-Cookie новая
-  P-->>B: ответ вкладки 2, та же Set-Cookie
+  P-->>B: ответ вкладки 2, Set-Cookie с теми же токенами
   Note over P: результат хранится 10 с, работает пока один экземпляр BFF
 ```
 
@@ -198,8 +211,10 @@ sequenceDiagram
 
 ### Выход
 
-BFF вызывает Go с Bearer и `refresh_token` в теле, стирает cookie и отвечает `204`. Даже если Go
-вернул `401` (токен уже недействителен), клиент получает `204`: сессии больше нет в любом случае.
+После проверок CSRF и списка маршрутов BFF вызывает Go с Bearer и `refresh_token` в теле, стирает cookie
+и отвечает `204`. Даже если Go вернул `401` (токен уже недействителен), клиент получает `204`: сессии
+больше нет в любом случае. Без cookie сессии Go не вызывается, а ответ тот же `204`; три старые cookie
+стираются всегда.
 
 ```mermaid
 sequenceDiagram
@@ -213,6 +228,7 @@ sequenceDiagram
   A-->>P: 204
   P-->>B: 204, Set-Cookie __Host-Http-session Max-Age=0
   Note over P: 204 и когда Go ответил 401
+  Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
   B-->>F: 204
 ```
 
@@ -220,8 +236,9 @@ sequenceDiagram
 
 ### Сессия кончилась
 
-Refresh-токен просрочен или отозван. Go отвечает `401`, BFF стирает cookie и отвечает
-`401 unauthorized`; фронт показывает форму входа.
+Refresh-токен отозван или не принят Go. Go отвечает `401`, BFF стирает cookie и отвечает
+`401 unauthorized`; фронт показывает форму входа. Если refresh просто истёк, браузер уже удалил
+cookie (`Max-Age` = `refresh_expires_in`), и BFF отвечает `401` на шаге проверки cookie, не обращаясь в Go.
 
 ```mermaid
 sequenceDiagram
@@ -231,9 +248,10 @@ sequenceDiagram
   participant A as Go API
   F->>B: GET /api/v1/users/me, X-CSRF: 1
   B->>P: GET /api/v1/users/me, Cookie __Host-Http-session
+  Note over P: до accessExp меньше 30 с
   P->>A: POST /api/v1/auth/refresh, refresh_token
   A-->>P: 401
-  Note over P: refresh отвергнут, сессия кончилась
+  Note over P: refresh отозван или не принят, сессия кончилась
   P-->>B: 401 unauthorized, Set-Cookie Max-Age=0
   B-->>F: 401
   Note over F: гость - показать форму входа

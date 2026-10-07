@@ -12,8 +12,8 @@
 
 ```mermaid
 flowchart LR
-    D["Apidog"] -->|"apidog"| O["spec/openapi.json"]
-    O -->|"oapi-codegen"| G["Go: сервер"]
+    D["Apidog"] -->|"make generate: cmd/apidog + oapi-codegen"| G["Go: сервер"]
+    D -->|"apidog"| O["spec/openapi.json (монорепа)"]
     O -->|"типы вызовов Go"| BT["BFF: клиент к Go"]
     O --> F["openapi-format"]
     Y["spec/bff.overlay.yaml"] --> F
@@ -21,6 +21,10 @@ flowchart LR
     P -->|"openapi-cdd"| C["Клиент: src/api/schema.ts"]
     P -->|"типы своих ручек"| BS["BFF: ручки /auth/*"]
 ```
+
+Go забирает контракт из Apidog сам: `make generate` в бэкенде запускает
+[`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31)
+и затем `oapi-codegen`. Файл `spec/openapi.json` в монорепе нужен клиенту и BFF.
 
 Почему не два контракта в Apidog: ручки данных (`/users/me`, `/notebooks*`) пришлось бы описывать
 дважды и следить, чтобы описания не разошлись. Overlay хранит только различия.
@@ -47,7 +51,9 @@ Go становится серверным API для BFF, поэтому его
 [OpenAPI Overlay](https://spec.openapis.org/overlay/v1.0.0.html) 1.0.0 из `spec/bff.overlay.yaml`:
 
 - удаляется `/auth/refresh`: refresh делает сам BFF (см. сценарий [«Access истёк»](/bff/auth#access-истек));
-- `/auth/register` и `/auth/login` отвечают схемой `User` и заголовком `Set-Cookie`;
+- `/auth/register` и `/auth/login` отвечают схемой `User` и заголовком `Set-Cookie`. `update` сливает
+  объекты рекурсивно: без предварительного `remove` схема `User` слилась бы с исходной `{ user, tokens }`,
+  и токены попали бы в публичный контракт. Поэтому сначала `remove` на `content`, потом `update`;
 - `/auth/logout` без тела запроса, отвечает `204` и `Set-Cookie`;
 - `bearerAuth` заменяется схемами `sessionCookie` и `csrfHeader`: ручкам данных и `logout` нужны обе,
   `register` и `login` только `csrfHeader`;
@@ -64,7 +70,10 @@ actions:
   - target: $.paths['/auth/refresh']
     remove: true
 
-  # register и login: наружу отдаётся только User, токены остаются на сервере
+  # register и login: наружу отдаётся только User, токены остаются на сервере;
+  # update сливает объекты, поэтому старый content сначала удаляется
+  - target: $.paths['/auth/register'].post.responses['201'].content
+    remove: true
   - target: $.paths['/auth/register'].post.responses['201']
     update:
       content:
@@ -75,6 +84,8 @@ actions:
         Set-Cookie:
           schema:
             type: string
+  - target: $.paths['/auth/login'].post.responses['200'].content
+    remove: true
   - target: $.paths['/auth/login'].post.responses['200']
     update:
       content:
@@ -178,6 +189,8 @@ actions:
    задуманным.
 2. `spec/openapi.public.json` совпадает с выведенным заново из `spec/openapi.json` и
    `spec/bff.overlay.yaml`.
+3. `spec/openapi.public.json` не содержит `access_token`, `refresh_token`, `TokenPair` и `bearerAuth`.
+   Так ловится и утечка токенов через слияние, и ручка данных, забытая в overlay.
 
 ## Какие запросы BFF пропускает
 
@@ -187,11 +200,14 @@ BFF проксирует только то, что есть в публично�
 
 > When implementing a dynamically configurable proxy, the BFF MUST ensure that it only allows requests to explicitly permitted hosts and paths.
 
-Всё, чего нет в контракте, получает `404 not_found` без запроса в Go. Например, в контракте нет
+Проверки CSRF идут раньше списка (см. [«Авторизация и CSRF»](/bff/auth#как-bff-проксирует-запрос)), поэтому запрос
+без `X-CSRF` получит `403`, а не `404`. Всё, чего нет в контракте, получает `404 not_found` без запроса в Go. Например, в контракте нет
 `DELETE /api/v1/notebooks/{id}` (есть только `GET`), поэтому:
 
 ```http
 DELETE /api/v1/notebooks/42
+X-CSRF: 1
+Origin: https://cellestial.ru
 
 404 Not Found
 { "code": "not_found", "message": "..." }
