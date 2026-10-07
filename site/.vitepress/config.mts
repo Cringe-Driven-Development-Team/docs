@@ -20,7 +20,15 @@ export default withMermaid(
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
       ],
       sidebar: {
-        '/security/csrf/': [{ text: 'CSRF', items: [{ text: 'Как устроено', link: '/security/csrf/' }] }],
+        '/security/csrf/': [
+          {
+            text: 'CSRF',
+            items: [
+              { text: 'Как устроено', link: '/security/csrf/' },
+              { text: 'Сценарии', link: '/security/csrf/scenarios' },
+            ],
+          },
+        ],
       },
       socialLinks: [{ icon: 'github', link: 'https://github.com/Cringe-Driven-Development-Team/docs' }],
       outline: { level: [2, 3], label: 'На этой странице' },
