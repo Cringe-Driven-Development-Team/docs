@@ -108,13 +108,16 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   - `/auth/refresh`: тело `{ refresh_token }` → `200 TokenPair`;
   - `/auth/logout`: тело `{ refresh_token }`, `bearerAuth` → `204`;
   - ручки данных — `bearerAuth`; `Set-Cookie`, параметр cookie `refresh_token` и `X-CSRF-Token` уходят.
+- Go забирает контракт из Apidog сам: `make generate` (backend@4094350) — `go run ./cmd/apidog` и
+  `oapi-codegen`; монорепа нужна клиенту и BFF.
 - Монорепа: `spec/openapi.json` (выгрузка Apidog), `spec/bff.overlay.yaml`, `spec/openapi.public.json`
   (выведен, закоммичен). `bun run sync`: `apidog` → `overlay`
   (`openapi-format spec/openapi.json --overlayFile spec/bff.overlay.yaml -o spec/openapi.public.json`)
   → `generate`.
 - Overlay:
   - удаляет `/auth/refresh`;
-  - `/auth/register` и `/auth/login` отвечают `User` и заголовком `Set-Cookie`; `/auth/logout` — без
+  - `/auth/register` и `/auth/login` отвечают `User` и заголовком `Set-Cookie` (`update` сливает
+    объекты, поэтому `content` сначала удаляется `remove`); `/auth/logout` — без
     тела запроса, `204` и `Set-Cookie`;
   - `securitySchemes`: `sessionCookie` (apiKey, cookie `__Host-Http-session`) и `csrfHeader` (apiKey,
     header `X-CSRF`); ручкам данных и `logout` — оба, `register` и `login` — `csrfHeader`;
@@ -123,7 +126,8 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
 - Генерация (`openapi-cdd`): `apps/client` — из `openapi.public.json`; `apps/bff` — `paths` обоих
   файлов: публичные для своих ручек `/auth/*`, внутренние для вызовов Go.
 - CI монорепы: каждое действие overlay находит хотя бы один узел (иначе правка в Apidog молча ломает
-  overlay); `openapi.public.json` совпадает с выведенным заново.
+  overlay); `openapi.public.json` совпадает с выведенным заново; `openapi.public.json` не содержит
+  `access_token`, `refresh_token`, `TokenPair` и `bearerAuth`.
 - Список разрешённых маршрутов прокси строится из пар «шаблон пути + метод» публичного контракта
   (RFC §6.1.3.6). Параметры пути подставляются только в шаблон; чего нет в контракте — `404 not_found`
   без запроса в Go.
@@ -133,20 +137,27 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
 - Cookie `__Host-Http-session`: `HttpOnly`, `Secure`, `Path=/`, `SameSite=Strict`, без `Domain`,
   `Max-Age` = `refresh_expires_in`. Значение — `base64url(iv ‖ шифротекст ‖ тег)` AES-256-GCM ключом
   `SESSION_KEY` (32 байта) от JSON `{ access, refresh, accessExp, refreshExp }`; имя cookie — AAD.
-- Ручка с `sessionCookie`: расшифровать cookie (нет или не расшифровывается — `401 unauthorized`); если до
-  `accessExp` меньше 30 с — refresh; запрос в Go с `Authorization: Bearer`; на `401` от Go — refresh и
-  один повтор; ответ клиенту с новой cookie, если токены сменились.
+  `iv` — 12 случайных байт из CSPRNG, новые при каждом шифровании; повтор IV с тем же ключом ломает GCM.
+  Ошибка расшифровки или тега — `401 unauthorized`.
+- Порядок проверок для каждого запроса к `/api/v1`, включая `login`, `register`, `logout`: CSRF
+  (`403 csrf_invalid`) → маршрут в списке разрешённых (`404 not_found`) → для ручек с `sessionCookie`
+  расшифровать cookie (нет или не расшифровывается — `401 unauthorized`); если до `accessExp` меньше
+  30 с — refresh; запрос в Go с `Authorization: Bearer`; на `401` от Go — refresh и один повтор; ответ
+  клиенту с новой cookie, если токены сменились.
 - В Go уходят только `Content-Type`, `Accept`, `X-Request-ID` и тело; `Cookie` и `X-CSRF` — нет.
   `Set-Cookie` из ответа Go не пропускается.
 - Одновременные refresh объединяются: ключ — SHA-256 refresh-токена, результат держится в памяти 10 с.
   Вторая вкладка со старой cookie получает те же новые токены. Гонка backend#12 уходит, пока BFF один
   экземпляр.
 - Refresh отвергнут (`401` от Go) — BFF стирает cookie (`Max-Age=0`) и отвечает `401 unauthorized`.
-- `login`/`register`: BFF вызывает Go, ставит cookie, отдаёт `User`. `logout`: BFF вызывает Go с
-  Bearer и refresh в теле, стирает cookie, отвечает `204` даже если Go ответил `401`.
+- `login`/`register`: BFF вызывает Go, ставит cookie, отдаёт `User`. `logout`: после проверки
+  CSRF и списка BFF вызывает Go с Bearer и refresh в теле, стирает cookie сессии и три старые
+  (`access_token`, `refresh_token`, `__Host-csrf`), отвечает `204` даже если Go ответил `401`; без cookie
+  сессии Go не вызывается, ответ тот же `204`.
 
 ### 4.4. CSRF
 
+- Проверки CSRF идут первыми: раньше списка разрешённых маршрутов и расшифровки cookie.
 - Каждый запрос к `/api/v1` без `X-CSRF: 1` — `403 csrf_invalid`, без запроса в Go. Чужой origin не
   может поставить заголовок без preflight, а CORS BFF не разрешает никому: клиент на том же origin.
 - `POST`, `PUT`, `PATCH`, `DELETE`: `Origin` равен `APP_ORIGIN`, `Sec-Fetch-Site` (если есть) —
