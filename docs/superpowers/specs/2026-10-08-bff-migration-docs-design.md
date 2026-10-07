@@ -7,7 +7,7 @@
 Команда начинает трек миграции на BFF: браузер ходит только в BFF, BFF проксирует запросы в Go API.
 До кода нужно договориться о двух вещах, которые связаны через `/auth/*`:
 
-1. как spec-first через Apidog и генератор `openapi-cdd` работают, когда между клиентом и Go стоит BFF;
+1. как spec-first через Apidog и генератор Orval работают, когда между клиентом и Go стоит BFF;
 2. где живут токены, как идёт refresh и как BFF защищается от CSRF.
 
 Результат — раздел сайта документации «Миграция на BFF» из трёх страниц с mermaid-схемами. Раздел
@@ -85,6 +85,8 @@ RFC 10017 «OAuth 2.0 for Browser-Based Applications» (BCP 212, август 20
 | BFF — прокси к `/api/v1`, пути и схемы данных те же | трек начинается с переноса токенов и CSRF, не с переделки API | tRPC и серверный bootstrap HTML из замороженного варианта |
 | BFF в монорепе фронта: `apps/client`, `apps/bff` | один `sync` из Apidog, клиент и overlay меняются одним PR | отдельная репа `bff` |
 | Один контракт в Apidog (Go API), публичный контракт BFF выводится overlay | ручки данных описываются один раз; отличается только `/auth/*` и схема безопасности | два контракта в Apidog; один контракт без описания отличий |
+| Генерация — Orval: клиент (fetch), BFF (hono + zod, fetch к Go) | один генератор для обеих сторон; хендлеры Hono с валидацией zod; overlay остаётся (стандартный файл, проверяется в CI) | свой `openapi-cdd` |
+| Собственные ручки BFF — тег `bff` в том же проекте Apidog | один контракт; Go исключает их `exclude-tags` (`oapi-codegen`), Orval `goApi` — `filters` | отдельный контракт BFF |
 | Сессия — зашифрованная cookie с access и refresh | BFF без состояния: деплой на каждый коммит `main` никого не разлогинивает; новых сервисов нет; RFC §6.1.2.3 | Redis; память процесса BFF |
 | CSRF — статичный заголовок `X-CSRF: 1` + `SameSite=Strict` + `Origin`/`Sec-Fetch-Site` | основной путь RFC §6.1.3.3; фронту не нужно читать cookie и повторять после `403` | подписанный Double Submit; оба механизма |
 | Go API — только Bearer: токены в JSON, cookie, CSRF и CORS удаляются | Go снаружи не виден; контракт Apidog становится честным S2S | Go без изменений, BFF изображает браузер; переходный режим cookie + Bearer |
@@ -113,7 +115,8 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
 - Монорепа: `spec/openapi.json` (выгрузка Apidog), `spec/bff.overlay.yaml`, `spec/openapi.public.json`
   (выведен, закоммичен). `bun run sync`: `apidog` → `overlay`
   (`openapi-format spec/openapi.json --overlayFile spec/bff.overlay.yaml -o spec/openapi.public.json`)
-  → `generate`.
+  → `orval` (`orval.config.ts`: `client` — fetch, `baseUrl: '/api/v1'`, мутатор с `X-CSRF: 1`; `bff` —
+  `client: 'hono'`, zod; `goApi` — из `openapi.json` с `filters` `exclude` тега `bff`, fetch, Bearer).
 - Overlay:
   - удаляет `/auth/refresh`;
   - `/auth/register` и `/auth/login` отвечают `User` и заголовком `Set-Cookie` (`update` сливает
@@ -123,8 +126,12 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
     header `X-CSRF`); ручкам данных и `logout` — оба, `register` и `login` — `csrfHeader`;
     `bearerAuth` удаляется;
   - добавляет к ответам ручек данных `401` и `403` со схемой `Error`.
-- Генерация (`openapi-cdd`): `apps/client` — из `openapi.public.json`; `apps/bff` — `paths` обоих
-  файлов: публичные для своих ручек `/auth/*`, внутренние для вызовов Go.
+- Генерация (Orval 8.40.0: `OutputClient` — `fetch`, `hono`, `zod`; `InputFiltersOptions` — `mode`, `tags`,
+  `schemas`): `apps/client` — fetch из `openapi.public.json`; `apps/bff` — хендлеры Hono (`createFactory`,
+  `@hono/zod-validator`) для `/auth/*` и тега `bff` и fetch к Go из `openapi.json` без тега `bff`.
+- Собственные ручки BFF (агрегация, пакетные запросы) — тег `bff` в том же проекте Apidog; Go исключает их
+  `output-options.exclude-tags`, в публичный контракт они проходят как есть, BFF обслуживает их хендлерами,
+  а не прокси.
 - CI монорепы: каждое действие overlay находит хотя бы один узел (иначе правка в Apidog молча ломает
   overlay); `openapi.public.json` совпадает с выведенным заново; `openapi.public.json` не содержит
   `access_token`, `refresh_token`, `TokenPair` и `bearerAuth`.
