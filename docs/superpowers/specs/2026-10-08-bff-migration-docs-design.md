@@ -159,8 +159,10 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
 - Порядок проверок для каждого запроса к `/api/v1`, включая `login`, `register`, `logout`: CSRF
   (`403 csrf_invalid`) → маршрут в списке разрешённых (`404 not_found`) → для ручек с `sessionCookie`
   расшифровать cookie (нет или не расшифровывается — `401 unauthorized`); если до `accessExp` меньше
-  30 с — refresh; запрос в Go с `Authorization: Bearer`; на `401` от Go — refresh и один повтор; ответ
-  клиенту с новой cookie, если токены сменились.
+  30 с — refresh; запрос в Go с `Authorization: Bearer` (на двух VPS и `X-BFF-Key`); `403 s2s_forbidden`
+  от Go — клиенту `502 internal`, в лог, без refresh, сессию не трогать; на `401` от Go — refresh и один
+  повтор; ответ клиенту с новой cookie, если токены сменились. Upgrade WebSocket проходит только
+  проверку `Origin` (§4.7).
 - В Go уходят только `Content-Type`, `Accept`, `X-Request-ID` и тело; `Cookie` и `X-CSRF` — нет.
   `Set-Cookie` из ответа Go не пропускается.
 - Одновременные refresh объединяются: ключ — SHA-256 refresh-токена, результат держится в памяти 10 с.
@@ -208,9 +210,9 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   §6.1.3.3.2); публичный `api.*` нужен только другим клиентам (мобильный, партнёры) с Bearer или OAuth.
 - BFF → Go по приватному адресу VPS2 (в документах адрес и подсеть не пишутся). Файрвол VPS2
   (security group) пускает порт API только с VPS1.
-- S2S-ключ: заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает за постоянное время, без ключа или
-  с неверным — `401`; `BFF_API_KEY` в `.env` обеих машин. Сильнее — mTLS между VPS1 и VPS2.
-- Ключ проверяется раньше Bearer; отказ — `403 s2s_forbidden`, а не `401`: на `401` BFF делает refresh,
+- S2S-ключ: заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает за постоянное время и проверяет
+  его раньше Bearer; `BFF_API_KEY` в `.env` обеих машин. Сильнее — mTLS между VPS1 и VPS2.
+- Без ключа или с неверным — `403 s2s_forbidden`, а не `401`: на `401` BFF делает refresh,
   тот же ключ даёт `401`, и BFF стёр бы cookie — рассинхрон ключей или ротация на одной машине
   разлогинили бы всех. BFF считает `s2s_forbidden` инфраструктурной ошибкой: клиенту `502` (`internal`),
   лог, без refresh, сессию не трогает. Ротация: Go принимает два ключа на время переключения.
@@ -222,7 +224,7 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   пропускается.
 - Security group VPS2: порт API и SSH только с VPS1, порт Postgres не открыт.
 - Нужно добавить в infra: инстанс и порт VPS2 под новым именем, security group, `ProxyJump` в inventory
-  (`ssh_hardening` сейчас запрещает `AllowTcpForwarding`, tasks/main.yml:14-15).
+  (`ssh_hardening` сейчас запрещает `AllowTcpForwarding`, tasks/main.yml:14-16).
 - Трафик внутри частной сети без TLS — принятый риск MVP (Selectel изолирует сеть); mTLS его закрыл бы.
 - Ansible ходит на VPS2 по SSH только через VPS1 как jump host (`ProxyJump`).
 - Масштабирование: BFF — один экземпляр; второй требует общей блокировки refresh (Redis) или льготного
