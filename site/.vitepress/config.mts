@@ -26,6 +26,7 @@ export default withMermaid(
             items: [
               { text: 'Как устроено', link: '/security/csrf/' },
               { text: 'Сценарии', link: '/security/csrf/scenarios' },
+              { text: 'Проверка и ограничения', link: '/security/csrf/checks' },
             ],
           },
         ],

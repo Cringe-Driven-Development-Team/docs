@@ -4,8 +4,8 @@
 что и где проверяется, что делает фронт. Код — на коммитах бэка
 [`4094350`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/tree/4094350) и фронта
 [`344ad0b`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/tree/344ad0b).
-Как это выглядит в каждом случае — «Сценарии», что проверено и чего не хватает —
-«Проверка и ограничения».
+Как это выглядит в каждом случае — [«Сценарии»](./scenarios), что проверено и чего не хватает —
+[«Проверка и ограничения»](./checks).
 
 Схема защиты — Double Submit Cookie с подписью: сервер кладёт токен в cookie, которую JavaScript
 нашего сайта может прочитать, а фронт повторяет его значение в заголовке `X-CSRF-Token`. Чужая
@@ -117,7 +117,7 @@ CSRF стоит раньше обработчика, поэтому отклон
   ([`setCsrfHeader`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/csrf.ts#L13)).
 - Вход и регистрацию после `403 csrf_invalid` повторяет один раз: этот ответ уже принёс новую
   cookie ([`csrfMiddleware`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/csrf.ts#L46)).
-  Остальные запросы после `403` показывают ошибку — см. «Проверка и ограничения».
+  Остальные запросы после `403` показывают ошибку — см. [ограничения](./checks#известные-ограничения).
 - На `401` (кроме `/auth/*`) делает один общий `POST /auth/refresh` с `X-CSRF-Token` и повторяет
   запрос со свежим заголовком
   ([`authMiddleware`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/auth.ts#L12)).
