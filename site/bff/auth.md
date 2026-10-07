@@ -69,7 +69,8 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 3. Дальше только для ручек с `sessionCookie` (см. [«Контракт»](./contract)): cookie нет или она не
    расшифровывается — `401 unauthorized`.
 4. Если до `accessExp` меньше 30 с, обновить токены через refresh до запроса.
-5. Отправить запрос в Go (`http://api:8080/api/v1`) с `Authorization: Bearer`.
+5. Отправить запрос в Go (`http://api:8080/api/v1`) с `Authorization: Bearer`. На двух VPS к нему
+   добавляется `X-BFF-Key`, см. [«Две VPS»](/bff/#две-vps).
 6. Если Go ответил `401`, обновить токены и повторить запрос один раз.
 7. Ответить клиенту; если токены сменились, ответ несёт новую cookie.
 
@@ -106,6 +107,10 @@ cookie, и для каждого запроса, включая вход, рег
 ([§6.1.3.3.3](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.3)):
 
 > Note that this mechanism is not necessarily recommended over the CORS approach.
+
+WebSocket (будущая потоковая отдача вывода рантайма) CORS не знает: браузер сам прикладывает cookie к
+рукопожатию с любого сайта, и это Cross-Site WebSocket Hijacking. Поэтому BFF проверяет `Origin` на
+upgrade-запросе так же, как на мутациях: не равен `APP_ORIGIN` — `403`.
 
 Фронту больше не нужно читать cookie, повторять запрос после `403` и обновлять токены на `401`:
 `401` означает гостя и форму входа.

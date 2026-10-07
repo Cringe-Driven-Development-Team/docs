@@ -108,3 +108,15 @@ test("openapi-cdd встречается только в одной фразе �
   expect(count("site/bff/index.md")).toBe(0);
   expect(count("site/bff/auth.md")).toBe(0);
 });
+
+test("в «Обзоре» есть раздел «Две VPS»", () => {
+  const md = readFileSync("site/bff/index.md", "utf8");
+  for (const needle of ["## Две VPS", "X-BFF-Key", "BFF_API_KEY", "mTLS"]) {
+    expect(md, needle).toContain(needle);
+  }
+  for (const file of BFF_PAGES) {
+    // Номера разделов RFC («§6.1.3.3.2», «section-6.1.3.3.2») похожи на IPv4, их не считаем.
+    const text = readFileSync(file, "utf8").replace(/(§|section-)\d+(\.\d+)*/g, "");
+    expect(text, file).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
+  }
+});

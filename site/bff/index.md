@@ -105,9 +105,57 @@ Go, BFF и Caddy выкатываются одним прогоном playbook, 
 пользователь один раз входит заново — см. сценарий
 [«Первый вход после переезда»](/bff/auth#первыи-вход-после-переезда).
 
+## Две VPS
+
+Целевая схема для двух машин. Сейчас стек Pulumi — одна VPS, а двухсерверная схема (gateway и backend)
+заморожена в варианте `bff` документации
+([`pulumi/README.md`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/pulumi/README.md#L8)).
+
+```mermaid
+flowchart LR
+    B["Браузер"] -->|"cellestial.ru"| C
+    subgraph V1["VPS1, публичный IP"]
+        C["Caddy"] --> P["BFF"]
+    end
+    P -->|"частная сеть: Authorization: Bearer и X-BFF-Key"| A
+    subgraph V2["VPS2, без публичного IP"]
+        A["Go API"] --> D[("Postgres")]
+    end
+```
+
+- **VPS1:** Caddy и BFF, публичный (floating) IP, домен `cellestial.ru`. **VPS2:** Go API и Postgres, без
+  публичного IP, доступна только через частную сеть Selectel.
+- **Домен один.** Публичного `api.cellestial.ru` нет: по схеме BFF браузер говорит только с BFF, а
+  приложение живёт на одном origin с ним. RFC 10017
+  ([§6.1.3.3.2](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.2)) прямо допускает такую схему:
+
+  > It is also possible to deploy the browser-based application on the same origin as the BFF.
+
+  Отдельный публичный `api.*` нужен только другим клиентам, например мобильному приложению или
+  партнёрам, и для них это `Authorization: Bearer` или OAuth, а не cookie.
+- **BFF → Go** идёт на приватный адрес VPS2. Файрвол VPS2 (security group) пускает порт API только с
+  VPS1.
+- **S2S-ключ.** BFF шлёт заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает значение за постоянное
+  время; без ключа или с неверным — `401`. `BFF_API_KEY` лежит в `.env` обеих машин. Сильнее —
+  mTLS между VPS1 и VPS2.
+- **Без TLS внутри частной сети** — принятый риск MVP: Selectel изолирует приватную сеть. mTLS его бы
+  закрыл.
+- **Ansible** ходит на VPS2 по SSH только через VPS1 как jump host (`ProxyJump`): публичного адреса у
+  VPS2 нет. Динамический inventory группирует хосты по `metadata.role`
+  ([`openstack.yml`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/inventory/openstack.yml#L17)),
+  так что у второй машины будет своя роль.
+- **Уже есть в Pulumi:** `private-network`, `private-subnet` и `router`
+  ([`index.ts`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/pulumi/index.ts#L182-L192)),
+  инстанс `gateway` на порту частной подсети с floating IP
+  ([`index.ts`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/pulumi/index.ts#L250-L280)).
+  Ресурсы backend-сервера удалены, и возвращать их под прежним именем нельзя до проверки стейта
+  ([`README`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/pulumi/README.md#L287)).
+
 ## Ограничения
 
 - BFF работает одним экземпляром: объединение одновременных refresh держится в его памяти.
 - Смена `SESSION_KEY` разлогинивает всех: старые cookie больше не расшифровываются.
-- Go API закрыт только сетью compose, без отдельного S2S-ключа: из этой сети любой сервис может
-  позвать его напрямую.
+- На одной VPS Go API закрыт только сетью compose, без S2S-ключа: из этой сети любой сервис может
+  позвать его напрямую. На двух VPS есть ключ `X-BFF-Key` и файрвол, см. [«Две VPS»](#две-vps).
+- BFF остаётся одним экземпляром. Второй экземпляр потребует общую блокировку refresh (Redis) или
+  льготное окно из [backend#12](https://github.com/Cringe-Driven-Development-Team/backend/issues/12).
