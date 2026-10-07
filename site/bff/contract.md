@@ -149,7 +149,7 @@ actions:
       security:
         - sessionCookie: []
           csrfHeader: []
-  # ... то же для остальных ручек данных: /notebooks*, /notebooks/{id}/cells*
+  # ... то же для остальных ручек данных без тега bff: /notebooks*, /notebooks/{id}/cells*
 
   # 401 и 403 со схемой Error у ручек данных
   - target: $.paths['/users/me'].get.responses
@@ -210,8 +210,16 @@ export default defineConfig({
   },
   // собственные ручки BFF: хендлеры Hono с валидацией zod
   bff: {
-    input: 'spec/openapi.public.json',
-    output: { target: 'apps/bff/src/handlers', client: 'hono', mode: 'tags-split' }, // /auth/* и тег bff
+    input: {
+      target: 'spec/openapi.public.json',
+      filters: { mode: 'include', tags: ['auth', 'bff'] }, // только /auth/* и тег bff
+    },
+    output: {
+      target: 'apps/bff/src/handlers',
+      client: 'hono',
+      mode: 'tags-split',
+      override: { hono: { validatorOutputPath: 'apps/bff/src/handlers/validator.ts' } },
+    },
   },
   // BFF → Go: fetch без ручек с тегом bff
   goApi: {
@@ -230,7 +238,9 @@ export default defineConfig({
 ```
 
 Пример; точные пути и мутаторы зависят от репозитория. Цель `bff` создаёт хендлеры на `createFactory` из
-`hono/factory` и проверяет вход через `@hono/zod-validator`; остальные маршруты идут через общий прокси.
+`hono/factory`: заготовки, тело пишется руками. Вход и ответ проверяются через `zValidator`
+(`@hono/zod-validator`); остальные маршруты идут через общий прокси. Пути сгенерированных маршрутов без
+`/api/v1` (например `/auth/register`), поэтому приложение BFF монтирует их под `basePath('/api/v1')`.
 
 ## Собственные ручки BFF
 
@@ -239,7 +249,10 @@ export default defineConfig({
 
 - Go исключает их из своей генерации опцией `output-options.exclude-tags` в конфиге `oapi-codegen`
   ([README](https://github.com/oapi-codegen/oapi-codegen#how-can-i-ignore-parts-of-the-spec-i-dont-care-about));
-- в публичный контракт они попадают как есть, overlay их не трогает;
+- в публичный контракт они попадают как есть, overlay их не трогает: `sessionCookie` и `csrfHeader`
+  определены в самом проекте Apidog, и ручки с тегом `bff` сразу описываются с этими схемами и ответами
+  `401` и `403` со схемой `Error`. Go их не использует, его генерация тег `bff` исключает, а `update`
+  в `securitySchemes` у overlay просто сливается с ними;
 - цель `goApi` в Orval исключает их через `filters`, а цель `bff` генерирует для них хендлеры.
 
 Пример: `GET /api/v1/notebooks/{id}/view` — BFF параллельно запрашивает у Go блокнот и текущего

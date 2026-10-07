@@ -116,7 +116,7 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   (выведен, закоммичен). `bun run sync`: `apidog` → `overlay`
   (`openapi-format spec/openapi.json --overlayFile spec/bff.overlay.yaml -o spec/openapi.public.json`)
   → `orval` (`orval.config.ts`: `client` — fetch, `baseUrl: '/api/v1'`, мутатор с `X-CSRF: 1`; `bff` —
-  `client: 'hono'`, zod; `goApi` — из `openapi.json` с `filters` `exclude` тега `bff`, fetch, Bearer).
+  `client: 'hono'`, zod, `filters` `include` тегов `auth` и `bff`; `goApi` — из `openapi.json` с `filters` `exclude` тега `bff`, fetch, Bearer).
 - Overlay:
   - удаляет `/auth/refresh`;
   - `/auth/register` и `/auth/login` отвечают `User` и заголовком `Set-Cookie` (`update` сливает
@@ -131,7 +131,9 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   `@hono/zod-validator`) для `/auth/*` и тега `bff` и fetch к Go из `openapi.json` без тега `bff`.
 - Собственные ручки BFF (агрегация, пакетные запросы) — тег `bff` в том же проекте Apidog; Go исключает их
   `output-options.exclude-tags`, в публичный контракт они проходят как есть, BFF обслуживает их хендлерами,
-  а не прокси.
+  а не прокси. Они описаны в Apidog сразу с `sessionCookie` и `csrfHeader` (схемы определены в самом
+  проекте, Go их не использует) и ответами `401`/`403` с `Error`. Цель `bff` — `filters` include тегов `auth`
+  и `bff` (проверено запуском Orval 8.40.0: папки только `auth/` и `bff/`).
 - CI монорепы: каждое действие overlay находит хотя бы один узел (иначе правка в Apidog молча ломает
   overlay); `openapi.public.json` совпадает с выведенным заново; `openapi.public.json` не содержит
   `access_token`, `refresh_token`, `TokenPair` и `bearerAuth`.
