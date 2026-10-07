@@ -73,12 +73,14 @@ refresh не доходят до браузера, а значит, XSS на с�
 [`src/api/client.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/client.ts#L29)
 с `baseUrl: '/api/v1'` и `credentials: 'include'`. Меняется middleware: `csrf.ts` больше не читает
 cookie и ставит `X-CSRF: 1`; refresh на `401` и повтор после `403` уходят; `401` означает гостя и
-форму входа; старт приложения — `GET /users/me`. Задача frontend#34 становится не нужна.
+форму входа; старт приложения — `GET /users/me`. Типы и fetch-клиент генерирует Orval из публичного
+контракта. Задача frontend#34 становится не нужна.
 
 ### BFF
 
 Новый сервис: проксирует `/api/v1/*` в Go, хранит сессию в зашифрованной cookie, обновляет access сам,
-проверяет `X-CSRF`, `Origin` и `Sec-Fetch-Site`. Работает без своего хранилища. Гонка backend#12
+проверяет `X-CSRF`, `Origin` и `Sec-Fetch-Site`. Свои ручки (`/auth/*`, тег `bff`) — хендлеры Hono с zod,
+которые генерирует Orval; вызовы Go — сгенерированный Orval fetch-клиент. Работает без своего хранилища. Гонка backend#12
 решается внутри BFF, пока он один экземпляр — см. сценарий [«Две вкладки»](/bff/auth#две-вкладки).
 
 ### Go API

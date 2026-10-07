@@ -14,17 +14,22 @@
 flowchart LR
     D["Apidog"] -->|"make generate: cmd/apidog + oapi-codegen"| G["Go: сервер"]
     D -->|"apidog"| O["spec/openapi.json (монорепа)"]
-    O -->|"типы вызовов Go"| BT["BFF: клиент к Go"]
+    O -->|"Orval: fetch без тега bff"| BT["BFF: клиент к Go"]
     O --> F["openapi-format"]
     Y["spec/bff.overlay.yaml"] --> F
     F --> P["spec/openapi.public.json"]
-    P -->|"openapi-cdd"| C["Клиент: src/api/schema.ts"]
-    P -->|"типы своих ручек"| BS["BFF: ручки /auth/*"]
+    P -->|"Orval: client fetch"| C["Клиент: apps/client"]
+    P -->|"Orval: client hono и zod"| BS["BFF: ручки /auth/* и тег bff"]
 ```
 
 Go забирает контракт из Apidog сам: `make generate` в бэкенде запускает
 [`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31)
 и затем `oapi-codegen`. Файл `spec/openapi.json` в монорепе нужен клиенту и BFF.
+
+Типы и клиенты в монорепе генерирует [Orval](https://orval.dev). Сегодня клиент использует собственный
+генератор команды
+[`openapi-cdd`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/package.json#L16);
+трек переводит генерацию на Orval, потому что он умеет и сторону BFF: хендлеры Hono с валидацией через zod.
 
 Почему не два контракта в Apidog: ручки данных (`/users/me`, `/notebooks*`) пришлось бы описывать
 дважды и следить, чтобы описания не разошлись. Overlay хранит только различия.
@@ -176,11 +181,73 @@ actions:
    openapi-format spec/openapi.json --overlayFile spec/bff.overlay.yaml -o spec/openapi.public.json
    ```
 
-3. `generate` строит типы командой `openapi-cdd`: `apps/client` читает `spec/openapi.public.json`,
-   `apps/bff` берёт `paths` обоих файлов, публичные для своих ручек `/auth/*` и внутренние для вызовов Go.
+3. `orval` запускает Orval по `orval.config.ts` (см. ниже).
+
+`bun run sync` = `apidog` → `overlay` → `orval`.
 
 Файлы: `spec/openapi.json` создаёт `apidog`, `spec/bff.overlay.yaml` пишется руками,
 `spec/openapi.public.json` создаёт `overlay` и коммитится в репозиторий.
+
+## Генерация Orval
+
+Overlay остаётся отдельным файлом: у Orval есть `input.override.transformer`, но overlay — стандартный
+декларативный файл, который проверяется в CI. Orval читает уже готовые контракты. Конфиг
+`orval.config.ts` в корне монорепы содержит три цели:
+
+```ts
+import { defineConfig } from 'orval';
+
+export default defineConfig({
+  // клиент браузера: fetch к BFF
+  client: {
+    input: 'spec/openapi.public.json',
+    output: {
+      target: 'apps/client/src/api/gen.ts',
+      client: 'fetch',
+      baseUrl: '/api/v1',
+      override: { mutator: { path: 'apps/client/src/api/fetch.ts', name: 'csrfFetch' } }, // ставит X-CSRF: 1
+    },
+  },
+  // собственные ручки BFF: хендлеры Hono с валидацией zod
+  bff: {
+    input: 'spec/openapi.public.json',
+    output: { target: 'apps/bff/src/handlers', client: 'hono', mode: 'tags-split' }, // /auth/* и тег bff
+  },
+  // BFF → Go: fetch без ручек с тегом bff
+  goApi: {
+    input: {
+      target: 'spec/openapi.json',
+      filters: { mode: 'exclude', tags: ['bff'] },
+    },
+    output: {
+      target: 'apps/bff/src/go/gen.ts',
+      client: 'fetch',
+      baseUrl: 'http://api:8080/api/v1',
+      override: { mutator: { path: 'apps/bff/src/go/fetch.ts', name: 'bearerFetch' } }, // Authorization: Bearer <access>
+    },
+  },
+});
+```
+
+Пример; точные пути и мутаторы зависят от репозитория. Цель `bff` создаёт хендлеры на `createFactory` из
+`hono/factory` и проверяет вход через `@hono/zod-validator`; остальные маршруты идут через общий прокси.
+
+## Собственные ручки BFF
+
+Ручки, которые есть только у BFF (агрегация, пакетные запросы для сервиса вроде Colab), описываются в
+том же проекте Apidog с тегом `bff`. Дальше:
+
+- Go исключает их из своей генерации опцией `output-options.exclude-tags` в конфиге `oapi-codegen`
+  ([README](https://github.com/oapi-codegen/oapi-codegen#how-can-i-ignore-parts-of-the-spec-i-dont-care-about));
+- в публичный контракт они попадают как есть, overlay их не трогает;
+- цель `goApi` в Orval исключает их через `filters`, а цель `bff` генерирует для них хендлеры.
+
+Пример: `GET /api/v1/notebooks/{id}/view` — BFF параллельно запрашивает у Go блокнот и текущего
+пользователя и отдаёт один ответ.
+
+Список разрешённых маршрутов (ниже) остаётся прежним, но маршруты с тегом `bff` обслуживают хендлеры BFF,
+а не прокси. Проверка CI «в публичном контракте нет `access_token`, `refresh_token`, `TokenPair`,
+`bearerAuth`» действует и для них.
 
 ## Проверки в CI
 

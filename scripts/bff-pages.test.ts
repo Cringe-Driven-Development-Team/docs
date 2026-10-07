@@ -90,10 +90,21 @@ test("страница «Контракт» описывает overlay", () => {
     "sessionCookie",
     "csrfHeader",
     "TokenPair",
+    "orval",
+    "client: 'hono'",
+    "Собственные ручки BFF",
+    "`bff`",
   ]) {
     expect(md, needle).toContain(needle);
   }
   const yamlBlocks = md.match(/```yaml\n[\s\S]*?```/g) ?? [];
   expect(yamlBlocks.length).toBe(1);
   expect(yamlBlocks[0]).toContain("overlay: 1.0.0");
+});
+
+test("openapi-cdd встречается только в одной фразе «Контракта»", () => {
+  const count = (f: string) => (readFileSync(f, "utf8").match(/openapi-cdd/g) ?? []).length;
+  expect(count("site/bff/contract.md")).toBeLessThanOrEqual(1);
+  expect(count("site/bff/index.md")).toBe(0);
+  expect(count("site/bff/auth.md")).toBe(0);
 });
