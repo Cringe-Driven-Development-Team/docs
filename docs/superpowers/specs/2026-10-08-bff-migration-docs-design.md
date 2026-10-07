@@ -57,6 +57,13 @@
   `index.html` из бакета релизов.
 - `ansible/roles/app/templates/compose.yml.j2`: у `api` нет `ports`, он доступен только из сети `app`;
   окружение `CSRF_SECRET`, `COOKIE_SECURE`, `CORS_ALLOWED_ORIGINS`.
+- `pulumi/index.ts`: ресурсы `private-network`, `private-subnet`, `router` (L182-L192); инстанс `gateway`
+  на порту частной подсети (L250), `metadata.role: "gateway"`, floating IP и его привязка к порту
+  (L271-L280).
+- `ansible/inventory/openstack.yml:17`: группа `gateway` по `metadata.role`.
+- `pulumi/README.md`: L8 — двухсерверная схема (gateway + backend) заморожена в варианте `bff`
+  документации, стек — одна VPS; L287 — ресурсы backend-сервера удалены, возвращать их прежним
+  именем нельзя до проверки стейта.
 
 RFC 10017 «OAuth 2.0 for Browser-Based Applications» (BCP 212, август 2026):
 
@@ -90,7 +97,7 @@ RFC 10017 «OAuth 2.0 for Browser-Based Applications» (BCP 212, август 20
 | Сессия — зашифрованная cookie с access и refresh | BFF без состояния: деплой на каждый коммит `main` никого не разлогинивает; новых сервисов нет; RFC §6.1.2.3 | Redis; память процесса BFF |
 | CSRF — статичный заголовок `X-CSRF: 1` + `SameSite=Strict` + `Origin`/`Sec-Fetch-Site` | основной путь RFC §6.1.3.3; фронту не нужно читать cookie и повторять после `403` | подписанный Double Submit; оба механизма |
 | Go API — только Bearer: токены в JSON, cookie, CSRF и CORS удаляются | Go снаружи не виден; контракт Apidog становится честным S2S | Go без изменений, BFF изображает браузер; переходный режим cookie + Bearer |
-| Без отдельного S2S-ключа BFF → Go | Go закрыт сетью compose (§2); превью на боевых данных нет | ключ из замороженной спеки |
+| S2S-ключ BFF → Go: на одной VPS без ключа, на двух — `X-BFF-Key` и файрвол | одна VPS: Go закрыт сетью compose (§2), превью на боевых данных нет; две VPS: Go в частной сети, ключ и security group не пускают чужих (§4.7) | одна VPS — ключ из замороженной спеки; две VPS — mTLS между машинами как более сильная альтернатива |
 
 Допущение: BFF на Hono и bun, как в замороженном варианте. Раздел называет Hono только в примерах
 кода.
@@ -100,7 +107,7 @@ RFC 10017 «OAuth 2.0 for Browser-Based Applications» (BCP 212, август 20
 ### 4.1. Путь запроса
 
 Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. BFF → `http://api:8080/api/v1` по сети
-`app`. Клиент по-прежнему ходит на `/api/v1`: пути не меняются.
+`app` (на двух VPS — по `GO_API_URL`, §4.7). Клиент по-прежнему ходит на `/api/v1`: пути не меняются.
 
 ### 4.2. Контракт
 
@@ -109,6 +116,7 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   - `/auth/register` → `201 { user: User, tokens: TokenPair }`, `/auth/login` → `200` того же вида;
   - `/auth/refresh`: тело `{ refresh_token }` → `200 TokenPair`;
   - `/auth/logout`: тело `{ refresh_token }`, `bearerAuth` → `204`;
+  - на двух VPS в `Error.code` добавляется `s2s_forbidden` (`403`, §4.7);
   - ручки данных — `bearerAuth`; `Set-Cookie`, параметр cookie `refresh_token` и `X-CSRF-Token` уходят.
 - Go забирает контракт из Apidog сам: `make generate` (backend@4094350) — `go run ./cmd/apidog` и
   `oapi-codegen`; монорепа нужна клиенту и BFF.
@@ -151,8 +159,10 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
 - Порядок проверок для каждого запроса к `/api/v1`, включая `login`, `register`, `logout`: CSRF
   (`403 csrf_invalid`) → маршрут в списке разрешённых (`404 not_found`) → для ручек с `sessionCookie`
   расшифровать cookie (нет или не расшифровывается — `401 unauthorized`); если до `accessExp` меньше
-  30 с — refresh; запрос в Go с `Authorization: Bearer`; на `401` от Go — refresh и один повтор; ответ
-  клиенту с новой cookie, если токены сменились.
+  30 с — refresh; запрос в Go с `Authorization: Bearer` (на двух VPS и `X-BFF-Key`); `403 s2s_forbidden`
+  от Go — клиенту `502 internal`, в лог, без refresh, сессию не трогать; на `401` от Go — refresh и один
+  повтор; ответ клиенту с новой cookie, если токены сменились. Upgrade WebSocket проходит только
+  проверку `Origin` (§4.7).
 - В Go уходят только `Content-Type`, `Accept`, `X-Request-ID` и тело; `Cookie` и `X-CSRF` — нет.
   `Set-Cookie` из ответа Go не пропускается.
 - Одновременные refresh объединяются: ключ — SHA-256 refresh-токена, результат держится в памяти 10 с.
@@ -190,6 +200,41 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   `refresh_token` (`Path=/api/v1/auth`), `__Host-csrf` (`Path=/`). Каждый пользователь один раз
   входит заново.
 
+### 4.7. Две VPS
+
+Вариант размещения, утверждённый владельцем команды; в «Обзоре» ему посвящён раздел «Две VPS».
+
+- VPS1: Caddy и BFF, публичный (floating) IP, домен `cellestial.ru`. VPS2: Go API и Postgres, без
+  публичного IP, доступна только через частную сеть Selectel. Домен для пользователя один, публичного
+  `api.cellestial.ru` нет: браузер говорит только с BFF, приложение на одном origin с ним (RFC 10017
+  §6.1.3.3.2); публичный `api.*` нужен только другим клиентам (мобильный, партнёры) с Bearer или OAuth.
+- BFF → Go по приватному адресу VPS2 (в документах адрес и подсеть не пишутся). Файрвол VPS2
+  (security group) пускает порт API только с VPS1.
+- S2S-ключ: заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает за постоянное время и проверяет
+  его раньше Bearer; `BFF_API_KEY` в `.env` обеих машин. Сильнее — mTLS между VPS1 и VPS2.
+- Без ключа или с неверным — `403 s2s_forbidden`, а не `401`: на `401` BFF делает refresh,
+  тот же ключ даёт `401`, и BFF стёр бы cookie — рассинхрон ключей или ротация на одной машине
+  разлогинили бы всех. BFF считает `s2s_forbidden` инфраструктурной ошибкой: клиенту `502` (`internal`),
+  лог, без refresh, сессию не трогает. Ротация: Go принимает два ключа на время переключения.
+  `s2s_forbidden` — новое значение `Error.code` в Go-контракте (§4.2, применимо на двух VPS).
+  Сравнение — `crypto/subtle.ConstantTimeCompare`.
+- Адрес Go для BFF — переменная `GO_API_URL`: `http://api:8080` на одной VPS, `http://<приватный адрес
+  VPS2>:8080` на двух; на VPS2 compose публикует порт API только на приватном интерфейсе. Мутатор
+  `bearerFetch` подставляет origin из `GO_API_URL` и ставит `X-BFF-Key`; клиентский `X-BFF-Key` не
+  пропускается.
+- Security group VPS2: порт API и SSH только с VPS1, порт Postgres не открыт.
+- Нужно добавить в infra: инстанс и порт VPS2 под новым именем, security group, `ProxyJump` в inventory
+  (`ssh_hardening` сейчас запрещает `AllowTcpForwarding`, tasks/main.yml:14-16).
+- Трафик внутри частной сети без TLS — принятый риск MVP (Selectel изолирует сеть); mTLS его закрыл бы.
+- Ansible ходит на VPS2 по SSH только через VPS1 как jump host (`ProxyJump`).
+- Масштабирование: BFF — один экземпляр; второй требует общей блокировки refresh (Redis) или льготного
+  окна из backend#12.
+- WebSocket (будущая потоковая отдача вывода рантайма): у WS нет CORS, браузер прикладывает cookie к
+  рукопожатию (Cross-Site WebSocket Hijacking). `SameSite=Strict` не пускает cookie с чужого сайта, но
+  пускает с поддомена. Браузерный WebSocket не ставит свои заголовки, поэтому upgrade освобождён от
+  `X-CSRF` и защищён `Origin` (нет или не равен `APP_ORIGIN` — `403`) плюс `SameSite=Strict`; правило есть
+  в разделе CSRF страницы «Авторизация и CSRF».
+
 ## 5. Сайт
 
 - `site/bff/index.md` — «Обзор», `site/bff/contract.md` — «Контракт», `site/bff/auth.md` —
@@ -208,7 +253,7 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
 
 Было и стало: flowchart браузер → Caddy → Go сейчас и браузер → Caddy → BFF → Go потом; таблица cookie
 до и после; что меняется у фронта, BFF, Go и infra (§4.5); почему BFF — цитаты RFC §6 и §6.1.4.3;
-переключение (§4.6); ограничения: один экземпляр BFF, ротация `SESSION_KEY` разлогинивает всех.
+переключение (§4.6); ограничения: один экземпляр BFF, ротация `SESSION_KEY` разлогинивает всех; раздел «Две VPS» (§4.7), S2S-ключ только на двух VPS.
 
 ### 6.2. «Контракт»
 
