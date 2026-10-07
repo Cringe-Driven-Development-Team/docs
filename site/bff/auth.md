@@ -60,11 +60,13 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 Для ручки, которой нужна cookie сессии (`sessionCookie` в [«Контракте»](./contract)):
 
-1. Расшифровать cookie. Cookie нет или она не расшифровывается — `401 unauthorized`.
-2. Если до `accessExp` меньше 30 с, обновить токены через refresh до запроса.
-3. Отправить запрос в Go (`http://api:8080/api/v1`) с `Authorization: Bearer`.
-4. Если Go ответил `401`, обновить токены и повторить запрос один раз.
-5. Ответить клиенту; если токены сменились, ответ несёт новую cookie.
+1. Проверки CSRF (раздел «CSRF» ниже) идут до расшифровки cookie. Не прошли — `403 csrf_invalid`,
+   в Go ничего не уходит.
+2. Расшифровать cookie. Cookie нет или она не расшифровывается — `401 unauthorized`.
+3. Если до `accessExp` меньше 30 с, обновить токены через refresh до запроса.
+4. Отправить запрос в Go (`http://api:8080/api/v1`) с `Authorization: Bearer`.
+5. Если Go ответил `401`, обновить токены и повторить запрос один раз.
+6. Ответить клиенту; если токены сменились, ответ несёт новую cookie.
 
 В Go уходят только `Content-Type`, `Accept`, `X-Request-ID` и тело. `Cookie` и `X-CSRF` не уходят.
 `Set-Cookie` из ответа Go клиенту не пропускается: cookie выставляет только BFF.
@@ -75,7 +77,7 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 ## CSRF
 
-Три правила, все на стороне BFF:
+Три правила, все на стороне BFF. Проверки идут раньше всего остального, до расшифровки cookie:
 
 1. Каждый запрос к `/api/v1` без `X-CSRF: 1` получает `403 csrf_invalid` и в Go не уходит. Чужой
    origin не может поставить такой заголовок без preflight, а CORS BFF не разрешает никому: клиент
@@ -264,21 +266,24 @@ sequenceDiagram
 
 ### Запрос с поддомена
 
-Поддомен (скажем, захваченный) находится на том же сайте, поэтому cookie `SameSite=Strict` уходит
-вместе с запросом. Но `Origin` у такого запроса не равен `APP_ORIGIN`, и BFF отвечает
-`403 csrf_invalid`. Это именно тот случай, который `SameSite` один не закрывает
+Поддомен (скажем, захваченный) находится на том же сайте, поэтому `SameSite=Strict` не помогает:
+cookie уходит вместе с запросом. Это именно тот случай, который `SameSite` один не закрывает
 ([§6.1.3.3.1](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.1)):
 
 > As a result, a subdomain-takeover attack against b.example.com can enable CSRF attacks against the BFF of a.example.com.
+
+Форма с поддомена не может поставить `X-CSRF`, так что запрос отклоняется уже по отсутствию
+заголовка. Проверка `Origin` и `Sec-Fetch-Site` — вторая линия: она сработала бы и при ошибке в
+проверке заголовка или в настройке CORS.
 
 ```mermaid
 sequenceDiagram
   participant B as Браузер
   participant P as BFF
   participant E as Чужой сайт
-  E->>B: fetch с поддомена, X-CSRF: 1
-  B->>P: POST /api/v1/notebooks, Cookie __Host-Http-session, Origin поддомена
-  Note over P: same-site, cookie ушла, но Origin не равен APP_ORIGIN
+  E->>B: форма с поддомена, POST /api/v1/notebooks
+  B->>P: POST /api/v1/notebooks, Cookie __Host-Http-session, Origin поддомена, без X-CSRF
+  Note over P: same-site - cookie ушла, Strict её не останавливает. Sec-Fetch-Site: same-site, Origin не равен APP_ORIGIN
   P-->>B: 403 csrf_invalid
 ```
 
