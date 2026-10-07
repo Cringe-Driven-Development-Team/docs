@@ -24,7 +24,10 @@ export default withMermaid(
         '/bff/': [
           {
             text: 'Миграция на BFF',
-            items: [{ text: 'Обзор', link: '/bff/' }],
+            items: [
+              { text: 'Обзор', link: '/bff/' },
+              { text: 'Контракт', link: '/bff/contract' },
+            ],
           },
         ],
         '/security/csrf/': [

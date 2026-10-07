@@ -32,4 +32,24 @@ test("в меню есть BFF", () => {
   expect(config).toContain("text: 'BFF'");
   expect(config).toContain("activeMatch: '^/bff/'");
   expect(config).toContain("'/bff/'");
+  expect(config).toContain("'/bff/contract'");
+});
+
+test("страница «Контракт» описывает overlay", () => {
+  expect(existsSync("site/bff/contract.md")).toBe(true);
+  const md = readFileSync("site/bff/contract.md", "utf8");
+  for (const needle of [
+    "spec/bff.overlay.yaml",
+    "spec/openapi.public.json",
+    "openapi-format",
+    "--overlayFile",
+    "sessionCookie",
+    "csrfHeader",
+    "TokenPair",
+  ]) {
+    expect(md, needle).toContain(needle);
+  }
+  const yamlBlocks = md.match(/```yaml\n[\s\S]*?```/g) ?? [];
+  expect(yamlBlocks.length).toBe(1);
+  expect(yamlBlocks[0]).toContain("overlay: 1.0.0");
 });
