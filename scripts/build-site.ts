@@ -5,7 +5,7 @@
 import { appendFileSync, cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diagramNames, indexNames, pngSizes, renderIndex } from "./build-index.ts";
+import { diagramNames, INDEX_FILE, indexNames, pngSizes, renderIndex } from "./build-index.ts";
 
 const MAIN_BRANCH = "main";
 const BRANCH_STEP_TIMEOUT_MS = 5 * 60 * 1000;
@@ -25,6 +25,11 @@ export interface SluggedBranch extends Branch {
 
 export type BuildResult = { status: "ok" } | { status: "failed"; failedStep: string };
 export type PreviewEntry = SluggedBranch & BuildResult;
+
+// Базовый путь VitePress в превью ветки; ветки без VitePress переменную игнорируют.
+export function branchSiteBase(slug: string): string {
+  return `/docs/branches/${slug}/`;
+}
 
 export function branchSlug(name: string): string {
   const slug = name
@@ -104,7 +109,7 @@ export function renderPreviewsIndex(entries: readonly PreviewEntry[]): string {
   </style>
 </head>
 <body>
-  <p><a href="../">Диаграммы main</a></p>
+  <p><a href="../">Сайт main</a></p>
   <h1>Превью веток</h1>
 ${list}
 </body>
@@ -126,7 +131,7 @@ type Outcome = "ok" | "failed" | "timeout";
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 // Возвращает "ok", "failed" или "timeout". Отсутствующая программа в bun приходит исключением.
-function run(cmd: string[], options: { cwd?: string; timeout?: number } = {}): Outcome {
+function run(cmd: string[], options: { cwd?: string; timeout?: number; env?: Record<string, string | undefined> } = {}): Outcome {
   try {
     const result = Bun.spawnSync(cmd, { stdio: ["inherit", "inherit", "inherit"], killSignal: "SIGKILL", ...options });
     if (result.exitedDueToTimeout) {
@@ -176,7 +181,10 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
         console.error(`site: icon cache not copied for ${branch.name}: ${errorMessage(error)}`);
       }
     }
-    const buildOutcome = run(["bun", "run", "build"], options);
+    const buildOutcome = run(["bun", "run", "build"], {
+      ...options,
+      env: { ...process.env, SITE_BASE: branchSiteBase(branch.slug) },
+    });
     if (buildOutcome !== "ok") return stepFailure("bun run build", buildOutcome);
     if (!existsSync(join(dir, "dist", "index.html"))) return { status: "failed", failedStep: "dist" };
     try {
@@ -194,8 +202,8 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
 async function main(argv: string[]): Promise<number> {
   const started = Date.now();
   if (argv.includes("--main-built")) {
-    if (!existsSync(join("dist", "index.html"))) {
-      console.error("site: --main-built given but dist/index.html is missing");
+    if (!existsSync(INDEX_FILE)) {
+      console.error(`site: --main-built given but ${INDEX_FILE} is missing`);
       return 1;
     }
   } else if (run(["bun", "run", "build"]) !== "ok") {
@@ -240,7 +248,10 @@ async function main(argv: string[]): Promise<number> {
 
   await Bun.write(join(previewsDir, "index.html"), renderPreviewsIndex(entries));
   const names = indexNames(diagramNames());
-  await Bun.write(join("dist", "index.html"), renderIndex(names, { previewsHref: "branches/", sizes: await pngSizes(names) }));
+  await Bun.write(
+    INDEX_FILE,
+    renderIndex(names, { previewsHref: "../branches/", assetPrefix: "../", sizes: await pngSizes(names) }),
+  );
   if (process.env.GITHUB_STEP_SUMMARY) {
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderSummary(entries));
   }

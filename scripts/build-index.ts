@@ -68,13 +68,13 @@ export function indexTabs(names: readonly string[]): IndexTab[] {
   ];
 }
 
-function card(name: string, size?: ImageSize): string {
+function card(name: string, size: ImageSize | undefined, prefix: string): string {
   const title = name.slice(name.lastIndexOf("/") + 1);
   const dimensions = size ? ` width="${size.width}" height="${size.height}"` : "";
   return `    <section class="card" id="${name}">
       <h2><a class="anchor" href="#${name}" aria-label="Ссылка на ${name}">#</a>${title}</h2>
-      <p><a href="${name}.html">HTML</a> · <a href="${name}.png">PNG</a></p>
-      <a href="${name}.html"><img src="${name}.png"${dimensions} alt="${name}"></a>
+      <p><a href="${prefix}${name}.html">HTML</a> · <a href="${prefix}${name}.png">PNG</a></p>
+      <a href="${prefix}${name}.html"><img src="${prefix}${name}.png"${dimensions} alt="${name}"></a>
     </section>`;
 }
 
@@ -102,7 +102,7 @@ const ANCHOR_SCRIPT = `  <script>
     openAnchor();
   </script>`;
 
-function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Record<string, ImageSize>): { css: string; body: string } {
+function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Record<string, ImageSize>, prefix: string): { css: string; body: string } {
   const perTabCss = tabs
     .map(
       (_, i) => `
@@ -112,7 +112,7 @@ function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Reco
     )
     .join("");
   const radios = tabs.map((_, i) => `  <input type="radio" name="tab" id="tab-${i}" class="tab-radio"${i === 0 ? " checked" : ""}>`);
-  const panels = tabs.map((tab, i) => [`  <div class="panel" id="panel-${i}">`, ...tab.names.map((name) => card(name, sizes[name])), "  </div>"].join("\n"));
+  const panels = tabs.map((tab, i) => [`  <div class="panel" id="panel-${i}">`, ...tab.names.map((name) => card(name, sizes[name], prefix)), "  </div>"].join("\n"));
   const labels = tabs.map((tab, i) => `    <label for="tab-${i}">${tab.label}</label>`);
   const nav = ['  <nav class="tabs">', ...labels, ...(previewsLink ? [`    ${previewsLink}`] : []), "  </nav>"];
   return { css: TAB_BAR_CSS + perTabCss, body: [...radios, ...panels, ...nav, ANCHOR_SCRIPT].join("\n") };
@@ -120,15 +120,17 @@ function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Reco
 
 export function renderIndex(
   names: readonly string[],
-  options: { previewsHref?: string; sizes?: Record<string, ImageSize> } = {},
+  options: { previewsHref?: string; sizes?: Record<string, ImageSize>; assetPrefix?: string } = {},
 ): string {
   const tabs = indexTabs(names);
   const sizes = options.sizes ?? {};
+  // Индекс лежит в dist/diagrams/, схемы — в dist/: ссылки на них с префиксом "../".
+  const prefix = options.assetPrefix ?? "";
   const previewsLink = options.previewsHref ? `<a href="${options.previewsHref}">Превью веток</a>` : "";
   const { css, body } =
     tabs.length > 1
-      ? tabbedBody(tabs, previewsLink, sizes)
-      : { css: "", body: [...names.map((name) => card(name, sizes[name])), ...(previewsLink ? [`  <p>${previewsLink}</p>`] : [])].join("\n") };
+      ? tabbedBody(tabs, previewsLink, sizes, prefix)
+      : { css: "", body: [...names.map((name) => card(name, sizes[name], prefix)), ...(previewsLink ? [`  <p>${previewsLink}</p>`] : [])].join("\n") };
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -154,8 +156,11 @@ ${body}
 `;
 }
 
+// Индекс схем: главная сайта — VitePress, схемы открываются из меню «Архитектура».
+export const INDEX_FILE = join("dist", "diagrams", "index.html");
+
 if (import.meta.main) {
   const names = indexNames(diagramNames());
-  await Bun.write(join("dist", "index.html"), renderIndex(names, { sizes: await pngSizes(names) }));
-  console.error(`dist/index.html: ${names.length} diagrams`);
+  await Bun.write(INDEX_FILE, renderIndex(names, { sizes: await pngSizes(names), assetPrefix: "../" }));
+  console.error(`${INDEX_FILE}: ${names.length} diagrams`);
 }

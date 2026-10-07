@@ -166,3 +166,12 @@ test("renderIndex: the tabbed page opens the tab of the anchored card with an in
 test("renderIndex: the page without tabs has no script", () => {
   expect(renderIndex(["deployment", "ci"])).not.toMatch(/<script/);
 });
+
+test("renderIndex: assetPrefix goes before html and png links, anchors stay bare", () => {
+  const html = renderIndex(["contract", "bff/ci"], { assetPrefix: "../" });
+  expect(html).toContain('href="../contract.html"');
+  expect(html).toContain('src="../contract.png"');
+  expect(html).toContain('href="../bff/ci.png"');
+  expect(html).toContain('href="#contract"');
+  expect(html).not.toContain('href="contract.html"');
+});
