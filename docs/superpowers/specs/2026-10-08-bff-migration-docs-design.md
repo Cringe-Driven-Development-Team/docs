@@ -107,7 +107,7 @@ RFC 10017 «OAuth 2.0 for Browser-Based Applications» (BCP 212, август 20
 ### 4.1. Путь запроса
 
 Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. BFF → `http://api:8080/api/v1` по сети
-`app`. Клиент по-прежнему ходит на `/api/v1`: пути не меняются.
+`app` (на двух VPS — по `GO_API_URL`, §4.7). Клиент по-прежнему ходит на `/api/v1`: пути не меняются.
 
 ### 4.2. Контракт
 
@@ -116,6 +116,7 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   - `/auth/register` → `201 { user: User, tokens: TokenPair }`, `/auth/login` → `200` того же вида;
   - `/auth/refresh`: тело `{ refresh_token }` → `200 TokenPair`;
   - `/auth/logout`: тело `{ refresh_token }`, `bearerAuth` → `204`;
+  - на двух VPS в `Error.code` добавляется `s2s_forbidden` (`403`, §4.7);
   - ручки данных — `bearerAuth`; `Set-Cookie`, параметр cookie `refresh_token` и `X-CSRF-Token` уходят.
 - Go забирает контракт из Apidog сам: `make generate` (backend@4094350) — `go run ./cmd/apidog` и
   `oapi-codegen`; монорепа нужна клиенту и BFF.
@@ -209,13 +210,28 @@ Caddy: `/api/v1/*` → `bff:3000`, остальное — как сейчас. B
   (security group) пускает порт API только с VPS1.
 - S2S-ключ: заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает за постоянное время, без ключа или
   с неверным — `401`; `BFF_API_KEY` в `.env` обеих машин. Сильнее — mTLS между VPS1 и VPS2.
+- Ключ проверяется раньше Bearer; отказ — `403 s2s_forbidden`, а не `401`: на `401` BFF делает refresh,
+  тот же ключ даёт `401`, и BFF стёр бы cookie — рассинхрон ключей или ротация на одной машине
+  разлогинили бы всех. BFF считает `s2s_forbidden` инфраструктурной ошибкой: клиенту `502` (`internal`),
+  лог, без refresh, сессию не трогает. Ротация: Go принимает два ключа на время переключения.
+  `s2s_forbidden` — новое значение `Error.code` в Go-контракте (§4.2, применимо на двух VPS).
+  Сравнение — `crypto/subtle.ConstantTimeCompare`.
+- Адрес Go для BFF — переменная `GO_API_URL`: `http://api:8080` на одной VPS, `http://<приватный адрес
+  VPS2>:8080` на двух; на VPS2 compose публикует порт API только на приватном интерфейсе. Мутатор
+  `bearerFetch` подставляет origin из `GO_API_URL` и ставит `X-BFF-Key`; клиентский `X-BFF-Key` не
+  пропускается.
+- Security group VPS2: порт API и SSH только с VPS1, порт Postgres не открыт.
+- Нужно добавить в infra: инстанс и порт VPS2 под новым именем, security group, `ProxyJump` в inventory
+  (`ssh_hardening` сейчас запрещает `AllowTcpForwarding`, tasks/main.yml:14-15).
 - Трафик внутри частной сети без TLS — принятый риск MVP (Selectel изолирует сеть); mTLS его закрыл бы.
 - Ansible ходит на VPS2 по SSH только через VPS1 как jump host (`ProxyJump`).
 - Масштабирование: BFF — один экземпляр; второй требует общей блокировки refresh (Redis) или льготного
   окна из backend#12.
 - WebSocket (будущая потоковая отдача вывода рантайма): у WS нет CORS, браузер прикладывает cookie к
-  рукопожатию с любого сайта (Cross-Site WebSocket Hijacking), поэтому BFF проверяет `Origin` на upgrade;
-  правило есть в разделе CSRF страницы «Авторизация и CSRF».
+  рукопожатию (Cross-Site WebSocket Hijacking). `SameSite=Strict` не пускает cookie с чужого сайта, но
+  пускает с поддомена. Браузерный WebSocket не ставит свои заголовки, поэтому upgrade освобождён от
+  `X-CSRF` и защищён `Origin` (нет или не равен `APP_ORIGIN` — `403`) плюс `SameSite=Strict`; правило есть
+  в разделе CSRF страницы «Авторизация и CSRF».
 
 ## 5. Сайт
 
