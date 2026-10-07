@@ -18,8 +18,15 @@ export default withMermaid(
         // Индекс схем — не страница VitePress: target не даёт роутеру перехватить переход.
         { text: 'Архитектура', link: '/diagrams/', target: '_self' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
+        { text: 'BFF', link: '/bff/', activeMatch: '^/bff/' },
       ],
       sidebar: {
+        '/bff/': [
+          {
+            text: 'Миграция на BFF',
+            items: [{ text: 'Обзор', link: '/bff/' }],
+          },
+        ],
         '/security/csrf/': [
           {
             text: 'CSRF',
