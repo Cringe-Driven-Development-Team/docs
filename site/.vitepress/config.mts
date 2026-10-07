@@ -12,7 +12,7 @@ export default withMermaid(
     cleanUrls: true,
     markdown: { codeCopyButtonTitle: 'Копировать код' },
     // Сообщения не сжимаются под ширину колонки, длинные переносятся; широкая схема прокручивается.
-    mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false } },
+    mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {
       nav: [
         // Индекс схем — не страница VitePress: target не даёт роутеру перехватить переход.

@@ -35,17 +35,19 @@
 
 Отдельной ручки за токеном нет. Middleware
 [`CSRF`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L22)
-добавляет cookie к ответу любой ручки `/api/v1` (кроме `OPTIONS`), если в запросе её нет или она
-анонимная ([строка 48](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L48)):
+добавляет cookie к ответу любой ручки `/api/v1` (кроме `OPTIONS`), если в запросе её нет, а для
+известного пользователя — и если она анонимная
+([строки 48 и 75](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L48)):
 
 - пользователь известен — по живому `access_token` или, если его нет, по записи `refresh_token`
   ([строки 52–72](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L52)) —
   в ответе **подписанный** токен; так восстанавливается токен у вошедшего пользователя без cookie;
-- пользователя нет, cookie не было — **анонимный** токен;
+- пользователя нет, cookie не было — **анонимный** токен; пользователя нет, а анонимная cookie
+  уже есть — новой не выдаётся;
 - пользователь ищется, только если `Origin` пустой или свой: чужой сайт не получит подписанный
   токен чужого пользователя;
 - cookie ставится и на ответах с ошибкой (`401`, `403`, `404`), если обработчик не поставил
-  свою; у такого ответа `Cache-Control: no-store`
+  свою; у всех ответов, где middleware готов выдать cookie, — `Cache-Control: no-store`
   ([`csrfBootstrapWriter`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L114));
 - подписанную cookie, даже испорченную, middleware сам не заменяет.
 

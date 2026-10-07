@@ -27,7 +27,9 @@ function scrollToHashAfterMermaid(): void {
     const target = document.getElementById(hash);
     if (!target) return;
     // Как у VitePress: заголовок под шапкой сайта, а не за ней.
-    const navBottom = document.querySelector('.VPNav')?.getBoundingClientRect().bottom ?? 0;
+    // На узком экране шапка не закреплена и уезжает вверх (bottom < 0), закреплена полоса «Меню».
+    const bottomOf = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().bottom ?? 0;
+    const navBottom = Math.max(0, bottomOf('.VPNav'), bottomOf('.VPLocalNav'));
     window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - navBottom - 24 });
   };
   tick();
