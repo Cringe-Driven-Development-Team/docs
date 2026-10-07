@@ -4,3 +4,5 @@ dist/
 .idea/
 .superpowers/
 .claude/worktrees/
+site/.vitepress/dist/
+site/.vitepress/cache/
