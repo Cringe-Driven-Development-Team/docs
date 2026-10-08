@@ -121,8 +121,11 @@ test("real site/modules is valid", () => {
   expect([track("notebook-vps")?.area, track("notebook-vps")?.do]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }]]);
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
   expect(track("monaco")?.help).toEqual(["blackHATred"]);
-  expect([track("front-harness")?.area, track("front-harness")?.subtasks]).toEqual(["team", ["chrome-devtools-mcp", "Скиллы", "LSP для агента через MCP"]]);
-  expect(track("front-harness")?.pages.map((p) => [p.id, p.title])).toEqual([["lsp-mcp", "LSP для агента через MCP (Codex и Claude Code)"]]);
+  expect([track("front-harness")?.area, track("front-harness")?.subtasks]).toEqual(["team", ["chrome-devtools-mcp", "Скиллы", "LSP для агента через MCP", "Контекст всего сервиса для агента"]]);
+  expect(track("front-harness")?.pages.map((p) => [p.id, p.title])).toEqual([
+    ["lsp-mcp", "LSP для агента через MCP (Codex и Claude Code)"],
+    ["service-context", "Контекст всего сервиса для агента фронта"],
+  ]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
 });

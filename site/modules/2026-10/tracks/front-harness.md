@@ -8,5 +8,6 @@ subtasks:
   - "chrome-devtools-mcp"
   - "Скиллы"
   - "LSP для агента через MCP"
-pages: [lsp-mcp]
+  - "Контекст всего сервиса для агента"
+pages: [lsp-mcp, service-context]
 ---
