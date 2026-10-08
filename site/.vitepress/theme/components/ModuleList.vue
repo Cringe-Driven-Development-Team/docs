@@ -2,14 +2,15 @@
 // Архив модулей: от новых к старым, с числом треков, людей и готовых задач треков.
 import { withBase } from 'vitepress';
 import type { Module } from '../../modules.ts';
-import { trackProgress } from '../../board.ts';
+import { moduleTasks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 
 const peopleCount = (m: Module) => new Set(m.tracks.flatMap((t) => [...t.do.map((d) => d.login), ...t.help])).size;
-// done / total по всем трекам модуля; «—» без снимка доски.
+// done / total по всем трекам модуля; «—» без снимка доски или без sprints у модуля.
 function taskCount(m: Module): string {
-  if (!data.board) return '—';
-  const p = trackProgress(Object.values(data.board.byModule[m.id]?.byTrack ?? {}).flat());
+  const tasks = moduleTasks(data.board, m);
+  if (!tasks) return '—';
+  const p = trackProgress(Object.values(tasks.byTrack).flat());
   return `${p.done} / ${p.total}`;
 }
 </script>

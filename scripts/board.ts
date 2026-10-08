@@ -12,6 +12,9 @@ export type FieldOption = { id: string; name: string; description: string; color
 export type OptionInput = { id?: string; name: string; description: string; color: string };
 
 const TRACK_FIELD = "Трек";
+// Организация доски: её репозитории в ref без владельца, остальные — `владелец/репо#N`
+// (у разных организаций бывают репозитории с одним именем).
+const BOARD_ORG = "Cringe-Driven-Development-Team";
 const NEW_OPTION_COLOR = "GRAY";
 
 /** id трека → `title` из самого нового модуля (модули идут от новых к старым). */
@@ -49,10 +52,17 @@ const isRec = (value: unknown): value is Rec => typeof value === "object" && val
 const text = (value: unknown): string | null => (typeof value === "string" ? value : null);
 const fieldName = (value: unknown): string | null => (isRec(value) ? text(value.name) : null);
 
+/** `репо#N` для репозитория организации доски, иначе `владелец/репо#N`. */
+function refOf(repository: unknown, number: unknown): string {
+  const name = isRec(repository) ? (text(repository.name) ?? "") : "";
+  const login = isRec(repository) && isRec(repository.owner) ? text(repository.owner.login) : null;
+  const prefix = login !== null && login !== BOARD_ORG ? `${login}/` : "";
+  return `${prefix}${name}#${String(number)}`;
+}
+
 function toTask(content: Rec, node: Rec): BoardTask {
-  const repo = isRec(content.repository) ? (text(content.repository.name) ?? "") : "";
   const parent = isRec(content.parent) && isRec(content.parent.repository)
-    ? `${text(content.parent.repository.name) ?? ""}#${String(content.parent.number)}`
+    ? refOf(content.parent.repository, content.parent.number)
     : null;
   const closed = content.state === "CLOSED";
   const state: BoardState =
@@ -63,7 +73,7 @@ function toTask(content: Rec, node: Rec): BoardTask {
         : "open";
   const assignees = isRec(content.assignees) && Array.isArray(content.assignees.nodes) ? content.assignees.nodes : [];
   return {
-    ref: `${repo}#${String(content.number)}`,
+    ref: refOf(content.repository, content.number),
     title: text(content.title) ?? "",
     url: text(content.url) ?? "",
     state,
@@ -154,9 +164,11 @@ async function fetchTrackField(config: Config): Promise<{ projectId: string; fie
   const project = projectRoot(config, data);
   if (typeof project.id !== "string") throw new Error("GitHub API: нет id доски в ответе");
   const field = isRec(project.field) && typeof project.field.id === "string" ? project.field : null;
+  // Без списка значений мутация заменила бы поле пустым: лучше упасть.
+  if (field && !Array.isArray(field.options)) throw new Error(`GitHub API: у поля «${TRACK_FIELD}» нет списка options`);
   return {
     projectId: String(project.id),
-    field: field ? { id: String(field.id), options: (Array.isArray(field.options) ? field.options : []) as FieldOption[] } : null,
+    field: field ? { id: String(field.id), options: field.options as FieldOption[] } : null,
   };
 }
 
@@ -185,7 +197,7 @@ export async function sync(config: Config, tracks: ReadonlyMap<string, string>):
   return plan.length - field.options.length;
 }
 
-const ITEM_SELECTION = `content { __typename ... on Issue { number title url state stateReason repository { name } assignees(first: 10) { nodes { login } } parent { number repository { name } } } }
+const ITEM_SELECTION = `content { __typename ... on Issue { number title url state stateReason repository { name owner { login } } assignees(first: 10) { nodes { login } } parent { number repository { name owner { login } } } } }
 status: fieldValueByName(name: "Status") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
 sprint: fieldValueByName(name: "Sprint") { ... on ProjectV2ItemFieldIterationValue { title } }
 track: fieldValueByName(name: "${TRACK_FIELD}") { ... on ProjectV2ItemFieldSingleSelectValue { name } }`;

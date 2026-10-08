@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
   assignTasks,
+  moduleTasks,
   moscowDate,
   parseSnapshot,
   sortTasks,
   statusRank,
   trackProgress,
+  type BoardData,
   type BoardSnapshot,
   type BoardTask,
   type ModuleTasks,
@@ -119,6 +121,15 @@ describe("assignTasks", () => {
     expect(refs(at(r, "2026-10").byTrack.bff ?? [])).toEqual(["frontend#1", "frontend#2"]);
   });
 
+  test("track from the right parent when repo#N would collide across organisations", () => {
+    const a = mkTask({ ref: "go/r#8", track: "bff", sprint: "Sprint 6" });
+    const b = mkTask({ ref: "fe/r#8", track: "xss", sprint: "Sprint 6" });
+    const child = mkTask({ ref: "r#2", parent: "go/r#8", sprint: "Sprint 6" });
+    const r = assignTasks(modules, mkSnap([a, b, child]));
+    expect(refs(at(r, "2026-10").byTrack.bff ?? [])).toEqual(["go/r#8", "r#2"]);
+    expect(refs(at(r, "2026-10").byTrack.xss ?? [])).toEqual(["fe/r#8"]);
+  });
+
   test("a missing parent gives no track", () => {
     const child = mkTask({ ref: "frontend#2", parent: "frontend#99", sprint: "Sprint 6" });
     const r = assignTasks(modules, mkSnap([child]));
@@ -212,5 +223,22 @@ describe("statusRank", () => {
 describe("moscowDate", () => {
   test("converts to Moscow date", () => {
     expect(moscowDate("2026-10-11T21:30:00Z")).toBe("2026-10-12");
+  });
+});
+
+describe("moduleTasks", () => {
+  const board: BoardData = { takenAt: "2026-10-08T09:00:00Z", byModule: assignTasks(modules, mkSnap([])) };
+  const [withSprints] = modules;
+  const noSprints: Module = { ...(withSprints as Module), id: "2026-09", sprints: [] };
+
+  test("no snapshot gives null", () => {
+    expect(moduleTasks(null, withSprints as Module)).toBeNull();
+  });
+  test("a module without sprints gives null even with a snapshot", () => {
+    expect(moduleTasks(board, noSprints)).toBeNull();
+  });
+  test("a module with sprints gives its tasks, or an empty set when the snapshot has none for it", () => {
+    expect(moduleTasks(board, withSprints as Module)).toBe(board.byModule["2026-10"] as ModuleTasks);
+    expect(moduleTasks({ ...board, byModule: {} }, withSprints as Module)).toEqual({ byTrack: {}, untracked: [], unknown: [] });
   });
 });

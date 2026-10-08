@@ -14,7 +14,7 @@ import {
   personLoad,
   searchMatches,
 } from '../../modules.ts';
-import { type ModuleTasks, trackProgress } from '../../board.ts';
+import { type ModuleTasks, moduleTasks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import GraphCanvas from './GraphCanvas.vue';
 import GraphFilters from './GraphFilters.vue';
@@ -31,9 +31,7 @@ const failed = ref(false);
 const canvas = ref<InstanceType<typeof GraphCanvas>>();
 
 // Задачи модуля со снимка доски; null — снимка нет.
-const tasks = computed<ModuleTasks | null>(() =>
-  data.board && module.value ? (data.board.byModule[module.value.id] ?? { byTrack: {}, untracked: [], unknown: [] }) : null,
-);
+const tasks = computed<ModuleTasks | null>(() => (module.value ? moduleTasks(data.board, module.value) : null));
 const progress = computed(() =>
   Object.fromEntries(Object.entries(tasks.value?.byTrack ?? {}).map(([track, list]) => [track, trackProgress(list)])),
 );
@@ -120,7 +118,7 @@ watch(graph, (value) => {
           </div>
         </div>
       </template>
-      <section class="board">
+      <section v-if="module.sprints.length" class="board">
         <p class="taken">{{ takenAt ? `Снимок доски: ${takenAt} МСК` : 'Задачи с доски не загружены' }}</p>
         <details v-if="tasks?.untracked.length">
           <summary>Задачи без трека · {{ tasks.untracked.length }}</summary>

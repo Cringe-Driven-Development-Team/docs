@@ -4,6 +4,7 @@
 import { computed } from 'vue';
 import { useData, withBase } from 'vitepress';
 import { AREA_LABELS, pageRef, SIDE_LABELS } from '../../modules.ts';
+import { moduleTasks } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import TaskList from './TaskList.vue';
 
@@ -16,8 +17,8 @@ const found = computed(() => {
 });
 // null — снимка доски нет, раздела «Задачи» нет.
 const tasks = computed(() => {
-  if (!data.board || !found.value) return null;
-  return data.board.byModule[found.value.module.id]?.byTrack[found.value.track.id] ?? [];
+  const all = found.value ? moduleTasks(data.board, found.value.module) : null;
+  return all && found.value ? (all.byTrack[found.value.track.id] ?? []) : null;
 });
 const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
 const titleOf = (id: string) => found.value?.module.tracks.find((t) => t.id === id)?.title ?? id;

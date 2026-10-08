@@ -86,6 +86,49 @@ describe("toSnapshot", () => {
   test("результат проходит parseSnapshot", () => {
     expect(parseSnapshot(JSON.parse(JSON.stringify(snap)))).toEqual(snap);
   });
+
+  const issue = (number: number, ownerLogin: string, parent: unknown = null) => ({
+    content: {
+      __typename: "Issue",
+      number,
+      title: `T${number}`,
+      url: `https://github.com/${ownerLogin}/r/issues/${number}`,
+      state: "OPEN",
+      stateReason: null,
+      repository: { name: "2026_2_Cringe_Driven_Development", owner: { login: ownerLogin } },
+      assignees: { nodes: [] },
+      parent,
+    },
+    status: null,
+    sprint: null,
+    track: null,
+  });
+  const repo = (login: string) => ({ name: "2026_2_Cringe_Driven_Development", owner: { login } });
+
+  test("issue чужой организации: ref с владельцем", () => {
+    const s = toSnapshot([issue(8, "go-park-mail-ru")], fixture.iterations, "2026-10-08T10:00:00Z");
+    expect(s.tasks[0]?.ref).toBe("go-park-mail-ru/2026_2_Cringe_Driven_Development#8");
+  });
+  test("issue организации доски: ref без владельца", () => {
+    const s = toSnapshot([issue(8, "Cringe-Driven-Development-Team")], fixture.iterations, "2026-10-08T10:00:00Z");
+    expect(s.tasks[0]?.ref).toBe("2026_2_Cringe_Driven_Development#8");
+  });
+  test("родитель из чужой организации: parent с владельцем", () => {
+    const s = toSnapshot(
+      [issue(5, "Cringe-Driven-Development-Team", { number: 8, repository: repo("frontend-park-mail-ru") })],
+      fixture.iterations,
+      "2026-10-08T10:00:00Z",
+    );
+    expect(s.tasks[0]?.parent).toBe("frontend-park-mail-ru/2026_2_Cringe_Driven_Development#8");
+  });
+  test("одинаковые repo#N из разных организаций дают разные ref", () => {
+    const s = toSnapshot(
+      [issue(8, "go-park-mail-ru"), issue(8, "frontend-park-mail-ru")],
+      fixture.iterations,
+      "2026-10-08T10:00:00Z",
+    );
+    expect(new Set(s.tasks.map((t) => t.ref)).size).toBe(2);
+  });
 });
 
 // --- запросы к API: fetch подменён, сети нет ---
@@ -164,6 +207,12 @@ describe("sync", () => {
         { name: "db", description: "БД", color: "GRAY" },
       ],
     });
+  });
+
+  test("у поля нет списка options -> ошибка, мутаций нет", async () => {
+    const sent = stubFetch([{ data: { owner: { projectV2: { id: "P1", field: { id: "F1" } } } } }]);
+    await expect(sync(config, tracks)).rejects.toThrow("options");
+    expect(mutations(sent)).toHaveLength(0);
   });
 
   test("менять нечего -> мутации нет", async () => {

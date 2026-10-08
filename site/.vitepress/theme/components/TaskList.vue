@@ -26,7 +26,7 @@ const meta = (task: BoardTask) =>
     <section v-for="group in groups" :key="group.status" class="group">
       <p class="status">{{ group.status }}</p>
       <ul class="tasks">
-        <li v-for="task in group.tasks" :key="task.ref" class="task">
+        <li v-for="task in group.tasks" :key="task.url" class="task">
           <a class="ref" :href="task.url">{{ task.ref }}</a>
           <s v-if="task.state === 'not_planned'" class="title">{{ task.title }}</s>
           <span v-else class="title">{{ task.title }}</span>

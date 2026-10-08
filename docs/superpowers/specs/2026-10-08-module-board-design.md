@@ -90,7 +90,7 @@ type BoardSnapshot = {
   takenAt: string;                 // ISO-время снимка
   sprints: { title: string; start: string; days: number }[];  // все итерации поля Sprint
   tasks: {
-    ref: string;                   // "frontend#28"
+    ref: string;                   // "frontend#28"; репозиторий не из организации доски — "владелец/репо#28"
     title: string;
     url: string;
     state: "open" | "closed" | "not_planned";   // NOT_PLANNED и DUPLICATE → not_planned
@@ -98,7 +98,7 @@ type BoardSnapshot = {
     sprint: string | null;         // "Sprint 5"
     assignees: string[];           // логины
     track: string | null;          // значение «Трек»
-    parent: string | null;         // "frontend#9"
+    parent: string | null;         // "frontend#9", формат как у ref
   }[];
 };
 ```
@@ -148,14 +148,14 @@ on:
     - cron: "7 3-20 * * *"        # каждый час 06:07–23:07 МСК
 jobs:
   board:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'delete'
+    if: github.ref == 'refs/heads/main'   # при delete github.ref — основная ветка, снимок нужен и тогда
     continue-on-error: true
     steps:
       - checkout main (persist-credentials: false)
       - setup bun (oven-sh/setup-bun, точная версия), bun install --frozen-lockfile
       - bun scripts/board.ts sync          # env GH_TOKEN — секрет ADD_TO_PROJECT_PAT
       - bun scripts/board.ts snapshot board.json
-      - upload-artifact board (board.json)
+      - upload-artifact board (board.json)  # if: !cancelled(): снимок грузится и после сбоя sync
   build:
     needs: board, if: always() && <прежнее условие>
     steps:
@@ -163,7 +163,7 @@ jobs:
       - … как раньше
 ```
 
-`sync` падает → шаг помечен ошибкой, `snapshot` всё равно идёт (`if: always()` на шаге), в сводку
+`sync` падает → шаг помечен ошибкой, `snapshot` и загрузка артефакта всё равно идут (`if: !cancelled()` на шагах), в сводку
 запуска — строка с причиной. `build-site.ts` копирует `site/modules/board.json` в worktree ветки,
 если файл есть, — как кэш иконок. Токен есть только в env двух шагов job `board`.
 

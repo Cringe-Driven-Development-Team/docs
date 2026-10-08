@@ -86,6 +86,15 @@ export type ModuleTasks = { byTrack: Record<string, BoardTask[]>; untracked: Boa
 /** Снимок доски в данных сайта: время съёмки и задачи по модулям. */
 export type BoardData = { takenAt: string; byModule: Record<string, ModuleTasks> };
 
+/**
+ * Задачи модуля для показа; `null` — задач не показываем: снимка нет или у модуля нет `sprints`
+ * (спека §4.2). Модуль со `sprints`, которого нет в снимке, получает пустой набор.
+ */
+export function moduleTasks(board: BoardData | null, module: Module): ModuleTasks | null {
+  if (!board || module.sprints.length === 0) return null;
+  return board.byModule[module.id] ?? { byTrack: {}, untracked: [], unknown: [] };
+}
+
 /** Дата `YYYY-MM-DD` по Москве для ISO-времени. */
 export function moscowDate(iso: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
