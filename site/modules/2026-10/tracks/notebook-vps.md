@@ -31,5 +31,7 @@ subtasks:
 ## Открытые вопросы
 
 - Контейнеры (Docker, Kubernetes) или виртуальные машины. От этого зависит API: для контейнеров в
-  Kubernetes — Kubernetes API, для машин — OpenStack через gophercloud.
+  Kubernetes — Kubernetes API, для машин — OpenStack через gophercloud. VPS из Go проверены — наш Pulumi
+  уже создаёт их через gophercloud; контейнеры разбирает Саша —
+  [«Техгруминг окружений»](./runtime-grooming).
 - Кто создаёт приватную сеть окружений: бэкенд на лету или devops заранее.
