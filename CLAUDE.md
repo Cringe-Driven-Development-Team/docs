@@ -11,8 +11,9 @@
 - Схемы описывают целевое состояние. Факты бери из кода, не из памяти: инфраструктура — репозиторий
   `Cringe-Driven-Development-Team/infra` (`pulumi/`, bootstrap-стек `pulumi/bootstrap/`, `ansible/`).
   Каждую подпись и связь сверяй с исходником, связи не выдумывай.
-- Новая схема — новая строка в таблице README; схема корня — ещё раздел с `<Diagram>` на
-  `site/architecture/index.md` (тест-страж `scripts/architecture-page.test.ts`).
+- Новая схема — новая строка в таблице README; схема корня — ещё имя в `ROOT_NAMES`
+  (`site/.vitepress/diagram-names.ts`) и раздел с `<Diagram>` на `site/architecture/index.md`
+  (тесты `scripts/build-index.test.ts`, `scripts/architecture-page.test.ts`).
 
 ## Сборка
 

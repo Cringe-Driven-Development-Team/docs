@@ -25,3 +25,12 @@ test("config: Architecture goes to /architecture/ without target, branch preview
   expect(home).not.toContain("/diagrams/");
   expect(home).toContain("/architecture/");
 });
+
+test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => {
+  for (const file of ["README.md", "CLAUDE.md"]) {
+    const text = readFileSync(file, "utf8");
+    expect(text, file).toContain("site/.vitepress/diagram-names.ts");
+    expect(text, file).toContain("ROOT_NAMES");
+    expect(text, file).toContain("site/architecture/index.md");
+  }
+});

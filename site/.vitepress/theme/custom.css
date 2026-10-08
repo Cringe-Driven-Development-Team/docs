@@ -112,5 +112,6 @@
 .diagram:fullscreen .diagram__frame,
 .diagram--overlay .diagram__frame {
   flex: 1;
-  height: auto !important;
+  aspect-ratio: auto !important;
+  max-height: none !important;
 }

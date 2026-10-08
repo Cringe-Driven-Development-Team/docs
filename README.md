@@ -55,9 +55,10 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 
 Схемы MVP показаны на странице «Архитектура» (`/docs/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
-`site/.vitepress/theme/Diagram.vue`). Добавил схему в `diagrams/` — добавь строку в таблицу
-и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/architecture/index.md`: тест
-`scripts/architecture-page.test.ts` упадёт, если схемы корня там нет. Схема из подпапки
+`site/.vitepress/theme/Diagram.vue`). Добавил схему в корень `diagrams/` — добавь строку в таблицу,
+имя в `ROOT_NAMES` (`site/.vitepress/diagram-names.ts`: по нему берутся размеры и переадресуются
+старые якоря) и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/architecture/index.md`:
+тесты `scripts/build-index.test.ts` и `scripts/architecture-page.test.ts` упадут, если чего-то нет. Схема из подпапки
 рендерится в `dist/<папка>/<name>.html` и `.png`. Замороженные `bff/` и `frozen-k3s/`
 (`HIDDEN_FOLDERS` в `site/.vitepress/diagram-names.ts`) в меню не показываются, их схемы
 открываются по ссылкам из таблиц выше.

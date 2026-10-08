@@ -1,14 +1,26 @@
 import { expect, test } from "bun:test";
-import { fitOffset, fitScale, frameHeight, MAX_SCALE, STEP, stepScale } from "../site/.vitepress/theme/diagram-scale.ts";
+import { fitOffset, fitScale, frameStyle, MAX_SCALE, STEP, stepScale, widthChanged } from "../site/.vitepress/theme/diagram-scale.ts";
 
 test("fitScale: fits the canvas into the frame width, never above 1", () => {
   expect(fitScale(800, 1636)).toBeCloseTo(0.489, 3);
   expect(fitScale(2000, 1636)).toBe(1);
 });
 
-test("frameHeight: canvas height at the fit scale, capped at 70% of the viewport", () => {
-  expect(frameHeight(732, 0.5, 1000)).toBe(366);
-  expect(frameHeight(2264, 0.5, 1000)).toBe(700);
+test("fitScale: with the frame height (fullscreen) the whole canvas fits by the tighter side", () => {
+  expect(fitScale(1440, 1872, 846, 1132)).toBeCloseTo(0.747, 3);
+  expect(fitScale(1440, 1636, 846, 732)).toBeCloseTo(0.880, 3);
+  expect(fitScale(4000, 1636, 3000, 732)).toBe(1);
+});
+
+test("frameStyle: height comes from the canvas aspect ratio in CSS, capped at 70vh — known before JS", () => {
+  expect(frameStyle(1636, 732)).toEqual({ aspectRatio: "1636 / 732", maxHeight: "70vh" });
+});
+
+test("widthChanged: only a width change re-fits; height-only changes (address bar) keep the zoom", () => {
+  expect(widthChanged(undefined, 718)).toBe(true);
+  expect(widthChanged(718, 718)).toBe(false);
+  expect(widthChanged(718, 718.4)).toBe(false);
+  expect(widthChanged(718, 550)).toBe(true);
 });
 
 test("stepScale: multiplies or divides by STEP, clamped to [min, MAX_SCALE]", () => {

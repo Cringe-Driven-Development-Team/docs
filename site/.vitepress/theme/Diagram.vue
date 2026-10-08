@@ -5,7 +5,7 @@
 import type { PanzoomObject } from '@panzoom/panzoom';
 import { withBase } from 'vitepress';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { fitOffset, fitScale, frameHeight, MAX_SCALE, stepScale } from './diagram-scale.ts';
+import { fitOffset, fitScale, frameStyle, MAX_SCALE, stepScale, widthChanged } from './diagram-scale.ts';
 import { data as sizes } from './diagrams.data.ts';
 
 const props = defineProps<{ name: string }>();
@@ -13,29 +13,29 @@ const props = defineProps<{ name: string }>();
 const size = computed(() => sizes[props.name] ?? { width: 1600, height: 900, rendered: false });
 const html = computed(() => withBase(`/${props.name}.html`));
 const png = computed(() => withBase(`/${props.name}.png`));
+const frameCss = computed(() => frameStyle(size.value.width, size.value.height));
 
 const card = ref<HTMLElement>();
 const frame = ref<HTMLElement>();
 const canvas = ref<HTMLElement>();
 const fit = ref(1);
-const height = ref<number>();
 const overlay = ref(false);
 
 let panzoom: PanzoomObject | undefined;
 let observer: ResizeObserver | undefined;
+let observedWidth: number | undefined;
 
-// «Вписать»: масштаб по ширине рамки и сдвиг fitOffset — угол холста в углу рамки.
-// Значения задаются как стартовые и применяются reset — без гонки отдельных zoom и pan.
+// «Вписать»: на странице — по ширине рамки, в полном экране — целиком по более тесной стороне;
+// сдвиг fitOffset ставит угол холста в угол рамки. Значения задаются как стартовые и применяются
+// reset — без гонки отдельных zoom и pan.
 function fitToFrame(): void {
   const box = frame.value;
   if (!box || !panzoom) return;
-  const { width, height: canvasHeight } = size.value;
-  const scale = fitScale(box.clientWidth, width);
+  const { width, height } = size.value;
+  const full = overlay.value || document.fullscreenElement === card.value;
+  const scale = full ? fitScale(box.clientWidth, width, box.clientHeight, height) : fitScale(box.clientWidth, width);
   fit.value = scale;
-  if (!overlay.value && !document.fullscreenElement) {
-    height.value = frameHeight(canvasHeight, scale, window.innerHeight);
-  }
-  const offset = fitOffset(width, canvasHeight, scale);
+  const offset = fitOffset(width, height, scale);
   panzoom.setOptions({ minScale: scale, maxScale: MAX_SCALE, startScale: scale, startX: offset.x, startY: offset.y });
   panzoom.reset({ animate: false });
 }
@@ -100,7 +100,12 @@ onMounted(async () => {
   const { default: Panzoom } = await import('@panzoom/panzoom');
   panzoom = Panzoom(canvas.value, { cursor: 'grab', maxScale: MAX_SCALE, animate: false });
   frame.value.addEventListener('wheel', onWheel, { passive: false });
-  observer = new ResizeObserver(() => fitToFrame());
+  observer = new ResizeObserver(([entry]) => {
+    const next = entry?.contentRect.width ?? 0;
+    if (!widthChanged(observedWidth, next)) return;
+    observedWidth = next;
+    fitToFrame();
+  });
   observer.observe(frame.value);
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('keydown', onKey);
@@ -128,7 +133,7 @@ onBeforeUnmount(() => {
         <button type="button" aria-label="На весь экран" title="На весь экран" @click="toggleFullscreen">⛶</button>
       </template>
     </div>
-    <div v-if="size.rendered" ref="frame" class="diagram__frame" :style="height ? { height: `${height}px` } : undefined">
+    <div v-if="size.rendered" ref="frame" class="diagram__frame" :style="frameCss">
       <div ref="canvas" class="diagram__canvas" :style="{ width: `${size.width}px`, height: `${size.height}px` }">
         <iframe
           :src="html"
