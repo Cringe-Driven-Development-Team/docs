@@ -108,7 +108,14 @@ export function readConfig(env: Record<string, string | undefined>): Config {
   return { token, owner: env.BOARD_OWNER ?? "Cringe-Driven-Development-Team", kind, project };
 }
 
-async function gql(config: Config, query: string, variables: Rec): Promise<Rec> {
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+// GitHub сообщает об отсутствующем поле ошибкой NOT_FOUND ровно на пути owner.projectV2.field
+// (при этом data.owner.projectV2.field = null). Любая другая ошибка — настоящая.
+const isMissingField = (error: unknown) =>
+  isRec(error) && error.type === "NOT_FOUND" && sameJson(error.path, ["owner", "projectV2", "field"]);
+
+async function gql(config: Config, query: string, variables: Rec, tolerate?: (error: unknown) => boolean): Promise<Rec> {
   const response = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: { Authorization: `bearer ${config.token}`, "Content-Type": "application/json", "User-Agent": "cdd-docs-board" },
@@ -116,8 +123,9 @@ async function gql(config: Config, query: string, variables: Rec): Promise<Rec> 
   });
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok || !isRec(body)) throw new Error(`GitHub API: HTTP ${response.status}`);
-  if (Array.isArray(body.errors) && body.errors.length > 0) {
-    const messages = body.errors.map((e) => (isRec(e) ? String(e.message) : String(e))).join("; ");
+  const errors = Array.isArray(body.errors) ? body.errors.filter((e) => !tolerate?.(e)) : [];
+  if (errors.length > 0) {
+    const messages = errors.map((e) => (isRec(e) ? String(e.message) : String(e))).join("; ");
     throw new Error(`GitHub API: ${messages}`);
   }
   if (!isRec(body.data)) throw new Error("GitHub API: нет data в ответе");
@@ -142,7 +150,9 @@ async function fetchTrackField(config: Config): Promise<{ projectId: string; fie
     config,
     `id field(name: "${TRACK_FIELD}") { ... on ProjectV2SingleSelectField { ${FIELD_SELECTION} } }`,
   );
-  const project = projectRoot(config, await gql(config, query, { login: config.owner, number: config.project }));
+  const data = await gql(config, query, { login: config.owner, number: config.project }, isMissingField);
+  const project = projectRoot(config, data);
+  if (typeof project.id !== "string") throw new Error("GitHub API: нет id доски в ответе");
   const field = isRec(project.field) && typeof project.field.id === "string" ? project.field : null;
   return {
     projectId: String(project.id),
