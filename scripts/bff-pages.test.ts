@@ -24,13 +24,11 @@ export function firstBlock(md: string): string {
   return end === -1 ? rest.slice(start) : rest.slice(start, end + 4);
 }
 
-test("каждая страница трека начинается с плашки про tRPC", () => {
+test("плашек про отвергнутый вариант нет", () => {
   for (const file of BFF_PAGES) {
     const md = readFileSync(file, "utf8");
-    const block = firstBlock(md);
-    expect(block.startsWith("::: warning"), file).toBe(true);
-    expect(block, file).toContain(TRPC_WARNING);
-    expect(block, file).toContain(file === TRACK ? "(#trpc)" : "(../bff#trpc)");
+    expect(md, file).not.toContain("отвергнутый вариант");
+    expect(md, file).not.toContain(TRPC_WARNING);
     expect(md, file).not.toContain(OLD_WARNING);
   }
 });
@@ -41,6 +39,29 @@ test("в треке есть раздел tRPC и подстраницы", () =>
   expect(md).toContain("pages: [contract, auth]");
   expect(md).toContain('- "tRPC"');
   expect(md.split("\n").some((line) => line.startsWith("# "))).toBe(false);
+  const trpc = section(md, "tRPC");
+  expect(trpc).toContain("./bff/contract");
+  expect(trpc).not.toContain("/api/v1");
+});
+
+/** Подраздел `### <title>` до следующего заголовка `##` или `###`. */
+function subsection(md: string, title: string): string {
+  const start = md.indexOf(`\n### ${title}\n`);
+  if (start === -1) return "";
+  const rest = md.slice(start + 1).split("\n").slice(1).join("\n");
+  const next = rest.search(/^##+ /m);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
+test("обзор: клиент вызывает tRPC", () => {
+  const md = readFileSync(TRACK, "utf8");
+  const before = section(md, "Было и стало");
+  expect(before).toContain("/api/trpc/* на bff:3000");
+  expect(before).not.toContain("/api/v1/* на bff:3000");
+  expect(subsection(md, "Infra")).toContain("/api/trpc/*");
+  const front = subsection(md, "Фронт");
+  expect(front).toContain("AppRouter");
+  expect(front).not.toContain("публичного контракта");
 });
 
 test("в меню нет раздела BFF", () => {
