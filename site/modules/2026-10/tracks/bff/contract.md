@@ -109,9 +109,10 @@ export default defineConfig({
 | `cells.delete` | mutation | `DELETE /notebooks/{id}/cells/{index}` | `{ notebookId, index }` |
 
 Процедуры обновления токенов нет: refresh делает сам BFF (см.
-[«Авторизация и CSRF»](./auth#access-истек)). `auth.*` построены на `publicProcedure`, остальные — на
-`authedProcedure`: она требует сессию и даёт процедуре `ctx.go` — клиент Go с уже свежим access.
-Как устроены `createContext` и `authedProcedure` — в [«Авторизации и CSRF»](./auth).
+[«Авторизация и CSRF»](./auth#access-истек)). `auth.login` и `auth.register` построены на `publicProcedure`, `auth.logout` — на
+`optionalSessionProcedure`: если сессия есть, она даёт `ctx.go`, но без сессии не отвечает `UNAUTHORIZED`.
+Остальные — на `authedProcedure`: она требует сессию и даёт процедуре `ctx.go` — клиент Go с уже свежим
+access. Как устроены `createContext` и обе процедуры — в [«Авторизации и CSRF»](./auth).
 
 ```ts
 // apps/bff/src/router/cells.ts
@@ -214,7 +215,7 @@ import type { AppRouter } from '@cdd/bff';
 export const api = createClient<AppRouter>({ url: '/api/trpc' });
 
 const notebook = await api.notebooks.get.query({ id });
-await api.cells.create.mutate({ notebookId: id, type: 'code' });
+await api.cells.create.mutate({ notebookId: id, kind: 'code' });
 ```
 
 Протокол — [HTTP RPC tRPC 11](https://trpc.io/docs/rpc):
@@ -231,6 +232,8 @@ await api.cells.create.mutate({ notebookId: id, type: 'code' });
 - на каждый запрос ставит `X-CSRF: 1` и `credentials: 'same-origin'`;
 - вызовы одного метода в одном тике собирает в один батч; URL длиннее 2000 символов делит на несколько
   запросов;
+- если ошибка возникла в `createContext` (например, CSRF), на батч приходит один конверт `{ error }`, а не
+  массив: клиент отдаёт эту ошибку каждому вызову батча;
 - ошибку бросает как `TrpcError { code, httpStatus, appCode, message, zodError? }`; на `UNAUTHORIZED` стор
   сессии переходит в «гость», и фронт показывает форму входа.
 
@@ -240,19 +243,31 @@ await api.cells.create.mutate({ notebookId: id, type: 'code' });
 Клиент проверяется тестами на подставном `fetch`:
 
 ```ts
-test('батч двух query — один GET', async () => {
+test('батч двух query — один GET и два результата', async () => {
   const calls: string[] = [];
   const fetch = async (url: string) => {
     calls.push(url);
     return Response.json([{ result: { data: { id: 1 } } }, { result: { data: [] } }]);
   };
   const api = createClient<AppRouter>({ url: '/api/trpc', fetch });
-  await Promise.all([api.notebooks.get.query({ id: 1 }), api.notebooks.list.query()]);
+  const [notebook, list] = await Promise.all([api.notebooks.get.query({ id: 1 }), api.notebooks.list.query()]);
   expect(calls).toEqual([`/api/trpc/notebooks.get,notebooks.list?batch=1&input=${encodeURIComponent('{"0":{"id":1}}')}`]);
+  expect([notebook, list]).toEqual([{ id: 1 }, []]);
+});
+
+test('ошибка createContext на батч — один конверт для всех вызовов', async () => {
+  const fetch = async () =>
+    Response.json(
+      { error: { message: 'csrf', code: -32003, data: { code: 'FORBIDDEN', httpStatus: 403, appCode: 'csrf_invalid' } } },
+      { status: 403 },
+    );
+  const api = createClient<AppRouter>({ url: '/api/trpc', fetch });
+  const results = await Promise.allSettled([api.users.me.query(), api.notebooks.list.query()]);
+  expect(results.map((r) => r.status === 'rejected' && (r.reason as TrpcError).appCode)).toEqual(['csrf_invalid', 'csrf_invalid']);
 });
 ```
 
-*Пример; так же проверяются кодирование `input` и разбор конверта ошибки.*
+*Пример; так же проверяются одиночный вызов и конверт ошибки процедуры.*
 
 ## Какие вызовы BFF принимает
 
@@ -269,6 +284,7 @@ BFF ничего не проксирует, поэтому требование 
 
 ```http
 POST /api/trpc/notebooks.delete
+Content-Type: application/json
 X-CSRF: 1
 Origin: https://cellestial.ru
 

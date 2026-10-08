@@ -122,8 +122,12 @@
      (если есть) `same-origin`; иначе `TRPCError FORBIDDEN`, `appCode: csrf_invalid`;
   2. cookie `__Host-Http-session` → `session` или `null` (ошибка расшифровки — `null`).
   Cookie ставится и стирается через `resHeaders.append('Set-Cookie', …)`.
-- `publicProcedure` — `auth.login`, `auth.register`, `auth.logout`; `logout` всегда успешен и стирает
-  cookie сессии и три старые cookie.
+- `publicProcedure` — `auth.login`, `auth.register`; `auth.logout` — `optionalSessionProcedure`: при
+  сессии вызывает Go через `ctx.go` (refresh до вызова и один повтор после `401`, чтобы refresh-токен
+  отозвался и при истёкшем access), ошибки Go не пробрасывает, `UNAUTHORIZED` не отвечает, всегда успешен
+  и стирает cookie сессии и три старые cookie.
+- Раньше `createContext` tRPC сам разбирает запрос: тело не в JSON (обычная HTML-форма) — `415
+  UNSUPPORTED_MEDIA_TYPE`; ошибка в `createContext` на батч — один конверт `{ error }`, а не массив.
 - `authedProcedure` — middleware: нет сессии — `UNAUTHORIZED`; иначе `ctx.go` — клиент Go с токеном:
   refresh за 30 с до `accessExp`, один повтор после `401`, одновременные refresh объединяются по
   SHA-256 refresh-токена (10 с в памяти); refresh отвергнут — cookie стирается, `UNAUTHORIZED`.

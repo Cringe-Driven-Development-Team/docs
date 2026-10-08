@@ -78,7 +78,10 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 8. Ответить результатом процедуры; если токены сменились, BFF дописывает новую cookie в `resHeaders`.
    Остальные ошибки Go переводятся по таблице [«Ошибки»](./contract#ошибки).
 
-Исключение — `auth.logout`: после проверки CSRF он всегда успешен. Без cookie сессии Go не
+Исключение — `auth.logout`. Он построен на `optionalSessionProcedure`: если сессия есть, вызывает Go тем же
+клиентом `ctx.go` — с refresh до вызова и одним повтором после `401`, чтобы refresh-токен отозвался и при
+истёкшем access; ошибки Go он не пробрасывает. `auth.logout` никогда не отвечает `UNAUTHORIZED`: после
+проверки CSRF он всегда успешен. Без cookie сессии Go не
 вызывается; cookie сессии и три старые cookie (`access_token` с `Path=/api/v1`, `refresh_token` с
 `Path=/api/v1/auth`, `__Host-csrf` с `Path=/`) стираются в любом случае.
 
@@ -93,7 +96,7 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 ## CSRF
 
-Три правила, все на стороне BFF (исключение — upgrade WebSocket, см. ниже). Проверки идут первыми, в `createContext`, раньше расшифровки
+Три правила, все на стороне BFF (исключение — upgrade WebSocket, см. ниже). Проверки идут первыми из проверок BFF, в `createContext`, раньше расшифровки
 cookie, и для каждого вызова, включая вход, регистрацию и выход:
 
 1. Каждый вызов к `/api/trpc` без `X-CSRF: 1` получает `403 csrf_invalid` и в Go не уходит. Чужой
@@ -103,6 +106,10 @@ cookie, и для каждого вызова, включая вход, реги
    есть, равен `same-origin`; иначе `403 csrf_invalid`.
 3. `SameSite=Strict`: cookie не уходит на межсайтовые запросы. SPA это не мешает: HTML отдаётся без
    cookie, а запросы к API делает страница того же сайта.
+
+Ещё раньше tRPC сам разбирает запрос: тело не в JSON (`application/x-www-form-urlencoded` и
+`text/plain` — так шлёт обычная HTML-форма) он отклоняет `415 UNSUPPORTED_MEDIA_TYPE`, не вызывая
+`createContext`. Форма с `multipart/form-data` доходит до проверок CSRF и получает `403`.
 
 Первое правило — прямой путь из RFC
 ([§6.1.3.3.2](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.2)):
@@ -145,7 +152,7 @@ sequenceDiagram
   Note over P: заголовок X-CSRF есть, Origin равен APP_ORIGIN
   P->>A: POST /api/v1/auth/login
   A-->>P: 200 { user, tokens }
-  P-->>B: 200 { result: User }, Set-Cookie __Host-Http-session
+  P-->>B: 200 { result: { data: User } }, Set-Cookie __Host-Http-session
   Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
   B-->>F: 200 User
 ```
@@ -226,7 +233,7 @@ sequenceDiagram
 
 ### Выход
 
-После проверки CSRF процедура `auth.logout` вызывает Go с Bearer и `refresh_token` в теле, стирает cookie
+После проверки CSRF процедура `auth.logout` (при истёкшем access — после refresh) вызывает Go с Bearer и `refresh_token` в теле, стирает cookie
 и отвечает успехом. Даже если Go вернул `401` (токен уже недействителен), клиент получает успех: сессии
 больше нет в любом случае. Без cookie сессии Go не вызывается, а ответ тот же; три старые cookie
 стираются всегда.
@@ -241,7 +248,7 @@ sequenceDiagram
   B->>P: POST /api/trpc/auth.logout, Cookie __Host-Http-session
   P->>A: POST /api/v1/auth/logout, Authorization: Bearer, { refresh_token }
   A-->>P: 204
-  P-->>B: 200 { result: null }, Set-Cookie __Host-Http-session Max-Age=0
+  P-->>B: 200 { result: {} }, Set-Cookie __Host-Http-session Max-Age=0
   Note over P: успех и когда Go ответил 401
   Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
   B-->>F: успех
@@ -276,8 +283,9 @@ sequenceDiagram
 
 ### Атака с чужого сайта
 
-Форма с чужого сайта не может поставить `X-CSRF`, поэтому получает `403 csrf_invalid`, а в Go
-запрос не уходит. `fetch` с заголовком требует preflight, а BFF не разрешает CORS никому, так что
+Обычная форма с чужого сайта шлёт тело не в JSON, и tRPC отклоняет её `415 UNSUPPORTED_MEDIA_TYPE`
+ещё до проверок BFF; форма с `multipart/form-data` доходит до них и получает `403 csrf_invalid`:
+поставить `X-CSRF` она не может. В Go запрос не уходит ни в том, ни в другом случае. `fetch` с заголовком требует preflight, а BFF не разрешает CORS никому, так что
 браузер не отправит основной запрос.
 
 ```mermaid
@@ -286,8 +294,9 @@ sequenceDiagram
   participant P as BFF
   participant E as Чужой сайт
   E->>B: форма, POST /api/trpc/notebooks.create
-  B->>P: POST без X-CSRF
-  P-->>B: 403 FORBIDDEN csrf_invalid, в Go запрос не уходит
+  B->>P: POST без X-CSRF, тело формы
+  P-->>B: 415 UNSUPPORTED_MEDIA_TYPE, multipart - 403 FORBIDDEN csrf_invalid
+  Note over P: в Go запрос не уходит
   E->>B: fetch с заголовком X-CSRF: 1
   B->>P: OPTIONS /api/trpc/notebooks.create
   P-->>B: без разрешения CORS
@@ -305,8 +314,8 @@ cookie уходит вместе с запросом. Это именно тот
 
 > As a result, a subdomain-takeover attack against b.example.com can enable CSRF attacks against the BFF of a.example.com.
 
-Форма с поддомена не может поставить `X-CSRF`, так что запрос отклоняется уже по отсутствию
-заголовка. Проверка `Origin` и `Sec-Fetch-Site` — вторая линия: она сработала бы и при ошибке в
+Обычную форму с поддомена tRPC отклонит `415` ещё до проверок BFF, а форма с `multipart/form-data`
+не может поставить `X-CSRF` и отклоняется по отсутствию заголовка. Проверка `Origin` и `Sec-Fetch-Site` — вторая линия: она сработала бы и при ошибке в
 проверке заголовка или в настройке CORS.
 
 ```mermaid
@@ -317,7 +326,7 @@ sequenceDiagram
   E->>B: форма с поддомена, POST /api/trpc/notebooks.create
   B->>P: POST /api/trpc/notebooks.create, Cookie __Host-Http-session, Origin поддомена, без X-CSRF
   Note over P: same-site - cookie ушла, Strict её не останавливает. Sec-Fetch-Site: same-site, Origin не равен APP_ORIGIN
-  P-->>B: 403 FORBIDDEN csrf_invalid
+  P-->>B: 415 UNSUPPORTED_MEDIA_TYPE, multipart - 403 FORBIDDEN csrf_invalid
 ```
 
 *Проект: проверить после внедрения.*
@@ -360,7 +369,7 @@ sequenceDiagram
   Note over F: гость - показать форму входа
   F->>B: POST /api/trpc/auth.login, X-CSRF: 1
   B->>P: POST /api/trpc/auth.login
-  P-->>B: 200 { result: User }, Set-Cookie __Host-Http-session
+  P-->>B: 200 { result: { data: User } }, Set-Cookie __Host-Http-session
   Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
 ```
 

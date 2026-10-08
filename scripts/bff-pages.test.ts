@@ -236,3 +236,39 @@ test("ссылки на старые разделы", () => {
     }
   }
 });
+
+test("не-JSON до createContext — 415, а не 403", () => {
+  const auth = readFileSync(AUTH, "utf8");
+  for (const title of ["Атака с чужого сайта", "Запрос с поддомена"]) {
+    expect(subsection(auth, title), title).toContain("415");
+  }
+  expect(section(auth, "CSRF")).toContain("первыми из проверок BFF");
+  expect(section(readFileSync(CONTRACT, "utf8"), "Какие вызовы BFF принимает")).toContain("Content-Type: application/json");
+});
+
+test("ошибка createContext на батч — один конверт", () => {
+  const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
+  expect(client).toContain("один конверт");
+  expect(client).toContain("toEqual");
+});
+
+test("конверт успеха — result.data", () => {
+  const auth = readFileSync(AUTH, "utf8");
+  expect(auth).not.toContain("{ result: User }");
+  expect(auth).not.toContain("{ result: null }");
+  expect(auth).toContain("{ result: { data: User } }");
+});
+
+test("поле ячейки — kind, как в контракте Go", () => {
+  const contract = readFileSync(CONTRACT, "utf8");
+  expect(contract).not.toContain("type: 'code'");
+  expect(contract).toContain("kind: 'code'");
+});
+
+test("выход отзывает refresh и при истёкшем access", () => {
+  const contract = readFileSync(CONTRACT, "utf8");
+  const auth = readFileSync(AUTH, "utf8");
+  expect(contract).toContain("optionalSessionProcedure");
+  expect(auth).toContain("optionalSessionProcedure");
+  expect(auth).toContain("`auth.logout` никогда не отвечает `UNAUTHORIZED`");
+});
