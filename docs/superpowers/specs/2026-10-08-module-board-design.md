@@ -129,7 +129,7 @@ type BoardSnapshot = {
 | Файл | Отвечает за |
 |---|---|
 | `scripts/board.ts` | CLI задания `board`: `bun scripts/board.ts sync` и `bun scripts/board.ts snapshot <путь>`; GraphQL `https://api.github.com/graphql` с `GH_TOKEN`; проект `Cringe-Driven-Development-Team` №1; постраничное чтение карточек по 100. Чистые функции: `planOptions(existing, tracks)` → полный список `singleSelectOptions` или `null`, если менять нечего; `toSnapshot(items, sprintField, takenAt)` |
-| `site/.vitepress/board.ts` | тип `BoardSnapshot`, `parseSnapshot(json)` (форма 4.3, иначе ошибка с текстом), `assignTasks(modules, snapshot, today)` по 4.4, `trackProgress` |
+| `site/.vitepress/board.ts` | тип `BoardSnapshot`, `parseSnapshot(json)` (форма 4.3, иначе ошибка с текстом), `assignTasks(modules, snapshot)` по 4.4 («сегодня» — московская дата `snapshot.takenAt`: снимок делается прямо перед сборкой), `trackProgress` |
 | `site/.vitepress/modules.ts` | поле `sprints` модуля и его проверка; `buildGraph` получает необязательный прогресс треков и кладёт его в узел трека (`progress?: { done; active; total }`) |
 | `site/.vitepress/modules-read.ts`, `site/modules/modules.data.ts` | читают `site/modules/board.json`, если он есть (4.5); `Data` получает `board: { takenAt; byModule } \| null` |
 | `theme/components/TaskList.vue` | список задач: статус, ссылка `repo#N`, заголовок, спринт, исполнители (имя из `people.ts` или логин); `not_planned` — зачёркнуто в конце; группы по статусу в порядке `In progress`, `In review`, `Ready`, `Backlog`, `Done` |
