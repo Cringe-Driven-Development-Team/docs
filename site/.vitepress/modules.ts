@@ -168,3 +168,121 @@ export function parseModule(file: string, id: string, data: unknown, tracks: Tra
   const sorted = [...tracks].sort((a, b) => a.title.localeCompare(b.title, "ru"));
   return { id, title, ...(nonEmpty(fm.period) ? { period: fm.period } : {}), url: `/modules/${id}/`, tracks: sorted };
 }
+
+export type NodeKind = "person" | "track" | "subtask";
+export type GraphNode = {
+  id: string;
+  kind: NodeKind;
+  label: string;
+  title: string;
+  area: Area;
+  mentor?: true;
+  login?: string;
+  trackId?: string;
+};
+export type LinkKind = "do" | "help" | "part" | "related";
+export type GraphLink = { source: string; target: string; kind: LinkKind; side?: Side; why?: string };
+export type Graph = { nodes: GraphNode[]; links: GraphLink[] };
+
+export const LAYERS = ["subtasks", "help", "related"] as const;
+export type Layer = (typeof LAYERS)[number];
+export type Filter = { people: string[]; areas: Area[]; hide: Layer[] };
+export const DEFAULT_FILTER: Filter = { people: [], areas: [...AREAS], hide: [] };
+
+const personId = (login: string) => `person:${login}`;
+const trackId = (id: string) => `track:${id}`;
+const subtaskId = (id: string, index: number) => `subtask:${id}/${index}`;
+
+/** Граф модуля под фильтром; правила — план задачи 4 и прототип от 08.10. */
+export function buildGraph(module: Module, people: readonly Person[], filter: Filter): Graph {
+  const showHelp = !filter.hide.includes("help");
+  const participants = (t: Track) => [...t.do.map((d) => d.login), ...(showHelp ? t.help : [])];
+  const tracks = module.tracks.filter(
+    (t) => filter.areas.includes(t.area) && (filter.people.length === 0 || participants(t).some((l) => filter.people.includes(l))),
+  );
+  const logins = new Set([...filter.people, ...tracks.flatMap(participants)]);
+  const nodes: GraphNode[] = people
+    .filter((p) => logins.has(p.login))
+    .map((p) => ({
+      id: personId(p.login),
+      kind: "person",
+      label: p.name,
+      title: p.name,
+      area: p.area,
+      ...(p.mentor ? { mentor: true as const } : {}),
+      login: p.login,
+    }));
+  const links: GraphLink[] = [];
+  const showSubtasks = !filter.hide.includes("subtasks");
+  for (const t of tracks) {
+    nodes.push({ id: trackId(t.id), kind: "track", label: t.label, title: t.title, area: t.area });
+    for (const d of t.do) links.push({ source: personId(d.login), target: trackId(t.id), kind: "do", side: d.side });
+    if (showHelp) for (const login of t.help) links.push({ source: personId(login), target: trackId(t.id), kind: "help" });
+    if (!showSubtasks) continue;
+    t.subtasks.forEach((s, i) => {
+      nodes.push({ id: subtaskId(t.id, i), kind: "subtask", label: s, title: s, area: t.area, trackId: t.id });
+      links.push({ source: trackId(t.id), target: subtaskId(t.id, i), kind: "part" });
+    });
+  }
+  if (!filter.hide.includes("related")) {
+    const visible = new Set(tracks.map((t) => t.id));
+    for (const t of tracks) {
+      for (const r of t.related) {
+        if (visible.has(r.track)) links.push({ source: trackId(t.id), target: trackId(r.track), kind: "related", why: r.why });
+      }
+    }
+  }
+  return { nodes, links };
+}
+
+/** Узел и его соседи; у человека — ещё подзадачи его треков. */
+export function neighbours(graph: { links: GraphLink[] }, id: string): Set<string> {
+  const result = new Set([id]);
+  const near = (node: string) =>
+    graph.links.flatMap((l) => (l.source === node ? [l.target] : l.target === node ? [l.source] : []));
+  for (const n of near(id)) result.add(n);
+  if (id.startsWith("person:")) {
+    for (const t of [...result].filter((n) => n.startsWith("track:"))) {
+      for (const n of near(t)) if (n.startsWith("subtask:")) result.add(n);
+    }
+  }
+  return result;
+}
+
+export function searchMatches(nodes: readonly GraphNode[], query: string): Set<string> {
+  const q = query.trim().toLowerCase();
+  if (q === "") return new Set();
+  return new Set(nodes.filter((n) => n.title.toLowerCase().includes(q) || n.label.toLowerCase().includes(q)).map((n) => n.id));
+}
+
+/** `?people=…&area=…&hide=…` → фильтр; неизвестные логины, направления и слои отбрасываются. */
+export function filterFromQuery(search: string, people: readonly Person[]): Filter {
+  const params = new URLSearchParams(search);
+  const values = (key: string) => (params.get(key) ?? "").split(",").filter((v) => v !== "");
+  const known = new Set(people.map((p) => p.login));
+  const areas = values("area").filter((a): a is Area => (AREAS as readonly string[]).includes(a));
+  return {
+    people: values("people").filter((l) => known.has(l)),
+    areas: areas.length > 0 ? areas : [...AREAS],
+    hide: values("hide").filter((l): l is Layer => (LAYERS as readonly string[]).includes(l)),
+  };
+}
+
+/** Фильтр → query-строка с `?` или `""` для фильтра по умолчанию; запятые не кодируются. */
+export function filterToQuery(filter: Filter): string {
+  const parts: string[] = [];
+  if (filter.people.length > 0) parts.push(`people=${filter.people.join(",")}`);
+  if (filter.areas.length < AREAS.length) parts.push(`area=${filter.areas.join(",")}`);
+  if (filter.hide.length > 0) parts.push(`hide=${filter.hide.join(",")}`);
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
+}
+
+export type Load = { login: string; doing: number; helping: number };
+
+export function personLoad(module: Module, people: readonly Person[]): Load[] {
+  return people.map((p) => ({
+    login: p.login,
+    doing: module.tracks.filter((t) => t.do.some((d) => d.login === p.login)).length,
+    helping: module.tracks.filter((t) => t.help.includes(p.login)).length,
+  }));
+}
