@@ -11,7 +11,8 @@
 - Схемы описывают целевое состояние. Факты бери из кода, не из памяти: инфраструктура — репозиторий
   `Cringe-Driven-Development-Team/infra` (`pulumi/`, bootstrap-стек `pulumi/bootstrap/`, `ansible/`).
   Каждую подпись и связь сверяй с исходником, связи не выдумывай.
-- Новая схема — новая строка в таблице README.
+- Новая схема — новая строка в таблице README; схема корня — ещё раздел с `<Diagram>` на
+  `site/architecture/index.md` (тест-страж `scripts/architecture-page.test.ts`).
 
 ## Сборка
 
@@ -19,7 +20,7 @@
   Docker Desktop должен быть запущен. Без Docker — `DIAGRAMS_NATIVE=1 bun run <скрипт>`.
 - Перед коммитом: `bun run typecheck && bun run test && bun run build`.
 - `bun run site` из git worktree в Docker не работает — запускай из основного клона.
-- Сайт — VitePress в `site/` (главная `/docs/`), индекс схем — `/docs/diagrams/`. Новая страница — файл в
+- Сайт — VitePress в `site/` (главная `/docs/`), схемы — страница `/docs/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
   на конкретном SHA.
 - Модули — `site/modules/`: люди в `people.ts`, модуль — каталог `YYYY-MM`, трек — `tracks/<id>.md`; формат и

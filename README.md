@@ -53,14 +53,14 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | [integrations](https://cringe-driven-development-team.github.io/docs/frozen-k3s/integrations.html) | Внешние сервисы и кто с ними говорит |
 | [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
 
-Таблицы ведутся вручную: добавил файл в `diagrams/`, добавь строку сюда.
-`dist/diagrams/index.html` собирается автоматически: внизу страницы табы, как листы
-в Google Sheets. Первый таб `mvp` это схемы корня, он открыт по умолчанию,
-дальше по табу на подпапку. Схема из подпапки рендерится в
-`dist/<папка>/<name>.html` и `.png`. Замороженные `bff/` и `frozen-k3s/` на
-индекс не попадают (`HIDDEN_FOLDERS` в `scripts/build-index.ts`), их схемы
-открываются по ссылкам из таблиц выше. Пока других подпапок нет, табов на
-индексе нет, там список схем `mvp`.
+Схемы MVP показаны на странице «Архитектура» (`/docs/architecture/`) живыми карточками:
+масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
+`site/.vitepress/theme/Diagram.vue`). Добавил схему в `diagrams/` — добавь строку в таблицу
+и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/architecture/index.md`: тест
+`scripts/architecture-page.test.ts` упадёт, если схемы корня там нет. Схема из подпапки
+рендерится в `dist/<папка>/<name>.html` и `.png`. Замороженные `bff/` и `frozen-k3s/`
+(`HIDDEN_FOLDERS` в `site/.vitepress/diagram-names.ts`) в меню не показываются, их схемы
+открываются по ссылкам из таблиц выше.
 
 ### Локально
 
@@ -79,7 +79,7 @@ bun run validate   # схема, без браузера; имена иконо�
 bun run check      # цветовая конвенция и легенды, без браузера
 bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
 bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/; в Docker
-bun run build      # validate + check + warm + render + индекс схем + VitePress + site:check; в Docker
+bun run build      # validate + check + warm + render + переадресация индекса + VitePress + site:check; в Docker
 bun run site:dev   # VitePress локально: http://localhost:5173/docs/
 bun run site       # build + превью всех веток origin в dist/branches/; в Docker
 bun run icons      # обновить icons.txt из каталога иконок Eraser
@@ -110,14 +110,15 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 
 Главная `https://cringe-driven-development-team.github.io/docs/` — документация на
 [VitePress](https://vitepress.dev/): исходники страниц в `site/`, конфиг и меню в
-`site/.vitepress/config.mts`. Индекс схем открывается из меню «Архитектура»
-(`/docs/diagrams/`), сами схемы — по прежним адресам `/docs/<name>.html` и `.png`.
-Старые ссылки на карточки вида `/docs/#contract` главная переводит на `/docs/diagrams/#contract`.
+`site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/docs/architecture/`), их файлы —
+по прежним адресам `/docs/<name>.html` и `.png`. Старый индекс `/docs/diagrams/` — переадресация:
+`#contract` ведёт на `/docs/architecture/#contract`, `#bff/ci` — на `/docs/bff/ci.html`; так же
+главная переводит старые ссылки `/docs/#contract`.
 
 `bun run build` после рендера схем собирает VitePress (`bun run site:vitepress`) и переносит
 его в `dist/`: если файл VitePress совпал с файлом схемы, сборка падает, а не затирает схему.
-Затем `bun run site:check` проверяет ссылки, якоря и картинки страниц VitePress и индекса
-схем. Новая страница — файл в `site/` и пункт в `sidebar` конфига. Mermaid-схемы в Markdown:
+Затем `bun run site:check` проверяет ссылки (и `<iframe src>` карточек схем), якоря и картинки
+страниц VitePress. Новая страница — файл в `site/` и пункт в `sidebar` конфига. Mermaid-схемы в Markdown:
 `sequenceDiagram`, участники с короткими ASCII-алиасами, без `;` и `#` в сообщениях.
 
 ### Модули

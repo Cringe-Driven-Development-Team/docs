@@ -20,11 +20,12 @@ export default withMermaid(
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {
       nav: [
-        // Индекс схем — не страница VitePress: target не даёт роутеру перехватить переход.
-        { text: 'Архитектура', link: '/diagrams/', target: '_self' },
+        { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
         { text: 'BFF', link: '/bff/', activeMatch: '^/bff/' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
+        // Список превью веток есть только на сборке main (Pages); target — страница вне VitePress.
+        ...(SITE_BASE === '/docs/' ? [{ text: 'Превью веток', link: '/branches/', target: '_self' }] : []),
       ],
       sidebar: {
         '/modules/': modules.map((m) => ({
