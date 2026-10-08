@@ -46,6 +46,8 @@ export function validatePeople(people: readonly Person[], file = "modules/people
 
 export type Doer = { login: string; side: Side };
 export type Related = { track: string; why: string };
+/** Подстраница трека: `tracks/<track>/<id>.md` (спека 2026-10-08-bff-into-module §5). */
+export type TrackPage = { id: string; title: string; url: string };
 export type Track = {
   id: string;
   module: string;
@@ -57,6 +59,7 @@ export type Track = {
   subtasks: string[];
   related: Related[];
   hasBody: boolean;
+  pages: TrackPage[];
   url: string;
 };
 export type Module = { id: string; title: string; period?: string; sprints: string[]; url: string; tracks: Track[] };
@@ -107,6 +110,7 @@ export function parseTrack(
   data: unknown,
   body: string,
   people: readonly Person[],
+  pages: readonly TrackPage[] = [],
 ): Track {
   if (!TRACK_ID.test(id)) throw new ModuleDataError(file, "id", `имя файла ${id}.md: только строчная латиница, цифры и дефис`);
   const fm = isRecord(data) ? data : {};
@@ -150,8 +154,38 @@ export function parseTrack(
     subtasks: strings(file, "subtasks", fm.subtasks),
     related,
     hasBody: body.trim() !== "",
+    pages: [...pages],
     url: `/modules/${moduleId}/tracks/${id}`,
   };
+}
+
+/**
+ * Подстраницы трека: `declared` — `pages` из frontmatter трека `file`, `found` — md-файлы каталога
+ * `tracks/<trackId>/` (имя без `.md` и `title` из frontmatter). Порядок — как в `pages`.
+ */
+export function trackPages(
+  file: string,
+  moduleId: string,
+  trackId: string,
+  declared: unknown,
+  found: readonly { name: string; title: unknown }[],
+): TrackPage[] {
+  const ids = strings(file, "pages", declared);
+  ids.forEach((id, index) => {
+    if (!TRACK_ID.test(id)) throw new ModuleDataError(file, `pages[${index}]`, `${id}: только строчная латиница, цифры и дефис`);
+  });
+  const repeated = ids.find((id, index) => ids.indexOf(id) !== index);
+  if (repeated) throw new ModuleDataError(file, "pages", `${repeated} повторяется`);
+  const pageFile = (name: string) => `modules/${moduleId}/tracks/${trackId}/${name}.md`;
+  for (const id of ids) {
+    if (!found.some((f) => f.name === id)) throw new ModuleDataError(file, "pages", `нет файла ${trackId}/${id}.md`);
+  }
+  const stray = found.find((f) => !ids.includes(f.name));
+  if (stray) throw new ModuleDataError(pageFile(stray.name), "pages", `подстраницы нет в pages трека ${trackId}.md`);
+  return ids.map((id) => {
+    const title = requireTitle(pageFile(id), { title: found.find((f) => f.name === id)?.title });
+    return { id, title, url: `/modules/${moduleId}/tracks/${trackId}/${id}` };
+  });
 }
 
 /** Frontmatter `index.md` модуля и его треки → `Module`; проверки спеки §4.4 п. 5–6. */
@@ -309,9 +343,28 @@ export function personLoad(module: Module, people: readonly Person[]): Load[] {
   }));
 }
 
-/** Страница модуля или трека по `page.relativePath`; иначе `null`. */
-export function pageRef(relativePath: string): { module: string; track?: string } | null {
-  const match = /^modules\/([^/]+)\/(?:index\.md|tracks\/([^/]+)\.md)$/.exec(relativePath);
+/** Страница модуля, трека или подстраницы трека по `page.relativePath`; иначе `null`. */
+export function pageRef(relativePath: string): { module: string; track?: string; page?: string } | null {
+  const match = /^modules\/([^/]+)\/(?:index\.md|tracks\/([^/]+?)(?:\/([^/]+))?\.md)$/.exec(relativePath);
   if (!match?.[1]) return null;
-  return match[2] ? { module: match[1], track: match[2] } : { module: match[1] };
+  if (!match[2]) return { module: match[1] };
+  return match[3] ? { module: match[1], track: match[2], page: match[3] } : { module: match[1], track: match[2] };
+}
+
+/** Пункт меню VitePress (без импорта типов VitePress: файл работает и в браузере). */
+export type SidebarItem = { text: string; link?: string; collapsed?: boolean; items?: SidebarItem[] };
+
+/** Меню раздела «Модули»: по модулю — граф и треки, у трека с подстраницами — вложенные пункты. */
+export function moduleSidebar(modules: readonly Module[]): SidebarItem[] {
+  return modules.map((m) => ({
+    text: m.title,
+    items: [
+      { text: "Граф", link: m.url },
+      ...m.tracks.map((t): SidebarItem =>
+        t.pages.length > 0
+          ? { text: t.title, link: t.url, collapsed: false, items: t.pages.map((p) => ({ text: p.title, link: p.url })) }
+          : { text: t.title, link: t.url },
+      ),
+    ],
+  }));
 }

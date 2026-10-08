@@ -75,6 +75,7 @@ const mkTrack = (id: string, module: string): Track => ({
   subtasks: [],
   related: [],
   hasBody: false,
+  pages: [],
   url: `/modules/${module}/${id}`,
 });
 const mkModule = (id: string, sprints: string[], tracks: string[]): Module => ({
