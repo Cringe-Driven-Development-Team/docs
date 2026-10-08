@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
-import { diagramNames, indexNames, pngSize, pngSizes, renderRedirect } from "./build-index.ts";
+import { diagramNames, indexNames, PAGE_REDIRECTS, pngSize, pngSizes, renderPageRedirect, renderRedirect, writePageRedirects } from "./build-index.ts";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -87,4 +87,41 @@ test("renderRedirect: noindex, link to architecture/ and a script that follows d
   expect(followRedirect(html, "#frozen-k3s/cd")).toBe("../frozen-k3s/cd.html");
   expect(followRedirect(html, "")).toBe("../architecture/");
   expect(followRedirect(html, "#nope")).toBe("../architecture/");
+});
+
+test("PAGE_REDIRECTS: old BFF pages to the track, relative targets", () => {
+  expect(PAGE_REDIRECTS).toEqual([
+    { file: "bff/index.html", target: "../modules/2026-10/tracks/bff" },
+    { file: "bff/contract.html", target: "../modules/2026-10/tracks/bff/contract" },
+    { file: "bff/auth.html", target: "../modules/2026-10/tracks/bff/auth" },
+  ]);
+  for (const { target } of PAGE_REDIRECTS) expect(target.startsWith("/")).toBe(false);
+});
+
+test("PAGE_REDIRECTS do not collide with frozen bff diagrams", () => {
+  const frozen = diagramNames()
+    .filter((name) => name.startsWith("bff/"))
+    .map((name) => `${name}.html`);
+  expect(frozen.length).toBeGreaterThan(0);
+  for (const { file } of PAGE_REDIRECTS) expect(frozen).not.toContain(file);
+});
+
+test("renderPageRedirect keeps the hash and is not indexed", () => {
+  const html = renderPageRedirect("../modules/2026-10/tracks/bff/auth");
+  expect(html).toMatch(/^<!doctype html>/i);
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toContain('<a href="../modules/2026-10/tracks/bff/auth">');
+  expect(html).not.toContain("decodeURIComponent");
+  expect(followRedirect(html, "")).toBe("../modules/2026-10/tracks/bff/auth");
+  expect(followRedirect(html, "#две-вкладки")).toBe("../modules/2026-10/tracks/bff/auth#две-вкладки");
+  expect(followRedirect(html, "#%D0%B4%D0%B2%D0%B5")).toBe("../modules/2026-10/tracks/bff/auth#%D0%B4%D0%B2%D0%B5");
+});
+
+test("writePageRedirects writes three files", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "redirects-"));
+  tempDirs.push(dir);
+  await writePageRedirects(dir);
+  for (const { file, target } of PAGE_REDIRECTS) {
+    expect(await Bun.file(join(dir, file)).text()).toBe(renderPageRedirect(target));
+  }
 });

@@ -65,7 +65,42 @@ export function renderRedirect(rootNames: readonly string[]): string {
 // Страница-переадресация старого индекса схем.
 export const INDEX_FILE = join("dist", "diagrams", "index.html");
 
+// Старые страницы раздела /bff/ переехали в трек модуля (спека 2026-10-08-bff-into-module §5.4).
+// Цели относительные: так переадресация работает и в превью веток.
+export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
+  { file: "bff/index.html", target: "../modules/2026-10/tracks/bff" },
+  { file: "bff/contract.html", target: "../modules/2026-10/tracks/bff/contract" },
+  { file: "bff/auth.html", target: "../modules/2026-10/tracks/bff/auth" },
+];
+
+/** Страница-переадресация на `target` с тем же якорем; без JS — ссылка. */
+export function renderPageRedirect(target: string): string {
+  return `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Страница переехала</title>
+</head>
+<body>
+  <p>Страница переехала: <a href="${target}">новый адрес</a>.</p>
+  <script>
+    location.replace(${JSON.stringify(target)} + location.hash);
+  </script>
+</body>
+</html>
+`;
+}
+
+/** Пишет страницы-переадресации `PAGE_REDIRECTS` в `dist`. */
+export async function writePageRedirects(dist = "dist"): Promise<void> {
+  for (const { file, target } of PAGE_REDIRECTS) await Bun.write(join(dist, file), renderPageRedirect(target));
+}
+
 if (import.meta.main) {
   await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
   console.error(`${INDEX_FILE}: переадресация на architecture/`);
+  await writePageRedirects();
+  console.error(`dist/bff/: переадресация ${PAGE_REDIRECTS.length} страниц на трек модуля`);
 }
