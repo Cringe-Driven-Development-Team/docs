@@ -231,7 +231,7 @@ export default defineConfig({
       target: 'apps/bff/src/go/gen.ts',
       client: 'fetch',
       baseUrl: 'http://api:8080/api/v1',
-      override: { mutator: { path: 'apps/bff/src/go/fetch.ts', name: 'bearerFetch' } }, // Authorization: Bearer <access>
+      override: { mutator: { path: 'apps/bff/src/go/fetch.ts', name: 'bearerFetch' } }, // Authorization: Bearer <access>; на двух VPS ещё X-BFF-Key и origin из GO_API_URL
     },
   },
 });
