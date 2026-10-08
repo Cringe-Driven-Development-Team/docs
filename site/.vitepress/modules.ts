@@ -58,9 +58,10 @@ export type Track = {
   hasBody: boolean;
   url: string;
 };
-export type Module = { id: string; title: string; period?: string; url: string; tracks: Track[] };
+export type Module = { id: string; title: string; period?: string; sprints: string[]; url: string; tracks: Track[] };
 
 const TRACK_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SPRINT = /^Sprint \d+$/;
 const MODULE_ID = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -165,8 +166,14 @@ export function parseModule(file: string, id: string, data: unknown, tracks: Tra
       if (!ids.has(r.track)) throw new ModuleDataError(trackFile, `related[${index}].track`, `трека ${r.track} нет в модуле ${id}`);
     });
   }
+  const sprints: string[] = [];
+  list(file, "sprints", fm.sprints).forEach((item, index) => {
+    if (typeof item !== "string" || !SPRINT.test(item)) throw new ModuleDataError(file, `sprints[${index}]`, "нужен формат Sprint N");
+    if (sprints.includes(item)) throw new ModuleDataError(file, "sprints", `${item} повторяется`);
+    sprints.push(item);
+  });
   const sorted = [...tracks].sort((a, b) => a.title.localeCompare(b.title, "ru"));
-  return { id, title, ...(nonEmpty(fm.period) ? { period: fm.period } : {}), url: `/modules/${id}/`, tracks: sorted };
+  return { id, title, ...(nonEmpty(fm.period) ? { period: fm.period } : {}), sprints, url: `/modules/${id}/`, tracks: sorted };
 }
 
 export type NodeKind = "person" | "track" | "subtask";
