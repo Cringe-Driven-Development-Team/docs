@@ -46,7 +46,7 @@ jobs:
       - run: bun scripts/board.ts sync
         env:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
-      - if: always()
+      - if: "!cancelled()"
         run: bun scripts/board.ts snapshot board.json
         env:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
@@ -58,7 +58,7 @@ jobs:
 
   build:
     needs: board
-    if: always() && (github.ref == 'refs/heads/main' && (github.event_name != 'delete' || github.event.ref_type == 'branch'))
+    if: "!cancelled() && (github.ref == 'refs/heads/main' && (github.event_name != 'delete' || github.event.ref_type == 'branch'))"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -102,6 +102,7 @@ jobs:
 
   deploy:
     needs: build
+    if: "!cancelled() && needs.build.result == 'success'"
     runs-on: ubuntu-latest
     permissions:
       pages: write

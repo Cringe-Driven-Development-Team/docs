@@ -98,5 +98,5 @@ test("renderPreviewsIndex: the back link leads to the main site", () => {
 
 test("BOARD_SNAPSHOT is the ignored board snapshot path", () => {
   expect(BOARD_SNAPSHOT).toBe("site/modules/board.json");
-  expect(readFileSync(".gitignore", "utf8").split("\n")).toContain(BOARD_SNAPSHOT);
+  expect(readFileSync(".gitignore", "utf8").split(/\r?\n/)).toContain(BOARD_SNAPSHOT);
 });

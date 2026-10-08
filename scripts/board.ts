@@ -238,6 +238,13 @@ export async function main(args: readonly string[], env: Record<string, string |
     let message = error instanceof Error ? error.message : String(error);
     if (token) message = message.split(token).join("***");
     console.error(`board: ${message}`);
+    if (env.GITHUB_STEP_SUMMARY) {
+      try {
+        appendFileSync(env.GITHUB_STEP_SUMMARY, `board: ${message}\n`);
+      } catch {
+        // сводка необязательна: код возврата важнее
+      }
+    }
     return 1;
   }
 }

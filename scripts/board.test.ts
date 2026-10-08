@@ -1,3 +1,6 @@
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { parseSnapshot } from "../site/.vitepress/board.ts";
 import type { Module } from "../site/.vitepress/modules.ts";
@@ -194,6 +197,21 @@ describe("main", () => {
     try {
       expect(await main(["snapshot", "/dev/null"], { GH_TOKEN: "secret-token-123" })).toBe(1);
       const written = err.mock.calls.map((c) => c.join(" ")).join("\n");
+      expect(written).toContain("board:");
+      expect(written).not.toContain("secret-token-123");
+    } finally {
+      err.mockRestore();
+    }
+  });
+
+  test("ошибка API -> строка board: в GITHUB_STEP_SUMMARY без токена", async () => {
+    stubFetch([{ errors: [{ type: "FORBIDDEN", message: "bad credentials secret-token-123" }], data: null }]);
+    const err = spyOn(console, "error").mockImplementation(() => {});
+    const file = join(mkdtempSync(join(tmpdir(), "board-summary-")), "summary.md");
+    writeFileSync(file, "");
+    try {
+      expect(await main(["snapshot", "/dev/null"], { GH_TOKEN: "secret-token-123", GITHUB_STEP_SUMMARY: file })).toBe(1);
+      const written = readFileSync(file, "utf8");
       expect(written).toContain("board:");
       expect(written).not.toContain("secret-token-123");
     } finally {
