@@ -23,6 +23,8 @@
   --cdd-area-devops: #e1a740;
   --cdd-area-fullstack: #e47584;
   --cdd-area-team: #a9ba5c;
+}
+
 /* Схема Eraser в рамке (Diagram.vue): холст белый в обеих темах, рамка — в цветах темы. */
 .diagram {
   margin: 16px 0 24px;
