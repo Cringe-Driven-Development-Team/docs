@@ -5,13 +5,17 @@ do:
   iRedTea: front
   MrDuckVC: back
 subtasks:
-  - "tRPC"
+  - "tRPC (client)"
+  - "tRPC (server)"
   - "Turborepo + bun workspaces"
   - "Orval"
 pages: [contract, auth]
+related:
+  - track: front-libs
+    why: "tRPC (client) — свой клиент tRPC, фронтовая библиотека: живёт в монорепе библиотек и публикуется в npm вместе с ними"
 ---
 
-Подзадачи — со стороны фронта (Денис).
+«tRPC (server)» — роутер tRPC в BFF, делает Валентин; остальные подзадачи — со стороны фронта (Денис).
 
 Браузер ходит только в BFF (Backend for Frontend): клиент вызывает процедуры tRPC, а BFF ходит в Go API.
 Токены остаются на сервере и в браузер не попадают: у пользователя только зашифрованная cookie сессии.

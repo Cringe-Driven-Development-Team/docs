@@ -37,7 +37,8 @@ test("в треке есть раздел tRPC и подстраницы", () =>
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
   expect(md).toContain("pages: [contract, auth]");
-  expect(md).toContain('- "tRPC"');
+  expect(md).toContain('- "tRPC (client)"');
+  expect(md).toContain('- "tRPC (server)"');
   expect(md.split("\n").some((line) => line.startsWith("# "))).toBe(false);
   const trpc = section(md, "tRPC");
   expect(trpc).toContain("./bff/contract");
