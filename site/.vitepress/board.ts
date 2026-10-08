@@ -1,5 +1,6 @@
 // Снимок доски GitHub Projects: типы и разбор формы. Чистые функции без файлов и DOM.
 // Спека: docs/superpowers/specs/2026-10-08-module-board-design.md §4.3.
+import type { Module } from "./modules.ts";
 
 export type BoardState = "open" | "closed" | "not_planned";
 export type BoardTask = {
@@ -78,4 +79,85 @@ export function parseSnapshot(json: unknown): BoardSnapshot {
   const sprints = arr("sprints", root.sprints).map((s, i) => parseSprint(`sprints[${i}]`, s));
   const tasks = arr("tasks", root.tasks).map((t, i) => parseTask(`tasks[${i}]`, t));
   return { takenAt, sprints, tasks };
+}
+
+export type Progress = { done: number; active: number; total: number };
+export type ModuleTasks = { byTrack: Record<string, BoardTask[]>; untracked: BoardTask[]; unknown: BoardTask[] };
+
+/** Дата `YYYY-MM-DD` по Москве для ISO-времени. */
+export function moscowDate(iso: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function addDays(date: string, days: number): string {
+  const [y = 0, m = 1, d = 1] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** Модуль, в котором сегодня идёт один из спринтов; иначе самый новый модуль со спринтами. */
+function currentModule(modules: readonly Module[], snapshot: BoardSnapshot): Module | undefined {
+  const withSprints = modules.filter((m) => m.sprints.length > 0);
+  const today = moscowDate(snapshot.takenAt);
+  const running = new Set(
+    snapshot.sprints.filter((s) => s.start <= today && today < addDays(s.start, s.days)).map((s) => s.title),
+  );
+  const current = withSprints.find((m) => m.sprints.some((s) => running.has(s)));
+  if (current) return current;
+  return withSprints.reduce<Module | undefined>((a, m) => (a === undefined || m.id > a.id ? m : a), undefined);
+}
+
+/** Раскладка задач по модулям и трекам, спека §4.4. Ключи — id всех модулей. */
+export function assignTasks(modules: readonly Module[], snapshot: BoardSnapshot): Record<string, ModuleTasks> {
+  const result: Record<string, ModuleTasks> = {};
+  for (const m of modules) result[m.id] = { byTrack: {}, untracked: [], unknown: [] };
+  const byRef = new Map(snapshot.tasks.map((t) => [t.ref, t]));
+  const current = currentModule(modules, snapshot);
+  for (const task of snapshot.tasks) {
+    const track = task.track ?? (task.parent !== null ? (byRef.get(task.parent)?.track ?? null) : null);
+    const module =
+      task.sprint !== null ? modules.find((m) => m.sprints.includes(task.sprint as string)) : current;
+    const bucket = module && result[module.id];
+    if (!module || !bucket) continue;
+    if (track !== null) {
+      if (module.tracks.some((t) => t.id === track)) (bucket.byTrack[track] ??= []).push(task);
+      else bucket.unknown.push(task);
+    } else if (task.sprint !== null) {
+      bucket.untracked.push(task);
+    }
+  }
+  return result;
+}
+
+/** Прогресс трека, спека §4.4 п. 4. */
+export function trackProgress(tasks: readonly BoardTask[]): Progress {
+  const counted = tasks.filter((t) => t.state !== "not_planned");
+  return {
+    total: counted.length,
+    done: counted.filter((t) => t.status === "Done" || t.state === "closed").length,
+    active: counted.filter((t) => t.status === "In progress" || t.status === "In review").length,
+  };
+}
+
+export const STATUS_ORDER = ["In progress", "In review", "Ready", "Backlog", "Done"] as const;
+
+function statusRank(status: string | null): number {
+  if (status === null) return STATUS_ORDER.indexOf("Backlog");
+  const i = (STATUS_ORDER as readonly string[]).indexOf(status);
+  // статус вне списка — после Backlog, перед Done
+  return i === -1 ? STATUS_ORDER.indexOf("Backlog") + 0.5 : i;
+}
+
+/** Группы по `STATUS_ORDER`, внутри — по `ref`; `not_planned` в конце. */
+export function sortTasks(tasks: readonly BoardTask[]): BoardTask[] {
+  const key = (t: BoardTask) => (t.state === "not_planned" ? 1 : 0);
+  return [...tasks].sort(
+    (a, b) => key(a) - key(b) || statusRank(a.status) - statusRank(b.status) || a.ref.localeCompare(b.ref, "en", { numeric: true }),
+  );
 }
