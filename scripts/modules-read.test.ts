@@ -106,12 +106,12 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль октября 2026");
-  expect(october?.tracks).toHaveLength(20);
+  expect(october?.tracks).toHaveLength(21);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [4, 2],
-    blackHATred: [0, 4],
+    blackHATred: [1, 4],
     ManInTheCoat: [8, 0],
     iRedTea: [6, 0],
     GrayMouse9: [4, 0],
@@ -122,6 +122,8 @@ test("real site/modules is valid", () => {
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
   expect(track("monaco")?.help).toEqual(["blackHATred"]);
   expect([track("front-harness")?.area, track("front-harness")?.subtasks]).toEqual(["team", ["chrome-devtools-mcp", "Скиллы"]]);
+  const grooming = track("runtime-grooming");
+  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
 });
 
 const SNAPSHOT = {
