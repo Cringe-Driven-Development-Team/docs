@@ -182,3 +182,36 @@ test("правило модулей записано", () => {
   expect(readFileSync("README.md", "utf8")).toContain("pages: [");
   expect(readFileSync("site/modules/index.md", "utf8")).toContain("Здесь план");
 });
+
+/** Строки-стрелки всех mermaid-блоков раздела «Сценарии». */
+function scenarioArrows(md: string): string[] {
+  const blocks = section(md, "Сценарии").match(/```mermaid\n[\s\S]*?```/g) ?? [];
+  return blocks.flatMap((block) => block.split("\n")).filter((line) => /^\s*\w+-+>>[+-]?\w+:/.test(line));
+}
+
+test("в сценариях браузер вызывает tRPC", () => {
+  const arrows = scenarioArrows(readFileSync(AUTH, "utf8"));
+  const fromClient = arrows.filter((line) => /^\s*[FB]-+>>[+-]?[BP]:/.test(line));
+  expect(fromClient.length).toBeGreaterThan(0);
+  for (const line of fromClient) expect(line).not.toContain("/api/v1");
+  expect(fromClient.some((line) => line.includes("/api/trpc/auth.login"))).toBe(true);
+  const toGo = arrows.filter((line) => /^\s*P-+>>[+-]?A:/.test(line));
+  expect(toGo.some((line) => line.includes("/api/v1"))).toBe(true);
+});
+
+test("«Авторизация» описывает обработку вызова", () => {
+  const md = readFileSync(AUTH, "utf8");
+  expect(md).toContain("\n## Как BFF обрабатывает вызов\n");
+  expect(md).not.toContain("## Как BFF проксирует запрос");
+  for (const needle of ["createContext", "authedProcedure", "/api/trpc"]) expect(md, needle).toContain(needle);
+  expect(md).not.toContain("списке разрешённых");
+});
+
+test("ссылки на старые разделы", () => {
+  for (const file of BFF_PAGES) {
+    const md = readFileSync(file, "utf8");
+    for (const anchor of ["#какие-запросы-bff-пропускает", "#собственные-ручки-bff", "#overlay", "#как-bff-проксирует-запрос"]) {
+      expect(md, `${file} ${anchor}`).not.toContain(anchor);
+    }
+  }
+});
