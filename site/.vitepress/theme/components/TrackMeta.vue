@@ -1,0 +1,83 @@
+<script setup lang="ts">
+// Шапка страницы трека из frontmatter (слот doc-before): направление, люди, подзадачи, связи.
+import { computed } from 'vue';
+import { useData, withBase } from 'vitepress';
+import { AREA_LABELS, pageRef, SIDE_LABELS } from '../../modules.ts';
+import { data } from '../../../modules/modules.data.ts';
+
+const { page } = useData();
+const found = computed(() => {
+  const ref = pageRef(page.value.relativePath);
+  const module = data.modules.find((m) => m.id === ref?.module);
+  const track = ref?.track ? module?.tracks.find((t) => t.id === ref.track) : undefined;
+  return module && track ? { module, track } : null;
+});
+const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
+const titleOf = (id: string) => found.value?.module.tracks.find((t) => t.id === id)?.title ?? id;
+const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/tracks/${id}`);
+</script>
+
+<template>
+  <header v-if="found" class="vp-doc track-meta">
+    <p class="eyebrow">
+      <span class="area-dot" :style="{ background: `var(--cdd-area-${found.track.area})` }" />
+      Трек · {{ AREA_LABELS[found.track.area] }} ·
+      <a :href="withBase(found.module.url)">На графе модуля</a>
+    </p>
+    <h1>{{ found.track.title }}</h1>
+    <dl>
+      <dt>Делают</dt>
+      <dd>{{ found.track.do.map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') }}</dd>
+      <template v-if="found.track.help.length">
+        <dt>Помогают</dt>
+        <dd>{{ found.track.help.map(name).join(', ') }}</dd>
+      </template>
+    </dl>
+    <template v-if="found.track.subtasks.length">
+      <h2 id="подзадачи">Подзадачи</h2>
+      <ul>
+        <li v-for="subtask in found.track.subtasks" :key="subtask">{{ subtask }}</li>
+      </ul>
+    </template>
+    <template v-if="found.track.related.length">
+      <h2 id="связи">Связи</h2>
+      <ul>
+        <li v-for="r in found.track.related" :key="r.track"><a :href="urlOf(r.track)">{{ titleOf(r.track) }}</a> — {{ r.why }}</li>
+      </ul>
+    </template>
+    <div v-if="!found.track.hasBody" class="info custom-block">
+      <p class="custom-block-title">Описание ещё не написано</p>
+      <p>Цель, что сделать и приёмку менторы допишут после груминга.</p>
+    </div>
+  </header>
+</template>
+
+<style scoped>
+.track-meta {
+  margin-bottom: 24px;
+}
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+}
+.area-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 16px 0 0;
+}
+dt {
+  color: var(--vp-c-text-2);
+}
+dd {
+  margin: 0;
+}
+</style>

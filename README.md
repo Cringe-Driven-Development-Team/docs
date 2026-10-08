@@ -120,6 +120,45 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 схем. Новая страница — файл в `site/` и пункт в `sidebar` конфига. Mermaid-схемы в Markdown:
 `sequenceDiagram`, участники с короткими ASCII-алиасами, без `;` и `#` в сообщениях.
 
+### Модули
+
+План учебного модуля (месяц разработки) — граф «люди — треки — подзадачи» на
+`/docs/modules/<YYYY-MM>/`, страница на каждый трек и архив `/docs/modules/`. Данные лежат в
+`site/modules/`, меню модулей собирается из файлов само. Ошибка в данных роняет сборку и
+называет файл и поле.
+
+- **Человек** — строка в `site/modules/people.ts`: GitHub-логин, имя, роль, направление
+  (`front`, `back`, `devops`, `fullstack`, `team`), `mentor: true` у менторов.
+- **Модуль** — каталог `site/modules/<YYYY-MM>/` с `index.md`: во frontmatter `title`,
+  необязательный `period` и `aside: false`, в тексте `<ModuleGraph />`.
+- **Трек** — файл `site/modules/<YYYY-MM>/tracks/<id>.md`, `id` — строчная латиница, цифры и дефис:
+
+  ```yaml
+  ---
+  title: Multi-branch деплой фронта и стейджинг бэка через Coolify
+  label: Multi-branch + стейджинг (Coolify)   # подпись на графе; без него — title
+  area: devops                                 # front | back | devops | fullstack | team
+  do:                                          # логин → сторона: front | back | devops | team
+    iRedTea: devops
+  help: [YarikMix, blackHATred]                # необязательно
+  subtasks:                                    # необязательно
+    - Откаты
+  related:                                     # необязательно: связь с треком этого модуля
+    - track: ai-review
+      why: Агентам Stagehand нужен стенд ветки
+  ---
+
+  ## Цель
+  …
+  ```
+
+  Заголовок, исполнителей, подзадачи и связи страница трека показывает сама — в тексте
+  `# Заголовок` не нужен. Пока текста нет, на странице плашка «Описание ещё не написано».
+  У трека `fullstack` нужны исполнители со стороны `front` и `back`.
+
+В `vitepress dev` новый трек появится на графе сразу, а в меню — после перезапуска
+dev-сервера. Формат и проверки — `docs/superpowers/specs/2026-10-08-module-graph-design.md`.
+
 ### Превью веток
 
 Push в любую ветку публикует её сайт и схемы по адресу

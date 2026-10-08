@@ -29,6 +29,8 @@
     "@eraserlabs/diagrams-cli": "0.1.0",
     "@mermaid-js/mermaid-cli": "11.17.0",
     "@types/bun": "1.4.2",
+    "force-graph": "1.51.4",
+    "gray-matter": "4.0.3",
     "mermaid": "^11",
     "typescript": "7.0.2",
     "vitepress": "1.6.4",

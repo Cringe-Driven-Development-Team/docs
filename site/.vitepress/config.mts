@@ -1,7 +1,12 @@
 // Конфиг сайта документации. Спека: docs/superpowers/specs/2026-10-07-vitepress-csrf-docs-design.md §4.
 import { defineConfig } from 'vitepress';
 import { withMermaid } from 'vitepress-plugin-mermaid';
+import { fileURLToPath } from 'node:url';
+import { readModules } from './modules-read.ts';
 import { SITE_BASE } from './site.ts';
+
+// Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
+const modules = readModules(fileURLToPath(new URL('../modules', import.meta.url)));
 
 export default withMermaid(
   defineConfig({
@@ -19,8 +24,13 @@ export default withMermaid(
         { text: 'Архитектура', link: '/diagrams/', target: '_self' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
         { text: 'BFF', link: '/bff/', activeMatch: '^/bff/' },
+        { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
       sidebar: {
+        '/modules/': modules.map((m) => ({
+          text: m.title,
+          items: [{ text: 'Граф', link: m.url }, ...m.tracks.map((t) => ({ text: t.title, link: t.url }))],
+        })),
         '/bff/': [
           {
             text: 'Миграция на BFF',

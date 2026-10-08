@@ -1,9 +1,13 @@
 // Тема по умолчанию; на главной старый якорь индекса схем (#contract) переводит в diagrams/.
+// Модули: граф и архив — глобальные компоненты, шапка трека — в слоте doc-before.
 import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
-import { nextTick, onMounted, watch } from 'vue';
+import { h, nextTick, onMounted, watch } from 'vue';
 import { diagramsRedirect } from '../site.ts';
+import ModuleGraph from './components/ModuleGraph.vue';
+import ModuleList from './components/ModuleList.vue';
+import TrackMeta from './components/TrackMeta.vue';
 import './custom.css';
 
 const MERMAID_WAIT_MS = 5000;
@@ -37,6 +41,11 @@ function scrollToHashAfterMermaid(): void {
 
 const theme: Theme = {
   extends: DefaultTheme,
+  Layout: () => h(DefaultTheme.Layout, null, { 'doc-before': () => h(TrackMeta) }),
+  enhanceApp({ app }) {
+    app.component('ModuleGraph', ModuleGraph);
+    app.component('ModuleList', ModuleList);
+  },
   setup() {
     const route = useRoute();
     onMounted(() => {
