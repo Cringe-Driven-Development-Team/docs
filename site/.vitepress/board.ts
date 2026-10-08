@@ -149,10 +149,10 @@ export function trackProgress(tasks: readonly BoardTask[]): Progress {
 
 export const STATUS_ORDER = ["In progress", "In review", "Ready", "Backlog", "Done"] as const;
 
-function statusRank(status: string | null): number {
+/** Место статуса в `STATUS_ORDER`: без статуса — как Backlog, статус вне списка — сразу после Backlog. */
+export function statusRank(status: string | null): number {
   if (status === null) return STATUS_ORDER.indexOf("Backlog");
   const i = (STATUS_ORDER as readonly string[]).indexOf(status);
-  // статус вне списка — после Backlog, перед Done
   return i === -1 ? STATUS_ORDER.indexOf("Backlog") + 0.5 : i;
 }
 

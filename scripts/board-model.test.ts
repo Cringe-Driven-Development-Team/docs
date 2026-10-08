@@ -4,6 +4,7 @@ import {
   moscowDate,
   parseSnapshot,
   sortTasks,
+  statusRank,
   trackProgress,
   type BoardSnapshot,
   type BoardTask,
@@ -194,6 +195,17 @@ describe("sortTasks", () => {
       mkTask({ ref: "a#7", status: "In progress" }),
     ];
     expect(refs(sortTasks(tasks))).toEqual(["a#7", "a#6", "a#3", "a#4", "a#5", "a#1", "a#2"]);
+  });
+});
+
+describe("statusRank", () => {
+  test("STATUS_ORDER, unknown status right after Backlog, null as Backlog", () => {
+    expect(statusRank("In progress")).toBeLessThan(statusRank("In review"));
+    expect(statusRank("In review")).toBeLessThan(statusRank("Ready"));
+    expect(statusRank("Ready")).toBeLessThan(statusRank("Backlog"));
+    expect(statusRank("Backlog")).toBeLessThan(statusRank("Weird"));
+    expect(statusRank("Weird")).toBeLessThan(statusRank("Done"));
+    expect(statusRank(null)).toBe(statusRank("Backlog"));
   });
 });
 

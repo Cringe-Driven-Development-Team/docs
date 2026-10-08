@@ -2,24 +2,19 @@
 // Задачи с доски группами по статусу: ссылка на issue, заголовок, спринт, исполнители.
 // Рендерится при сборке. Спека: docs/superpowers/specs/2026-10-08-module-board-design.md §5.1.
 import { computed } from 'vue';
-import { type BoardTask, sortTasks, STATUS_ORDER } from '../../board.ts';
+import { type BoardTask, sortTasks, statusRank } from '../../board.ts';
 import type { Person } from '../../modules.ts';
 
 const props = defineProps<{ tasks: BoardTask[]; people: readonly Person[] }>();
 
-const KNOWN: readonly string[] = STATUS_ORDER;
-// Без статуса — в группе Backlog; статус вне списка — сразу после Backlog.
-const rank = (status: string) => {
-  const i = KNOWN.indexOf(status);
-  return i === -1 ? KNOWN.indexOf('Backlog') + 0.5 : i;
-};
+// Группа — по тексту статуса (у задачи без статуса заголовок «Backlog»), порядок групп — statusRank.
 const groups = computed(() => {
   const byStatus = new Map<string, BoardTask[]>();
   for (const task of sortTasks(props.tasks)) {
     const status = task.status ?? 'Backlog';
     byStatus.set(status, [...(byStatus.get(status) ?? []), task]);
   }
-  return [...byStatus].sort(([a], [b]) => rank(a) - rank(b)).map(([status, tasks]) => ({ status, tasks }));
+  return [...byStatus].sort(([a], [b]) => statusRank(a) - statusRank(b)).map(([status, tasks]) => ({ status, tasks }));
 });
 const name = (login: string) => props.people.find((p) => p.login === login)?.name ?? login;
 const meta = (task: BoardTask) =>
