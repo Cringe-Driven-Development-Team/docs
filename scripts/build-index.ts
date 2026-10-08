@@ -1,19 +1,13 @@
-// Собирает dist/index.html: заголовок, ссылки на <name>.html и <name>.png,
-// превью PNG. Схемы корня diagrams/ и каждая подпапка (diagrams/frozen-k3s/)
-// это табы в липкой полосе внизу окна, как листы в Google Sheets; первый таб
-// активен. Табы без JavaScript: radio + label + :checked; JS только открывает
-// таб по якорю. Без подпапок табов нет, страница это список карточек.
-// Подпапки из HIDDEN_FOLDERS на индекс не попадают.
-// Один статичный файл, CSS встроен, зависимостей нет.
+// Пишет dist/diagrams/index.html: старый индекс схем переехал на страницу «Архитектура»
+// (site/architecture/), здесь — переадресация старых якорей #<схема> и #<папка>/<схема>.
+// Ещё отдаёт имена схем и размеры PNG сборке сайта.
 // Использование: bun scripts/build-index.ts
 import { join } from "node:path";
+import { HIDDEN_FOLDERS, ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
+import { diagramTarget } from "../site/.vitepress/site.ts";
 import { DIAGRAMS_DIR, listDiagrams } from "./eraser.ts";
 
-// Имя таба со схемами корня diagrams/.
-export const ROOT_TAB = "mvp";
-
-// Подпапки замороженных архитектур: схемы рендерятся и открываются по прямой ссылке, таба на индексе нет.
-export const HIDDEN_FOLDERS = ["bff", "frozen-k3s"];
+export { HIDDEN_FOLDERS };
 
 // Схемы для индекса: все, кроме схем из HIDDEN_FOLDERS.
 export function indexNames(names: readonly string[]): string[] {
@@ -53,114 +47,33 @@ export async function pngSizes(names: readonly string[], dir = "dist"): Promise<
   return sizes;
 }
 
-export interface IndexTab {
-  label: string;
-  names: string[];
-}
-
-// Таб корня первым (если в корне есть схемы), дальше по табу на подпапку в порядке имён.
-export function indexTabs(names: readonly string[]): IndexTab[] {
-  const root = names.filter((name) => !name.includes("/"));
-  const folders = [...new Set(names.filter((name) => name.includes("/")).map((name) => name.slice(0, name.indexOf("/"))))];
-  return [
-    ...(root.length > 0 ? [{ label: ROOT_TAB, names: root }] : []),
-    ...folders.map((folder) => ({ label: folder, names: names.filter((name) => name.startsWith(`${folder}/`)) })),
-  ];
-}
-
-function card(name: string, size: ImageSize | undefined, prefix: string): string {
-  const title = name.slice(name.lastIndexOf("/") + 1);
-  const dimensions = size ? ` width="${size.width}" height="${size.height}"` : "";
-  return `    <section class="card" id="${name}">
-      <h2><a class="anchor" href="#${name}" aria-label="Ссылка на ${name}">#</a>${title}</h2>
-      <p><a href="${prefix}${name}.html">HTML</a> · <a href="${prefix}${name}.png">PNG</a></p>
-      <a href="${prefix}${name}.html"><img src="${prefix}${name}.png"${dimensions} alt="${name}"></a>
-    </section>`;
-}
-
-const TAB_BAR_CSS = `
-    body { padding-bottom: 80px; }
-    .tab-radio { position: absolute; opacity: 0; pointer-events: none; }
-    .panel { display: none; }
-    .tabs { position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: stretch; gap: 2px; padding: 0 16px; background: #f1f3f4; border-top: 1px solid #dadce0; }
-    .tabs label { padding: 10px 18px; color: #444; cursor: pointer; border-radius: 0 0 6px 6px; user-select: none; }
-    .tabs label:hover { background: #e4e7ea; }
-    .tabs a { margin-left: auto; align-self: center; }`;
-
-// Якорь #{name} в адресе: открыть таб карточки и прокрутить к ней. Битый якорь,
-// неизвестный id или id не карточки (tab-0, panel-1) — ничего не делать.
-const ANCHOR_SCRIPT = `  <script>
-    function openAnchor() {
-      let card;
-      try { card = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch { return; }
-      if (!card || !card.classList.contains("card")) return;
-      const panel = card.closest(".panel");
-      if (panel) document.getElementById("tab-" + panel.id.slice("panel-".length)).checked = true;
-      card.scrollIntoView();
-    }
-    addEventListener("hashchange", openAnchor);
-    openAnchor();
-  </script>`;
-
-function tabbedBody(tabs: readonly IndexTab[], previewsLink: string, sizes: Record<string, ImageSize>, prefix: string): { css: string; body: string } {
-  const perTabCss = tabs
-    .map(
-      (_, i) => `
-    #tab-${i}:checked ~ #panel-${i} { display: block; }
-    #tab-${i}:checked ~ .tabs label[for="tab-${i}"] { background: #fff; color: #188038; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
-    #tab-${i}:focus-visible ~ .tabs label[for="tab-${i}"] { outline: 2px solid #0b57d0; outline-offset: -2px; }`,
-    )
-    .join("");
-  const radios = tabs.map((_, i) => `  <input type="radio" name="tab" id="tab-${i}" class="tab-radio"${i === 0 ? " checked" : ""}>`);
-  const panels = tabs.map((tab, i) => [`  <div class="panel" id="panel-${i}">`, ...tab.names.map((name) => card(name, sizes[name], prefix)), "  </div>"].join("\n"));
-  const labels = tabs.map((tab, i) => `    <label for="tab-${i}">${tab.label}</label>`);
-  const nav = ['  <nav class="tabs">', ...labels, ...(previewsLink ? [`    ${previewsLink}`] : []), "  </nav>"];
-  return { css: TAB_BAR_CSS + perTabCss, body: [...radios, ...panels, ...nav, ANCHOR_SCRIPT].join("\n") };
-}
-
-export function renderIndex(
-  names: readonly string[],
-  options: { previewsHref?: string; sizes?: Record<string, ImageSize>; assetPrefix?: string } = {},
-): string {
-  const tabs = indexTabs(names);
-  const sizes = options.sizes ?? {};
-  // Индекс лежит в dist/diagrams/, схемы — в dist/: ссылки на них с префиксом "../".
-  const prefix = options.assetPrefix ?? "";
-  const previewsLink = options.previewsHref ? `<a href="${options.previewsHref}">Превью веток</a>` : "";
-  const { css, body } =
-    tabs.length > 1
-      ? tabbedBody(tabs, previewsLink, sizes, prefix)
-      : { css: "", body: [...names.map((name) => card(name, sizes[name], prefix)), ...(previewsLink ? [`  <p>${previewsLink}</p>`] : [])].join("\n") };
+// Переадресация со старого индекса: скрипт повторяет diagramTarget (встроен через String),
+// без JavaScript — ссылка на «Архитектуру».
+export function renderRedirect(rootNames: readonly string[]): string {
   return `<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Диаграммы</title>
-  <style>
-    body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: #fafafa; color: #111; }
-    h1 { margin: 0 0 24px; }
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 24px; scroll-margin-top: 16px; }
-    .card h2 { position: relative; margin: 0 0 8px; font-size: 20px; }
-    .anchor { position: absolute; right: 100%; padding-right: 4px; color: #999; text-decoration: none; opacity: 0; }
-    .card:hover .anchor, .anchor:focus-visible { opacity: 1; }
-    @media (hover: none) { .anchor { opacity: 1; } }
-    .card img { display: block; max-width: 100%; height: auto; border: 1px solid #eee; }${css}
-  </style>
+  <meta name="robots" content="noindex">
+  <title>Схемы переехали</title>
 </head>
 <body>
-  <h1>Диаграммы</h1>
-${body}
+  <p>Схемы переехали на страницу <a href="../architecture/">«Архитектура»</a>.</p>
+  <script>
+    const diagramTarget = ${String(diagramTarget)};
+    const target = diagramTarget(location.hash, ${JSON.stringify(rootNames)}, ${JSON.stringify(HIDDEN_FOLDERS)});
+    location.replace("../" + (target ?? "architecture/"));
+  </script>
 </body>
 </html>
 `;
 }
 
-// Индекс схем: главная сайта — VitePress, схемы открываются из меню «Архитектура».
+// Страница-переадресация старого индекса схем.
 export const INDEX_FILE = join("dist", "diagrams", "index.html");
 
 if (import.meta.main) {
-  const names = indexNames(diagramNames());
-  await Bun.write(INDEX_FILE, renderIndex(names, { sizes: await pngSizes(names), assetPrefix: "../" }));
-  console.error(`${INDEX_FILE}: ${names.length} diagrams`);
+  await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
+  console.error(`${INDEX_FILE}: переадресация на architecture/`);
 }

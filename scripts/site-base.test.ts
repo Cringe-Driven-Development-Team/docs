@@ -1,9 +1,13 @@
 import { expect, test } from "bun:test";
-import { diagramsRedirect } from "../site/.vitepress/site.ts";
+import { diagramTarget } from "../site/.vitepress/site.ts";
 
-test("diagramsRedirect: an old index anchor moves to diagrams/ under the site base", () => {
-  expect(diagramsRedirect("", "/docs/")).toBeNull();
-  expect(diagramsRedirect("#", "/docs/")).toBeNull();
-  expect(diagramsRedirect("#contract", "/docs/")).toBe("/docs/diagrams/#contract");
-  expect(diagramsRedirect("#bff/ci", "/docs/branches/x/")).toBe("/docs/branches/x/diagrams/#bff/ci");
+test("diagramTarget: anchors of root diagrams go to architecture/, hidden folders to the diagram HTML", () => {
+  expect(diagramTarget("#ci", ["ci"], ["bff"])).toBe("architecture/#ci");
+  expect(diagramTarget("#bff/ci", ["ci"], ["bff"])).toBe("bff/ci.html");
+  expect(diagramTarget("#nope", ["ci"], ["bff"])).toBe("architecture/");
+  expect(diagramTarget("#other/ci", ["ci"], ["bff"])).toBe("architecture/");
+  expect(diagramTarget("", ["ci"], ["bff"])).toBeNull();
+  expect(diagramTarget("#", ["ci"], ["bff"])).toBeNull();
+  expect(diagramTarget("#%D1%86", ["ci"], ["bff"])).toBe("architecture/");
+  expect(diagramTarget("#%E0%A4%A", ["ci"], ["bff"])).toBe("architecture/");
 });
