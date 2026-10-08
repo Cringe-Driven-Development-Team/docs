@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import {
+  BOARD_SNAPSHOT,
   assignSlugs,
   branchSiteBase,
   branchSlug,
@@ -92,4 +94,9 @@ test("renderPreviewsIndex: the back link leads to the main site", () => {
   const html = renderPreviewsIndex([]);
   expect(html).toContain('<a href="../">Сайт main</a>');
   expect(html).not.toContain("Диаграммы main");
+});
+
+test("BOARD_SNAPSHOT is the ignored board snapshot path", () => {
+  expect(BOARD_SNAPSHOT).toBe("site/modules/board.json");
+  expect(readFileSync(".gitignore", "utf8").split(/\r?\n/)).toContain(BOARD_SNAPSHOT);
 });

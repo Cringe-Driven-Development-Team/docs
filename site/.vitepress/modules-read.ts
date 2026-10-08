@@ -2,6 +2,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import matter from "gray-matter";
+import { assignTasks, type BoardData, parseSnapshot, SnapshotError } from "./board.ts";
 import { PEOPLE } from "../modules/people.ts";
 import { checkModuleId, ModuleDataError, type Module, parseModule, parseTrack, type Person, validatePeople } from "./modules.ts";
 
@@ -34,4 +35,18 @@ export function readModules(modulesDir: string, people: readonly Person[] = PEOP
     return parseModule(`modules/${id}/index.md`, id, readPage(index, `modules/${id}/index.md`).data, tracks);
   });
   return modules.sort((a, b) => b.id.localeCompare(a.id));
+}
+
+/** Снимок доски; нет файла — `null`, сломанный снимок — предупреждение и `null`: сборку он не роняет (спека §4.5). */
+export function readBoard(path: string, modules: readonly Module[]): BoardData | null {
+  if (!existsSync(path)) return null;
+  try {
+    const snapshot = parseSnapshot(JSON.parse(readFileSync(path, "utf8")));
+    return { takenAt: snapshot.takenAt, byModule: assignTasks(modules, snapshot) };
+  } catch (error) {
+    if (!(error instanceof SnapshotError) && !(error instanceof SyntaxError)) throw error;
+    const message = (error as Error).message;
+    console.warn(`${error instanceof SnapshotError ? message : `board.json: ${message}`} — задачи не показаны`);
+    return null;
+  }
 }

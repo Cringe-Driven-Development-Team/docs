@@ -1,9 +1,12 @@
 <script setup lang="ts">
-// Шапка страницы трека из frontmatter (слот doc-before): направление, люди, подзадачи, связи.
+// Шапка страницы трека из frontmatter (слот doc-before): направление, люди, подзадачи, связи,
+// задачи со снимка доски.
 import { computed } from 'vue';
 import { useData, withBase } from 'vitepress';
 import { AREA_LABELS, pageRef, SIDE_LABELS } from '../../modules.ts';
+import { moduleTasks } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
+import TaskList from './TaskList.vue';
 
 const { page } = useData();
 const found = computed(() => {
@@ -11,6 +14,11 @@ const found = computed(() => {
   const module = data.modules.find((m) => m.id === ref?.module);
   const track = ref?.track ? module?.tracks.find((t) => t.id === ref.track) : undefined;
   return module && track ? { module, track } : null;
+});
+// null — снимка доски нет, раздела «Задачи» нет.
+const tasks = computed(() => {
+  const all = found.value ? moduleTasks(data.board, found.value.module) : null;
+  return all && found.value ? (all.byTrack[found.value.track.id] ?? []) : null;
 });
 const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
 const titleOf = (id: string) => found.value?.module.tracks.find((t) => t.id === id)?.title ?? id;
@@ -44,6 +52,11 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
       <ul>
         <li v-for="r in found.track.related" :key="r.track"><a :href="urlOf(r.track)">{{ titleOf(r.track) }}</a> — {{ r.why }}</li>
       </ul>
+    </template>
+    <template v-if="tasks">
+      <h2 id="задачи">Задачи</h2>
+      <TaskList v-if="tasks.length" :tasks="tasks" :people="data.people" />
+      <p v-else>Задач пока нет: их привязывают на груминге полем «Трек» на доске</p>
     </template>
     <div v-if="!found.track.hasBody" class="info custom-block">
       <p class="custom-block-title">Описание ещё не написано</p>

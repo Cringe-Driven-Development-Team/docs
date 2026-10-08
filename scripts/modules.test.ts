@@ -124,6 +124,21 @@ describe("parseModule", () => {
     expect(() => parseModule(INDEX, "2026-10", {}, [])).toThrow(`${INDEX}: title — нужна непустая строка`);
   });
 
+  test("sprints are read, and default to an empty list", () => {
+    expect(parseModule(INDEX, "2026-10", { title: "М", sprints: ["Sprint 5", "Sprint 6"] }, []).sprints).toEqual(["Sprint 5", "Sprint 6"]);
+    expect(parseModule(INDEX, "2026-10", { title: "М" }, []).sprints).toEqual([]);
+  });
+
+  test("sprints are validated", () => {
+    expect(() => parseModule(INDEX, "2026-10", { title: "М", sprints: "Sprint 5" }, [])).toThrow(`${INDEX}: sprints — нужен список`);
+    expect(() => parseModule(INDEX, "2026-10", { title: "М", sprints: ["Sprint 5", "Спринт 6"] }, [])).toThrow(
+      `${INDEX}: sprints[1] — нужен формат Sprint N`,
+    );
+    expect(() => parseModule(INDEX, "2026-10", { title: "М", sprints: ["Sprint 5", "Sprint 5"] }, [])).toThrow(
+      `${INDEX}: sprints — Sprint 5 повторяется`,
+    );
+  });
+
   test("related must point to another track of the module", () => {
     expect(() => parseModule(INDEX, "2026-10", { title: "М" }, [t("a", "А", [{ track: "ghost", why: "w" }])])).toThrow(
       "modules/2026-10/tracks/a.md: related[0].track — трека ghost нет в модуле 2026-10",

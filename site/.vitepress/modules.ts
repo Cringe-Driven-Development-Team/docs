@@ -1,5 +1,6 @@
 // Модель учебного модуля: люди, треки, проверки данных, граф и фильтры. Чистые функции без файлов и DOM.
 // Спека: docs/superpowers/specs/2026-10-08-module-graph-design.md §4–5.
+import type { Progress } from "./board.ts";
 
 export const AREAS = ["front", "back", "devops", "fullstack", "team"] as const;
 export type Area = (typeof AREAS)[number];
@@ -58,9 +59,10 @@ export type Track = {
   hasBody: boolean;
   url: string;
 };
-export type Module = { id: string; title: string; period?: string; url: string; tracks: Track[] };
+export type Module = { id: string; title: string; period?: string; sprints: string[]; url: string; tracks: Track[] };
 
 const TRACK_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SPRINT = /^Sprint \d+$/;
 const MODULE_ID = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -165,8 +167,14 @@ export function parseModule(file: string, id: string, data: unknown, tracks: Tra
       if (!ids.has(r.track)) throw new ModuleDataError(trackFile, `related[${index}].track`, `трека ${r.track} нет в модуле ${id}`);
     });
   }
+  const sprints: string[] = [];
+  list(file, "sprints", fm.sprints).forEach((item, index) => {
+    if (typeof item !== "string" || !SPRINT.test(item)) throw new ModuleDataError(file, `sprints[${index}]`, "нужен формат Sprint N");
+    if (sprints.includes(item)) throw new ModuleDataError(file, "sprints", `${item} повторяется`);
+    sprints.push(item);
+  });
   const sorted = [...tracks].sort((a, b) => a.title.localeCompare(b.title, "ru"));
-  return { id, title, ...(nonEmpty(fm.period) ? { period: fm.period } : {}), url: `/modules/${id}/`, tracks: sorted };
+  return { id, title, ...(nonEmpty(fm.period) ? { period: fm.period } : {}), sprints, url: `/modules/${id}/`, tracks: sorted };
 }
 
 export type NodeKind = "person" | "track" | "subtask";
@@ -179,6 +187,7 @@ export type GraphNode = {
   mentor?: true;
   login?: string;
   trackId?: string;
+  progress?: Progress;
 };
 export type LinkKind = "do" | "help" | "part" | "related";
 export type GraphLink = { source: string; target: string; kind: LinkKind; side?: Side; why?: string };
@@ -194,7 +203,12 @@ const trackId = (id: string) => `track:${id}`;
 const subtaskId = (id: string, index: number) => `subtask:${id}/${index}`;
 
 /** Граф модуля под фильтром; правила — план задачи 4 и прототип от 08.10. */
-export function buildGraph(module: Module, people: readonly Person[], filter: Filter): Graph {
+export function buildGraph(
+  module: Module,
+  people: readonly Person[],
+  filter: Filter,
+  progress: Readonly<Record<string, Progress>> = {},
+): Graph {
   const showHelp = !filter.hide.includes("help");
   const participants = (t: Track) => [...t.do.map((d) => d.login), ...(showHelp ? t.help : [])];
   const tracks = module.tracks.filter(
@@ -215,7 +229,15 @@ export function buildGraph(module: Module, people: readonly Person[], filter: Fi
   const links: GraphLink[] = [];
   const showSubtasks = !filter.hide.includes("subtasks");
   for (const t of tracks) {
-    nodes.push({ id: trackId(t.id), kind: "track", label: t.label, title: t.title, area: t.area });
+    const trackProgress = progress[t.id];
+    nodes.push({
+      id: trackId(t.id),
+      kind: "track",
+      label: t.label,
+      title: t.title,
+      area: t.area,
+      ...(trackProgress && trackProgress.total > 0 ? { progress: trackProgress } : {}),
+    });
     for (const d of t.do) links.push({ source: personId(d.login), target: trackId(t.id), kind: "do", side: d.side });
     if (showHelp) for (const login of t.help) links.push({ source: personId(login), target: trackId(t.id), kind: "help" });
     if (!showSubtasks) continue;

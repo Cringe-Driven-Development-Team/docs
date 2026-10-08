@@ -14,10 +14,12 @@ import {
   personLoad,
   searchMatches,
 } from '../../modules.ts';
+import { type ModuleTasks, moduleTasks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import GraphCanvas from './GraphCanvas.vue';
 import GraphFilters from './GraphFilters.vue';
 import NodeCard from './NodeCard.vue';
+import TaskList from './TaskList.vue';
 import TrackList from './TrackList.vue';
 
 const { page } = useData();
@@ -28,7 +30,27 @@ const selected = ref<string | null>(null);
 const failed = ref(false);
 const canvas = ref<InstanceType<typeof GraphCanvas>>();
 
-const graph = computed(() => (module.value ? buildGraph(module.value, data.people, filter.value) : { nodes: [], links: [] }));
+// Задачи модуля со снимка доски; null — снимка нет.
+const tasks = computed<ModuleTasks | null>(() => (module.value ? moduleTasks(data.board, module.value) : null));
+const progress = computed(() =>
+  Object.fromEntries(Object.entries(tasks.value?.byTrack ?? {}).map(([track, list]) => [track, trackProgress(list)])),
+);
+const takenAt = computed(() =>
+  data.board
+    ? new Intl.DateTimeFormat('ru-RU', {
+        timeZone: 'Europe/Moscow',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(data.board.takenAt))
+    : null,
+);
+
+const graph = computed(() =>
+  module.value ? buildGraph(module.value, data.people, filter.value, progress.value) : { nodes: [], links: [] },
+);
 const matches = computed(() => searchMatches(graph.value.nodes, query.value));
 const load = computed(() => (module.value ? personLoad(module.value, data.people) : []));
 const empty = computed(() => !graph.value.nodes.some((n) => n.kind === 'track'));
@@ -59,9 +81,10 @@ watch(graph, (value) => {
     <p v-if="module.tracks.length === 0" class="empty">
       В модуле пока нет треков. Добавьте файл в <code>site/modules/{{ module.id }}/tracks/</code>.
     </p>
-    <template v-else>
-      <div class="layout">
-        <GraphFilters v-model:filter="filter" v-model:query="query" :people="data.people" :load="load" />
+    <!-- Снимок доски — под графом (вторая строка правой колонки); без треков — сам по себе. -->
+    <div :class="{ layout: module.tracks.length > 0 }">
+      <template v-if="module.tracks.length">
+        <GraphFilters v-model:filter="filter" v-model:query="query" :people="data.people" :load="load" class="filters" />
         <div class="stage">
           <ClientOnly>
             <GraphCanvas
@@ -80,15 +103,34 @@ watch(graph, (value) => {
             <p>Под фильтр ничего не попало</p>
             <button type="button" class="reset" @click="reset">Сбросить фильтры</button>
           </div>
-          <NodeCard v-if="selected" :id="selected" :module="module" :people="data.people" @select="selected = $event" @close="selected = null" />
+          <NodeCard
+            v-if="selected"
+            :id="selected"
+            :module="module"
+            :people="data.people"
+            :tasks="tasks"
+            @select="selected = $event"
+            @close="selected = null"
+          />
           <div class="hud">
             <p>Наведите на узел, чтобы подсветить соседей. Клик открывает карточку, колесо мыши меняет масштаб.</p>
             <button type="button" @click="canvas?.fit()">Вписать</button>
           </div>
         </div>
-      </div>
-      <TrackList :module="module" />
-    </template>
+      </template>
+      <section v-if="module.sprints.length" class="board">
+        <p class="taken">{{ takenAt ? `Снимок доски: ${takenAt} МСК` : 'Задачи с доски не загружены' }}</p>
+        <details v-if="tasks?.untracked.length">
+          <summary>Задачи без трека · {{ tasks.untracked.length }}</summary>
+          <TaskList :tasks="tasks.untracked" :people="data.people" />
+        </details>
+        <details v-if="tasks?.unknown.length">
+          <summary>Задачи с неизвестным треком · {{ tasks.unknown.length }}</summary>
+          <TaskList :tasks="tasks.unknown" :people="data.people" />
+        </details>
+      </section>
+    </div>
+    <TrackList v-if="module.tracks.length" :module="module" />
   </div>
 </template>
 
@@ -96,8 +138,17 @@ watch(graph, (value) => {
 .layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-rows: auto 1fr;
+  gap: 12px 16px;
   margin: 16px 0 32px;
+}
+.layout .filters {
+  grid-row: span 2;
+}
+.layout .board {
+  grid-column: 2;
+  align-self: start;
+  margin: 0;
 }
 .stage {
   position: relative;
@@ -163,9 +214,38 @@ watch(graph, (value) => {
 .period {
   color: var(--vp-c-text-2);
 }
+.board {
+  margin: 0 0 32px;
+}
+.taken {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+}
+.board details {
+  margin: 4px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+}
+.board summary {
+  margin: 0;
+  cursor: pointer;
+  font-weight: 500;
+}
+.board details[open] summary {
+  margin-bottom: 8px;
+}
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .layout .filters {
+    grid-row: auto;
+  }
+  .layout .board {
+    grid-column: auto;
   }
 }
 @media (max-width: 640px) {
