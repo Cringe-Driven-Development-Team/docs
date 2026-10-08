@@ -1,8 +1,9 @@
 ---
 title: "Автоподнятие VPS под каждый новый блокнот"
 label: "Авто-VPS под блокнот"
-area: devops
+area: back
 do:
+  MrDuckVC: back
   iRedTea: devops
 help: [blackHATred]
 ---

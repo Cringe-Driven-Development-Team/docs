@@ -3,6 +3,6 @@ title: "Рефакторинг репозитория бэка"
 label: "Рефакторинг репы бэка"
 area: back
 do:
-  MrDuckVC: back
+  GrayMouse9: back
 help: [blackHATred]
 ---

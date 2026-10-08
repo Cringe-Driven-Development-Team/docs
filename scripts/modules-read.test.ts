@@ -111,12 +111,16 @@ test("real site/modules is valid", () => {
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [3, 2],
-    blackHATred: [0, 3],
+    blackHATred: [0, 4],
     ManInTheCoat: [8, 0],
     iRedTea: [6, 0],
-    GrayMouse9: [3, 0],
+    GrayMouse9: [4, 0],
     MrDuckVC: [4, 0],
   });
+  const track = (id: string) => october!.tracks.find((t) => t.id === id);
+  expect([track("notebook-vps")?.area, track("notebook-vps")?.do]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }]]);
+  expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
+  expect(track("monaco")?.help).toEqual(["blackHATred"]);
 });
 
 const SNAPSHOT = {
