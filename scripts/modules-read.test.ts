@@ -38,6 +38,15 @@ test("errors name the file from site/", () => {
   expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff.md: do — логина MrDuck нет в people.ts");
 });
 
+test("YAML syntax errors name the file", () => {
+  write("2026-10/index.md", "---\ntitle: Октябрь\n---\n");
+  write("2026-10/tracks/bff.md", BFF.replace("  MrDuckVC: back\n", "  MrDuckVC: back\n  iRedTea: back\n"));
+  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff.md: frontmatter — duplicated mapping key");
+  write("2026-10/tracks/bff.md", BFF);
+  write("2026-10/index.md", "---\ntitle: [Октябрь\n---\n");
+  expect(() => readModules(dir)).toThrow("modules/2026-10/index.md: frontmatter — ");
+});
+
 test("rejects a stray directory", () => {
   write("drafts/notes.md", "черновик\n");
   expect(() => readModules(dir)).toThrow("modules/drafts: каталог — drafts — нужен формат YYYY-MM");
