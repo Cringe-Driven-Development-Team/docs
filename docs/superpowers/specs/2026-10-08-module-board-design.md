@@ -153,7 +153,7 @@ jobs:
     steps:
       - checkout main (persist-credentials: false)
       - setup bun (oven-sh/setup-bun, точная версия), bun install --frozen-lockfile
-      - bun scripts/board.ts sync          # env GH_TOKEN: secrets.ADD_TO_PROJECT_PAT
+      - bun scripts/board.ts sync          # env GH_TOKEN — секрет ADD_TO_PROJECT_PAT
       - bun scripts/board.ts snapshot board.json
       - upload-artifact board (board.json)
   build:
