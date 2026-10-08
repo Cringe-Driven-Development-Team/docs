@@ -84,6 +84,14 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
 .track-crumb {
   margin-bottom: 4px;
 }
+/* Строка стоит вне .vp-doc: ссылкам нужен цвет темы, иначе они не отличаются от текста. */
+.track-crumb a {
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+}
+.track-crumb a:hover {
+  text-decoration: underline;
+}
 .eyebrow {
   margin: 0 0 8px;
   font-size: 13px;
