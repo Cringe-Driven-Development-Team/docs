@@ -4,6 +4,7 @@
 // Использование: bun scripts/build-index.ts
 import { join } from "node:path";
 import { HIDDEN_FOLDERS, ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
+import { type ImageSize, parsePngSize } from "../site/.vitepress/png-size.ts";
 import { diagramTarget } from "../site/.vitepress/site.ts";
 import { DIAGRAMS_DIR, listDiagrams } from "./eraser.ts";
 
@@ -19,22 +20,13 @@ export function diagramNames(dir = DIAGRAMS_DIR): string[] {
   return listDiagrams(dir).map((file) => file.slice(dir.length + 1, -".json".length));
 }
 
-export interface ImageSize {
-  width: number;
-  height: number;
-}
+export type { ImageSize };
 
-const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-
-// Размер PNG из чанка IHDR: ширина — байты 16–19, высота — 20–23, big-endian.
-// Нет файла, короче 24 байт или не PNG — undefined.
+// Размер PNG файла; нет файла, короче 24 байт или не PNG — undefined.
 export async function pngSize(path: string): Promise<ImageSize | undefined> {
   const file = Bun.file(path);
   if (!(await file.exists())) return undefined;
-  const head = await file.slice(0, 24).bytes();
-  if (head.length < 24 || PNG_SIGNATURE.some((byte, i) => head[i] !== byte)) return undefined;
-  const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
-  return { width: view.getUint32(16), height: view.getUint32(20) };
+  return parsePngSize(await file.slice(0, 24).bytes());
 }
 
 // Размеры PNG схем из dir (по умолчанию dist/), только для найденных файлов.
