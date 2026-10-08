@@ -7,4 +7,6 @@ do:
 subtasks:
   - "chrome-devtools-mcp"
   - "Скиллы"
+  - "LSP для агента через MCP"
+pages: [lsp-mcp]
 ---
