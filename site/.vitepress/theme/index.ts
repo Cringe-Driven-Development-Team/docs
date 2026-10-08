@@ -1,13 +1,15 @@
-// Тема по умолчанию; на главной старый якорь индекса схем (#contract) переводит в diagrams/.
+// Тема по умолчанию; на главной старый якорь индекса схем (#contract) переводит на «Архитектуру».
 // Модули: граф и архив — глобальные компоненты, шапка трека — в слоте doc-before.
 import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
 import { h, nextTick, onMounted, watch } from 'vue';
-import { diagramsRedirect } from '../site.ts';
+import { HIDDEN_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
+import { diagramTarget } from '../site.ts';
 import ModuleGraph from './components/ModuleGraph.vue';
 import ModuleList from './components/ModuleList.vue';
 import TrackMeta from './components/TrackMeta.vue';
+import Diagram from './Diagram.vue';
 import './custom.css';
 
 const MERMAID_WAIT_MS = 5000;
@@ -45,15 +47,16 @@ const theme: Theme = {
   enhanceApp({ app }) {
     app.component('ModuleGraph', ModuleGraph);
     app.component('ModuleList', ModuleList);
+    app.component('Diagram', Diagram);
   },
   setup() {
     const route = useRoute();
     onMounted(() => {
       const base = import.meta.env.BASE_URL;
       if (location.pathname === base) {
-        const target = diagramsRedirect(location.hash, base);
+        const target = diagramTarget(location.hash, ROOT_NAMES, HIDDEN_FOLDERS);
         if (target) {
-          location.replace(target);
+          location.replace(base + target);
           return;
         }
       }

@@ -47,3 +47,10 @@ test("checkSite: broken link, missing anchor and missing image are reported, dia
     "index.html: нет картинки /docs/x.png",
   ]);
 });
+
+test("checkSite: iframe src must exist, links into branches/ are skipped", () => {
+  const missing = site({ "index.html": '<iframe src="/docs/x.html"></iframe><a href="/docs/branches/">p</a>' });
+  expect(checkSite(missing, "/docs/", [])).toEqual(["index.html: битая ссылка /docs/x.html"]);
+  const present = site({ "index.html": '<iframe src="/docs/x.html" loading="lazy"></iframe>', "x.html": "" });
+  expect(checkSite(present, "/docs/", ["x"])).toEqual([]);
+});

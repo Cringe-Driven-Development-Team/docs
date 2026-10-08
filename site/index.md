@@ -11,15 +11,13 @@ hero:
       link: /security/csrf/
     - theme: alt
       text: Схемы архитектуры
-      link: /diagrams/
-      target: _self
+      link: /architecture/
 
 features:
   - title: Архитектура
     details: Схемы MVP — деплой, CI, CD, клиент, контракт, инфраструктура.
-    link: /diagrams/
+    link: /architecture/
     linkText: Открыть схемы
-    target: _self
   - title: 'Безопасность: CSRF'
     details: Три cookie, Double Submit с подписью, проверки на ручках и все сценарии со схемами.
     link: /security/csrf/

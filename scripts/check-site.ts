@@ -62,13 +62,13 @@ function fileOf(pathname: string, base: string): string | undefined {
 
 type Reference = { kind: "link" | "image"; value: string };
 
-// <a href>, <link href>, <script src> — ссылки (должны существовать); <img src> — картинки.
+// <a href>, <link href>, <script src>, <iframe src> — ссылки (должны существовать); <img src> — картинки.
 function referencesOf(html: string): Reference[] {
   const refs: Reference[] = [];
-  for (const [tag] of html.matchAll(/<(?:a|link|script|img)\s[^>]*>/gi)) {
+  for (const [tag] of html.matchAll(/<(?:a|link|script|img|iframe)\s[^>]*>/gi)) {
     const kind = /^<img/i.test(tag) ? "image" : "link";
     // Разбираются только атрибуты в двойных кавычках: VitePress всегда выводит их так.
-    const attr = kind === "image" || /^<script/i.test(tag) ? "src" : "href";
+    const attr = kind === "image" || /^<(?:script|iframe)/i.test(tag) ? "src" : "href";
     const value = new RegExp(`\\s${attr}="([^"]*)"`, "i").exec(tag)?.[1];
     if (value !== undefined) refs.push({ kind, value: unescapeHtml(value) });
   }
@@ -92,6 +92,8 @@ export function checkSite(dist: string, base: string, diagrams: readonly string[
       if (value === "" || /^data:/i.test(value)) continue;
       if (SCHEME.test(value)) continue;
       const url = new URL(value, ORIGIN + here);
+      // Список превью веток появляется только на Pages после build-site.ts.
+      if (url.pathname.startsWith(`${base}branches/`)) continue;
       const file = fileOf(url.pathname, base);
       let ok = file !== undefined && existsSync(join(dist, file));
       const fragment = decode(url.hash.slice(1));

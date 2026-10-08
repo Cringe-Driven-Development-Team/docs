@@ -2,7 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diagramNames, indexNames, pngSize, pngSizes, renderIndex } from "./build-index.ts";
+import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
+import { diagramNames, indexNames, pngSize, pngSizes, renderRedirect } from "./build-index.ts";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -21,68 +22,6 @@ test("diagramNames: names of *.json relative to the dir without extension, subfo
 
 test("indexNames: drops diagrams of bff/ and frozen-k3s/, keeps the root and other folders", () => {
   expect(indexNames(["cd", "bff/ci", "frozen-k3s/ci", "bff-next/ci", "other/ci"])).toEqual(["cd", "bff-next/ci", "other/ci"]);
-});
-
-test("renderIndex: one card per diagram with html link, png link and preview", () => {
-  const html = renderIndex(["deployment", "ci"]);
-  expect(html).toMatch(/^<!doctype html>/i);
-  expect(html).toMatch(/#<\/a>deployment<\/h2>/);
-  expect(html).toMatch(/href="deployment\.html"/);
-  expect(html).toMatch(/href="deployment\.png"/);
-  expect(html).toMatch(/<img src="deployment\.png"/);
-  expect(html).toMatch(/#<\/a>ci<\/h2>/);
-  expect(html).not.toMatch(/<link|<script/);
-});
-
-test("renderIndex: links branch previews only when previewsHref is given", () => {
-  expect(renderIndex(["ci"], { previewsHref: "branches/" })).toMatch(/<a href="branches\/">Превью веток<\/a>/);
-  expect(renderIndex(["ci"])).not.toMatch(/Превью веток/);
-});
-
-test("renderIndex: root diagrams and each subfolder become tabs, the root tab first and checked", () => {
-  const html = renderIndex(["ci", "frozen-k3s/cd", "frozen-k3s/ci"]);
-  expect(html).toContain('<input type="radio" name="tab" id="tab-0" class="tab-radio" checked>');
-  expect(html).toContain('<input type="radio" name="tab" id="tab-1" class="tab-radio">');
-  expect(html).toContain('<label for="tab-0">mvp</label>');
-  expect(html).toContain('<label for="tab-1">frozen-k3s</label>');
-  expect(html.indexOf('<label for="tab-0">')).toBeLessThan(html.indexOf('<label for="tab-1">'));
-  expect(html).toContain("#tab-0:checked ~ #panel-0 { display: block; }");
-  expect(html).toContain("#tab-1:checked ~ #panel-1 { display: block; }");
-  expect(html).not.toMatch(/<link/);
-});
-
-test("renderIndex: each tab panel holds only its own cards, all with h2 titles and folder paths in links", () => {
-  const html = renderIndex(["ci", "frozen-k3s/cd", "frozen-k3s/ci"]);
-  const rootPanel = html.slice(html.indexOf('id="panel-0"'), html.indexOf('id="panel-1"'));
-  const folderPanel = html.slice(html.indexOf('id="panel-1"'), html.indexOf('<nav class="tabs">'));
-  expect(rootPanel).toContain("#</a>ci</h2>");
-  expect(rootPanel).toContain('href="ci.html"');
-  expect(rootPanel).not.toContain("frozen-k3s/");
-  expect(folderPanel).toContain("#</a>cd</h2>");
-  expect(folderPanel).toContain('href="frozen-k3s/cd.html"');
-  expect(folderPanel).toContain('<img src="frozen-k3s/ci.png" alt="frozen-k3s/ci">');
-  expect(html).not.toMatch(/<h3>|class="folder"/);
-});
-
-test("renderIndex: the tab bar comes after the panels and carries the branch previews link", () => {
-  const html = renderIndex(["ci", "frozen-k3s/cd"], { previewsHref: "branches/" });
-  const bar = html.slice(html.indexOf('<nav class="tabs">'), html.indexOf("</nav>"));
-  expect(html.indexOf('id="panel-1"')).toBeLessThan(html.indexOf('<nav class="tabs">'));
-  expect(bar).toContain('<a href="branches/">Превью веток</a>');
-  expect(html.match(/Превью веток/g)).toHaveLength(1);
-});
-
-test("renderIndex: without subfolders there are no tabs, the page is a plain list of cards", () => {
-  const html = renderIndex(["deployment", "ci"], { previewsHref: "branches/" });
-  expect(html).not.toMatch(/class="tabs"|type="radio"|class="panel"/);
-  expect(html).toMatch(/<p><a href="branches\/">Превью веток<\/a><\/p>/);
-});
-
-test("renderIndex: with only subfolders the first folder is the first, checked tab", () => {
-  const html = renderIndex(["a/x", "b/y"]);
-  expect(html).toContain('<label for="tab-0">a</label>');
-  expect(html).toContain('<label for="tab-1">b</label>');
-  expect(html).not.toContain(">mvp<");
 });
 
 // Минимальный заголовок PNG: сигнатура, длина и тип чанка IHDR, ширина, высота.
@@ -125,53 +64,27 @@ test("pngSizes: sizes only for diagrams whose PNG exists, subfolder names keep t
   });
 });
 
-test("renderIndex: each card has its path as id and a # link to it", () => {
-  const html = renderIndex(["contract", "frozen-k3s/ci"]);
-  expect(html).toContain('<section class="card" id="contract">');
-  expect(html).toContain('<h2><a class="anchor" href="#contract" aria-label="Ссылка на contract">#</a>contract</h2>');
-  expect(html).toContain('<section class="card" id="frozen-k3s/ci">');
-  expect(html).toContain('<h2><a class="anchor" href="#frozen-k3s/ci" aria-label="Ссылка на frozen-k3s/ci">#</a>ci</h2>');
+test("ROOT_NAMES matches the root diagrams", () => {
+  expect([...ROOT_NAMES]).toEqual(indexNames(diagramNames()));
 });
 
-test("renderIndex: img gets width and height only for diagrams with a known size", () => {
-  const html = renderIndex(["ci", "frozen-k3s/cd"], { sizes: { ci: { width: 3744, height: 3064 } } });
-  expect(html).toContain('<img src="ci.png" width="3744" height="3064" alt="ci">');
-  expect(html).toContain('<img src="frozen-k3s/cd.png" alt="frozen-k3s/cd">');
-  expect(renderIndex(["ci", "frozen-k3s/cd"])).not.toMatch(/width="/);
-});
+// Выполняет встроенный скрипт переадресации с подставным location и возвращает адрес replace.
+function followRedirect(html: string, hash: string): string | undefined {
+  const script = html.slice(html.indexOf("<script>") + "<script>".length, html.indexOf("</script>"));
+  let target: string | undefined;
+  new Function("location", script)({ hash, replace: (url: string) => (target = url) });
+  return target;
+}
 
-test("renderIndex: anchor styles, scroll margin and always-visible # without hover", () => {
-  const html = renderIndex(["ci"]);
-  expect(html).toContain("scroll-margin-top: 16px;");
-  expect(html).toContain(".card:hover .anchor, .anchor:focus-visible { opacity: 1; }");
-  expect(html).toContain("@media (hover: none) { .anchor { opacity: 1; } }");
-  expect(html).toContain(".card h2 { position: relative;");
-  expect(html).toContain(".anchor { position: absolute; right: 100%;");
-});
-
-test("renderIndex: the tabbed page opens the tab of the anchored card with an inline script after the tab bar", () => {
-  const html = renderIndex(["ci", "frozen-k3s/cd"]);
-  const script = html.slice(html.indexOf("<script>"), html.indexOf("</script>"));
-  expect(html.indexOf("</nav>")).toBeLessThan(html.indexOf("<script>"));
-  expect(script).toContain("decodeURIComponent(location.hash.slice(1))");
-  expect(script).toContain("catch { return; }");
-  expect(script).toContain('if (!card || !card.classList.contains("card")) return;');
-  expect(script).toContain('card.closest(".panel")');
-  expect(script).toContain('addEventListener("hashchange", openAnchor);');
-  expect(script).toContain("card.scrollIntoView();");
-  expect(script).toContain('document.getElementById("tab-" + panel.id.slice("panel-".length)).checked = true;');
-  expect(script.trimEnd()).toMatch(/\n\s*openAnchor\(\);$/);
-});
-
-test("renderIndex: the page without tabs has no script", () => {
-  expect(renderIndex(["deployment", "ci"])).not.toMatch(/<script/);
-});
-
-test("renderIndex: assetPrefix goes before html and png links, anchors stay bare", () => {
-  const html = renderIndex(["contract", "bff/ci"], { assetPrefix: "../" });
-  expect(html).toContain('href="../contract.html"');
-  expect(html).toContain('src="../contract.png"');
-  expect(html).toContain('href="../bff/ci.png"');
-  expect(html).toContain('href="#contract"');
-  expect(html).not.toContain('href="contract.html"');
+test("renderRedirect: noindex, link to architecture/ and a script that follows diagramTarget", () => {
+  const html = renderRedirect(["ci", "contract"]);
+  expect(html).toMatch(/^<!doctype html>/i);
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toContain('<a href="../architecture/">');
+  expect(html).toContain('["ci","contract"]');
+  expect(followRedirect(html, "#ci")).toBe("../architecture/#ci");
+  expect(followRedirect(html, "#bff/ci")).toBe("../bff/ci.html");
+  expect(followRedirect(html, "#frozen-k3s/cd")).toBe("../frozen-k3s/cd.html");
+  expect(followRedirect(html, "")).toBe("../architecture/");
+  expect(followRedirect(html, "#nope")).toBe("../architecture/");
 });
