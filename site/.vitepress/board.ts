@@ -83,6 +83,8 @@ export function parseSnapshot(json: unknown): BoardSnapshot {
 
 export type Progress = { done: number; active: number; total: number };
 export type ModuleTasks = { byTrack: Record<string, BoardTask[]>; untracked: BoardTask[]; unknown: BoardTask[] };
+/** Снимок доски в данных сайта: время съёмки и задачи по модулям. */
+export type BoardData = { takenAt: string; byModule: Record<string, ModuleTasks> };
 
 /** Дата `YYYY-MM-DD` по Москве для ISO-времени. */
 export function moscowDate(iso: string): string {

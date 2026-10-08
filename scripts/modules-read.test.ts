@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { personLoad } from "../site/.vitepress/modules.ts";
-import { readModules } from "../site/.vitepress/modules-read.ts";
+import { readBoard, readModules } from "../site/.vitepress/modules-read.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
 let dir = "";
@@ -70,4 +70,59 @@ test("real site/modules is valid", () => {
     GrayMouse9: [3, 0],
     MrDuckVC: [4, 0],
   });
+});
+
+const SNAPSHOT = {
+  takenAt: "2026-10-14T09:00:00Z",
+  sprints: [{ title: "Sprint 5", start: "2026-10-13", days: 14 }],
+  tasks: [
+    { ref: "frontend#1", title: "Задача", url: "https://x/1", state: "open", status: "Ready", sprint: "Sprint 5", assignees: [], track: "bff", parent: null },
+  ],
+};
+
+function boardModules() {
+  write("2026-10/index.md", "---\ntitle: Октябрь\nsprints: [Sprint 5]\n---\n");
+  write("2026-10/tracks/bff.md", BFF);
+  return readModules(dir);
+}
+
+test("readBoard: no file gives null", () => {
+  expect(readBoard(join(dir, "board.json"), boardModules())).toBeNull();
+});
+
+test("readBoard: broken JSON warns and gives null", () => {
+  const modules = boardModules();
+  write("board.json", "{ не json");
+  const warn = spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    expect(readBoard(join(dir, "board.json"), modules)).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/^board\.json: .+ — задачи не показаны$/);
+  } finally {
+    warn.mockRestore();
+  }
+});
+
+test("readBoard: wrong shape warns and gives null", () => {
+  const modules = boardModules();
+  write("board.json", JSON.stringify({ takenAt: 1 }));
+  const warn = spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    expect(readBoard(join(dir, "board.json"), modules)).toBeNull();
+    expect(String(warn.mock.calls[0]?.[0])).toBe("board.json: takenAt — нужна строка — задачи не показаны");
+  } finally {
+    warn.mockRestore();
+  }
+});
+
+test("readBoard: valid snapshot is split by module", () => {
+  const modules = boardModules();
+  write("board.json", JSON.stringify(SNAPSHOT));
+  const board = readBoard(join(dir, "board.json"), modules);
+  expect(board?.takenAt).toBe(SNAPSHOT.takenAt);
+  expect(board?.byModule["2026-10"]?.byTrack.bff?.map((x) => x.ref)).toEqual(["frontend#1"]);
+});
+
+test("real october module has four sprints", () => {
+  expect(readModules("site/modules").find((m) => m.id === "2026-10")?.sprints).toEqual(["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"]);
 });

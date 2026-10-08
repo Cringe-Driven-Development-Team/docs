@@ -37,6 +37,14 @@ describe("buildGraph", () => {
     expect(kinds()).toEqual(["do", "do", "do", "do", "help", "help", "part", "part", "related"]);
   });
 
+  test("track node carries progress only when total > 0", () => {
+    const nodes = buildGraph(MODULE, PEOPLE, DEFAULT_FILTER, { bff: { done: 1, active: 0, total: 2 }, "ai-review": { done: 0, active: 0, total: 0 } }).nodes;
+    expect(nodes.find((n) => n.id === "track:bff")?.progress).toEqual({ done: 1, active: 0, total: 2 });
+    expect(nodes.filter((n) => n.progress !== undefined).map((n) => n.id)).toEqual(["track:bff"]);
+    expect(nodes.find((n) => n.id === "track:multibranch")).not.toHaveProperty("progress");
+    expect(nodes.find((n) => n.id === "track:ai-review")).not.toHaveProperty("progress");
+  });
+
   test("links carry side and why", () => {
     const { links } = graph();
     expect(links).toContainEqual({ source: "person:MrDuckVC", target: "track:bff", kind: "do", side: "back" });
