@@ -103,27 +103,55 @@ test("сценарий двух вкладок — один refresh в Go", () =
   expect(toGo.filter((line) => line.includes("/auth/refresh")).length).toBe(1);
 });
 
-test("страница «Контракт» описывает overlay", () => {
-  expect(existsSync(CONTRACT)).toBe(true);
+export const PROCEDURES = [
+  "auth.register",
+  "auth.login",
+  "auth.logout",
+  "users.me",
+  "notebooks.list",
+  "notebooks.get",
+  "notebooks.create",
+  "cells.create",
+  "cells.delete",
+];
+
+/** Раздел `## <title>` страницы до следующего `## `. */
+export function section(md: string, title: string): string {
+  const start = md.indexOf(`\n## ${title}\n`);
+  if (start === -1) return "";
+  const rest = md.slice(start + 1).split("\n").slice(1).join("\n");
+  const next = rest.search(/^## /m);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
+test("«Контракт» описывает tRPC", () => {
   const md = readFileSync(CONTRACT, "utf8");
-  for (const needle of [
-    "spec/bff.overlay.yaml",
-    "spec/openapi.public.json",
-    "openapi-format",
-    "--overlayFile",
-    "sessionCookie",
-    "csrfHeader",
-    "TokenPair",
-    "orval",
-    "client: 'hono'",
-    "Собственные ручки BFF",
-    "`bff`",
-  ]) {
+  const headings = md.split("\n").filter((line) => line.startsWith("## ")).map((line) => line.slice(3));
+  expect(headings).toEqual([
+    "Источники правды",
+    "Что меняется в контракте Go",
+    "Команды",
+    "Генерация Orval",
+    "Роутер",
+    "Процедуры экранов",
+    "Ошибки",
+    "Клиент",
+    "Какие вызовы BFF принимает",
+  ]);
+  for (const needle of ["AppRouter", "views.notebook", "appCode", "inferRouterOutputs", "/api/trpc", "createContext", "authedProcedure", "goZod", "client: 'zod'"]) {
     expect(md, needle).toContain(needle);
   }
-  const yamlBlocks = md.match(/```yaml\n[\s\S]*?```/g) ?? [];
-  expect(yamlBlocks.length).toBe(1);
-  expect(yamlBlocks[0]).toContain("overlay: 1.0.0");
+  for (const needle of ["bff.overlay.yaml", "openapi.public.json", "client: 'hono'", "Собственные ручки"]) {
+    expect(md, needle).not.toContain(needle);
+  }
+});
+
+test("в таблице роутера все 9 процедур", () => {
+  const rows = section(readFileSync(CONTRACT, "utf8"), "Роутер")
+    .split("\n")
+    .filter((line) => line.startsWith("|"));
+  for (const p of PROCEDURES) expect(rows.some((row) => row.includes(`\`${p}\``)), p).toBe(true);
+  expect(rows.some((row) => row.includes("auth.refresh"))).toBe(false);
 });
 
 test("openapi-cdd встречается только в одной фразе «Контракта»", () => {

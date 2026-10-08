@@ -8,35 +8,34 @@ title: Контракт
 Решение по tRPC меняет участок клиент → BFF: где в тексте прокси `/api/v1` и список разрешённых маршрутов — это отвергнутый вариант, см. [tRPC](../bff#trpc).
 :::
 
-Контракт API остаётся spec-first: в Apidog ведётся один контракт Go API, а публичный контракт BFF,
-между клиентом и BFF, выводится из него отдельным файлом — overlay. Ручки данных описываются один раз,
-а отличается только `/auth/*` и схема безопасности.
+Между клиентом и BFF контракт — роутер tRPC: процедуры описаны кодом в BFF, клиент получает их типы
+импортом из монорепы. Между BFF и Go контракт остаётся spec-first: Go описан в Apidog, а клиент к нему и
+схемы входа генерирует Orval.
 
-## Один источник
+## Источники правды
 
 ```mermaid
 flowchart LR
-    D["Apidog"] -->|"make generate: cmd/apidog + oapi-codegen"| G["Go: сервер"]
-    D -->|"apidog"| O["spec/openapi.json (монорепа)"]
-    O -->|"Orval: fetch без тега bff"| BT["BFF: клиент к Go"]
-    O --> F["openapi-format"]
-    Y["spec/bff.overlay.yaml"] --> F
-    F --> P["spec/openapi.public.json"]
-    P -->|"Orval: client fetch"| C["Клиент: apps/client"]
-    P -->|"Orval: client hono и zod"| BS["BFF: ручки /auth/* и тег bff"]
+    D["Apidog: контракт Go"] -->|"make generate: cmd/apidog и oapi-codegen"| G["Go: сервер"]
+    D -->|"bun run sync"| S["spec/openapi.json"]
+    S -->|"Orval goApi"| GA["apps/bff/src/go: клиент к Go"]
+    S -->|"Orval goZod"| GZ["apps/bff/src/go: zod-схемы"]
+    GA --> R["apps/bff/src/router: роутер tRPC"]
+    GZ --> R
+    R -->|"import type AppRouter"| C["apps/client"]
 ```
 
-Go забирает контракт из Apidog сам: `make generate` в бэкенде запускает
-[`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31)
-и затем `oapi-codegen`. Файл `spec/openapi.json` в монорепе нужен клиенту и BFF.
-
-Типы и клиенты в монорепе генерирует [Orval](https://orval.dev). Сегодня клиент использует собственный
-генератор команды
-[`openapi-cdd`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/package.json#L16);
-трек переводит генерацию на Orval, потому что он умеет и сторону BFF: хендлеры Hono с валидацией через zod.
-
-Почему не два контракта в Apidog: ручки данных (`/users/me`, `/notebooks*`) пришлось бы описывать
-дважды и следить, чтобы описания не разошлись. Overlay хранит только различия.
+- **Go ↔ BFF.** Контракт Go ведётся в Apidog. Go забирает его сам: `make generate` в бэкенде запускает
+  [`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31)
+  и затем `oapi-codegen`. Монорепа выгружает тот же контракт в `spec/openapi.json`, и Orval строит по нему
+  клиент к Go и zod-схемы операций для BFF.
+- **Клиент ↔ BFF.** Контракт — роутер tRPC в `apps/bff/src/router/`. Клиент делает
+  `import type { AppRouter } from '@cdd/bff'`: в бандл не попадает ни строчки кода BFF.
+- **Apidog описывает только Go.** Публичного OpenAPI у BFF нет: overlay, публичный контракт и их проверки
+  в CI больше не нужны.
+- **Валидация.** Вход процедур проверяют zod-схемы, сгенерированные из контракта Go: правило поля
+  описано один раз, в Apidog. Выход не проверяется во время работы — типы ответа берутся из Orval, а Go —
+  наш сервис.
 
 ## Что меняется в контракте Go
 
@@ -54,247 +53,231 @@ Go становится серверным API для BFF, поэтому его
 [`access_token`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/authenticate.go#L19),
 заголовок `Authorization` он не смотрит. После переезда код и контракт сходятся.
 
-## Overlay
-
-Публичный контракт получается из `spec/openapi.json` действиями
-[OpenAPI Overlay](https://spec.openapis.org/overlay/v1.0.0.html) 1.0.0 из `spec/bff.overlay.yaml`:
-
-- удаляется `/auth/refresh`: refresh делает сам BFF (см. сценарий [«Access истёк»](./auth#access-истек));
-- `/auth/register` и `/auth/login` отвечают схемой `User` и заголовком `Set-Cookie`. `update` сливает
-  объекты рекурсивно: без предварительного `remove` схема `User` слилась бы с исходной `{ user, tokens }`,
-  и токены попали бы в публичный контракт. Поэтому сначала `remove` на `content`, потом `update`;
-- `/auth/logout` без тела запроса, отвечает `204` и `Set-Cookie`;
-- `bearerAuth` заменяется схемами `sessionCookie` и `csrfHeader`: ручкам данных и `logout` нужны обе,
-  `register` и `login` только `csrfHeader`;
-- у ручек данных появляются ответы `401` и `403` со схемой `Error`.
-
-```yaml
-overlay: 1.0.0
-info:
-  title: Публичный контракт BFF
-  version: 1.0.0
-extends: openapi.json
-actions:
-  # /auth/refresh делает сам BFF, наружу его не отдаём
-  - target: $.paths['/auth/refresh']
-    remove: true
-
-  # register и login: наружу отдаётся только User, токены остаются на сервере;
-  # update сливает объекты, поэтому старый content сначала удаляется
-  - target: $.paths['/auth/register'].post.responses['201'].content
-    remove: true
-  - target: $.paths['/auth/register'].post.responses['201']
-    update:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/User'
-      headers:
-        Set-Cookie:
-          schema:
-            type: string
-  - target: $.paths['/auth/login'].post.responses['200'].content
-    remove: true
-  - target: $.paths['/auth/login'].post.responses['200']
-    update:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/User'
-      headers:
-        Set-Cookie:
-          schema:
-            type: string
-
-  # logout: без тела запроса, 204 и Set-Cookie, который стирает сессию
-  - target: $.paths['/auth/logout'].post.requestBody
-    remove: true
-  - target: $.paths['/auth/logout'].post.responses['204']
-    update:
-      headers:
-        Set-Cookie:
-          schema:
-            type: string
-
-  # схемы безопасности
-  - target: $.components.securitySchemes.bearerAuth
-    remove: true
-  - target: $.components.securitySchemes
-    update:
-      sessionCookie:
-        type: apiKey
-        in: cookie
-        name: __Host-Http-session
-      csrfHeader:
-        type: apiKey
-        in: header
-        name: X-CSRF
-
-  # security: register и login — csrfHeader; данные и logout — оба
-  - target: $.paths['/auth/register'].post
-    update:
-      security:
-        - csrfHeader: []
-  - target: $.paths['/auth/login'].post
-    update:
-      security:
-        - csrfHeader: []
-  - target: $.paths['/auth/logout'].post.security
-    remove: true
-  - target: $.paths['/auth/logout'].post
-    update:
-      security:
-        - sessionCookie: []
-          csrfHeader: []
-  - target: $.paths['/users/me'].get.security
-    remove: true
-  - target: $.paths['/users/me'].get
-    update:
-      security:
-        - sessionCookie: []
-          csrfHeader: []
-  # ... то же для остальных ручек данных без тега bff: /notebooks*, /notebooks/{id}/cells*
-
-  # 401 и 403 со схемой Error у ручек данных
-  - target: $.paths['/users/me'].get.responses
-    update:
-      '401':
-        description: Нет сессии
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Error'
-      '403':
-        description: Не прошла проверка CSRF
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Error'
-```
-
-Пример; точные пути зависят от выгрузки Apidog.
-
 ## Команды
 
-`bun run sync` выполняет три шага подряд:
+`bun run sync` выполняет два шага подряд:
 
-1. `apidog` выгружает контракт из Apidog в `spec/openapi.json`;
-2. `overlay` выводит публичный контракт:
+1. `apidog` выгружает контракт Go из Apidog в `spec/openapi.json`;
+2. `orval` генерирует по нему клиент к Go и zod-схемы (см. ниже).
 
-   ```sh
-   openapi-format spec/openapi.json --overlayFile spec/bff.overlay.yaml -o spec/openapi.public.json
-   ```
-
-3. `orval` запускает Orval по `orval.config.ts` (см. ниже).
-
-`bun run sync` = `apidog` → `overlay` → `orval`.
-
-Файлы: `spec/openapi.json` создаёт `apidog`, `spec/bff.overlay.yaml` пишется руками,
-`spec/openapi.public.json` создаёт `overlay` и коммитится в репозиторий.
+`spec/openapi.json` коммитится: по диффу видно, что поменялось в контракте Go. Собственный генератор
+клиента `openapi-cdd` больше не нужен: клиент берёт типы из роутера, а не из OpenAPI.
 
 ## Генерация Orval
 
-Overlay остаётся отдельным файлом: у Orval есть `input.override.transformer`, но overlay — стандартный
-декларативный файл, который проверяется в CI. Orval читает уже готовые контракты. Конфиг
-`orval.config.ts` в корне монорепы содержит три цели:
+`orval.config.ts` в корне монорепы — две цели, обе читают контракт Go:
 
 ```ts
 import { defineConfig } from 'orval';
 
 export default defineConfig({
-  // клиент браузера: fetch к BFF
-  client: {
-    input: 'spec/openapi.public.json',
-    output: {
-      target: 'apps/client/src/api/gen.ts',
-      client: 'fetch',
-      baseUrl: '/api/v1',
-      override: { mutator: { path: 'apps/client/src/api/fetch.ts', name: 'csrfFetch' } }, // ставит X-CSRF: 1
-    },
-  },
-  // собственные ручки BFF: хендлеры Hono с валидацией zod
-  bff: {
-    input: {
-      target: 'spec/openapi.public.json',
-      filters: { mode: 'include', tags: ['auth', 'bff'] }, // только /auth/* и тег bff
-    },
-    output: {
-      target: 'apps/bff/src/handlers',
-      client: 'hono',
-      mode: 'tags-split',
-      override: { hono: { validatorOutputPath: 'apps/bff/src/handlers/validator.ts' } },
-    },
-  },
-  // BFF → Go: fetch без ручек с тегом bff
+  // BFF → Go: fetch-клиент по операциям контракта
   goApi: {
-    input: {
-      target: 'spec/openapi.json',
-      filters: { mode: 'exclude', tags: ['bff'] },
-    },
+    input: { target: 'spec/openapi.json' },
     output: {
-      target: 'apps/bff/src/go/gen.ts',
+      target: 'apps/bff/src/go/client.ts',
       client: 'fetch',
-      baseUrl: 'http://api:8080/api/v1',
-      override: { mutator: { path: 'apps/bff/src/go/fetch.ts', name: 'bearerFetch' } }, // Authorization: Bearer <access>; на двух VPS ещё X-BFF-Key и origin из GO_API_URL
+      baseUrl: 'http://api:8080/api/v1', // на двух VPS мутатор берёт адрес из GO_API_URL
+      override: { mutator: { path: 'apps/bff/src/go/fetch.ts', name: 'bearerFetch' } }, // Authorization: Bearer <access>; на двух VPS ещё X-BFF-Key
+    },
+  },
+  // zod-схемы входа процедур
+  goZod: {
+    input: { target: 'spec/openapi.json' },
+    output: {
+      target: 'apps/bff/src/go/zod.ts',
+      client: 'zod',
     },
   },
 });
 ```
 
-Пример; точные пути и мутаторы зависят от репозитория. Цель `bff` создаёт хендлеры на `createFactory` из
-`hono/factory`: заготовки, тело пишется руками. Вход и ответ проверяются через `zValidator`
-(`@hono/zod-validator`); остальные маршруты идут через общий прокси. Пути сгенерированных маршрутов без
-`/api/v1` (например `/auth/register`), поэтому приложение BFF монтирует их под `basePath('/api/v1')`.
+*Пример; точные пути, имена функций и схем — по выгрузке.* Схемы Orval называет по операциям, например
+`CreateCellBody` — тело `POST /notebooks/{id}/cells`.
 
-## Собственные ручки BFF
+## Роутер
 
-Ручки, которые есть только у BFF (агрегация, пакетные запросы для сервиса вроде Colab), описываются в
-том же проекте Apidog с тегом `bff`. Дальше:
+Роутер лежит в `apps/bff/src/router/`, по файлу на ресурс; `index.ts` собирает их в `appRouter`.
+Процедуры названы по ресурсам Go:
 
-- Go исключает их из своей генерации опцией `output-options.exclude-tags` в конфиге `oapi-codegen`
-  ([README](https://github.com/oapi-codegen/oapi-codegen#how-can-i-ignore-parts-of-the-spec-i-dont-care-about));
-- в публичный контракт они попадают как есть, overlay их не трогает: `sessionCookie` и `csrfHeader`
-  определены в самом проекте Apidog, и ручки с тегом `bff` сразу описываются с этими схемами и ответами
-  `401` и `403` со схемой `Error`. Go их не использует, его генерация тег `bff` исключает, а `update`
-  в `securitySchemes` у overlay просто сливается с ними;
-- цель `goApi` в Orval исключает их через `filters`, а цель `bff` генерирует для них хендлеры.
+| Процедура | Тип | Go | Вход |
+| --- | --- | --- | --- |
+| `auth.register` | mutation | `POST /auth/register` | тело регистрации |
+| `auth.login` | mutation | `POST /auth/login` | тело входа |
+| `auth.logout` | mutation | `POST /auth/logout` | — |
+| `users.me` | query | `GET /users/me` | — |
+| `notebooks.list` | query | `GET /notebooks` | — |
+| `notebooks.get` | query | `GET /notebooks/{id}` | `{ id }` |
+| `notebooks.create` | mutation | `POST /notebooks` | тело создания |
+| `cells.create` | mutation | `POST /notebooks/{id}/cells` | `{ notebookId, …тело }` |
+| `cells.delete` | mutation | `DELETE /notebooks/{id}/cells/{index}` | `{ notebookId, index }` |
 
-Пример: `GET /api/v1/notebooks/{id}/view` — BFF параллельно запрашивает у Go блокнот и текущего
-пользователя и отдаёт один ответ.
+Процедуры обновления токенов нет: refresh делает сам BFF (см.
+[«Авторизация и CSRF»](./auth#access-истек)). `auth.*` построены на `publicProcedure`, остальные — на
+`authedProcedure`: она требует сессию и даёт процедуре `ctx.go` — клиент Go с уже свежим access.
+Как устроены `createContext` и `authedProcedure` — в [«Авторизации и CSRF»](./auth).
 
-Список разрешённых маршрутов (ниже) остаётся прежним, но маршруты с тегом `bff` обслуживают хендлеры BFF,
-а не прокси. Проверка CI «в публичном контракте нет `access_token`, `refresh_token`, `TokenPair`,
-`bearerAuth`» действует и для них.
+```ts
+// apps/bff/src/router/cells.ts
+import { z } from 'zod';
+import { authedProcedure, router } from '../trpc';
+import { CreateCellBody } from '../go/zod';
 
-## Проверки в CI
+export const cells = router({
+  create: authedProcedure
+    .input(z.object({ notebookId: z.number().int() }).extend(CreateCellBody.shape))
+    .mutation(({ ctx, input: { notebookId, ...body } }) => ctx.go.createCell(notebookId, body)),
+  delete: authedProcedure
+    .input(z.object({ notebookId: z.number().int(), index: z.number().int() }))
+    .mutation(({ ctx, input }) => ctx.go.deleteCell(input.notebookId, input.index)),
+});
+```
 
-1. Каждое действие overlay находит хотя бы один узел. Без этого правка в Apidog (переименованный путь,
-   удалённый ответ) молча ломает overlay: действие ничего не меняет, а публичный контракт расходится с
-   задуманным.
-2. `spec/openapi.public.json` совпадает с выведенным заново из `spec/openapi.json` и
-   `spec/bff.overlay.yaml`.
-3. `spec/openapi.public.json` не содержит `access_token`, `refresh_token`, `TokenPair` и `bearerAuth`.
-   Так ловится и утечка токенов через слияние, и ручка данных, забытая в overlay.
+```ts
+// apps/bff/src/router/index.ts
+export const appRouter = router({ auth, users, notebooks, cells });
+export type AppRouter = typeof appRouter;
+```
 
-## Какие запросы BFF пропускает
+*Пример; имена схем и методов клиента Go — по выгрузке Orval.*
 
-BFF проксирует только то, что есть в публичном контракте. Список разрешённых маршрутов строится из пар
-«шаблон пути + метод»; параметры пути подставляются только в шаблон. Это требование
+## Процедуры экранов
+
+Процедура ресурса — одно действие или один ресурс. Если экрану нужно больше одного вызова Go, для него
+заводится процедура в роутере `views`: она делает вызовы Go параллельно и отдаёт один ответ. Процедуры
+ресурсов остаются для действий и отдельных виджетов.
+
+Сейчас каждый экран фронта делает по одному запросу: список блокнотов —
+[`GET /notebooks`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/pages/NotebooksPage/NotebooksPage.tsx#L32),
+блокнот —
+[`GET /notebooks/{id}`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/pages/NotebookPage/NotebookPage.tsx#L38),
+поэтому процедур экранов пока нет.
+
+::: info
+`views.notebook` появится вместе с треком [«Авто-VPS»](../notebook-vps): странице блокнота понадобится и
+сам блокнот, и статус его окружения.
+:::
+
+```ts
+// apps/bff/src/router/views.ts
+export const views = router({
+  notebook: authedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .query(async ({ ctx, input }) => {
+      const [notebook, runtime] = await Promise.all([ctx.go.getNotebook(input.id), ctx.go.getRuntime(input.id)]);
+      return { notebook, runtime };
+    }),
+});
+```
+
+*Пример; `getRuntime` — будущая ручка трека «Авто-VPS».*
+
+## Ошибки
+
+Go отвечает на ошибку телом `Error { code, message }`. BFF переводит её в ошибку tRPC:
+
+| Ответ Go | Ошибка tRPC | Что ещё |
+| --- | --- | --- |
+| `400` | `BAD_REQUEST` | |
+| `401` после неудачного refresh | `UNAUTHORIZED` | cookie сессии стирается |
+| `403` | `FORBIDDEN` | |
+| `404` | `NOT_FOUND` | |
+| `409` | `CONFLICT` | |
+| `403 s2s_forbidden`, `5xx`, сеть | `BAD_GATEWAY` | запись в лог, сессия не трогается |
+
+`errorFormatter` роутера добавляет в `data`:
+
+- `appCode` — код приложения: `Error.code` от Go или код BFF (`csrf_invalid`). Клиент показывает
+  сообщения по `appCode`, а не по тексту `message`;
+- `zodError` — `error.flatten()`, если вход не прошёл схему (`BAD_REQUEST`).
+
+`stack` в прод не уходит.
+
+```json
+{
+  "error": {
+    "message": "Блокнот не найден",
+    "code": -32004,
+    "data": { "code": "NOT_FOUND", "httpStatus": 404, "path": "notebooks.get", "appCode": "notebook_not_found" }
+  }
+}
+```
+
+*Пример; коды приложения — из контракта Go.*
+
+## Клиент
+
+Сторонних runtime-библиотек на клиенте нет, поэтому клиент tRPC свой: пакет `packages/trpc-client` в
+монорепе. Типы он берёт из `@trpc/server` только через `import type` — `inferRouterInputs` и
+`inferRouterOutputs`, — и в бандл `@trpc/server` не попадает.
+
+```ts
+import { createClient } from '@cdd/trpc-client';
+import type { AppRouter } from '@cdd/bff';
+
+export const api = createClient<AppRouter>({ url: '/api/trpc' });
+
+const notebook = await api.notebooks.get.query({ id });
+await api.cells.create.mutate({ notebookId: id, type: 'code' });
+```
+
+Протокол — [HTTP RPC tRPC 11](https://trpc.io/docs/rpc):
+
+- query — `GET /api/trpc/<процедура>?input=<encodeURIComponent(JSON)>`;
+- mutation — `POST /api/trpc/<процедура>` с JSON в теле;
+- батч — процедуры через запятую в пути, `?batch=1`, `input` — объект по индексам вызовов; ответ — массив
+  конвертов в том же порядке, при разных статусах — `207`;
+- успех — `{ "result": { "data": … } }`, ошибка — `{ "error": { "message", "code", "data" } }`
+  (см. [«Ошибки»](#ошибки)).
+
+Что делает клиент:
+
+- на каждый запрос ставит `X-CSRF: 1` и `credentials: 'same-origin'`;
+- вызовы одного метода в одном тике собирает в один батч; URL длиннее 2000 символов делит на несколько
+  запросов;
+- ошибку бросает как `TrpcError { code, httpStatus, appCode, message, zodError? }`; на `UNAUTHORIZED` стор
+  сессии переходит в «гость», и фронт показывает форму входа.
+
+Подписок пока нет. Потоковый вывод ячеек, когда понадобится, пойдёт через SSE на `fetch`: у `EventSource`
+нельзя поставить заголовок `X-CSRF`.
+
+Клиент проверяется тестами на подставном `fetch`:
+
+```ts
+test('батч двух query — один GET', async () => {
+  const calls: string[] = [];
+  const fetch = async (url: string) => {
+    calls.push(url);
+    return Response.json([{ result: { data: { id: 1 } } }, { result: { data: [] } }]);
+  };
+  const api = createClient<AppRouter>({ url: '/api/trpc', fetch });
+  await Promise.all([api.notebooks.get.query({ id: 1 }), api.notebooks.list.query()]);
+  expect(calls).toEqual([`/api/trpc/notebooks.get,notebooks.list?batch=1&input=${encodeURIComponent('{"0":{"id":1}}')}`]);
+});
+```
+
+*Пример; так же проверяются кодирование `input` и разбор конверта ошибки.*
+
+## Какие вызовы BFF принимает
+
 [RFC 10017 §6.1.3.6](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.6):
 
 > When implementing a dynamically configurable proxy, the BFF MUST ensure that it only allows requests to explicitly permitted hosts and paths.
 
-Проверки CSRF идут раньше списка (см. [«Авторизация и CSRF»](./auth#как-bff-проксирует-запрос)), поэтому запрос
-без `X-CSRF` получит `403`, а не `404`. Всё, чего нет в контракте, получает `404 not_found` без запроса в Go. Например, в контракте нет
-`DELETE /api/v1/notebooks/{id}` (есть только `GET`), поэтому:
+BFF ничего не проксирует, поэтому требование выполняется устройством: Go вызывается только из процедур
+роутера и только сгенерированным клиентом, а путь и метод каждого вызова Go заданы в коде процедуры.
+
+Проверки CSRF идут раньше роутера (см. [«Авторизация и CSRF»](./auth#как-bff-обрабатывает-вызов)), поэтому
+вызов без `X-CSRF` получит `403`. Вызов несуществующей процедуры получает `404 NOT_FOUND` от tRPC без
+запроса в Go:
 
 ```http
-DELETE /api/v1/notebooks/42
+POST /api/trpc/notebooks.delete
 X-CSRF: 1
 Origin: https://cellestial.ru
 
 404 Not Found
-{ "code": "not_found", "message": "..." }
+{ "error": { "message": "No procedure found on path \"notebooks.delete\"", "code": -32004, "data": { "code": "NOT_FOUND", "httpStatus": 404, "path": "notebooks.delete" } } }
 ```
 
-Пример; в Go такой запрос не уходит.
+*Пример; удаления блокнота в контракте нет.*
