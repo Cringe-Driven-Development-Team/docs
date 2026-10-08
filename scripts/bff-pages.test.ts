@@ -144,3 +144,13 @@ test("в «Обзоре» есть раздел «Две VPS»", () => {
     expect(text, file).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
   }
 });
+
+test("правило модулей записано", () => {
+  const claude = readFileSync("CLAUDE.md", "utf8");
+  expect(claude).toContain("## Что где лежит");
+  expect(claude).toContain("Схемы корня описывают прод");
+  expect(claude).toContain("tracks/<id>/<page>.md");
+  expect(claude).not.toContain("Схемы описывают целевое состояние");
+  expect(readFileSync("README.md", "utf8")).toContain("pages: [");
+  expect(readFileSync("site/modules/index.md", "utf8")).toContain("Здесь план");
+});
