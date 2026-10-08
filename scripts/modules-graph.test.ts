@@ -6,6 +6,7 @@ import {
   filterFromQuery,
   filterToQuery,
   neighbours,
+  pageRef,
   parseModule,
   parseTrack,
   personLoad,
@@ -107,4 +108,11 @@ test("personLoad", () => {
   expect(load.map((l) => l.login)).toEqual(PEOPLE.map((p) => p.login));
   expect(load.find((l) => l.login === "YarikMix")).toEqual({ login: "YarikMix", doing: 1, helping: 1 });
   expect(load.find((l) => l.login === "ManInTheCoat")).toEqual({ login: "ManInTheCoat", doing: 0, helping: 0 });
+});
+
+test("pageRef: module and track pages by relative path", () => {
+  expect(pageRef("modules/2026-10/index.md")).toEqual({ module: "2026-10" });
+  expect(pageRef("modules/2026-10/tracks/2fa.md")).toEqual({ module: "2026-10", track: "2fa" });
+  expect(pageRef("modules/index.md")).toBeNull();
+  expect(pageRef("bff/index.md")).toBeNull();
 });

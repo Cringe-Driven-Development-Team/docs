@@ -8,3 +8,19 @@
   margin: 0 auto;
   max-width: none;
 }
+
+/* Цвета направлений треков на графе и в списках модулей. Спека: docs/superpowers/specs/2026-10-08-module-graph-design.md §5.2. */
+:root {
+  --cdd-area-front: #2c6bd4;
+  --cdd-area-back: #13886b;
+  --cdd-area-devops: #b07710;
+  --cdd-area-fullstack: #c9445a;
+  --cdd-area-team: #6b7c1c;
+}
+.dark {
+  --cdd-area-front: #5f95f1;
+  --cdd-area-back: #3fbc9c;
+  --cdd-area-devops: #e1a740;
+  --cdd-area-fullstack: #e47584;
+  --cdd-area-team: #a9ba5c;
+}

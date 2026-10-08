@@ -286,3 +286,10 @@ export function personLoad(module: Module, people: readonly Person[]): Load[] {
     helping: module.tracks.filter((t) => t.help.includes(p.login)).length,
   }));
 }
+
+/** Страница модуля или трека по `page.relativePath`; иначе `null`. */
+export function pageRef(relativePath: string): { module: string; track?: string } | null {
+  const match = /^modules\/([^/]+)\/(?:index\.md|tracks\/([^/]+)\.md)$/.exec(relativePath);
+  if (!match?.[1]) return null;
+  return match[2] ? { module: match[1], track: match[2] } : { module: match[1] };
+}
