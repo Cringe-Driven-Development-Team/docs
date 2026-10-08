@@ -17,3 +17,10 @@ export function stepScale(current: number, direction: 1 | -1, min: number): numb
   const next = direction === 1 ? current * STEP : current / STEP;
   return Math.min(MAX_SCALE, Math.max(min, next));
 }
+
+// Сдвиг холста для «вписать»: panzoom масштабирует вокруг центра элемента
+// (transform: scale(s) translate(x, y)), центр при этом съезжает на W(1 − s) / 2 экранных пикселей,
+// то есть на W(1 − s) / 2s до масштаба — столько и возвращаем, чтобы угол холста встал в угол рамки.
+export function fitOffset(canvasWidth: number, canvasHeight: number, scale: number): { x: number; y: number } {
+  return { x: (-canvasWidth * (1 - scale)) / (2 * scale) || 0, y: (-canvasHeight * (1 - scale)) / (2 * scale) || 0 };
+}

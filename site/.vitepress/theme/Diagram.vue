@@ -5,7 +5,7 @@
 import type { PanzoomObject } from '@panzoom/panzoom';
 import { withBase } from 'vitepress';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { fitScale, frameHeight, MAX_SCALE, stepScale } from './diagram-scale.ts';
+import { fitOffset, fitScale, frameHeight, MAX_SCALE, stepScale } from './diagram-scale.ts';
 import { data as sizes } from './diagrams.data.ts';
 
 const props = defineProps<{ name: string }>();
@@ -24,8 +24,8 @@ const overlay = ref(false);
 let panzoom: PanzoomObject | undefined;
 let observer: ResizeObserver | undefined;
 
-// «Вписать»: масштаб по ширине рамки и сдвиг, при котором левый верхний угол холста в углу рамки
-// (panzoom масштабирует вокруг центра элемента и применяет сдвиг после масштаба).
+// «Вписать»: масштаб по ширине рамки и сдвиг fitOffset — угол холста в углу рамки.
+// Значения задаются как стартовые и применяются reset — без гонки отдельных zoom и pan.
 function fitToFrame(): void {
   const box = frame.value;
   if (!box || !panzoom) return;
@@ -35,9 +35,9 @@ function fitToFrame(): void {
   if (!overlay.value && !document.fullscreenElement) {
     height.value = frameHeight(canvasHeight, scale, window.innerHeight);
   }
-  panzoom.setOptions({ minScale: scale, maxScale: MAX_SCALE });
-  panzoom.zoom(scale, { animate: false, force: true });
-  panzoom.pan((-width * (1 - scale)) / (2 * scale), (-canvasHeight * (1 - scale)) / (2 * scale), { animate: false, force: true });
+  const offset = fitOffset(width, canvasHeight, scale);
+  panzoom.setOptions({ minScale: scale, maxScale: MAX_SCALE, startScale: scale, startX: offset.x, startY: offset.y });
+  panzoom.reset({ animate: false });
 }
 
 function step(direction: 1 | -1): void {
@@ -75,9 +75,17 @@ async function toggleFullscreen(): Promise<void> {
     return;
   }
   if (typeof el.requestFullscreen === 'function') {
-    await el.requestFullscreen();
-    return;
+    try {
+      await el.requestFullscreen();
+      return;
+    } catch {
+      // Браузер отказал (политика, фрейм без allowfullscreen) — карточка поверх страницы.
+    }
   }
+  openOverlay();
+}
+
+function openOverlay(): void {
   overlay.value = true;
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(fitToFrame);
@@ -90,7 +98,7 @@ function onFullscreenChange(): void {
 onMounted(async () => {
   if (!size.value.rendered || !canvas.value || !frame.value) return;
   const { default: Panzoom } = await import('@panzoom/panzoom');
-  panzoom = Panzoom(canvas.value, { contain: 'outside', cursor: 'grab', maxScale: MAX_SCALE, animate: false });
+  panzoom = Panzoom(canvas.value, { cursor: 'grab', maxScale: MAX_SCALE, animate: false });
   frame.value.addEventListener('wheel', onWheel, { passive: false });
   observer = new ResizeObserver(() => fitToFrame());
   observer.observe(frame.value);
