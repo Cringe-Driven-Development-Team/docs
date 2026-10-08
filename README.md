@@ -159,6 +159,26 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 В `vitepress dev` новый трек появится на графе сразу, а в меню — после перезапуска
 dev-сервера. Формат и проверки — `docs/superpowers/specs/2026-10-08-module-graph-design.md`.
 
+#### Задачи с доски
+
+Граф показывает прогресс треков по задачам доски GitHub Projects. Привязка задачи к треку — поле
+«Трек» на доске: его значения создаёт `bun scripts/board.ts sync` по файлам треков. У модуля
+во frontmatter `index.md` список `sprints` (например `sprints: [Sprint 5, Sprint 6]`) определяет,
+к какому модулю относится задача по её спринту.
+
+Снимок доски собирает отдельный job `board` в workflow Pages: на каждый запуск на `main` и по
+расписанию раз в час (`7 3-20 * * *`, UTC). Токен `ADD_TO_PROJECT_PAT` получает только этот job,
+который выполняет код из `main`; сборка веток токена не видит и берёт готовый снимок. Если job
+упал, сайт собирается без прогресса.
+
+Локально снимок получают так:
+
+```sh
+GH_TOKEN="$(gh auth token)" bun scripts/board.ts snapshot site/modules/board.json
+```
+
+Файл `site/modules/board.json` в git не попадает.
+
 ### Превью веток
 
 Push в любую ветку публикует её сайт и схемы по адресу

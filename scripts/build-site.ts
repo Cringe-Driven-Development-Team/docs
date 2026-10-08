@@ -11,6 +11,8 @@ const MAIN_BRANCH = "main";
 const BRANCH_STEP_TIMEOUT_MS = 5 * 60 * 1000;
 const SITE_BRANCH_BUDGET_MS = 30 * 60 * 1000;
 const ICON_CACHE_DIR = join(".eraser", "icons");
+/** Снимок доски: игнорируется git, приходит из job board и нужен сборке графа. */
+export const BOARD_SNAPSHOT = "site/modules/board.json";
 // Имя, которое slug ветки занимать не может: там лежит список превью.
 const RESERVED_SLUGS = ["index.html"];
 
@@ -179,6 +181,14 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
         cpSync(ICON_CACHE_DIR, join(dir, ICON_CACHE_DIR), { recursive: true });
       } catch (error) {
         console.error(`site: icon cache not copied for ${branch.name}: ${errorMessage(error)}`);
+      }
+    }
+    // Снимок доски: ветке нельзя выдавать токен, поэтому берёт готовый файл основной сборки.
+    if (existsSync(BOARD_SNAPSHOT)) {
+      try {
+        cpSync(BOARD_SNAPSHOT, join(dir, BOARD_SNAPSHOT));
+      } catch (error) {
+        console.error(`site: board snapshot not copied for ${branch.name}: ${errorMessage(error)}`);
       }
     }
     const buildOutcome = run(["bun", "run", "build"], {
