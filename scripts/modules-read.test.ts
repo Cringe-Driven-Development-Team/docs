@@ -2,7 +2,9 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { personLoad } from "../site/.vitepress/modules.ts";
 import { readModules } from "../site/.vitepress/modules-read.ts";
+import { PEOPLE } from "../site/modules/people.ts";
 
 let dir = "";
 beforeEach(() => {
@@ -46,4 +48,17 @@ test("requires index.md", () => {
   expect(() => readModules(dir)).toThrow("modules/2026-10: index.md — нет файла страницы модуля");
 });
 
-test.todo("real site/modules is valid", () => {});
+test("real site/modules is valid", () => {
+  const october = readModules("site/modules").find((m) => m.id === "2026-10");
+  expect(october?.title).toBe("Модуль октября 2026");
+  expect(october?.tracks).toHaveLength(19);
+  const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
+  expect(load).toEqual({
+    YarikMix: [3, 2],
+    blackHATred: [0, 3],
+    ManInTheCoat: [8, 0],
+    iRedTea: [6, 0],
+    GrayMouse9: [3, 0],
+    MrDuckVC: [4, 0],
+  });
+});
