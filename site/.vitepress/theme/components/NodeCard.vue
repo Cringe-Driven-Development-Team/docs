@@ -1,10 +1,13 @@
 <script setup lang="ts">
-// Карточка выбранного узла графа: человек, трек или подзадача.
+// Карточка выбранного узла графа: человек, трек или подзадача; задачи — со снимка доски.
 import { computed } from 'vue';
 import { withBase } from 'vitepress';
 import { AREA_LABELS, type Module, type Person, SIDE_LABELS, type Track } from '../../modules.ts';
+import { type ModuleTasks, trackProgress } from '../../board.ts';
+import TaskList from './TaskList.vue';
 
-const props = defineProps<{ id: string; module: Module; people: readonly Person[] }>();
+// tasks: null — снимка доски нет, блоков задач в карточке нет.
+const props = defineProps<{ id: string; module: Module; people: readonly Person[]; tasks: ModuleTasks | null }>();
 const emit = defineEmits<{ select: [id: string]; close: [] }>();
 
 const person = (login: string) => props.people.find((p) => p.login === login);
@@ -27,13 +30,18 @@ const view = computed(() => {
         if (login !== p.login) mates.set(login, [...(mates.get(login) ?? []), t.label]);
       }
     }
-    return { kind: 'person' as const, p, doing, helping, mates: [...mates] };
+    const tasks = props.tasks;
+    const all = tasks ? [...Object.values(tasks.byTrack).flat(), ...tasks.untracked, ...tasks.unknown] : null;
+    const open = all?.filter((t) => t.assignees.includes(p.login) && t.state === 'open' && t.status !== 'Done') ?? null;
+    return { kind: 'person' as const, p, doing, helping, mates: [...mates], open };
   }
   if (kind === 'track') {
     const t = trackById(rest);
     if (!t) return null;
     const incoming = props.module.tracks.flatMap((o) => o.related.filter((r) => r.track === t.id).map((r) => ({ track: o.id, why: r.why })));
-    return { kind: 'track' as const, t, related: [...t.related, ...incoming] };
+    const tasks = props.tasks ? (props.tasks.byTrack[t.id] ?? []) : null;
+    const progress = tasks ? trackProgress(tasks) : null;
+    return { kind: 'track' as const, t, related: [...t.related, ...incoming], tasks, progress };
   }
   const [trackId = '', index = ''] = rest.split('/');
   const t = trackById(trackId);
@@ -69,6 +77,10 @@ const view = computed(() => {
           <span class="why">{{ tracks.join(', ') }}</span>
         </li>
       </ul>
+      <template v-if="view.open">
+        <h4>Открытые задачи · {{ view.open.length }}</h4>
+        <TaskList v-if="view.open.length" :tasks="view.open" :people="people" />
+      </template>
     </template>
 
     <template v-else-if="view.kind === 'track'">
@@ -100,6 +112,11 @@ const view = computed(() => {
           <span class="why">{{ r.why }}</span>
         </li>
       </ul>
+      <template v-if="view.tasks && view.progress">
+        <h4>Задачи · {{ view.progress.done }} из {{ view.progress.total }} готово</h4>
+        <TaskList v-if="view.tasks.length" :tasks="view.tasks" :people="people" />
+        <p v-else class="none">Задач пока нет: их привязывают на груминге полем «Трек» на доске</p>
+      </template>
       <a class="page" :href="withBase(view.t.url)">Открыть страницу трека</a>
     </template>
 
@@ -205,6 +222,11 @@ li {
   font-size: 12px;
   color: var(--vp-c-text-2);
   text-align: right;
+}
+.none {
+  margin: 0;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
 }
 .page {
   display: inline-block;

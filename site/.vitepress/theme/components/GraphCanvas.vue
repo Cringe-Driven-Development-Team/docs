@@ -5,6 +5,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useData } from 'vitepress';
 import type ForceGraphType from 'force-graph';
 import { AREAS, type Area, type GraphLink, type GraphNode, neighbours } from '../../modules.ts';
+import type { Progress } from '../../board.ts';
 
 const props = defineProps<{ nodes: GraphNode[]; links: GraphLink[]; selected: string | null; matches: Set<string> }>();
 const emit = defineEmits<{ select: [id: string | null]; failed: [] }>();
@@ -86,6 +87,29 @@ function graphData(): { nodes: SimNode[]; links: SimLink[] } {
   return { nodes, links: props.links.map((l) => ({ ...l })) };
 }
 
+// Дуга прогресса трека от 12 часов по часовой: готово — цвет направления, в работе — он же
+// полупрозрачный, остальное — цвет рёбер. Прозрачность приглушения уже стоит в ctx.globalAlpha.
+function drawProgress(ctx: CanvasRenderingContext2D, { done, active, total }: Progress, color: string, x: number, y: number, r: number): void {
+  // закрытая задача со статусом «In progress» считается и готовой, и в работе — готовое главнее
+  const busy = Math.min(active, total - done);
+  const parts: [number, string][] = [
+    [done / total, color],
+    [busy / total, rgba(color, 0.4)],
+    [(total - done - busy) / total, rgba(colors.edge, 0.35)],
+  ];
+  let start = -Math.PI / 2;
+  ctx.lineWidth = 1.6;
+  for (const [share, stroke] of parts) {
+    if (share <= 0) continue;
+    const end = start + share * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 2.2, start, end);
+    ctx.strokeStyle = stroke;
+    ctx.stroke();
+    start = end;
+  }
+}
+
 function drawNode(node: SimNode, ctx: CanvasRenderingContext2D, scale: number): void {
   const x = node.x ?? 0;
   const y = node.y ?? 0;
@@ -98,6 +122,7 @@ function drawNode(node: SimNode, ctx: CanvasRenderingContext2D, scale: number): 
   ctx.arc(x, y, r, 0, 2 * Math.PI);
   ctx.fillStyle = node.kind === 'subtask' ? rgba(colors.area[node.area], 0.75) : colors.area[node.area];
   ctx.fill();
+  if (node.progress) drawProgress(ctx, node.progress, colors.area[node.area], x, y, r);
   if (node.mentor) {
     ctx.beginPath();
     ctx.arc(x, y, r + 2.4, 0, 2 * Math.PI);
@@ -107,7 +132,7 @@ function drawNode(node: SimNode, ctx: CanvasRenderingContext2D, scale: number): 
   }
   if (node.id === props.selected || match) {
     ctx.beginPath();
-    ctx.arc(x, y, r + (node.mentor ? 4.8 : 3), 0, 2 * Math.PI);
+    ctx.arc(x, y, r + (node.mentor ? 4.8 : node.progress ? 4.6 : 3), 0, 2 * Math.PI);
     ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 1.6;
     ctx.stroke();
@@ -125,7 +150,7 @@ function drawNode(node: SimNode, ctx: CanvasRenderingContext2D, scale: number): 
     ctx.textBaseline = 'top';
     ctx.globalAlpha = alpha;
     ctx.fillStyle = node.kind === 'person' || inFocus || match ? colors.text : colors.muted;
-    const top = y + r + (node.mentor ? 4.5 : 2.5);
+    const top = y + r + (node.mentor ? 4.5 : node.progress ? 4 : 2.5);
     node.lines.forEach((line, i) => ctx.fillText(line, x, top + i * size * 1.18));
   }
   ctx.globalAlpha = 1;
