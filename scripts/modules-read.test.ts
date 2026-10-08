@@ -106,7 +106,7 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль октября 2026");
-  expect(october?.tracks).toHaveLength(23);
+  expect(october?.tracks).toHaveLength(22);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
@@ -115,7 +115,7 @@ test("real site/modules is valid", () => {
     ManInTheCoat: [9, 0],
     iRedTea: [6, 0],
     GrayMouse9: [4, 0],
-    MrDuckVC: [5, 0],
+    MrDuckVC: [4, 0],
   });
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
   expect([track("notebook-vps")?.area, track("notebook-vps")?.do]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }]]);
@@ -133,8 +133,7 @@ test("real site/modules is valid", () => {
     ["tRPC (client)", "tRPC (server)", "Turborepo + bun workspaces", "Orval"],
     ["front-libs"],
   ]);
-  const xssBack = track("xss-back");
-  expect([xssBack?.area, xssBack?.do, xssBack?.related.map((r) => r.track)]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }], ["xss"]]);
+  expect(track("xss-back")).toBeUndefined();
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
 });
