@@ -24,13 +24,11 @@ export function firstBlock(md: string): string {
   return end === -1 ? rest.slice(start) : rest.slice(start, end + 4);
 }
 
-test("каждая страница трека начинается с плашки про tRPC", () => {
+test("плашек про отвергнутый вариант нет", () => {
   for (const file of BFF_PAGES) {
     const md = readFileSync(file, "utf8");
-    const block = firstBlock(md);
-    expect(block.startsWith("::: warning"), file).toBe(true);
-    expect(block, file).toContain(TRPC_WARNING);
-    expect(block, file).toContain(file === TRACK ? "(#trpc)" : "(../bff#trpc)");
+    expect(md, file).not.toContain("отвергнутый вариант");
+    expect(md, file).not.toContain(TRPC_WARNING);
     expect(md, file).not.toContain(OLD_WARNING);
   }
 });
@@ -41,6 +39,29 @@ test("в треке есть раздел tRPC и подстраницы", () =>
   expect(md).toContain("pages: [contract, auth]");
   expect(md).toContain('- "tRPC"');
   expect(md.split("\n").some((line) => line.startsWith("# "))).toBe(false);
+  const trpc = section(md, "tRPC");
+  expect(trpc).toContain("./bff/contract");
+  expect(trpc).not.toContain("/api/v1");
+});
+
+/** Подраздел `### <title>` до следующего заголовка `##` или `###`. */
+function subsection(md: string, title: string): string {
+  const start = md.indexOf(`\n### ${title}\n`);
+  if (start === -1) return "";
+  const rest = md.slice(start + 1).split("\n").slice(1).join("\n");
+  const next = rest.search(/^##+ /m);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
+test("обзор: клиент вызывает tRPC", () => {
+  const md = readFileSync(TRACK, "utf8");
+  const before = section(md, "Было и стало");
+  expect(before).toContain("/api/trpc/* на bff:3000");
+  expect(before).not.toContain("/api/v1/* на bff:3000");
+  expect(subsection(md, "Infra")).toContain("/api/trpc/*");
+  const front = subsection(md, "Фронт");
+  expect(front).toContain("AppRouter");
+  expect(front).not.toContain("публичного контракта");
 });
 
 test("в меню нет раздела BFF", () => {
@@ -103,27 +124,55 @@ test("сценарий двух вкладок — один refresh в Go", () =
   expect(toGo.filter((line) => line.includes("/auth/refresh")).length).toBe(1);
 });
 
-test("страница «Контракт» описывает overlay", () => {
-  expect(existsSync(CONTRACT)).toBe(true);
+export const PROCEDURES = [
+  "auth.register",
+  "auth.login",
+  "auth.logout",
+  "users.me",
+  "notebooks.list",
+  "notebooks.get",
+  "notebooks.create",
+  "cells.create",
+  "cells.delete",
+];
+
+/** Раздел `## <title>` страницы до следующего `## `. */
+export function section(md: string, title: string): string {
+  const start = md.indexOf(`\n## ${title}\n`);
+  if (start === -1) return "";
+  const rest = md.slice(start + 1).split("\n").slice(1).join("\n");
+  const next = rest.search(/^## /m);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
+test("«Контракт» описывает tRPC", () => {
   const md = readFileSync(CONTRACT, "utf8");
-  for (const needle of [
-    "spec/bff.overlay.yaml",
-    "spec/openapi.public.json",
-    "openapi-format",
-    "--overlayFile",
-    "sessionCookie",
-    "csrfHeader",
-    "TokenPair",
-    "orval",
-    "client: 'hono'",
-    "Собственные ручки BFF",
-    "`bff`",
-  ]) {
+  const headings = md.split("\n").filter((line) => line.startsWith("## ")).map((line) => line.slice(3));
+  expect(headings).toEqual([
+    "Источники правды",
+    "Что меняется в контракте Go",
+    "Команды",
+    "Генерация Orval",
+    "Роутер",
+    "Процедуры экранов",
+    "Ошибки",
+    "Клиент",
+    "Какие вызовы BFF принимает",
+  ]);
+  for (const needle of ["AppRouter", "views.notebook", "appCode", "inferRouterOutputs", "/api/trpc", "createContext", "authedProcedure", "goZod", "client: 'zod'"]) {
     expect(md, needle).toContain(needle);
   }
-  const yamlBlocks = md.match(/```yaml\n[\s\S]*?```/g) ?? [];
-  expect(yamlBlocks.length).toBe(1);
-  expect(yamlBlocks[0]).toContain("overlay: 1.0.0");
+  for (const needle of ["bff.overlay.yaml", "openapi.public.json", "client: 'hono'", "Собственные ручки"]) {
+    expect(md, needle).not.toContain(needle);
+  }
+});
+
+test("в таблице роутера все 9 процедур", () => {
+  const rows = section(readFileSync(CONTRACT, "utf8"), "Роутер")
+    .split("\n")
+    .filter((line) => line.startsWith("|"));
+  for (const p of PROCEDURES) expect(rows.some((row) => row.includes(`\`${p}\``)), p).toBe(true);
+  expect(rows.some((row) => row.includes("auth.refresh"))).toBe(false);
 });
 
 test("openapi-cdd встречается только в одной фразе «Контракта»", () => {
@@ -153,4 +202,73 @@ test("правило модулей записано", () => {
   expect(claude).not.toContain("Схемы описывают целевое состояние");
   expect(readFileSync("README.md", "utf8")).toContain("pages: [");
   expect(readFileSync("site/modules/index.md", "utf8")).toContain("Здесь план");
+});
+
+/** Строки-стрелки всех mermaid-блоков раздела «Сценарии». */
+function scenarioArrows(md: string): string[] {
+  const blocks = section(md, "Сценарии").match(/```mermaid\n[\s\S]*?```/g) ?? [];
+  return blocks.flatMap((block) => block.split("\n")).filter((line) => /^\s*\w+-+>>[+-]?\w+:/.test(line));
+}
+
+test("в сценариях браузер вызывает tRPC", () => {
+  const arrows = scenarioArrows(readFileSync(AUTH, "utf8"));
+  const fromClient = arrows.filter((line) => /^\s*[FB]-+>>[+-]?[BP]:/.test(line));
+  expect(fromClient.length).toBeGreaterThan(0);
+  for (const line of fromClient) expect(line).not.toContain("/api/v1");
+  expect(fromClient.some((line) => line.includes("/api/trpc/auth.login"))).toBe(true);
+  const toGo = arrows.filter((line) => /^\s*P-+>>[+-]?A:/.test(line));
+  expect(toGo.some((line) => line.includes("/api/v1"))).toBe(true);
+});
+
+test("«Авторизация» описывает обработку вызова", () => {
+  const md = readFileSync(AUTH, "utf8");
+  expect(md).toContain("\n## Как BFF обрабатывает вызов\n");
+  expect(md).not.toContain("## Как BFF проксирует запрос");
+  for (const needle of ["createContext", "authedProcedure", "/api/trpc"]) expect(md, needle).toContain(needle);
+  expect(md).not.toContain("списке разрешённых");
+});
+
+test("ссылки на старые разделы", () => {
+  for (const file of BFF_PAGES) {
+    const md = readFileSync(file, "utf8");
+    for (const anchor of ["#какие-запросы-bff-пропускает", "#собственные-ручки-bff", "#overlay", "#как-bff-проксирует-запрос"]) {
+      expect(md, `${file} ${anchor}`).not.toContain(anchor);
+    }
+  }
+});
+
+test("не-JSON до createContext — 415, а не 403", () => {
+  const auth = readFileSync(AUTH, "utf8");
+  for (const title of ["Атака с чужого сайта", "Запрос с поддомена"]) {
+    expect(subsection(auth, title), title).toContain("415");
+  }
+  expect(section(auth, "CSRF")).toContain("первыми из проверок BFF");
+  expect(section(readFileSync(CONTRACT, "utf8"), "Какие вызовы BFF принимает")).toContain("Content-Type: application/json");
+});
+
+test("ошибка createContext на батч — один конверт", () => {
+  const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
+  expect(client).toContain("один конверт");
+  expect(client).toContain("toEqual");
+});
+
+test("конверт успеха — result.data", () => {
+  const auth = readFileSync(AUTH, "utf8");
+  expect(auth).not.toContain("{ result: User }");
+  expect(auth).not.toContain("{ result: null }");
+  expect(auth).toContain("{ result: { data: User } }");
+});
+
+test("поле ячейки — kind, как в контракте Go", () => {
+  const contract = readFileSync(CONTRACT, "utf8");
+  expect(contract).not.toContain("type: 'code'");
+  expect(contract).toContain("kind: 'code'");
+});
+
+test("выход отзывает refresh и при истёкшем access", () => {
+  const contract = readFileSync(CONTRACT, "utf8");
+  const auth = readFileSync(AUTH, "utf8");
+  expect(contract).toContain("optionalSessionProcedure");
+  expect(auth).toContain("optionalSessionProcedure");
+  expect(auth).toContain("`auth.logout` никогда не отвечает `UNAUTHORIZED`");
 });
