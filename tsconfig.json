@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "types": ["bun"]
   },
-  "include": ["scripts/**/*.ts", "site/.vitepress/*.ts", "site/.vitepress/*.mts"]
+  "include": ["scripts/**/*.ts", "site/.vitepress/*.ts", "site/.vitepress/*.mts", "site/modules/**/*.ts"]
 }
