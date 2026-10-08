@@ -32,6 +32,52 @@ test("reads modules newest first", () => {
   expect(modules[1]?.tracks).toEqual([]);
 });
 
+const BFF_PAGES = BFF.replace("---\n\n", "pages: [contract, auth]\n---\n\n");
+const page = (title: string) => `---\ntitle: ${title}\n---\n# ${title}\n`;
+const october = () => write("2026-10/index.md", "---\ntitle: Октябрь\n---\n");
+
+test("reads track subpages", () => {
+  october();
+  write("2026-10/tracks/bff.md", BFF_PAGES);
+  write("2026-10/tracks/bff/contract.md", page("Контракт"));
+  write("2026-10/tracks/bff/auth.md", page("Авторизация и CSRF"));
+  write("2026-10/tracks/bff/scheme.png", "png");
+  const [bff] = readModules(dir)[0]?.tracks ?? [];
+  expect(bff?.pages.map((p) => [p.id, p.title])).toEqual([
+    ["contract", "Контракт"],
+    ["auth", "Авторизация и CSRF"],
+  ]);
+});
+
+test("subpage without pages entry", () => {
+  october();
+  write("2026-10/tracks/bff.md", BFF);
+  write("2026-10/tracks/bff/x.md", page("X"));
+  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff/x.md: pages — подстраницы нет в pages трека bff.md");
+});
+
+test("subpage directory without a track", () => {
+  october();
+  write("2026-10/tracks/bff.md", BFF);
+  write("2026-10/tracks/ghost/a.md", page("A"));
+  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/ghost/a.md: pages — подстраницы нет в pages трека ghost.md");
+});
+
+test("missing subpage file", () => {
+  october();
+  write("2026-10/tracks/bff.md", BFF_PAGES);
+  write("2026-10/tracks/bff/auth.md", page("Авторизация и CSRF"));
+  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff.md: pages — нет файла bff/contract.md");
+});
+
+test("subpage YAML error names the file", () => {
+  october();
+  write("2026-10/tracks/bff.md", BFF_PAGES);
+  write("2026-10/tracks/bff/contract.md", page("Контракт"));
+  write("2026-10/tracks/bff/auth.md", "---\ntitle: [x\n---\n");
+  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff/auth.md: frontmatter — ");
+});
+
 test("errors name the file from site/", () => {
   write("2026-10/index.md", "---\ntitle: Октябрь\n---\n");
   write("2026-10/tracks/bff.md", BFF.replace("MrDuckVC", "MrDuck"));
@@ -61,6 +107,7 @@ test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль октября 2026");
   expect(october?.tracks).toHaveLength(19);
+  expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [3, 2],

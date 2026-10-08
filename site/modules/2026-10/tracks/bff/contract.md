@@ -1,7 +1,11 @@
+---
+title: Контракт
+---
+
 # Миграция на BFF: контракт
 
 ::: warning
-Проект трека миграции на BFF, ещё не внедрено. Как работает сейчас — раздел [CSRF](/security/csrf/).
+Решение по tRPC меняет участок клиент → BFF: где в тексте прокси `/api/v1` и список разрешённых маршрутов — это отвергнутый вариант, см. [tRPC](../bff#trpc).
 :::
 
 Контракт API остаётся spec-first: в Apidog ведётся один контракт Go API, а публичный контракт BFF,
@@ -55,7 +59,7 @@ Go становится серверным API для BFF, поэтому его
 Публичный контракт получается из `spec/openapi.json` действиями
 [OpenAPI Overlay](https://spec.openapis.org/overlay/v1.0.0.html) 1.0.0 из `spec/bff.overlay.yaml`:
 
-- удаляется `/auth/refresh`: refresh делает сам BFF (см. сценарий [«Access истёк»](/bff/auth#access-истек));
+- удаляется `/auth/refresh`: refresh делает сам BFF (см. сценарий [«Access истёк»](./auth#access-истек));
 - `/auth/register` и `/auth/login` отвечают схемой `User` и заголовком `Set-Cookie`. `update` сливает
   объекты рекурсивно: без предварительного `remove` схема `User` слилась бы с исходной `{ user, tokens }`,
   и токены попали бы в публичный контракт. Поэтому сначала `remove` на `content`, потом `update`;
@@ -280,7 +284,7 @@ BFF проксирует только то, что есть в публично�
 
 > When implementing a dynamically configurable proxy, the BFF MUST ensure that it only allows requests to explicitly permitted hosts and paths.
 
-Проверки CSRF идут раньше списка (см. [«Авторизация и CSRF»](/bff/auth#как-bff-проксирует-запрос)), поэтому запрос
+Проверки CSRF идут раньше списка (см. [«Авторизация и CSRF»](./auth#как-bff-проксирует-запрос)), поэтому запрос
 без `X-CSRF` получит `403`, а не `404`. Всё, чего нет в контракте, получает `404 not_found` без запроса в Go. Например, в контракте нет
 `DELETE /api/v1/notebooks/{id}` (есть только `GET`), поэтому:
 

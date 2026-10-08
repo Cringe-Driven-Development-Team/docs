@@ -1,44 +1,68 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Страницы раздела «Миграция на BFF».
-export const BFF_PAGES = ["site/bff/index.md", "site/bff/contract.md", "site/bff/auth.md"];
+// Документы трека «BFF» модуля октября: страница трека и две подстраницы.
+export const TRACK = "site/modules/2026-10/tracks/bff.md";
+export const CONTRACT = "site/modules/2026-10/tracks/bff/contract.md";
+export const AUTH = "site/modules/2026-10/tracks/bff/auth.md";
+export const BFF_PAGES = [TRACK, CONTRACT, AUTH];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
-export const WARNING =
-  "Проект трека миграции на BFF, ещё не внедрено. Как работает сейчас — раздел [CSRF](/security/csrf/).";
+export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
+export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
 export const TIP =
-  "Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/bff/auth).";
+  "Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2026-10/tracks/bff/auth).";
 
-/** Текст первого блока `:::` после строки `# `. */
-export function firstBlockAfterTitle(md: string): string {
-  const lines = md.split("\n");
+/** Первый блок `:::` страницы: после frontmatter и строки `# `, если она есть. */
+export function firstBlock(md: string): string {
+  const body = md.replace(/^---\n[\s\S]*?\n---\n/, "");
+  const lines = body.split("\n");
   const title = lines.findIndex((line) => line.startsWith("# "));
-  const rest = lines.slice(title + 1).join("\n").trimStart();
-  const end = rest.indexOf("\n:::");
-  return end === -1 ? rest : rest.slice(0, end + 4);
+  const rest = lines.slice(title + 1).join("\n");
+  const start = rest.indexOf(":::");
+  if (start === -1) return "";
+  const end = rest.indexOf("\n:::", start + 3);
+  return end === -1 ? rest.slice(start) : rest.slice(start, end + 4);
 }
 
-test("каждая существующая страница BFF начинается с плашки «проект»", () => {
-  expect(existsSync("site/bff/index.md")).toBe(true);
-  for (const file of BFF_PAGES.filter((f) => existsSync(f))) {
-    const block = firstBlockAfterTitle(readFileSync(file, "utf8"));
+test("каждая страница трека начинается с плашки про tRPC", () => {
+  for (const file of BFF_PAGES) {
+    const md = readFileSync(file, "utf8");
+    const block = firstBlock(md);
     expect(block.startsWith("::: warning"), file).toBe(true);
-    expect(block, file).toContain(WARNING);
+    expect(block, file).toContain(TRPC_WARNING);
+    expect(block, file).toContain(file === TRACK ? "(#trpc)" : "(../bff#trpc)");
+    expect(md, file).not.toContain(OLD_WARNING);
   }
 });
 
-test("в меню есть BFF", () => {
-  const config = readFileSync("site/.vitepress/config.mts", "utf8");
-  expect(config).toContain("text: 'BFF'");
-  expect(config).toContain("activeMatch: '^/bff/'");
-  expect(config).toContain("'/bff/'");
-  expect(config).toContain("'/bff/contract'");
-  expect(config).toContain("'/bff/auth'");
+test("в треке есть раздел tRPC и подстраницы", () => {
+  const md = readFileSync(TRACK, "utf8");
+  expect(md).toContain("## tRPC");
+  expect(md).toContain("pages: [contract, auth]");
+  expect(md).toContain('- "tRPC"');
+  expect(md.split("\n").some((line) => line.startsWith("# "))).toBe(false);
 });
 
-test("страницы CSRF ссылаются на раздел BFF", () => {
+test("в меню нет раздела BFF", () => {
+  const config = readFileSync("site/.vitepress/config.mts", "utf8");
+  expect(config).not.toContain("text: 'BFF'");
+  expect(config).not.toContain("'/bff/'");
+  expect(config).toContain("moduleSidebar(");
+});
+
+test("старого раздела нет", () => {
+  expect(existsSync("site/bff")).toBe(false);
+});
+
+test("ссылок на /bff/ не осталось", () => {
+  for (const file of new Bun.Glob("site/**/*.md").scanSync()) {
+    expect(readFileSync(file, "utf8"), file).not.toContain("](/bff/");
+  }
+});
+
+test("страницы CSRF ссылаются на трек", () => {
   for (const file of CSRF_PAGES) {
-    const block = firstBlockAfterTitle(readFileSync(file, "utf8"));
+    const block = firstBlock(readFileSync(file, "utf8"));
     expect(block.startsWith("::: tip"), file).toBe(true);
     expect(block, file).toContain(TIP);
   }
@@ -61,8 +85,8 @@ function scenarios(md: string): { title: string; body: string }[] {
 }
 
 test("в «Авторизация и CSRF» десять сценариев со схемой и пометкой", () => {
-  expect(existsSync("site/bff/auth.md")).toBe(true);
-  const list = scenarios(readFileSync("site/bff/auth.md", "utf8"));
+  expect(existsSync(AUTH)).toBe(true);
+  const list = scenarios(readFileSync(AUTH, "utf8"));
   expect(list.length).toBe(10);
   for (const { title, body } of list) {
     expect(body.match(/```mermaid/g)?.length, title).toBe(1);
@@ -72,16 +96,16 @@ test("в «Авторизация и CSRF» десять сценариев со
 });
 
 test("сценарий двух вкладок — один refresh в Go", () => {
-  expect(existsSync("site/bff/auth.md")).toBe(true);
-  const tabs = scenarios(readFileSync("site/bff/auth.md", "utf8")).find((s) => s.title === "Две вкладки");
+  expect(existsSync(AUTH)).toBe(true);
+  const tabs = scenarios(readFileSync(AUTH, "utf8")).find((s) => s.title === "Две вкладки");
   expect(tabs).toBeDefined();
   const toGo = tabs!.body.split("\n").filter((line) => /^\s*\w+-+>>[+-]?A:/.test(line));
   expect(toGo.filter((line) => line.includes("/auth/refresh")).length).toBe(1);
 });
 
 test("страница «Контракт» описывает overlay", () => {
-  expect(existsSync("site/bff/contract.md")).toBe(true);
-  const md = readFileSync("site/bff/contract.md", "utf8");
+  expect(existsSync(CONTRACT)).toBe(true);
+  const md = readFileSync(CONTRACT, "utf8");
   for (const needle of [
     "spec/bff.overlay.yaml",
     "spec/openapi.public.json",
@@ -104,13 +128,13 @@ test("страница «Контракт» описывает overlay", () => {
 
 test("openapi-cdd встречается только в одной фразе «Контракта»", () => {
   const count = (f: string) => (readFileSync(f, "utf8").match(/openapi-cdd/g) ?? []).length;
-  expect(count("site/bff/contract.md")).toBeLessThanOrEqual(1);
-  expect(count("site/bff/index.md")).toBe(0);
-  expect(count("site/bff/auth.md")).toBe(0);
+  expect(count(CONTRACT)).toBeLessThanOrEqual(1);
+  expect(count(TRACK)).toBe(0);
+  expect(count(AUTH)).toBe(0);
 });
 
 test("в «Обзоре» есть раздел «Две VPS»", () => {
-  const md = readFileSync("site/bff/index.md", "utf8");
+  const md = readFileSync(TRACK, "utf8");
   for (const needle of ["## Две VPS", "X-BFF-Key", "BFF_API_KEY", "mTLS"]) {
     expect(md, needle).toContain(needle);
   }
@@ -119,4 +143,14 @@ test("в «Обзоре» есть раздел «Две VPS»", () => {
     const text = readFileSync(file, "utf8").replace(/(§|section-)\d+(\.\d+)*/g, "");
     expect(text, file).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
   }
+});
+
+test("правило модулей записано", () => {
+  const claude = readFileSync("CLAUDE.md", "utf8");
+  expect(claude).toContain("## Что где лежит");
+  expect(claude).toContain("Схемы корня описывают прод");
+  expect(claude).toContain("tracks/<id>/<page>.md");
+  expect(claude).not.toContain("Схемы описывают целевое состояние");
+  expect(readFileSync("README.md", "utf8")).toContain("pages: [");
+  expect(readFileSync("site/modules/index.md", "utf8")).toContain("Здесь план");
 });

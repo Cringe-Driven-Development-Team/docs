@@ -123,4 +123,6 @@ test("pageRef: module and track pages by relative path", () => {
   expect(pageRef("modules/2026-10/tracks/2fa.md")).toEqual({ module: "2026-10", track: "2fa" });
   expect(pageRef("modules/index.md")).toBeNull();
   expect(pageRef("bff/index.md")).toBeNull();
+  expect(pageRef("modules/2026-10/tracks/bff/contract.md")).toEqual({ module: "2026-10", track: "bff", page: "contract" });
+  expect(pageRef("modules/2026-10/tracks/bff/a/b.md")).toBeNull();
 });

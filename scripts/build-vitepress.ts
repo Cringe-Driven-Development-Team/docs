@@ -3,16 +3,16 @@
 // Спека: docs/superpowers/specs/2026-10-07-vitepress-csrf-docs-design.md §5.
 import { cpSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { diagramNames, INDEX_FILE } from "./build-index.ts";
+import { diagramNames, INDEX_FILE, PAGE_REDIRECTS } from "./build-index.ts";
 
 const SRC = "site";
 const OUT = join(SRC, ".vitepress", "dist");
 const DIST = "dist";
 
-/** Файлы схем в dist/, которые VitePress не вправе затереть; свои прошлые файлы он перезаписывает. */
+/** Файлы схем и переадресаций в dist/, которые VitePress не вправе затереть; свои прошлые файлы он перезаписывает. */
 export function protectedFiles(diagrams: readonly string[]): string[] {
   const index = INDEX_FILE.slice("dist/".length).replaceAll("\\", "/");
-  return [...diagrams.flatMap((name) => [`${name}.html`, `${name}.png`]), index];
+  return [...diagrams.flatMap((name) => [`${name}.html`, `${name}.png`]), index, ...PAGE_REDIRECTS.map((r) => r.file)];
 }
 
 /** Файлы VitePress, совпавшие с защищёнными файлами схем, по алфавиту. */

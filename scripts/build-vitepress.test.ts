@@ -11,12 +11,15 @@ test("mergeConflicts: VitePress files that already exist in dist", () => {
   ]);
 });
 
-test("protectedFiles: html and png of every diagram plus the diagrams index", () => {
+test("protectedFiles: html and png of every diagram, the diagrams index and the old BFF pages", () => {
   expect(protectedFiles(["contract", "bff/ci"])).toEqual([
     "contract.html",
     "contract.png",
     "bff/ci.html",
     "bff/ci.png",
     "diagrams/index.html",
+    "bff/index.html",
+    "bff/contract.html",
+    "bff/auth.html",
   ]);
 });

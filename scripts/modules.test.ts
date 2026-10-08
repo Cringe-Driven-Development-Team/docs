@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { AREA_LABELS, ModuleDataError, parseModule, parseTrack, type Track, validatePeople } from "../site/.vitepress/modules.ts";
+import { AREA_LABELS, ModuleDataError, moduleSidebar, parseModule, parseTrack, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
 test("PEOPLE: the team from the spec, valid", () => {
@@ -38,8 +38,15 @@ describe("parseTrack", () => {
       subtasks: [],
       related: [],
       hasBody: false,
+      pages: [],
       url: "/modules/2026-10/tracks/bff",
     });
+  });
+
+  test("parseTrack keeps given pages", () => {
+    const page: TrackPage = { id: "auth", title: "Авторизация и CSRF", url: "/modules/2026-10/tracks/bff/auth" };
+    const t = parseTrack(FILE, "2026-10", "bff", valid(), "", PEOPLE, [page]);
+    expect(t.pages).toEqual([page]);
   });
 
   test("label, help, subtasks, related and body are read", () => {
@@ -151,5 +158,70 @@ describe("parseModule", () => {
   test("module directory must be YYYY-MM", () => {
     expect(() => parseModule("modules/2026-13/index.md", "2026-13", { title: "М" }, [])).toThrow("modules/2026-13: каталог — 2026-13 — нужен формат YYYY-MM");
     expect(() => parseModule("modules/drafts/index.md", "drafts", { title: "М" }, [])).toThrow("modules/drafts: каталог — drafts — нужен формат YYYY-MM");
+  });
+});
+
+describe("trackPages", () => {
+  const TRACK = "modules/2026-10/tracks/bff.md";
+  const pages = (declared: unknown, found: { name: string; title: unknown }[]) => trackPages(TRACK, "2026-10", "bff", declared, found);
+
+  test("returns pages in declared order with titles and urls", () => {
+    expect(pages(["contract", "auth"], [{ name: "auth", title: "Авторизация и CSRF" }, { name: "contract", title: "Контракт" }])).toEqual([
+      { id: "contract", title: "Контракт", url: "/modules/2026-10/tracks/bff/contract" },
+      { id: "auth", title: "Авторизация и CSRF", url: "/modules/2026-10/tracks/bff/auth" },
+    ]);
+  });
+
+  test("no pages and no files — empty", () => {
+    expect(pages(undefined, [])).toEqual([]);
+  });
+
+  test("pages must be a list of ids", () => {
+    expect(() => pages("contract", [])).toThrow(`${TRACK}: pages — нужен список`);
+    expect(() => pages([1], [])).toThrow(`${TRACK}: pages[0] — нужна строка`);
+    expect(() => pages(["Contract"], [])).toThrow(`${TRACK}: pages[0] — Contract: только строчная латиница, цифры и дефис`);
+  });
+
+  test("duplicate page", () => {
+    expect(() => pages(["auth", "auth"], [{ name: "auth", title: "А" }])).toThrow(`${TRACK}: pages — auth повторяется`);
+  });
+
+  test("declared page without a file", () => {
+    expect(() => pages(["contract"], [])).toThrow(`${TRACK}: pages — нет файла bff/contract.md`);
+  });
+
+  test("file not in pages", () => {
+    expect(() => pages(undefined, [{ name: "x", title: "X" }])).toThrow("modules/2026-10/tracks/bff/x.md: pages — подстраницы нет в pages трека bff.md");
+  });
+
+  test("page needs a title", () => {
+    expect(() => pages(["auth"], [{ name: "auth", title: " " }])).toThrow("modules/2026-10/tracks/bff/auth.md: title — нужна непустая строка");
+  });
+});
+
+describe("moduleSidebar", () => {
+  test("nests subpages under their track", () => {
+    const sub = (id: string, title: string): TrackPage => ({ id, title, url: `/modules/2026-10/tracks/bff/${id}` });
+    const bff = parseTrack(FILE, "2026-10", "bff", valid(), "", PEOPLE, [sub("contract", "Контракт"), sub("auth", "Авторизация и CSRF")]);
+    const xss = track({ title: "XSS", area: "front", do: { iRedTea: "front" } }, "xss");
+    const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Октябрь" }, [bff, xss]);
+    expect(moduleSidebar([m])).toEqual([
+      {
+        text: "Октябрь",
+        items: [
+          { text: "Граф", link: "/modules/2026-10/" },
+          {
+            text: "BFF",
+            link: "/modules/2026-10/tracks/bff",
+            collapsed: false,
+            items: [
+              { text: "Контракт", link: "/modules/2026-10/tracks/bff/contract" },
+              { text: "Авторизация и CSRF", link: "/modules/2026-10/tracks/bff/auth" },
+            ],
+          },
+          { text: "XSS", link: "/modules/2026-10/tracks/xss" },
+        ],
+      },
+    ]);
   });
 });
