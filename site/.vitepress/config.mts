@@ -2,6 +2,7 @@
 import { defineConfig } from 'vitepress';
 import { withMermaid } from 'vitepress-plugin-mermaid';
 import { fileURLToPath } from 'node:url';
+import { moduleSidebar } from './modules.ts';
 import { readModules } from './modules-read.ts';
 import { SITE_BASE } from './site.ts';
 
@@ -22,26 +23,12 @@ export default withMermaid(
       nav: [
         { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
-        { text: 'BFF', link: '/bff/', activeMatch: '^/bff/' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
         // Список превью веток есть только на сборке main (Pages); target — страница вне VitePress.
         ...(SITE_BASE === '/docs/' ? [{ text: 'Превью веток', link: '/branches/', target: '_self' }] : []),
       ],
       sidebar: {
-        '/modules/': modules.map((m) => ({
-          text: m.title,
-          items: [{ text: 'Граф', link: m.url }, ...m.tracks.map((t) => ({ text: t.title, link: t.url }))],
-        })),
-        '/bff/': [
-          {
-            text: 'Миграция на BFF',
-            items: [
-              { text: 'Обзор', link: '/bff/' },
-              { text: 'Контракт', link: '/bff/contract' },
-              { text: 'Авторизация и CSRF', link: '/bff/auth' },
-            ],
-          },
-        ],
+        '/modules/': moduleSidebar(modules),
         '/security/csrf/': [
           {
             text: 'CSRF',

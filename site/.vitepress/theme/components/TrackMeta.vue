@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// Шапка страницы трека из frontmatter (слот doc-before): направление, люди, подзадачи, связи,
-// задачи со снимка доски.
+// Шапка страницы трека из frontmatter (слот doc-before): направление, люди, документы, подзадачи,
+// связи, задачи со снимка доски. На подстранице трека — только строка «Трек · модуль» над заголовком.
 import { computed } from 'vue';
 import { useData, withBase } from 'vitepress';
 import { AREA_LABELS, pageRef, SIDE_LABELS } from '../../modules.ts';
@@ -13,11 +13,11 @@ const found = computed(() => {
   const ref = pageRef(page.value.relativePath);
   const module = data.modules.find((m) => m.id === ref?.module);
   const track = ref?.track ? module?.tracks.find((t) => t.id === ref.track) : undefined;
-  return module && track ? { module, track } : null;
+  return module && track ? { module, track, sub: ref?.page !== undefined } : null;
 });
 // null — снимка доски нет, раздела «Задачи» нет.
 const tasks = computed(() => {
-  const all = found.value ? moduleTasks(data.board, found.value.module) : null;
+  const all = found.value && !found.value.sub ? moduleTasks(data.board, found.value.module) : null;
   return all && found.value ? (all.byTrack[found.value.track.id] ?? []) : null;
 });
 const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
@@ -26,7 +26,11 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
 </script>
 
 <template>
-  <header v-if="found" class="vp-doc track-meta">
+  <p v-if="found?.sub" class="eyebrow track-crumb">
+    Трек <a :href="withBase(found.track.url)">{{ found.track.title }}</a> ·
+    <a :href="withBase(found.module.url)">{{ found.module.title }}</a>
+  </p>
+  <header v-else-if="found" class="vp-doc track-meta">
     <p class="eyebrow">
       <span class="area-dot" :style="{ background: `var(--cdd-area-${found.track.area})` }" />
       Трек · {{ AREA_LABELS[found.track.area] }} ·
@@ -39,6 +43,14 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
       <template v-if="found.track.help.length">
         <dt>Помогают</dt>
         <dd>{{ found.track.help.map(name).join(', ') }}</dd>
+      </template>
+      <template v-if="found.track.pages.length">
+        <dt>Документы</dt>
+        <dd>
+          <template v-for="(p, i) in found.track.pages" :key="p.id"
+            >{{ i > 0 ? ', ' : '' }}<a :href="withBase(p.url)">{{ p.title }}</a></template
+          >
+        </dd>
       </template>
     </dl>
     <template v-if="found.track.subtasks.length">
@@ -68,6 +80,9 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
 <style scoped>
 .track-meta {
   margin-bottom: 24px;
+}
+.track-crumb {
+  margin-bottom: 4px;
 }
 .eyebrow {
   margin: 0 0 8px;
