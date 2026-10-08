@@ -9,6 +9,7 @@ import { diagramTarget } from '../site.ts';
 import ModuleGraph from './components/ModuleGraph.vue';
 import ModuleList from './components/ModuleList.vue';
 import TrackMeta from './components/TrackMeta.vue';
+import Diagram from './Diagram.vue';
 import './custom.css';
 
 const MERMAID_WAIT_MS = 5000;
@@ -46,6 +47,7 @@ const theme: Theme = {
   enhanceApp({ app }) {
     app.component('ModuleGraph', ModuleGraph);
     app.component('ModuleList', ModuleList);
+    app.component('Diagram', Diagram);
   },
   setup() {
     const route = useRoute();

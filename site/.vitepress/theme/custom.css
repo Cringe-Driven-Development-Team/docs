@@ -23,4 +23,94 @@
   --cdd-area-devops: #e1a740;
   --cdd-area-fullstack: #e47584;
   --cdd-area-team: #a9ba5c;
+/* Схема Eraser в рамке (Diagram.vue): холст белый в обеих темах, рамка — в цветах темы. */
+.diagram {
+  margin: 16px 0 24px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+  overflow: hidden;
+}
+.diagram__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+.diagram__name {
+  margin-right: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+}
+.diagram__toolbar button {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font-size: 16px;
+  line-height: 1;
+}
+.diagram__toolbar button:hover {
+  border-color: var(--vp-c-brand-1);
+}
+.diagram__toolbar button:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 1px;
+}
+.diagram__frame {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+.diagram__canvas {
+  position: relative;
+}
+.diagram__canvas iframe {
+  display: block;
+  border: 0;
+  background: #fff;
+}
+/* Перехватывает указатель: иначе перетаскивание и колесо уходят во фрейм. */
+.diagram__shield {
+  position: absolute;
+  inset: 0;
+}
+.diagram__missing {
+  margin: 0;
+  padding: 24px 16px;
+  color: var(--vp-c-text-2);
+}
+.diagram__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--vp-c-divider);
+  font-size: 13px;
+}
+.diagram__hint {
+  margin-left: auto;
+  color: var(--vp-c-text-3);
+}
+/* Полный экран: Fullscreen API или (iPhone) карточка поверх страницы. */
+.diagram:fullscreen,
+.diagram--overlay {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-radius: 0;
+}
+.diagram--overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+.diagram:fullscreen .diagram__frame,
+.diagram--overlay .diagram__frame {
+  flex: 1;
+  height: auto !important;
 }
