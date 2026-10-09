@@ -4,8 +4,8 @@ title: Контракт
 
 # Миграция на BFF: контракт
 
-Между клиентом и BFF контракт — роутер tRPC: процедуры описаны кодом в BFF, клиент получает их типы
-импортом из монорепы. Между BFF и Go контракт остаётся spec-first: Go описан в Apidog, а клиент к нему и
+Между клиентом и BFF контракт — роутер tRPC: процедуры описаны кодом в BFF, фронт получает их типы
+импортом `@cdd/bff` из монорепы фронта. Между BFF и Go контракт остаётся spec-first: Go описан в Apidog, а клиент к нему и
 схемы входа генерирует Orval.
 
 ## Источники правды
@@ -204,12 +204,14 @@ Go отвечает на ошибку телом `Error { code, message }`. BFF 
 
 ## Клиент
 
-Сторонних runtime-библиотек на клиенте нет, поэтому клиент tRPC свой: пакет `packages/trpc-client` в
-монорепе. Типы он берёт из `@trpc/server` только через `import type` — `inferRouterInputs` и
+Сторонних runtime-библиотек на клиенте нет, поэтому клиент tRPC свой: пакет `@cdd-team/trpc-client` в
+монорепе фронтовых библиотек [`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages) (`packages/trpc-client`). Оттуда он
+публикуется в npm вместе с остальными библиотеками, фронт ставит его зависимостью — подтрек
+[«tRPC (client)»](../trpc-client). Типы он берёт из `@trpc/server` только через `import type` — `inferRouterInputs` и
 `inferRouterOutputs`, — и в бандл `@trpc/server` не попадает.
 
 ```ts
-import { createClient } from '@cdd/trpc-client';
+import { createClient } from '@cdd-team/trpc-client';
 import type { AppRouter } from '@cdd/bff';
 
 export const api = createClient<AppRouter>({ url: '/api/trpc' });

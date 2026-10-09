@@ -113,7 +113,7 @@ test("real site/modules is valid", () => {
     YarikMix: [7, 3],
     blackHATred: [1, 4],
     ManInTheCoat: [9, 0],
-    iRedTea: [7, 0],
+    iRedTea: [8, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
@@ -134,7 +134,15 @@ test("real site/modules is valid", () => {
   const libs = track("front-libs");
   expect([libs?.do, libs?.help, libs?.related.map((r) => r.track)]).toEqual([[{ login: "ManInTheCoat", side: "front" }], ["YarikMix"], ["react"]]);
   expect([track("bff")?.subtasks.map((s) => s.title), track("bff")?.related.map((r) => r.track)]).toEqual([
-    ["tRPC (client)", "tRPC (server)", "Turborepo + bun workspaces", "Orval"],
+    ["tRPC (server)", "Turborepo + bun workspaces", "Orval"],
+    [],
+  ]);
+  const client = track("trpc-client");
+  expect([client?.label, client?.area, client?.do, client?.partOf, client?.related.map((r) => r.track)]).toEqual([
+    "tRPC (client)",
+    "front",
+    [{ login: "iRedTea", side: "front" }],
+    "bff",
     ["front-libs"],
   ]);
   expect(track("xss-back")).toBeUndefined();
