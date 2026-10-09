@@ -156,6 +156,12 @@ export function trackProgress(tasks: readonly BoardTask[]): Progress {
   };
 }
 
+/** Задачи трека и его подтреков (спека 2026-10-09-subtracks §6); у подтрека и обычного трека — только свои. */
+export function tasksWithSubtracks(module: Module, byTrack: Readonly<Record<string, readonly BoardTask[]>>, id: string): BoardTask[] {
+  const subtracks = module.tracks.filter((t) => t.partOf === id);
+  return [...(byTrack[id] ?? []), ...subtracks.flatMap((t) => byTrack[t.id] ?? [])];
+}
+
 export const STATUS_ORDER = ["In progress", "In review", "Ready", "Backlog", "Done"] as const;
 
 /** Место статуса в `STATUS_ORDER`: без статуса — как Backlog, статус вне списка — сразу после Backlog. */

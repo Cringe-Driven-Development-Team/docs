@@ -6,6 +6,7 @@ import {
   parseSnapshot,
   sortTasks,
   statusRank,
+  tasksWithSubtracks,
   trackProgress,
   type BoardData,
   type BoardSnapshot,
@@ -242,4 +243,15 @@ describe("moduleTasks", () => {
     expect(moduleTasks(board, withSprints as Module)).toBe(board.byModule["2026-10"] as ModuleTasks);
     expect(moduleTasks({ ...board, byModule: {} }, withSprints as Module)).toEqual({ byTrack: {}, untracked: [], unknown: [] });
   });
+});
+
+test("tasksWithSubtracks: parent sums subtracks, others only own", () => {
+  const m: Module = { ...mkModule("2026-10", [], ["svc", "front", "xss"]) };
+  m.tracks[1] = { ...m.tracks[1]!, partOf: "svc" };
+  const a = mkTask({ ref: "frontend#1" });
+  const b = mkTask({ ref: "frontend#2" });
+  expect(tasksWithSubtracks(m, { front: [b] }, "svc")).toEqual([b]);
+  expect(tasksWithSubtracks(m, { svc: [a], front: [b] }, "svc")).toEqual([a, b]);
+  expect(tasksWithSubtracks(m, { svc: [a], front: [b] }, "front")).toEqual([b]);
+  expect(tasksWithSubtracks(m, {}, "xss")).toEqual([]);
 });
