@@ -107,12 +107,12 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(33);
+  expect(october?.tracks).toHaveLength(35);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
-    YarikMix: [7, 5],
-    blackHATred: [2, 4],
+    YarikMix: [7, 7],
+    blackHATred: [2, 5],
     ManInTheCoat: [10, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
@@ -171,7 +171,18 @@ test("real site/modules is valid", () => {
     ["GitHub-алерты через webhook", "telegram-alerts", [{ login: "YarikMix", side: "team" }]],
     ["Apidog-алерты через webhook", "telegram-alerts", [{ login: "YarikMix", side: "team" }]],
   ]);
-  expect([track("2fa")?.area, track("2fa")?.do]).toEqual(["fullstack", []]);
+  expect([track("2fa")?.area, track("2fa")?.do, track("2fa")?.mentors]).toEqual(["fullstack", [], ["YarikMix"]]);
+  expect(track("xss")?.mentors).toEqual(["YarikMix"]);
+  expect([track("file-search")?.area, track("file-search")?.do, track("file-search")?.mentors, track("file-search")?.related.map((r) => r.track)]).toEqual([
+    "fullstack",
+    [],
+    ["blackHATred"],
+    [],
+  ]);
+  expect(["file-search-front", "file-search-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
+    ["Поиск по файлу: фронт", "front", [{ login: "ManInTheCoat", side: "front" }], "file-search"],
+    ["Поиск по файлу: бэк", "back", [{ login: "MrDuckVC", side: "back" }], "file-search"],
+  ]);
   expect(["2fa-front", "2fa-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
     ["2FA: фронт", "front", [{ login: "iRedTea", side: "front" }], "2fa"],
     ["2FA: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "2fa"],

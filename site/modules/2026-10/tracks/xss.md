@@ -3,6 +3,7 @@ title: "XSS"
 area: front
 do:
   iRedTea: front
+mentors: [YarikMix]
 subtasks:
   - "CSP и nosniff в Caddy"
 related:
