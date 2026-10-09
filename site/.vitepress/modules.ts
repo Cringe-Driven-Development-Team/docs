@@ -432,17 +432,21 @@ export function pageRef(relativePath: string): { module: string; track?: string;
 /** Пункт меню VitePress (без импорта типов VitePress: файл работает и в браузере). */
 export type SidebarItem = { text: string; link?: string; collapsed?: boolean; items?: SidebarItem[] };
 
-/** Меню раздела «Модули»: по модулю — граф и треки, у трека с подстраницами — вложенные пункты. */
+/** Треки без родителя — верхний уровень меню и списка треков. */
+export function topTracks(module: Module): Track[] {
+  return module.tracks.filter((t) => t.partOf === undefined);
+}
+
+/** Подтреки трека в порядке `module.tracks`. */
+export function subtracksOf(module: Module, id: string): Track[] {
+  return module.tracks.filter((t) => t.partOf === id);
+}
+
+/** Меню раздела «Модули»: по модулю — граф и треки; в пункте трека — подстраницы, затем подтреки. */
 export function moduleSidebar(modules: readonly Module[]): SidebarItem[] {
-  return modules.map((m) => ({
-    text: m.title,
-    items: [
-      { text: "Граф", link: m.url },
-      ...m.tracks.map((t): SidebarItem =>
-        t.pages.length > 0
-          ? { text: t.title, link: t.url, collapsed: false, items: t.pages.map((p) => ({ text: p.title, link: p.url })) }
-          : { text: t.title, link: t.url },
-      ),
-    ],
-  }));
+  const item = (m: Module, t: Track): SidebarItem => {
+    const items = [...t.pages.map((p): SidebarItem => ({ text: p.title, link: p.url })), ...subtracksOf(m, t.id).map((s) => item(m, s))];
+    return items.length > 0 ? { text: t.title, link: t.url, collapsed: false, items } : { text: t.title, link: t.url };
+  };
+  return modules.map((m) => ({ text: m.title, items: [{ text: "Граф", link: m.url }, ...topTracks(m).map((t) => item(m, t))] }));
 }

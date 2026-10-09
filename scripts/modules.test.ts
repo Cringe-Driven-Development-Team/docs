@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { AREA_LABELS, ModuleDataError, moduleSidebar, parseModule, parseTrack, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
+import { AREA_LABELS, ModuleDataError, moduleSidebar, parseModule, parseTrack, subtracksOf, topTracks, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
 test("PEOPLE: the team from the spec, valid", () => {
@@ -264,5 +264,25 @@ describe("moduleSidebar", () => {
         ],
       },
     ]);
+  });
+  test("subtrack is nested under its parent after the parent's subpages", () => {
+    const sub = (track: string, id: string, title: string): TrackPage => ({ id, title, url: `/modules/2026-10/tracks/${track}/${id}` });
+    const svc = parseTrack("modules/2026-10/tracks/svc.md", "2026-10", "svc", { title: "Сервис", area: "team", do: { YarikMix: "team" } }, "", PEOPLE, [sub("svc", "plan", "План")]);
+    const front = parseTrack("modules/2026-10/tracks/front.md", "2026-10", "front", { title: "Фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "svc" }, "", PEOPLE, [sub("front", "lsp", "LSP")]);
+    const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Октябрь" }, [svc, front]);
+    expect(moduleSidebar([m])[0]?.items).toEqual([
+      { text: "Граф", link: "/modules/2026-10/" },
+      {
+        text: "Сервис",
+        link: "/modules/2026-10/tracks/svc",
+        collapsed: false,
+        items: [
+          { text: "План", link: "/modules/2026-10/tracks/svc/plan" },
+          { text: "Фронт", link: "/modules/2026-10/tracks/front", collapsed: false, items: [{ text: "LSP", link: "/modules/2026-10/tracks/front/lsp" }] },
+        ],
+      },
+    ]);
+    expect(topTracks(m).map((t) => t.id)).toEqual(["svc"]);
+    expect(subtracksOf(m, "svc").map((t) => t.id)).toEqual(["front"]);
   });
 });

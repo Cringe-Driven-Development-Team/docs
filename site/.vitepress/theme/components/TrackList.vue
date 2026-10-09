@@ -2,13 +2,15 @@
 // Треки модуля текстом по направлениям: рендерится при сборке, работает без JS, видна check-site.
 import { computed } from 'vue';
 import { withBase } from 'vitepress';
-import { AREA_LABELS, AREAS, SIDE_LABELS, type Module } from '../../modules.ts';
+import { AREA_LABELS, AREAS, SIDE_LABELS, subtracksOf, topTracks, type Module, type Track } from '../../modules.ts';
 import { data } from '../../../modules/modules.data.ts';
 
 const props = defineProps<{ module: Module }>();
 const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
+const who = (t: Track) =>
+  t.do.map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') + (t.help.length ? `; помогают: ${t.help.map(name).join(', ')}` : '');
 const groups = computed(() =>
-  AREAS.map((area) => ({ area, tracks: props.module.tracks.filter((t) => t.area === area) })).filter((g) => g.tracks.length > 0),
+  AREAS.map((area) => ({ area, tracks: topTracks(props.module).filter((t) => t.area === area) })).filter((g) => g.tracks.length > 0),
 );
 </script>
 
@@ -21,9 +23,12 @@ const groups = computed(() =>
       </h3>
       <ul>
         <li v-for="track in group.tracks" :key="track.id">
-          <a :href="withBase(track.url)">{{ track.title }}</a>
-          — {{ track.do.map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') }}<template v-if="track.help.length">;
-            помогают: {{ track.help.map(name).join(', ') }}</template>
+          <a :href="withBase(track.url)">{{ track.title }}</a> — {{ who(track) }}
+          <ul v-if="subtracksOf(module, track.id).length">
+            <li v-for="sub in subtracksOf(module, track.id)" :key="sub.id">
+              <a :href="withBase(sub.url)">{{ sub.title }}</a> — {{ who(sub) }}
+            </li>
+          </ul>
         </li>
       </ul>
     </template>
