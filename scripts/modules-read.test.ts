@@ -106,15 +106,15 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль октября 2026");
-  expect(october?.tracks).toHaveLength(24);
+  expect(october?.tracks).toHaveLength(25);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [6, 3],
     blackHATred: [1, 4],
     ManInTheCoat: [9, 0],
-    iRedTea: [6, 0],
-    GrayMouse9: [4, 0],
+    iRedTea: [7, 0],
+    GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
@@ -149,6 +149,13 @@ test("real site/modules is valid", () => {
   expect(track("front-harness")?.partOf).toBe("service-harness");
   expect(track("front-harness")?.related).toEqual([]);
   expect(track("service-harness")?.subtasks).toEqual([{ title: "Скиллы", subtasks: ["/apidog"] }]);
+  const redis = track("redis-sessions");
+  expect([redis?.area, redis?.do, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
+    "back",
+    [{ login: "GrayMouse9", side: "back" }, { login: "iRedTea", side: "devops" }],
+    ["bff", "profile"],
+    4,
+  ]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
   expect(grooming?.subtasks.map((s) => s.title)).toEqual([
