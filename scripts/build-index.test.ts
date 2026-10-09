@@ -129,7 +129,7 @@ test("writePageRedirects writes three files", async () => {
 function moduleDist(): string {
   const dir = mkdtempSync(join(tmpdir(), "module-moves-"));
   tempDirs.push(dir);
-  for (const file of ["modules/2/index.html", "modules/2/tracks/bff.html", "modules/2/tracks/bff/auth.html", "modules/index.html"]) {
+  for (const file of ["modules/2/index.html", "modules/2/tracks/bff.html", "modules/2/tracks/bff/auth.html", "modules/2/tracks/search-index.html", "modules/index.html"]) {
     mkdirSync(dirname(join(dir, file)), { recursive: true });
     writeFileSync(join(dir, file), "<html></html>");
   }
@@ -145,6 +145,7 @@ test("moduleRedirects: every built page of the new module gets its old address, 
     { file: "modules/2026-10/index.html", target: "../2/" },
     { file: "modules/2026-10/tracks/bff.html", target: "../../2/tracks/bff" },
     { file: "modules/2026-10/tracks/bff/auth.html", target: "../../../2/tracks/bff/auth" },
+    { file: "modules/2026-10/tracks/search-index.html", target: "../../2/tracks/search-index" },
   ]);
   expect(moduleRedirects(mkdtempSync(join(tmpdir(), "module-moves-empty-")))).toEqual([]);
 });

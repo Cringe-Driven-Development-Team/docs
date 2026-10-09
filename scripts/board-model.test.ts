@@ -166,6 +166,14 @@ describe("assignTasks", () => {
     expect(at(r, "2").byTrack.bff ?? []).toHaveLength(0);
   });
 
+  test("no sprint between modules goes to the newest by number, 10 after 9", () => {
+    const nine = mkModule("9", ["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"], ["bff"]);
+    const ten = mkModule("10", ["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"], ["bff"]);
+    const r = assignTasks([nine, ten], mkSnap([mkTask({ track: "bff" })], "2026-12-20T10:00:00Z"));
+    expect(at(r, "10").byTrack.bff ?? []).toHaveLength(1);
+    expect(at(r, "9").byTrack.bff ?? []).toHaveLength(0);
+  });
+
   test("untracked only from module sprints", () => {
     const none = assignTasks(modules, mkSnap([mkTask()]));
     expect(at(none, "2").untracked).toHaveLength(0);

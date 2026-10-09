@@ -89,7 +89,8 @@ export function moduleRedirects(dist: string, moves = MODULE_MOVES): { file: str
       .sort()
       .map((name) => {
         const up = "../".repeat(name.split("/").length);
-        const page = name.endsWith("index.html") ? name.slice(0, -"index.html".length) : name.slice(0, -".html".length);
+        const index = name === "index.html" || name.endsWith("/index.html");
+        const page = index ? name.slice(0, -"index.html".length) : name.slice(0, -".html".length);
         return { file: `modules/${from}/${name}`, target: `${up}${to}/${page}` };
       });
   });
