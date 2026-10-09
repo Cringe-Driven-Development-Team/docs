@@ -10,7 +10,5 @@ subtasks:
   - "LSP для агента через MCP"
   - "Контекст всего сервиса для агента"
 pages: [lsp-mcp, service-context]
-related:
-  - track: service-harness
-    why: "Подтрек: harness фронта — часть harness'а сервиса"
+part_of: service-harness
 ---

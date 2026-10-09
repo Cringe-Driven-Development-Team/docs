@@ -3,8 +3,8 @@
 // связи, задачи со снимка доски. На подстранице трека — только строка «Трек · модуль» над заголовком.
 import { computed } from 'vue';
 import { useData, withBase } from 'vitepress';
-import { AREA_LABELS, pageRef, SIDE_LABELS } from '../../modules.ts';
-import { moduleTasks } from '../../board.ts';
+import { AREA_LABELS, pageRef, SIDE_LABELS, subtracksOf } from '../../modules.ts';
+import { moduleTasks, noTasksNote, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import TaskList from './TaskList.vue';
 
@@ -16,10 +16,23 @@ const found = computed(() => {
   return module && track ? { module, track, sub: ref?.page !== undefined } : null;
 });
 // null — снимка доски нет, раздела «Задачи» нет.
-const tasks = computed(() => {
+const byTrack = computed(() => {
   const all = found.value && !found.value.sub ? moduleTasks(data.board, found.value.module) : null;
-  return all && found.value ? (all.byTrack[found.value.track.id] ?? []) : null;
+  return all ? all.byTrack : null;
 });
+const tasks = computed(() => (byTrack.value && found.value ? (byTrack.value[found.value.track.id] ?? []) : null));
+// Прогресс родителя — вместе с задачами подтреков.
+const progress = computed(() =>
+  byTrack.value && found.value ? trackProgress(tasksWithSubtracks(found.value.module, byTrack.value, found.value.track.id)) : null,
+);
+const subtracks = computed(() =>
+  found.value
+    ? subtracksOf(found.value.module, found.value.track.id).map((s) => ({
+        s,
+        progress: byTrack.value ? trackProgress(byTrack.value[s.id] ?? []) : null,
+      }))
+    : [],
+);
 const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
 const titleOf = (id: string) => found.value?.module.tracks.find((t) => t.id === id)?.title ?? id;
 const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/tracks/${id}`);
@@ -44,6 +57,10 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
         <dt>Помогают</dt>
         <dd>{{ found.track.help.map(name).join(', ') }}</dd>
       </template>
+      <template v-if="found.track.partOf">
+        <dt>Входит в трек</dt>
+        <dd><a :href="urlOf(found.track.partOf)">{{ titleOf(found.track.partOf) }}</a></dd>
+      </template>
       <template v-if="found.track.pages.length">
         <dt>Документы</dt>
         <dd>
@@ -56,7 +73,20 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
     <template v-if="found.track.subtasks.length">
       <h2 id="подзадачи">Подзадачи</h2>
       <ul>
-        <li v-for="subtask in found.track.subtasks" :key="subtask">{{ subtask }}</li>
+        <li v-for="(subtask, i) in found.track.subtasks" :key="i">
+          {{ subtask.title }}
+          <ul v-if="subtask.subtasks.length">
+            <li v-for="(title, j) in subtask.subtasks" :key="j">{{ title }}</li>
+          </ul>
+        </li>
+      </ul>
+    </template>
+    <template v-if="subtracks.length">
+      <h2 id="подтреки">Подтреки</h2>
+      <ul>
+        <li v-for="{ s, progress: p } in subtracks" :key="s.id">
+          <a :href="withBase(s.url)">{{ s.title }}</a><template v-if="p"> — {{ p.done }} из {{ p.total }} готово</template>
+        </li>
       </ul>
     </template>
     <template v-if="found.track.related.length">
@@ -66,9 +96,9 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
       </ul>
     </template>
     <template v-if="tasks">
-      <h2 id="задачи">Задачи</h2>
+      <h2 id="задачи">Задачи<template v-if="progress && progress.total > 0"> · {{ progress.done }} из {{ progress.total }} готово</template></h2>
       <TaskList v-if="tasks.length" :tasks="tasks" :people="data.people" />
-      <p v-else>Задач пока нет: их привязывают на груминге полем «Трек» на доске</p>
+      <p v-else>{{ noTasksNote(progress?.total ?? 0) }}</p>
     </template>
     <div v-if="!found.track.hasBody" class="info custom-block">
       <p class="custom-block-title">Описание ещё не написано</p>

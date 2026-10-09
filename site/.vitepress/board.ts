@@ -1,6 +1,6 @@
 // Снимок доски GitHub Projects: типы и разбор формы. Чистые функции без файлов и DOM.
 // Спека: docs/superpowers/specs/2026-10-08-module-board-design.md §4.3.
-import type { Module } from "./modules.ts";
+import { type Module, subtracksOf } from "./modules.ts";
 
 export type BoardState = "open" | "closed" | "not_planned";
 export type BoardTask = {
@@ -154,6 +154,16 @@ export function trackProgress(tasks: readonly BoardTask[]): Progress {
     done: counted.filter((t) => t.status === "Done" || t.state === "closed").length,
     active: counted.filter((t) => t.status === "In progress" || t.status === "In review").length,
   };
+}
+
+/** Задачи трека и его подтреков (спека 2026-10-09-subtracks §6); у подтрека и обычного трека — только свои. */
+export function tasksWithSubtracks(module: Module, byTrack: Readonly<Record<string, readonly BoardTask[]>>, id: string): BoardTask[] {
+  return [...(byTrack[id] ?? []), ...subtracksOf(module, id).flatMap((t) => byTrack[t.id] ?? [])];
+}
+
+/** Текст вместо пустого списка своих задач; `withSubtracks` — сколько задач вместе с подтреками. */
+export function noTasksNote(withSubtracks: number): string {
+  return withSubtracks > 0 ? "Своих задач нет — задачи в подтреках" : "Задач пока нет: их привязывают на груминге полем «Трек» на доске";
 }
 
 export const STATUS_ORDER = ["In progress", "In review", "Ready", "Backlog", "Done"] as const;

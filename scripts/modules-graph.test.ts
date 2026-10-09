@@ -11,6 +11,7 @@ import {
   parseTrack,
   personLoad,
   searchMatches,
+  subtaskByNodeId,
 } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
@@ -88,6 +89,41 @@ test("neighbours of a person include subtasks of their tracks", () => {
   const n = neighbours(graph(), "person:MrDuckVC");
   expect([...n].sort()).toEqual(["person:MrDuckVC", "subtask:bff/0", "subtask:bff/1", "track:bff"]);
   expect([...neighbours(graph(), "track:ai-review")].sort()).toEqual(["person:YarikMix", "track:ai-review"]);
+});
+
+const NESTED = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+  t("service", { title: "Сервис", area: "team", do: { YarikMix: "team" }, subtasks: [{ title: "Скиллы", subtasks: ["/apidog"] }] }),
+  t("front", { title: "Фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "service" }),
+]);
+const nested = (filter: Partial<Filter> = {}) => buildGraph(NESTED, PEOPLE, { ...DEFAULT_FILTER, ...filter });
+
+test("sub link and nested subtasks", () => {
+  const g = nested();
+  expect(g.links.filter((l) => l.kind === "sub")).toEqual([{ source: "track:service", target: "track:front", kind: "sub" }]);
+  expect(g.links.filter((l) => l.kind === "part")).toEqual([
+    { source: "track:service", target: "subtask:service/0", kind: "part" },
+    { source: "subtask:service/0", target: "subtask:service/0/0", kind: "part" },
+  ]);
+  expect(g.nodes.find((n) => n.id === "subtask:service/0/0")).toMatchObject({ kind: "subtask", label: "/apidog", trackId: "service" });
+});
+
+test("layers and filters for sub", () => {
+  expect(nested({ hide: ["subtasks"] }).nodes.some((n) => n.kind === "subtask")).toBe(false);
+  expect(nested({ hide: ["related"] }).links.some((l) => l.kind === "sub")).toBe(true);
+  expect(nested({ areas: ["front"] }).links.some((l) => l.kind === "sub")).toBe(false);
+  expect(nested({ areas: ["front"] }).nodes.map((n) => n.id)).toContain("track:front");
+});
+
+test("neighbours: person gets nested subtasks, parent gets subtrack", () => {
+  expect([...neighbours(nested(), "person:YarikMix")].sort()).toEqual(["person:YarikMix", "subtask:service/0", "subtask:service/0/0", "track:service"]);
+  expect(neighbours(nested(), "track:service").has("track:front")).toBe(true);
+});
+
+test("subtaskByNodeId", () => {
+  expect(subtaskByNodeId(NESTED, "subtask:service/0")).toMatchObject({ title: "Скиллы", children: ["/apidog"], parent: null });
+  expect(subtaskByNodeId(NESTED, "subtask:service/0/0")).toMatchObject({ title: "/apidog", children: [], parent: { index: 0, title: "Скиллы" } });
+  expect(subtaskByNodeId(NESTED, "subtask:service/0/5")).toBeNull();
+  expect(subtaskByNodeId(NESTED, "subtask:nope/0")).toBeNull();
 });
 
 test("searchMatches", () => {

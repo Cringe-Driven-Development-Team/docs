@@ -14,7 +14,7 @@ import {
   personLoad,
   searchMatches,
 } from '../../modules.ts';
-import { type ModuleTasks, moduleTasks, trackProgress } from '../../board.ts';
+import { type ModuleTasks, moduleTasks, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import GraphCanvas from './GraphCanvas.vue';
 import GraphFilters from './GraphFilters.vue';
@@ -32,9 +32,12 @@ const canvas = ref<InstanceType<typeof GraphCanvas>>();
 
 // Задачи модуля со снимка доски; null — снимка нет.
 const tasks = computed<ModuleTasks | null>(() => (module.value ? moduleTasks(data.board, module.value) : null));
-const progress = computed(() =>
-  Object.fromEntries(Object.entries(tasks.value?.byTrack ?? {}).map(([track, list]) => [track, trackProgress(list)])),
-);
+// Прогресс родителя — вместе с задачами подтреков.
+const progress = computed(() => {
+  const m = module.value;
+  const byTrack = tasks.value?.byTrack ?? {};
+  return m ? Object.fromEntries(m.tracks.map((t) => [t.id, trackProgress(tasksWithSubtracks(m, byTrack, t.id))])) : {};
+});
 const takenAt = computed(() =>
   data.board
     ? new Intl.DateTimeFormat('ru-RU', {

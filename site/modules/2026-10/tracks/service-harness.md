@@ -5,5 +5,6 @@ area: team
 do:
   YarikMix: team
 subtasks:
-  - "Скиллы: /apidog"
+  - title: "Скиллы"
+    subtasks: ["/apidog"]
 ---

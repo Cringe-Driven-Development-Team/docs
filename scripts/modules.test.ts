@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { AREA_LABELS, ModuleDataError, moduleSidebar, parseModule, parseTrack, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
+import { AREA_LABELS, ModuleDataError, moduleSidebar, parseModule, parseTrack, subtracksOf, topTracks, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
 test("PEOPLE: the team from the spec, valid", () => {
@@ -51,7 +51,7 @@ describe("parseTrack", () => {
 
   test("label, help, subtasks, related and body are read", () => {
     const t = track({ ...valid(), label: "Б", help: ["YarikMix"], subtasks: ["tRPC"], related: [{ track: "x", why: "y" }] }, "bff", "## Цель");
-    expect([t.label, t.help, t.subtasks, t.related, t.hasBody]).toEqual(["Б", ["YarikMix"], ["tRPC"], [{ track: "x", why: "y" }], true]);
+    expect([t.label, t.help, t.subtasks, t.related, t.hasBody]).toEqual(["Б", ["YarikMix"], [{ title: "tRPC", subtasks: [] }], [{ track: "x", why: "y" }], true]);
   });
 
   test("title is required", () => {
@@ -91,7 +91,7 @@ describe("parseTrack", () => {
     fails({ ...valid(), help: "YarikMix" }, "help — нужен список");
     fails({ ...valid(), subtasks: "tRPC" }, "subtasks — нужен список");
     fails({ ...valid(), related: { track: "x" } }, "related — нужен список");
-    fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка");
+    fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка или { title, subtasks }");
     fails({ ...valid(), help: ["YarikMix", 1] }, "help[1] — нужна строка");
   });
 
@@ -102,6 +102,31 @@ describe("parseTrack", () => {
 
   test("related entries need a non-empty why", () => {
     fails({ ...valid(), related: [{ track: "x", why: "" }] }, "related[0].why — нужна непустая строка");
+  });
+
+  test("subtasks: string and object read the same", () => {
+    const t = track({ ...valid(), subtasks: ["tRPC", { title: "Скиллы", subtasks: ["/apidog"] }, { title: "Orval" }] });
+    expect(t.subtasks).toEqual([
+      { title: "tRPC", subtasks: [] },
+      { title: "Скиллы", subtasks: ["/apidog"] },
+      { title: "Orval", subtasks: [] },
+    ]);
+  });
+
+  test("part_of is read", () => {
+    expect(track({ ...valid(), part_of: "service" }).partOf).toBe("service");
+    expect("partOf" in track(valid())).toBe(false);
+  });
+
+  test("part_of and subtasks are checked", () => {
+    fails({ ...valid(), part_of: "" }, "part_of — нужна непустая строка");
+    fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка или { title, subtasks }");
+    fails({ ...valid(), subtasks: [{ title: "a", note: "x" }] }, "subtasks[0] — нужна строка или { title, subtasks }");
+    fails({ ...valid(), subtasks: [{ title: "" }] }, "subtasks[0].title — нужна непустая строка");
+    fails({ ...valid(), subtasks: [{ title: "a", subtasks: [{ title: "b" }] }] }, "subtasks[0].subtasks[0] — нужна строка: вложенность — один уровень");
+    fails({ ...valid(), subtasks: ["a", { title: "a" }] }, "subtasks — подзадача «a» повторяется");
+    fails({ ...valid(), subtasks: [{ title: "a", subtasks: ["b", "b"] }] }, "subtasks — подзадача «b» повторяется");
+    expect(track({ ...valid(), subtasks: ["a", { title: "b", subtasks: ["a"] }] }).subtasks).toHaveLength(2);
   });
 
   test("id must be lowercase latin, digits and dashes", () => {
@@ -121,6 +146,22 @@ describe("parseModule", () => {
     expect(m.url).toBe("/modules/2026-10/");
     expect(m.period).toBeUndefined();
     expect(m.tracks.map((x) => x.id)).toEqual(["a", "b"]);
+  });
+
+  test("part_of is checked against the module", () => {
+    const p = (id: string, extra: Record<string, unknown> = {}) => track({ title: id, area: "team", do: { YarikMix: "team" }, ...extra }, id);
+    const mod = (...tracks: Track[]) => () => parseModule(INDEX, "2026-10", { title: "М" }, tracks);
+    const file = (id: string) => `modules/2026-10/tracks/${id}.md`;
+    expect(mod(p("a", { part_of: "x" }))).toThrow(`${file("a")}: part_of — трека x нет в модуле 2026-10`);
+    expect(mod(p("a", { part_of: "a" }))).toThrow(`${file("a")}: part_of — трек ссылается сам на себя`);
+    expect(mod(p("a"), p("b", { part_of: "a" }), p("c", { part_of: "b" }))).toThrow(`${file("c")}: part_of — b сам подтрек: вложенность — один уровень`);
+    expect(mod(p("a"), p("b", { part_of: "a", related: [{ track: "a", why: "w" }] }))).toThrow(
+      `${file("b")}: related[0].track — a — родитель или подтрек, связь уже есть через part_of`,
+    );
+    expect(mod(p("a", { related: [{ track: "b", why: "w" }] }), p("b", { part_of: "a" }))).toThrow(
+      `${file("a")}: related[0].track — b — родитель или подтрек, связь уже есть через part_of`,
+    );
+    expect(mod(p("a"), p("b", { part_of: "a" }))().tracks.find((t) => t.id === "b")?.partOf).toBe("a");
   });
 
   test("period is read", () => {
@@ -223,5 +264,25 @@ describe("moduleSidebar", () => {
         ],
       },
     ]);
+  });
+  test("subtrack is nested under its parent after the parent's subpages", () => {
+    const sub = (track: string, id: string, title: string): TrackPage => ({ id, title, url: `/modules/2026-10/tracks/${track}/${id}` });
+    const svc = parseTrack("modules/2026-10/tracks/svc.md", "2026-10", "svc", { title: "Сервис", area: "team", do: { YarikMix: "team" } }, "", PEOPLE, [sub("svc", "plan", "План")]);
+    const front = parseTrack("modules/2026-10/tracks/front.md", "2026-10", "front", { title: "Фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "svc" }, "", PEOPLE, [sub("front", "lsp", "LSP")]);
+    const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Октябрь" }, [svc, front]);
+    expect(moduleSidebar([m])[0]?.items).toEqual([
+      { text: "Граф", link: "/modules/2026-10/" },
+      {
+        text: "Сервис",
+        link: "/modules/2026-10/tracks/svc",
+        collapsed: false,
+        items: [
+          { text: "План", link: "/modules/2026-10/tracks/svc/plan" },
+          { text: "Фронт", link: "/modules/2026-10/tracks/front", collapsed: false, items: [{ text: "LSP", link: "/modules/2026-10/tracks/front/lsp" }] },
+        ],
+      },
+    ]);
+    expect(topTracks(m).map((t) => t.id)).toEqual(["svc"]);
+    expect(subtracksOf(m, "svc").map((t) => t.id)).toEqual(["front"]);
   });
 });
