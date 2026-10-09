@@ -7,6 +7,8 @@
 import { join } from "node:path";
 import { readModules } from "../site/.vitepress/modules-read.ts";
 
+type ReadModules = typeof readModules;
+
 const MARKER = "/site/modules/";
 
 // Форма слова по числу: plural(1, ["модуль", "модуля", "модулей"]) → "модуль".
@@ -20,8 +22,9 @@ function plural(n: number, forms: readonly [string, string, string]): string {
 }
 
 // Читает и проверяет все модули; бросает ModuleDataError с текстом сборки.
-export function checkModules(dir: string): string {
-  const modules = readModules(dir);
+// read — валидатор нужного репозитория (по умолчанию свой, подключённый статически).
+export function checkModules(dir: string, read: ReadModules = readModules): string {
+  const modules = read(dir);
   const tracks = modules.reduce((sum, m) => sum + m.tracks.length, 0);
   const m = modules.length;
   return `modules ok: ${m} ${plural(m, ["модуль", "модуля", "модулей"])}, ${tracks} ${plural(tracks, ["трек", "трека", "треков"])}`;
@@ -36,8 +39,9 @@ export function hookModulesDir(stdin: string): string | null {
     return null;
   }
   if (typeof file !== "string") return null;
-  const at = file.indexOf(MARKER);
-  return at < 0 ? null : file.slice(0, at + MARKER.length - 1);
+  const path = file.replaceAll("\\", "/");
+  const at = path.lastIndexOf(MARKER);
+  return at < 0 ? null : path.slice(0, at + MARKER.length - 1);
 }
 
 function errorText(e: unknown): string {
@@ -49,7 +53,11 @@ if (import.meta.main) {
     const dir = hookModulesDir(await Bun.stdin.text().catch(() => ""));
     if (dir) {
       try {
-        checkModules(dir);
+        // Валидатор и people.ts — из репозитория правимого файла (worktree), не из того, где лежит скрипт.
+        // Импорт внутри try: синтаксическая ошибка в источнике даёт сообщение, а не стек.
+        const root = dir.slice(0, -"/site/modules".length);
+        const mod = (await import(join(root, "site/.vitepress/modules-read.ts"))) as { readModules: ReadModules };
+        checkModules(dir, mod.readModules);
       } catch (e) {
         console.error(errorText(e));
         process.exit(2);

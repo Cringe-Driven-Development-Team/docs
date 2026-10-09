@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { checkModules, hookModulesDir } from "./modules-check.ts";
@@ -22,7 +22,19 @@ function write(path: string, text: string): string {
 const GOOD = "---\ntitle: BFF\narea: fullstack\ndo:\n  iRedTea: front\n  MrDuckVC: back\n---\n\n## Цель\nтекст\n";
 const BAD = "---\ntitle: BFF\narea: fullstack\ndo: {}\n---\n\n## Цель\nтекст\n";
 
+// Копия валидатора в temp-репозитории: хук берёт его из репозитория правимого файла.
+function installValidator(): void {
+  const real = join(import.meta.dir, "..");
+  mkdirSync(join(root, "site", ".vitepress"), { recursive: true });
+  for (const f of ["modules-read.ts", "modules.ts", "board.ts"]) {
+    copyFileSync(join(real, "site", ".vitepress", f), join(root, "site", ".vitepress", f));
+  }
+  symlinkSync(join(real, "node_modules"), join(root, "node_modules"));
+}
+
 function setup(track: string): string {
+  installValidator();
+  write("people.ts", readFileSync(join(import.meta.dir, "..", "site", "modules", "people.ts"), "utf8"));
   write("index.md", "---\ntitle: Модули\n---\n");
   write("2/index.md", "---\ntitle: Октябрь\n---\n");
   return write("2/tracks/bff.md", track);
@@ -87,4 +99,33 @@ test("сломанный YAML: сообщение с путём файла, бе
   expect(r.code).toBe(2);
   expect(r.err).toContain("bff.md");
   expect(r.err).not.toContain("\n    at ");
+});
+
+// Поддельный репозиторий: копия валидатора и свой people.ts (в нём логин, которого нет в настоящем PEOPLE).
+function fakeRepo(people: string, login = "newbie"): string {
+  installValidator();
+  write("people.ts", people);
+  write("index.md", "---\ntitle: Модули\n---\n");
+  write("2/index.md", "---\ntitle: Октябрь\n---\n");
+  return write("2/tracks/bff.md", GOOD.replace("iRedTea", login));
+}
+
+test("--hook: валидатор берётся из репозитория правимого файла", () => {
+  const realPeople = readFileSync(join(import.meta.dir, "..", "site", "modules", "people.ts"), "utf8");
+  const file = fakeRepo(realPeople.replace(/(export const PEOPLE[^\n]*\n)/, '$1  { login: "newbie", name: "Новичок", role: "фронт", area: "front" },\n'));
+  const r = run(["--hook"], hookInput(file));
+  expect(r).toEqual({ code: 0, out: "", err: "" });
+});
+
+test("--hook: сломанный people.ts — код 2, сообщение без стека", () => {
+  const file = fakeRepo("export const PEOPLE = [;\n", "iRedTea");
+  const r = run(["--hook"], hookInput(file));
+  expect(r.code).toBe(2);
+  expect(r.err.trim()).not.toBe("");
+  expect(r.err).not.toMatch(/^\s+at /m);
+});
+
+test("hookModulesDir: пути Windows и последнее вхождение", () => {
+  expect(hookModulesDir(hookInput("C:\\repo\\site\\modules\\2\\tracks\\bff.md"))).toBe("C:/repo/site/modules");
+  expect(hookModulesDir(hookInput("/a/site/modules/b/site/modules/2/x.md"))).toBe("/a/site/modules/b/site/modules");
 });
