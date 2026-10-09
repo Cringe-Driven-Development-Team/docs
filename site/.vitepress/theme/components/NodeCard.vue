@@ -2,7 +2,7 @@
 // Карточка выбранного узла графа: человек, трек или подзадача; задачи — со снимка доски.
 import { computed } from 'vue';
 import { withBase } from 'vitepress';
-import { AREA_LABELS, type Module, type Person, SIDE_LABELS, subtaskByNodeId, subtracksOf, type Track } from '../../modules.ts';
+import { AREA_LABELS, doersOf, type Module, type Person, SIDE_LABELS, subtaskByNodeId, subtracksOf, type Track } from '../../modules.ts';
 import { type ModuleTasks, noTasksNote, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import TaskList from './TaskList.vue';
 
@@ -13,7 +13,7 @@ const emit = defineEmits<{ select: [id: string]; close: [] }>();
 const person = (login: string) => props.people.find((p) => p.login === login);
 const trackById = (id: string) => props.module.tracks.find((t) => t.id === id);
 const sideOf = (t: Track, login: string) => {
-  const side = t.do.find((d) => d.login === login)?.side;
+  const side = doersOf(props.module, t).find((d) => d.login === login)?.side;
   return side ? SIDE_LABELS[side] : 'помогает';
 };
 
@@ -91,7 +91,7 @@ const view = computed(() => {
       <h3>{{ view.t.title }}</h3>
       <h4>Делают</h4>
       <ul>
-        <li v-for="d in view.t.do" :key="d.login">
+        <li v-for="d in doersOf(module, view.t)" :key="d.login">
           <button type="button" class="go" @click="emit('select', `person:${d.login}`)">{{ person(d.login)?.name ?? d.login }}</button>
           <span class="side">{{ SIDE_LABELS[d.side] }}</span>
         </li>
@@ -166,7 +166,7 @@ const view = computed(() => {
       </ul>
       <h4>Кто</h4>
       <ul>
-        <li v-for="login in [...view.t.do.map((d) => d.login), ...view.t.help]" :key="login">
+        <li v-for="login in [...doersOf(module, view.t).map((d) => d.login), ...view.t.help]" :key="login">
           <button type="button" class="go" @click="emit('select', `person:${login}`)">{{ person(login)?.name ?? login }}</button>
           <span class="side">{{ sideOf(view.t, login) }}</span>
         </li>
