@@ -120,7 +120,11 @@ test("real site/modules is valid", () => {
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
   expect([track("notebook-vps")?.area, track("notebook-vps")?.do]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }]]);
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
-  expect(track("monaco")?.help).toEqual(["blackHATred"]);
+  expect([track("monaco")?.help, track("monaco")?.subtasks, track("monaco")?.hasBody]).toEqual([
+    ["blackHATred"],
+    ["Ввод кода и текста", "Ячейки code и text"],
+    true,
+  ]);
   expect([track("front-harness")?.area, track("front-harness")?.subtasks]).toEqual(["team", ["chrome-devtools-mcp", "Скиллы", "LSP для агента через MCP", "Контекст всего сервиса для агента"]]);
   expect(track("front-harness")?.pages.map((p) => [p.id, p.title])).toEqual([
     ["lsp-mcp", "LSP для агента через MCP (Codex и Claude Code)"],
