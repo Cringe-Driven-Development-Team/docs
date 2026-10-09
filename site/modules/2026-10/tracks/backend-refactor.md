@@ -4,5 +4,5 @@ label: "Рефакторинг репы бэка"
 area: back
 do:
   GrayMouse9: back
-help: [blackHATred]
+mentors: [blackHATred]
 ---

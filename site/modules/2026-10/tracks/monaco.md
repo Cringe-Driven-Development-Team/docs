@@ -3,7 +3,7 @@ title: "Monaco editor"
 area: front
 do:
   ManInTheCoat: front
-help: [blackHATred]
+mentors: [blackHATred]
 subtasks:
   - "Просмотр кода, только чтение"
   - "Ячейки code и text"

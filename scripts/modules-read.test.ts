@@ -108,7 +108,7 @@ test("real site/modules is valid", () => {
   expect(october?.title).toBe("Модуль №2");
   expect(october?.tracks).toHaveLength(33);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
-  const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
+  const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
     YarikMix: [7, 5],
     blackHATred: [2, 4],
@@ -118,9 +118,9 @@ test("real site/modules is valid", () => {
     MrDuckVC: [4, 0],
   });
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
-  expect([track("notebook-vps")?.area, track("notebook-vps")?.do, track("notebook-vps")?.help]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }], []]);
+  expect([track("notebook-vps")?.area, track("notebook-vps")?.do, track("notebook-vps")?.mentors]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }], []]);
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
-  expect([track("monaco")?.help, track("monaco")?.subtasks.map((s) => s.title), track("monaco")?.hasBody]).toEqual([
+  expect([track("monaco")?.mentors, track("monaco")?.subtasks.map((s) => s.title), track("monaco")?.hasBody]).toEqual([
     ["blackHATred"],
     ["Просмотр кода, только чтение", "Ячейки code и text"],
     true,
@@ -132,7 +132,7 @@ test("real site/modules is valid", () => {
   ]);
   expect(track("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG", "Portal API"]);
   const libs = track("front-libs");
-  expect([libs?.do, libs?.help, libs?.related.map((r) => r.track)]).toEqual([[{ login: "ManInTheCoat", side: "front" }], ["YarikMix"], ["react"]]);
+  expect([libs?.do, libs?.mentors, libs?.related.map((r) => r.track)]).toEqual([[{ login: "ManInTheCoat", side: "front" }], ["YarikMix"], ["react"]]);
   expect([track("bff")?.subtasks.map((s) => s.title), track("bff")?.related.map((r) => r.track)]).toEqual([
     ["tRPC (server)", "Turborepo + bun workspaces", "Orval"],
     [],
@@ -158,7 +158,7 @@ test("real site/modules is valid", () => {
   expect(track("front-harness")?.related).toEqual([]);
   expect(track("service-harness")?.subtasks).toEqual([{ title: "Скиллы", subtasks: ["/apidog"] }]);
   const redis = track("redis-sessions");
-  expect([redis?.area, redis?.do, redis?.help, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
+  expect([redis?.area, redis?.do, redis?.mentors, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
     "back",
     [{ login: "GrayMouse9", side: "back" }, { login: "iRedTea", side: "devops" }],
     ["blackHATred"],
@@ -175,8 +175,8 @@ test("real site/modules is valid", () => {
     ["2FA: фронт", "front", [{ login: "iRedTea", side: "front" }], "2fa"],
     ["2FA: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "2fa"],
   ]);
-  expect(track("bff")?.help).toEqual(["YarikMix"]);
-  expect([track("profile")?.area, track("profile")?.do, track("profile")?.help]).toEqual(["fullstack", [], ["YarikMix"]]);
+  expect(track("bff")?.mentors).toEqual(["YarikMix"]);
+  expect([track("profile")?.area, track("profile")?.do, track("profile")?.mentors]).toEqual(["fullstack", [], ["YarikMix"]]);
   expect(["profile-front", "profile-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
     ["Профиль: фронт", "front", [{ login: "ManInTheCoat", side: "front" }], "profile"],
     ["Профиль: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "profile"],

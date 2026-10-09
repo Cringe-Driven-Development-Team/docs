@@ -4,7 +4,7 @@ label: "Монорепа библиотек + release-please"
 area: front
 do:
   ManInTheCoat: front
-help: [YarikMix]
+mentors: [YarikMix]
 related:
   - track: react
     why: "@maninthecoat/react — одна из библиотек, которые переезжают в монорепу"

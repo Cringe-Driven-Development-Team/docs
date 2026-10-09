@@ -5,7 +5,7 @@ area: back
 do:
   GrayMouse9: back
   iRedTea: devops
-help: [blackHATred]
+mentors: [blackHATred]
 subtasks:
   - "Redis в compose через Ansible"
   - "Refresh-сессии в Redis вместо refresh_sessions"

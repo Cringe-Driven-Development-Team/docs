@@ -34,7 +34,7 @@ describe("parseTrack", () => {
       label: "BFF",
       area: "fullstack",
       do: [{ login: "iRedTea", side: "front" }, { login: "MrDuckVC", side: "back" }],
-      help: [],
+      mentors: [],
       subtasks: [],
       related: [],
       hasBody: false,
@@ -49,9 +49,9 @@ describe("parseTrack", () => {
     expect(t.pages).toEqual([page]);
   });
 
-  test("label, help, subtasks, related and body are read", () => {
-    const t = track({ ...valid(), label: "Б", help: ["YarikMix"], subtasks: ["tRPC"], related: [{ track: "x", why: "y" }] }, "bff", "## Цель");
-    expect([t.label, t.help, t.subtasks, t.related, t.hasBody]).toEqual(["Б", ["YarikMix"], [{ title: "tRPC", subtasks: [] }], [{ track: "x", why: "y" }], true]);
+  test("label, mentors, subtasks, related and body are read", () => {
+    const t = track({ ...valid(), label: "Б", mentors: ["YarikMix"], subtasks: ["tRPC"], related: [{ track: "x", why: "y" }] }, "bff", "## Цель");
+    expect([t.label, t.mentors, t.subtasks, t.related, t.hasBody]).toEqual(["Б", ["YarikMix"], [{ title: "tRPC", subtasks: [] }], [{ track: "x", why: "y" }], true]);
   });
 
   test("title is required", () => {
@@ -74,24 +74,38 @@ describe("parseTrack", () => {
 
   test("unknown login suggests the right case", () => {
     fails({ ...valid(), do: { iredtea: "front", MrDuckVC: "back" } }, "do — логина iredtea нет в people.ts — может быть, iRedTea?");
-    fails({ ...valid(), help: ["yarikmix"] }, "help — логина yarikmix нет в people.ts — может быть, YarikMix?");
+    fails({ ...valid(), mentors: ["yarikmix"] }, "mentors — логина yarikmix нет в people.ts — может быть, YarikMix?");
   });
 
   test("unknown login", () => {
     fails({ ...valid(), do: { MrDuck: "front", MrDuckVC: "back" } }, "do — логина MrDuck нет в people.ts");
-    fails({ ...valid(), help: ["ghost"] }, "help — логина ghost нет в people.ts");
+    fails({ ...valid(), mentors: ["ghost"] }, "mentors — логина ghost нет в people.ts");
   });
 
-  test("a doer cannot also help", () => {
-    fails({ ...valid(), help: ["iRedTea"] }, "help — iRedTea уже исполнитель");
+  test("help is replaced by mentors", () => {
+    fails({ ...valid(), help: ["YarikMix"] }, "help — поле заменено на mentors");
+    fails({ ...valid(), help: [] }, "help — поле заменено на mentors");
+  });
+
+  test("a mentor must be a mentor in people.ts", () => {
+    fails({ ...valid(), mentors: ["ManInTheCoat"] }, "mentors — ManInTheCoat не ментор: в people.ts нет mentor: true");
+  });
+
+  test("a doer cannot also be a mentor", () => {
+    const own = { title: "T", area: "team", do: { YarikMix: "team" }, mentors: ["YarikMix"] };
+    expect(() => track(own)).toThrow(`${FILE}: mentors — YarikMix уже исполнитель`);
+  });
+
+  test("mentors do not repeat", () => {
+    fails({ ...valid(), mentors: ["YarikMix", "YarikMix"] }, "mentors — YarikMix повторяется");
   });
 
   test("lists must be lists of strings", () => {
-    fails({ ...valid(), help: "YarikMix" }, "help — нужен список");
+    fails({ ...valid(), mentors: "YarikMix" }, "mentors — нужен список");
     fails({ ...valid(), subtasks: "tRPC" }, "subtasks — нужен список");
     fails({ ...valid(), related: { track: "x" } }, "related — нужен список");
     fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка или { title, subtasks }");
-    fails({ ...valid(), help: ["YarikMix", 1] }, "help[1] — нужна строка");
+    fails({ ...valid(), mentors: ["YarikMix", 1] }, "mentors[1] — нужна строка");
   });
 
   test("fullstack needs front and back", () => {

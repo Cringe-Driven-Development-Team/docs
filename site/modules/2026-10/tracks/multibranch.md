@@ -4,5 +4,5 @@ label: "Multi-branch + стейджинг (Coolify)"
 area: devops
 do:
   iRedTea: devops
-help: [YarikMix, blackHATred]
+mentors: [YarikMix, blackHATred]
 ---
