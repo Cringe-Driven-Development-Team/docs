@@ -133,8 +133,10 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 Остальные разделы сайта и схемы корня описывают, как работает прод. Сделанный трек остаётся в архиве
 модуля как история, а прод описывается в разделе вне модулей.
 
-- **Человек** — строка в `site/modules/people.ts`: GitHub-логин, имя, роль, направление
+- **`site/modules/people.yaml`** — люди: GitHub-логин, имя, роль, направление
   (`front`, `back`, `devops`, `fullstack`, `team`), `mentor: true` у менторов.
+- **`site/modules/module-graph.yaml`** — настройки графа и доски (организация, проект, поля). Формат и CLI —
+  [README пакета](https://github.com/TP-Prepare/frontend-packages/blob/main/packages/vitepress-module-graph/README.md).
 - **Модуль** — каталог `site/modules/<номер>/` (`2`, `3`, …) с `index.md`: во frontmatter `title`,
   необязательный `period` и `aside: false`, в тексте `<ModuleGraph />`.
 - **Трек** — файл `site/modules/<номер>/tracks/<id>.md`, `id` — строчная латиница, цифры и дефис:
@@ -146,7 +148,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
   area: devops                                 # front | back | devops | fullstack | team
   do:                                          # логин → сторона: front | back | devops | team
     iRedTea: devops
-  mentors: [YarikMix, blackHATred]             # необязательно; только люди с mentor: true в people.ts
+  mentors: [YarikMix, blackHATred]             # необязательно; только люди с mentor: true в people.yaml
   subtasks:                                    # необязательно
     - Откаты
   related:                                     # необязательно: связь с треком этого модуля
@@ -177,7 +179,7 @@ dev-сервера. Формат и проверки — `docs/superpowers/specs
 #### Задачи с доски
 
 Граф показывает прогресс треков по задачам доски GitHub Projects. Привязка задачи к треку — поле
-«Трек» на доске: его значения создаёт `bun scripts/board.ts sync` по файлам треков. У модуля
+«Трек» на доске: его значения создаёт `bunx module-graph board sync` по файлам треков. У модуля
 во frontmatter `index.md` список `sprints` (например `sprints: [Sprint 5, Sprint 6]`) определяет,
 к какому модулю относится задача по её спринту.
 
@@ -194,7 +196,7 @@ dev-сервера. Формат и проверки — `docs/superpowers/specs
 Локально снимок получают так:
 
 ```sh
-GH_TOKEN="$(gh auth token)" bun scripts/board.ts snapshot site/modules/board.json
+GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json
 ```
 
 Файл `site/modules/board.json` в git не попадает.

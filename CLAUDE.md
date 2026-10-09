@@ -40,7 +40,7 @@
 - Сайт — VitePress в `site/` (главная `/docs/`), схемы — страница `/docs/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
   на конкретном SHA.
-- Модули — `site/modules/`: люди в `people.ts`, модуль — каталог с номером (`2`), трек — `tracks/<id>.md`; формат и
+- Модули — `site/modules/`: люди в `people.yaml`, настройки графа в `module-graph.yaml`, модуль — каталог с номером (`2`), трек — `tracks/<id>.md`; формат и
   проверки — `docs/superpowers/specs/2026-10-08-module-graph-design.md` §4.3–4.4. Подстраницы трека —
   `tracks/<id>/<page>.md` и список `pages` во frontmatter трека
   (`docs/superpowers/specs/2026-10-08-bff-into-module-design.md` §5). Меню модулей строится само.

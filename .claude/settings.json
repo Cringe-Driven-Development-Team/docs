@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun \"$CLAUDE_PROJECT_DIR/scripts/modules-check.ts\" --hook"
+            "command": "bunx module-graph check --hook"
           }
         ]
       }
