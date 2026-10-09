@@ -58,7 +58,7 @@
 | `@tp-prepare/vitepress-module-graph` | модель: типы, настройки по умолчанию, разбор треков и людей, правила, связи графа, фильтры, разбор снимка доски; без файлов и DOM | везде |
 | `…/node` | `loadModuleDir`, `readModules`, `moduleSidebar`, `createModulesLoader` | конфиг и загрузчик VitePress, CLI |
 | `…/theme` | компоненты `.vue`, `installModuleGraph(app, data)`, `trackHeader` | тема VitePress |
-| `…/style.css` | стили графа, переменные `--mg-*` | тема |
+| `…/style.css` | переменные `--mg-area-*` по умолчанию (`DEFAULT_CONFIG`); стили компонентов — в самих `.vue` | тема |
 | bin `module-graph` | §5 | терминал, CI, хуки |
 
 ### 3.2. Подключение на сайте
@@ -88,8 +88,8 @@ import { data } from '../../modules/modules.data';
 - `createModulesLoader(url)` возвращает `{ watch, load }` загрузчика VitePress; `watch` — `index.md` модулей, файлы
   треков, `people.yaml`, `module-graph.yaml`, `board.json`.
 - `trackHeader` — шапка трека (сейчас `TrackMeta`): на странице не трека ничего не рисует.
-- Переменные цветов `--mg-area-<ключ>` пакет ставит из `module-graph.yaml` при `installModuleGraph`; на сайте их можно
-  переопределить своим CSS.
+- Переменные цветов `--mg-area-<ключ>` из `module-graph.yaml` рисует `<style>` в корне графа, архива и шапки трека:
+  `:where(:root)` и `:where(html.dark)`, то есть с нулевой специфичностью — сайт переопределяет их обычным `:root { … }`.
 
 ### 3.3. Сборка и зависимости
 
@@ -133,8 +133,9 @@ board: { owner: Cringe-Driven-Development-Team, project: 1, field: Трек }
 
 - `route` — адрес папки модулей на сайте, с `/` в начале и в конце; ссылки на модули, треки и подстраницы строятся от
   него.
-- `areas` и `sides`, если заданы, заменяют значения по умолчанию целиком. Ключи — как id трека
-  (`[a-z0-9]+(-[a-z0-9]+)*`). `color` и `dark` — `#rrggbb`.
+- `areas` и `sides`, если заданы, заменяют значения по умолчанию целиком. Ключи — строчная латиница,
+  цифры и дефис, первая — буква (`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`): у ключа-числа JavaScript меняет порядок, а порядок
+  направлений — порядок в фильтре. `color` и `dark` — `#rrggbb`.
 - `needs` — стороны из `sides`; у трека с этим направлением исполнители (с подтреками, как `doersOf`) закрывают все
   перечисленные стороны. Ошибка: `<файл трека>: do — у трека «<label>» нужны исполнители со сторон <стороны>`.
   Заменяет `checkFullstack`.
