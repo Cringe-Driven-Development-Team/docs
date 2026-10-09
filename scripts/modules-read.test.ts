@@ -106,13 +106,13 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль октября 2026");
-  expect(october?.tracks).toHaveLength(21);
+  expect(october?.tracks).toHaveLength(24);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
-    YarikMix: [4, 2],
+    YarikMix: [6, 3],
     blackHATred: [1, 4],
-    ManInTheCoat: [8, 0],
+    ManInTheCoat: [9, 0],
     iRedTea: [6, 0],
     GrayMouse9: [4, 0],
     MrDuckVC: [4, 0],
@@ -120,14 +120,42 @@ test("real site/modules is valid", () => {
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
   expect([track("notebook-vps")?.area, track("notebook-vps")?.do]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }]]);
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
-  expect(track("monaco")?.help).toEqual(["blackHATred"]);
+  expect([track("monaco")?.help, track("monaco")?.subtasks, track("monaco")?.hasBody]).toEqual([
+    ["blackHATred"],
+    ["Просмотр кода, только чтение", "Ячейки code и text"],
+    true,
+  ]);
   expect([track("front-harness")?.area, track("front-harness")?.subtasks]).toEqual(["team", ["chrome-devtools-mcp", "Скиллы", "LSP для агента через MCP", "Контекст всего сервиса для агента"]]);
   expect(track("front-harness")?.pages.map((p) => [p.id, p.title])).toEqual([
     ["lsp-mcp", "LSP для агента через MCP (Codex и Claude Code)"],
     ["service-context", "Контекст всего сервиса для агента фронта"],
   ]);
+  expect(track("react")?.subtasks).toEqual(["refs", "Поддержка SVG", "Portal API"]);
+  const libs = track("front-libs");
+  expect([libs?.do, libs?.help, libs?.related.map((r) => r.track)]).toEqual([[{ login: "ManInTheCoat", side: "front" }], ["YarikMix"], ["react"]]);
+  expect([track("bff")?.subtasks, track("bff")?.related.map((r) => r.track)]).toEqual([
+    ["tRPC (client)", "tRPC (server)", "Turborepo + bun workspaces", "Orval"],
+    ["front-libs"],
+  ]);
+  expect(track("xss-back")).toBeUndefined();
+  expect([track("xss")?.subtasks, track("xss")?.related.map((r) => r.track)]).toEqual([
+    ["CSP и nosniff в Caddy"],
+    ["monaco", "file-exec", "file-search"],
+  ]);
+  expect([track("ai-review")?.label, track("ai-review")?.subtasks]).toEqual(["ИИ-код-ревью", []]);
+  const testing = track("ai-testing");
+  expect([testing?.do, testing?.related.map((r) => r.track)]).toEqual([[{ login: "YarikMix", side: "team" }], ["multibranch"]]);
+  expect([track("service-harness")?.label, track("service-harness")?.subtasks]).toEqual(["Harness сервиса", ["Скиллы: /apidog"]]);
+  expect(track("front-harness")?.related.map((r) => r.track)).toEqual(["service-harness"]);
   const grooming = track("runtime-grooming");
-  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
+  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
+  expect(grooming?.subtasks).toEqual([
+    "Контейнеры в Selectel: Managed Kubernetes или Docker на своих VM",
+    "Изоляция чужого кода",
+    "Декомпозиция «Исполнения файлов» и «Авто-VPS»",
+    "Архитектурные схемы",
+  ]);
+  expect(track("file-exec")?.hasBody).toBe(true);
 });
 
 const SNAPSHOT = {
