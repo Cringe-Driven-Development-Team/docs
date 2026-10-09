@@ -106,19 +106,19 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(26);
+  expect(october?.tracks).toHaveLength(27);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [7, 3],
-    blackHATred: [1, 4],
+    blackHATred: [1, 3],
     ManInTheCoat: [9, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
-  expect([track("notebook-vps")?.area, track("notebook-vps")?.do]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }]]);
+  expect([track("notebook-vps")?.area, track("notebook-vps")?.do, track("notebook-vps")?.help]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }], []]);
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
   expect([track("monaco")?.help, track("monaco")?.subtasks.map((s) => s.title), track("monaco")?.hasBody]).toEqual([
     ["blackHATred"],
