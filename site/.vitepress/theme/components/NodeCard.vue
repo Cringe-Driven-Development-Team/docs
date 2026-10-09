@@ -2,8 +2,8 @@
 // Карточка выбранного узла графа: человек, трек или подзадача; задачи — со снимка доски.
 import { computed } from 'vue';
 import { withBase } from 'vitepress';
-import { AREA_LABELS, type Module, type Person, SIDE_LABELS, type Track } from '../../modules.ts';
-import { type ModuleTasks, trackProgress } from '../../board.ts';
+import { AREA_LABELS, type Module, type Person, SIDE_LABELS, subtaskByNodeId, subtracksOf, type Track } from '../../modules.ts';
+import { type ModuleTasks, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import TaskList from './TaskList.vue';
 
 // tasks: null — снимка доски нет, блоков задач в карточке нет.
@@ -39,14 +39,17 @@ const view = computed(() => {
     const t = trackById(rest);
     if (!t) return null;
     const incoming = props.module.tracks.flatMap((o) => o.related.filter((r) => r.track === t.id).map((r) => ({ track: o.id, why: r.why })));
-    const tasks = props.tasks ? (props.tasks.byTrack[t.id] ?? []) : null;
-    const progress = tasks ? trackProgress(tasks) : null;
-    return { kind: 'track' as const, t, related: [...t.related, ...incoming], tasks, progress };
+    const byTrack = props.tasks?.byTrack ?? null;
+    const tasks = byTrack ? (byTrack[t.id] ?? []) : null;
+    // Прогресс родителя — вместе с подтреками; список задач — только свои.
+    const progress = byTrack ? trackProgress(tasksWithSubtracks(props.module, byTrack, t.id)) : null;
+    const parent = t.partOf ? trackById(t.partOf) : undefined;
+    const subtracks = subtracksOf(props.module, t.id).map((s) => ({ s, progress: byTrack ? trackProgress(byTrack[s.id] ?? []) : null }));
+    return { kind: 'track' as const, t, related: [...t.related, ...incoming], tasks, progress, parent, subtracks };
   }
-  const [trackId = '', index = ''] = rest.split('/');
-  const t = trackById(trackId);
-  const title = t?.subtasks[Number(index)]?.title;
-  return t && title !== undefined ? { kind: 'subtask' as const, t, title } : null;
+  const found = subtaskByNodeId(props.module, props.id);
+  if (!found) return null;
+  return { kind: 'subtask' as const, t: found.track, title: found.title, children: found.children, parent: found.parent };
 });
 </script>
 
@@ -99,11 +102,29 @@ const view = computed(() => {
           <button type="button" class="go" @click="emit('select', `person:${login}`)">{{ person(login)?.name ?? login }}</button>
         </li>
       </ul>
+      <template v-if="view.parent">
+        <h4>Входит в трек</h4>
+        <ul>
+          <li><button type="button" class="go" @click="emit('select', `track:${view.parent.id}`)">{{ view.parent.label }}</button></li>
+        </ul>
+      </template>
+      <h4 v-if="view.subtracks.length">Подтреки · {{ view.subtracks.length }}</h4>
+      <ul>
+        <li v-for="{ s, progress } in view.subtracks" :key="s.id">
+          <button type="button" class="go" @click="emit('select', `track:${s.id}`)">{{ s.label }}</button>
+          <span v-if="progress" class="side">{{ progress.done }} из {{ progress.total }} готово</span>
+        </li>
+      </ul>
       <h4 v-if="view.t.subtasks.length">Подзадачи · {{ view.t.subtasks.length }}</h4>
       <ul>
-        <li v-for="(s, i) in view.t.subtasks" :key="i">
-          <button type="button" class="go" @click="emit('select', `subtask:${view.t.id}/${i}`)">{{ s.title }}</button>
-        </li>
+        <template v-for="(s, i) in view.t.subtasks" :key="i">
+          <li>
+            <button type="button" class="go" @click="emit('select', `subtask:${view.t.id}/${i}`)">{{ s.title }}</button>
+          </li>
+          <li v-for="(title, j) in s.subtasks" :key="`${i}/${j}`" class="nested">
+            <button type="button" class="go" @click="emit('select', `subtask:${view.t.id}/${i}/${j}`)">{{ title }}</button>
+          </li>
+        </template>
       </ul>
       <h4 v-if="view.related.length">Связи</h4>
       <ul>
@@ -123,6 +144,22 @@ const view = computed(() => {
     <template v-else>
       <p class="eyebrow"><span class="dot" :style="{ background: `var(--cdd-area-${view.t.area})` }" />Подзадача</p>
       <h3>{{ view.title }}</h3>
+      <template v-if="view.parent">
+        <h4>Входит в подзадачу</h4>
+        <ul>
+          <li>
+            <button type="button" class="go" @click="emit('select', `subtask:${view.t.id}/${view.parent.index}`)">{{ view.parent.title }}</button>
+          </li>
+        </ul>
+      </template>
+      <template v-if="view.children.length">
+        <h4>Подзадачи · {{ view.children.length }}</h4>
+        <ul>
+          <li v-for="(title, j) in view.children" :key="j">
+            <button type="button" class="go" @click="emit('select', `${id}/${j}`)">{{ title }}</button>
+          </li>
+        </ul>
+      </template>
       <h4>Входит в трек</h4>
       <ul>
         <li><button type="button" class="go" @click="emit('select', `track:${view.t.id}`)">{{ view.t.label }}</button></li>
@@ -206,6 +243,9 @@ li {
   gap: 8px;
   align-items: baseline;
   padding: 1px 0;
+}
+li.nested {
+  padding-left: 16px;
 }
 .go {
   text-align: left;
