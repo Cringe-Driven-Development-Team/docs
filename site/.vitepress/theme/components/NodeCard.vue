@@ -45,7 +45,7 @@ const view = computed(() => {
   }
   const [trackId = '', index = ''] = rest.split('/');
   const t = trackById(trackId);
-  const title = t?.subtasks[Number(index)];
+  const title = t?.subtasks[Number(index)]?.title;
   return t && title !== undefined ? { kind: 'subtask' as const, t, title } : null;
 });
 </script>
@@ -101,8 +101,8 @@ const view = computed(() => {
       </ul>
       <h4 v-if="view.t.subtasks.length">Подзадачи · {{ view.t.subtasks.length }}</h4>
       <ul>
-        <li v-for="(s, i) in view.t.subtasks" :key="s">
-          <button type="button" class="go" @click="emit('select', `subtask:${view.t.id}/${i}`)">{{ s }}</button>
+        <li v-for="(s, i) in view.t.subtasks" :key="i">
+          <button type="button" class="go" @click="emit('select', `subtask:${view.t.id}/${i}`)">{{ s.title }}</button>
         </li>
       </ul>
       <h4 v-if="view.related.length">Связи</h4>

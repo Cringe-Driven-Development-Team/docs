@@ -51,7 +51,7 @@ describe("parseTrack", () => {
 
   test("label, help, subtasks, related and body are read", () => {
     const t = track({ ...valid(), label: "Б", help: ["YarikMix"], subtasks: ["tRPC"], related: [{ track: "x", why: "y" }] }, "bff", "## Цель");
-    expect([t.label, t.help, t.subtasks, t.related, t.hasBody]).toEqual(["Б", ["YarikMix"], ["tRPC"], [{ track: "x", why: "y" }], true]);
+    expect([t.label, t.help, t.subtasks, t.related, t.hasBody]).toEqual(["Б", ["YarikMix"], [{ title: "tRPC", subtasks: [] }], [{ track: "x", why: "y" }], true]);
   });
 
   test("title is required", () => {
@@ -91,7 +91,7 @@ describe("parseTrack", () => {
     fails({ ...valid(), help: "YarikMix" }, "help — нужен список");
     fails({ ...valid(), subtasks: "tRPC" }, "subtasks — нужен список");
     fails({ ...valid(), related: { track: "x" } }, "related — нужен список");
-    fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка");
+    fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка или { title, subtasks }");
     fails({ ...valid(), help: ["YarikMix", 1] }, "help[1] — нужна строка");
   });
 
@@ -102,6 +102,31 @@ describe("parseTrack", () => {
 
   test("related entries need a non-empty why", () => {
     fails({ ...valid(), related: [{ track: "x", why: "" }] }, "related[0].why — нужна непустая строка");
+  });
+
+  test("subtasks: string and object read the same", () => {
+    const t = track({ ...valid(), subtasks: ["tRPC", { title: "Скиллы", subtasks: ["/apidog"] }, { title: "Orval" }] });
+    expect(t.subtasks).toEqual([
+      { title: "tRPC", subtasks: [] },
+      { title: "Скиллы", subtasks: ["/apidog"] },
+      { title: "Orval", subtasks: [] },
+    ]);
+  });
+
+  test("part_of is read", () => {
+    expect(track({ ...valid(), part_of: "service" }).partOf).toBe("service");
+    expect("partOf" in track(valid())).toBe(false);
+  });
+
+  test("part_of and subtasks are checked", () => {
+    fails({ ...valid(), part_of: "" }, "part_of — нужна непустая строка");
+    fails({ ...valid(), subtasks: [404] }, "subtasks[0] — нужна строка или { title, subtasks }");
+    fails({ ...valid(), subtasks: [{ title: "a", note: "x" }] }, "subtasks[0] — нужна строка или { title, subtasks }");
+    fails({ ...valid(), subtasks: [{ title: "" }] }, "subtasks[0].title — нужна непустая строка");
+    fails({ ...valid(), subtasks: [{ title: "a", subtasks: [{ title: "b" }] }] }, "subtasks[0].subtasks[0] — нужна строка: вложенность — один уровень");
+    fails({ ...valid(), subtasks: ["a", { title: "a" }] }, "subtasks — подзадача «a» повторяется");
+    fails({ ...valid(), subtasks: [{ title: "a", subtasks: ["b", "b"] }] }, "subtasks — подзадача «b» повторяется");
+    expect(track({ ...valid(), subtasks: ["a", { title: "b", subtasks: ["a"] }] }).subtasks).toHaveLength(2);
   });
 
   test("id must be lowercase latin, digits and dashes", () => {

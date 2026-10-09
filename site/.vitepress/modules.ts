@@ -46,6 +46,8 @@ export function validatePeople(people: readonly Person[], file = "modules/people
 
 export type Doer = { login: string; side: Side };
 export type Related = { track: string; why: string };
+/** Подзадача трека; вложенные — только строки (спека 2026-10-09-subtracks §4). */
+export type Subtask = { title: string; subtasks: string[] };
 /** Подстраница трека: `tracks/<track>/<id>.md` (спека 2026-10-08-bff-into-module §5). */
 export type TrackPage = { id: string; title: string; url: string };
 export type Track = {
@@ -56,8 +58,10 @@ export type Track = {
   area: Area;
   do: Doer[];
   help: string[];
-  subtasks: string[];
+  subtasks: Subtask[];
   related: Related[];
+  /** Родитель подтрека — `part_of`; вложенность в один уровень. */
+  partOf?: string;
   hasBody: boolean;
   pages: TrackPage[];
   url: string;
@@ -93,6 +97,35 @@ function strings(file: string, field: string, value: unknown): string[] {
     if (typeof item !== "string") throw new ModuleDataError(file, `${field}[${index}]`, "нужна строка");
     return item;
   });
+}
+
+const SUBTASK_KEYS = new Set(["title", "subtasks"]);
+
+/** Подзадачи: строка или `{ title, subtasks }`; вложенные — строки; соседние названия не повторяются. */
+function subtasks(file: string, value: unknown): Subtask[] {
+  const unique = (titles: string[]) => {
+    const seen = new Set<string>();
+    for (const title of titles) {
+      if (seen.has(title)) throw new ModuleDataError(file, "subtasks", `подзадача «${title}» повторяется`);
+      seen.add(title);
+    }
+  };
+  const result = list(file, "subtasks", value).map((item, index): Subtask => {
+    const field = `subtasks[${index}]`;
+    if (typeof item === "string") return { title: item, subtasks: [] };
+    if (!isRecord(item) || Object.keys(item).some((key) => !SUBTASK_KEYS.has(key))) {
+      throw new ModuleDataError(file, field, "нужна строка или { title, subtasks }");
+    }
+    if (!nonEmpty(item.title)) throw new ModuleDataError(file, `${field}.title`, "нужна непустая строка");
+    const nested = list(file, `${field}.subtasks`, item.subtasks).map((sub, j) => {
+      if (typeof sub !== "string") throw new ModuleDataError(file, `${field}.subtasks[${j}]`, "нужна строка: вложенность — один уровень");
+      return sub;
+    });
+    unique(nested);
+    return { title: item.title, subtasks: nested };
+  });
+  unique(result.map((st) => st.title));
+  return result;
 }
 
 function checkLogin(file: string, field: string, login: string, people: readonly Person[]): void {
@@ -143,6 +176,8 @@ export function parseTrack(
     if (!nonEmpty(entry.why)) throw new ModuleDataError(file, `related[${index}].why`, "нужна непустая строка");
     return { track: entry.track, why: entry.why };
   });
+  if (fm.part_of !== undefined && !nonEmpty(fm.part_of)) throw new ModuleDataError(file, "part_of", "нужна непустая строка");
+  const partOf = nonEmpty(fm.part_of) ? fm.part_of : undefined;
   return {
     id,
     module: moduleId,
@@ -151,8 +186,9 @@ export function parseTrack(
     area: area as Area,
     do: doers,
     help,
-    subtasks: strings(file, "subtasks", fm.subtasks),
+    subtasks: subtasks(file, fm.subtasks),
     related,
+    ...(partOf ? { partOf } : {}),
     hasBody: body.trim() !== "",
     pages: [...pages],
     url: `/modules/${moduleId}/tracks/${id}`,
@@ -276,7 +312,7 @@ export function buildGraph(
     if (showHelp) for (const login of t.help) links.push({ source: personId(login), target: trackId(t.id), kind: "help" });
     if (!showSubtasks) continue;
     t.subtasks.forEach((s, i) => {
-      nodes.push({ id: subtaskId(t.id, i), kind: "subtask", label: s, title: s, area: t.area, trackId: t.id });
+      nodes.push({ id: subtaskId(t.id, i), kind: "subtask", label: s.title, title: s.title, area: t.area, trackId: t.id });
       links.push({ source: trackId(t.id), target: subtaskId(t.id, i), kind: "part" });
     });
   }

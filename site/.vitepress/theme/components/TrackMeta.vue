@@ -56,7 +56,7 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
     <template v-if="found.track.subtasks.length">
       <h2 id="подзадачи">Подзадачи</h2>
       <ul>
-        <li v-for="subtask in found.track.subtasks" :key="subtask">{{ subtask }}</li>
+        <li v-for="(subtask, i) in found.track.subtasks" :key="i">{{ subtask.title }}</li>
       </ul>
     </template>
     <template v-if="found.track.related.length">
