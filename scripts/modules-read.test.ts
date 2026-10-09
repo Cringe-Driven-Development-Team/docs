@@ -106,13 +106,13 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(29);
+  expect(october?.tracks).toHaveLength(33);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
-    YarikMix: [7, 3],
-    blackHATred: [1, 3],
-    ManInTheCoat: [9, 0],
+    YarikMix: [7, 5],
+    blackHATred: [2, 4],
+    ManInTheCoat: [10, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
@@ -158,9 +158,10 @@ test("real site/modules is valid", () => {
   expect(track("front-harness")?.related).toEqual([]);
   expect(track("service-harness")?.subtasks).toEqual([{ title: "Скиллы", subtasks: ["/apidog"] }]);
   const redis = track("redis-sessions");
-  expect([redis?.area, redis?.do, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
+  expect([redis?.area, redis?.do, redis?.help, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
     "back",
     [{ login: "GrayMouse9", side: "back" }, { login: "iRedTea", side: "devops" }],
+    ["blackHATred"],
     ["bff", "profile"],
     4,
   ]);
@@ -174,12 +175,27 @@ test("real site/modules is valid", () => {
     ["2FA: фронт", "front", [{ login: "iRedTea", side: "front" }], "2fa"],
     ["2FA: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "2fa"],
   ]);
+  expect(track("bff")?.help).toEqual(["YarikMix"]);
+  expect([track("profile")?.area, track("profile")?.do, track("profile")?.help]).toEqual(["fullstack", [], ["YarikMix"]]);
+  expect(["profile-front", "profile-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
+    ["Профиль: фронт", "front", [{ login: "ManInTheCoat", side: "front" }], "profile"],
+    ["Профиль: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "profile"],
+  ]);
+  expect([track("figma")?.title, track("figma")?.area, track("figma")?.do]).toEqual(["Figma", "front", [{ login: "ManInTheCoat", side: "front" }]]);
   const grooming = track("runtime-grooming");
-  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
+  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
+  const execGrooming = track("file-exec-grooming");
+  expect([execGrooming?.label, execGrooming?.area, execGrooming?.do, execGrooming?.related.map((r) => r.track), execGrooming?.subtasks.length]).toEqual([
+    "Техгруминг исполнения файлов",
+    "back",
+    [{ login: "blackHATred", side: "back" }],
+    ["file-exec", "runtime-grooming"],
+    5,
+  ]);
   expect(grooming?.subtasks.map((s) => s.title)).toEqual([
     "Контейнеры в Selectel: Managed Kubernetes или Docker на своих VM",
     "Изоляция чужого кода",
-    "Декомпозиция «Исполнения файлов» и «Авто-VPS»",
+    "Декомпозиция «Авто-VPS»",
     "Архитектурные схемы",
   ]);
   expect(track("file-exec")?.hasBody).toBe(true);

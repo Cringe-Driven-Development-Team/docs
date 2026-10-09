@@ -5,6 +5,7 @@ area: back
 do:
   GrayMouse9: back
   iRedTea: devops
+help: [blackHATred]
 subtasks:
   - "Redis в compose через Ansible"
   - "Refresh-сессии в Redis вместо refresh_sessions"
@@ -30,7 +31,7 @@ Access-токен — JWT, его не хранят: бэк проверяет �
 
 - **Redis — контейнер в compose рядом с Postgres, выкатывает Ansible.** Так же, как Postgres, и бесплатно.
   Управляемый Redis Selectel через Pulumi не берём: платный кластер, а Postgres у нас не управляемый.
-- **Бэк — Даша** (она же на бэке профиля, где смена пароля), **инфра — Денис.**
+- **Бэк — Даша** (она же на бэке профиля, где смена пароля), **инфра — Денис**, **помогает Саша.**
 
 ## Не входит
 
