@@ -65,7 +65,10 @@
 
 ```ts
 // site/modules/modules.data.ts — папка этого файла и есть папка модулей
+import type { ModuleGraphData } from '@tp-prepare/vitepress-module-graph';
 import { createModulesLoader } from '@tp-prepare/vitepress-module-graph/node';
+declare const data: ModuleGraphData;   // подстановка VitePress; объявление — для tsc
+export { data };
 export default createModulesLoader(import.meta.url);
 ```
 
@@ -74,6 +77,8 @@ export default createModulesLoader(import.meta.url);
 import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/node';
 // themeConfig.sidebar:
 '/modules/': moduleSidebar(readModules('site/modules')),
+// пакет отдаёт .vue как есть — Vite сайта собирает их и для SSR:
+vite: { ssr: { noExternal: ['@tp-prepare/vitepress-module-graph'] } },
 ```
 
 ```ts

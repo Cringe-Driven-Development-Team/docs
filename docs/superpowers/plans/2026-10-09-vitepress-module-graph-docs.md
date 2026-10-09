@@ -48,7 +48,7 @@
   - пример трека из README (как `README track example is a valid track`) разбирается `parseTrack` с `ctx = { config, people, prefix: "modules" }`, менторы `["YarikMix","blackHATred"]`.
   Если число треков на `main` к началу плана другое — взять фактическое и записать в ledger.
 - [ ] **Step 2:** `bun add -d --exact @tp-prepare/vitepress-module-graph@<версия>`; `bun test scripts/modules-data.test.ts` → FAIL (нет `people.yaml`).
-- [ ] **Step 3:** `people.yaml` и `module-graph.yaml`; подключение — спека §3.2 (`modules.data.ts` — одна строка `createModulesLoader(import.meta.url)`, `Data` больше не объявлять); `custom.css` — убрать блок `--cdd-area-*` с комментарием; `package.json` — `"modules:check": "module-graph check"`; удалить файлы из списка.
+- [ ] **Step 3:** `people.yaml` и `module-graph.yaml`; подключение — спека §3.2 (`modules.data.ts` — `createModulesLoader(import.meta.url)` и `declare const data: ModuleGraphData`; `config.mts` — `vite.ssr.noExternal: ['@tp-prepare/vitepress-module-graph']` рядом с `withMermaid`, без него SSR-сборка падает на `.vue`); `custom.css` — убрать блок `--cdd-area-*` с комментарием; `package.json` — `"modules:check": "module-graph check"`; удалить файлы из списка.
 - [ ] **Step 4:** `bun run typecheck && bun run test` → PASS; `grep -rn "modules.ts\|modules-read\|people.ts\|cdd-area" site scripts` — пусто; `bun run modules:check` → `modules ok: 1 модуль, 35 треков`.
 - [ ] **Step 5:** `bun run build` (Docker) → `site ok`.
 - [ ] **Step 6: Commit** `feat(modules): граф на пакете @tp-prepare/vitepress-module-graph, люди и настройки в YAML`.
