@@ -136,7 +136,14 @@ test("real site/modules is valid", () => {
   expect(track("xss-back")).toBeUndefined();
   expect([track("xss")?.subtasks, track("xss")?.hasBody]).toEqual([["CSP и nosniff в Caddy"], true]);
   const grooming = track("runtime-grooming");
-  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
+  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
+  expect(grooming?.subtasks).toEqual([
+    "Контейнеры в Selectel: Managed Kubernetes или Docker на своих VM",
+    "Изоляция чужого кода",
+    "Декомпозиция «Исполнения файлов» и «Авто-VPS»",
+    "Архитектурные схемы",
+  ]);
+  expect(track("file-exec")?.hasBody).toBe(true);
 });
 
 const SNAPSHOT = {
