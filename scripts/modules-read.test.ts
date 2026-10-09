@@ -106,13 +106,13 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(29);
+  expect(october?.tracks).toHaveLength(32);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
-    YarikMix: [7, 3],
+    YarikMix: [7, 5],
     blackHATred: [1, 3],
-    ManInTheCoat: [9, 0],
+    ManInTheCoat: [10, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
@@ -174,6 +174,13 @@ test("real site/modules is valid", () => {
     ["2FA: фронт", "front", [{ login: "iRedTea", side: "front" }], "2fa"],
     ["2FA: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "2fa"],
   ]);
+  expect(track("bff")?.help).toEqual(["YarikMix"]);
+  expect([track("profile")?.area, track("profile")?.do, track("profile")?.help]).toEqual(["fullstack", [], ["YarikMix"]]);
+  expect(["profile-front", "profile-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
+    ["Профиль: фронт", "front", [{ login: "ManInTheCoat", side: "front" }], "profile"],
+    ["Профиль: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "profile"],
+  ]);
+  expect([track("figma")?.title, track("figma")?.area, track("figma")?.do]).toEqual(["Figma", "front", [{ login: "ManInTheCoat", side: "front" }]]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
   expect(grooming?.subtasks.map((s) => s.title)).toEqual([
