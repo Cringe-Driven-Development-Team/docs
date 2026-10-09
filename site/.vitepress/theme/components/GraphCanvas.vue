@@ -159,7 +159,7 @@ function drawNode(node: SimNode, ctx: CanvasRenderingContext2D, scale: number): 
 function linkColor(l: SimLink): string {
   if (hot(l)) return colors.accent;
   const base = l.kind === 'related' ? colors.muted : colors.edge;
-  return rgba(base, focus || props.matches.size > 0 ? DIM : l.kind === 'part' ? 0.55 : 0.9);
+  return rgba(base, focus || props.matches.size > 0 ? DIM : l.kind === 'part' || l.kind === 'sub' ? 0.55 : 0.9);
 }
 
 function fit(): void {
@@ -206,7 +206,7 @@ onMounted(async () => {
     .graphData(graphData());
   (graph.d3Force('charge') as unknown as { strength(v: number): void }).strength(-95);
   (graph.d3Force('link') as unknown as { distance(fn: (l: SimLink) => number): void }).distance((l) =>
-    l.kind === 'part' ? 16 : l.kind === 'related' ? 70 : 40,
+    l.kind === 'part' ? 16 : l.kind === 'sub' ? 45 : l.kind === 'related' ? 70 : 40,
   );
   resize = new ResizeObserver(() => graph?.width(el.clientWidth).height(el.clientHeight));
   resize.observe(el);

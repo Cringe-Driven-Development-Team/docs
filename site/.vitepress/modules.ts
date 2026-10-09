@@ -274,7 +274,7 @@ export type GraphNode = {
   trackId?: string;
   progress?: Progress;
 };
-export type LinkKind = "do" | "help" | "part" | "related";
+export type LinkKind = "do" | "help" | "part" | "related" | "sub";
 export type GraphLink = { source: string; target: string; kind: LinkKind; side?: Side; why?: string };
 export type Graph = { nodes: GraphNode[]; links: GraphLink[] };
 
@@ -329,10 +329,18 @@ export function buildGraph(
     t.subtasks.forEach((s, i) => {
       nodes.push({ id: subtaskId(t.id, i), kind: "subtask", label: s.title, title: s.title, area: t.area, trackId: t.id });
       links.push({ source: trackId(t.id), target: subtaskId(t.id, i), kind: "part" });
+      s.subtasks.forEach((title, j) => {
+        const id = `${subtaskId(t.id, i)}/${j}`;
+        nodes.push({ id, kind: "subtask", label: title, title, area: t.area, trackId: t.id });
+        links.push({ source: subtaskId(t.id, i), target: id, kind: "part" });
+      });
     });
   }
+  const visible = new Set(tracks.map((t) => t.id));
+  for (const t of tracks) {
+    if (t.partOf !== undefined && visible.has(t.partOf)) links.push({ source: trackId(t.partOf), target: trackId(t.id), kind: "sub" });
+  }
   if (!filter.hide.includes("related")) {
-    const visible = new Set(tracks.map((t) => t.id));
     for (const t of tracks) {
       for (const r of t.related) {
         if (visible.has(r.track)) links.push({ source: trackId(t.id), target: trackId(r.track), kind: "related", why: r.why });
@@ -350,10 +358,29 @@ export function neighbours(graph: { links: GraphLink[] }, id: string): Set<strin
   for (const n of near(id)) result.add(n);
   if (id.startsWith("person:")) {
     for (const t of [...result].filter((n) => n.startsWith("track:"))) {
-      for (const n of near(t)) if (n.startsWith("subtask:")) result.add(n);
+      for (const n of near(t)) {
+        if (!n.startsWith("subtask:")) continue;
+        result.add(n);
+        for (const nested of near(n)) if (nested.startsWith("subtask:")) result.add(nested);
+      }
     }
   }
   return result;
+}
+
+/** Подзадача по id узла `subtask:<трек>/<i>` или `subtask:<трек>/<i>/<j>`; иначе `null`. */
+export function subtaskByNodeId(
+  module: Module,
+  id: string,
+): { track: Track; title: string; children: string[]; parent: { index: number; title: string } | null } | null {
+  const match = /^subtask:([^/]+)\/(\d+)(?:\/(\d+))?$/.exec(id);
+  if (!match) return null;
+  const track = module.tracks.find((t) => t.id === match[1]);
+  const top = track?.subtasks[Number(match[2])];
+  if (!track || !top) return null;
+  if (match[3] === undefined) return { track, title: top.title, children: top.subtasks, parent: null };
+  const title = top.subtasks[Number(match[3])];
+  return title === undefined ? null : { track, title, children: [], parent: { index: Number(match[2]), title: top.title } };
 }
 
 export function searchMatches(nodes: readonly GraphNode[], query: string): Set<string> {
