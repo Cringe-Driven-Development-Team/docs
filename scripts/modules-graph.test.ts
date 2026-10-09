@@ -6,6 +6,7 @@ import {
   filterFromQuery,
   filterToQuery,
   neighbours,
+  nodePaint,
   pageRef,
   parseModule,
   parseTrack,
@@ -161,4 +162,10 @@ test("pageRef: module and track pages by relative path", () => {
   expect(pageRef("bff/index.md")).toBeNull();
   expect(pageRef("modules/2026-10/tracks/bff/contract.md")).toEqual({ module: "2026-10", track: "bff", page: "contract" });
   expect(pageRef("modules/2026-10/tracks/bff/a/b.md")).toBeNull();
+});
+
+test("nodePaint: people are neutral, tracks and subtasks take the track area", () => {
+  expect(nodePaint({ kind: "person", area: "front" })).toEqual({ neutral: true });
+  expect(nodePaint({ kind: "track", area: "devops" })).toEqual({ neutral: false, area: "devops", alpha: 1 });
+  expect(nodePaint({ kind: "subtask", area: "back" })).toEqual({ neutral: false, area: "back", alpha: 0.75 });
 });

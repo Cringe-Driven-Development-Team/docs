@@ -4,7 +4,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useData } from 'vitepress';
 import type ForceGraphType from 'force-graph';
-import { AREAS, type Area, type GraphLink, type GraphNode, neighbours } from '../../modules.ts';
+import { AREAS, type Area, type GraphLink, type GraphNode, neighbours, nodePaint } from '../../modules.ts';
 import type { Progress } from '../../board.ts';
 
 const props = defineProps<{ nodes: GraphNode[]; links: GraphLink[]; selected: string | null; matches: Set<string> }>();
@@ -120,7 +120,8 @@ function drawNode(node: SimNode, ctx: CanvasRenderingContext2D, scale: number): 
   ctx.globalAlpha = dim ? DIM : 1;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI);
-  ctx.fillStyle = node.kind === 'subtask' ? rgba(colors.area[node.area], 0.75) : colors.area[node.area];
+  const paint = nodePaint(node);
+  ctx.fillStyle = paint.neutral ? colors.muted : rgba(colors.area[paint.area], paint.alpha);
   ctx.fill();
   if (node.progress) drawProgress(ctx, node.progress, colors.area[node.area], x, y, r);
   if (node.mentor) {

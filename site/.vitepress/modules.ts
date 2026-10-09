@@ -278,6 +278,12 @@ export type LinkKind = "do" | "help" | "part" | "related" | "sub";
 export type GraphLink = { source: string; target: string; kind: LinkKind; side?: Side; why?: string };
 export type Graph = { nodes: GraphNode[]; links: GraphLink[] };
 
+/** Заливка узла: люди — нейтральные, цвет направления — только у треков и подзадач. */
+export function nodePaint(node: Pick<GraphNode, "kind" | "area">): { neutral: true } | { neutral: false; area: Area; alpha: number } {
+  if (node.kind === "person") return { neutral: true };
+  return { neutral: false, area: node.area, alpha: node.kind === "subtask" ? 0.75 : 1 };
+}
+
 export const LAYERS = ["subtasks", "help", "related"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Filter = { people: string[]; areas: Area[]; hide: Layer[] };
