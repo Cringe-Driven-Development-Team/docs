@@ -134,6 +134,7 @@ test("real site/modules is valid", () => {
     ["front-libs"],
   ]);
   expect(track("xss-back")).toBeUndefined();
+  expect([track("xss")?.subtasks, track("xss")?.hasBody]).toEqual([["CSP и nosniff в Caddy"], true]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
 });
