@@ -122,7 +122,7 @@ test("real site/modules is valid", () => {
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
   expect([track("monaco")?.help, track("monaco")?.subtasks, track("monaco")?.hasBody]).toEqual([
     ["blackHATred"],
-    ["Ввод кода и текста", "Ячейки code и text"],
+    ["Просмотр кода, только чтение", "Ячейки code и text"],
     true,
   ]);
   expect([track("front-harness")?.area, track("front-harness")?.subtasks]).toEqual(["team", ["chrome-devtools-mcp", "Скиллы", "LSP для агента через MCP", "Контекст всего сервиса для агента"]]);
