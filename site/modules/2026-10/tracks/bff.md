@@ -12,7 +12,8 @@ pages: [contract, auth]
 ---
 
 «tRPC (server)» — роутер tRPC в BFF, делает Валентин; остальные подзадачи — со стороны фронта (Денис).
-Свой клиент tRPC — подтрек [«tRPC (client)»](./trpc-client): он живёт в монорепе фронтовых библиотек.
+Свой клиент tRPC — подтрек [«tRPC (client)»](./trpc-client): пакет `@cdd-team/trpc-client` живёт в монорепе фронтовых
+библиотек [`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages).
 
 Браузер ходит только в BFF (Backend for Frontend): клиент вызывает процедуры tRPC, а BFF ходит в Go API.
 Токены остаются на сервере и в браузер не попадают: у пользователя только зашифрованная cookie сессии.
@@ -81,8 +82,8 @@ refresh не доходят до браузера, а значит, XSS на с�
 
 Клиент создаётся в
 [`src/api/client.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/client.ts#L29)
-с `baseUrl: '/api/v1'` и `credentials: 'include'`. Его заменяет свой клиент tRPC (`packages/trpc-client`,
-см. [«Клиент»](./bff/contract#клиент)): типы процедур — `import type { AppRouter }` из BFF, на каждый
+с `baseUrl: '/api/v1'` и `credentials: 'include'`. Его заменяет свой клиент tRPC (`@cdd-team/trpc-client` из
+[`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages), см. [«Клиент»](./bff/contract#клиент)): типы процедур — `import type { AppRouter }` из BFF, на каждый
 вызов `X-CSRF: 1`, cookie он не читает. Refresh на `401` и повтор после `403` уходят; `UNAUTHORIZED`
 означает гостя и форму входа; старт приложения — `users.me`. Задача frontend#34 становится не нужна.
 

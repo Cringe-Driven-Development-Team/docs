@@ -274,3 +274,15 @@ test("выход отзывает refresh и при истёкшем access", ()
   expect(auth).toContain("optionalSessionProcedure");
   expect(auth).toContain("`auth.logout` никогда не отвечает `UNAUTHORIZED`");
 });
+
+test("клиент tRPC — пакет @cdd-team/trpc-client из frontend-packages", () => {
+  const repo = "https://github.com/Cringe-Driven-Development-Team/frontend-packages";
+  for (const file of [TRACK, CONTRACT]) {
+    const md = readFileSync(file, "utf8");
+    expect(md, file).toContain("@cdd-team/trpc-client");
+    expect(md, file).toContain(repo);
+    expect(md, file).not.toContain("@cdd/trpc-client");
+    expect(md, file).not.toContain("tRPC (`packages/trpc-client`");
+    expect(md, file).not.toContain("пакет `packages/trpc-client`");
+  }
+});
