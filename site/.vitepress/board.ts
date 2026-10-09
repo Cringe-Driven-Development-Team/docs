@@ -121,7 +121,7 @@ function currentModule(modules: readonly Module[], snapshot: BoardSnapshot): Mod
   );
   const current = withSprints.find((m) => m.sprints.some((s) => running.has(s)));
   if (current) return current;
-  return withSprints.reduce<Module | undefined>((a, m) => (a === undefined || m.id > a.id ? m : a), undefined);
+  return withSprints.reduce<Module | undefined>((a, m) => (a === undefined || Number(m.id) > Number(a.id) ? m : a), undefined);
 }
 
 /** Раскладка задач по модулям и трекам, спека §4.4. Ключи — id всех модулей. */

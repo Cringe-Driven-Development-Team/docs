@@ -23,11 +23,12 @@ const BFF = "---\ntitle: BFF\narea: fullstack\ndo:\n  iRedTea: front\n  MrDuckVC
 test("reads modules newest first", () => {
   write("people.ts", "export {};\n");
   write("index.md", "---\ntitle: Модули\n---\n");
-  write("2026-09/index.md", "---\ntitle: Сентябрь\n---\n");
-  write("2026-10/index.md", "---\ntitle: Октябрь\nperiod: 13.10 — 09.11\n---\n<ModuleGraph />\n");
-  write("2026-10/tracks/bff.md", BFF);
+  write("9/index.md", "---\ntitle: Девятый\n---\n");
+  write("2/index.md", "---\ntitle: Второй\n---\n");
+  write("10/index.md", "---\ntitle: Десятый\nperiod: 13.10 — 09.11\n---\n<ModuleGraph />\n");
+  write("10/tracks/bff.md", BFF);
   const modules = readModules(dir);
-  expect(modules.map((m) => m.id)).toEqual(["2026-10", "2026-09"]);
+  expect(modules.map((m) => m.id)).toEqual(["10", "9", "2"]);
   expect(modules[0]?.period).toBe("13.10 — 09.11");
   expect(modules[0]?.tracks.map((t) => [t.id, t.hasBody])).toEqual([["bff", true]]);
   expect(modules[1]?.tracks).toEqual([]);
@@ -35,14 +36,14 @@ test("reads modules newest first", () => {
 
 const BFF_PAGES = BFF.replace("---\n\n", "pages: [contract, auth]\n---\n\n");
 const page = (title: string) => `---\ntitle: ${title}\n---\n# ${title}\n`;
-const october = () => write("2026-10/index.md", "---\ntitle: Октябрь\n---\n");
+const october = () => write("2/index.md", "---\ntitle: Октябрь\n---\n");
 
 test("reads track subpages", () => {
   october();
-  write("2026-10/tracks/bff.md", BFF_PAGES);
-  write("2026-10/tracks/bff/contract.md", page("Контракт"));
-  write("2026-10/tracks/bff/auth.md", page("Авторизация и CSRF"));
-  write("2026-10/tracks/bff/scheme.png", "png");
+  write("2/tracks/bff.md", BFF_PAGES);
+  write("2/tracks/bff/contract.md", page("Контракт"));
+  write("2/tracks/bff/auth.md", page("Авторизация и CSRF"));
+  write("2/tracks/bff/scheme.png", "png");
   const [bff] = readModules(dir)[0]?.tracks ?? [];
   expect(bff?.pages.map((p) => [p.id, p.title])).toEqual([
     ["contract", "Контракт"],
@@ -52,60 +53,60 @@ test("reads track subpages", () => {
 
 test("subpage without pages entry", () => {
   october();
-  write("2026-10/tracks/bff.md", BFF);
-  write("2026-10/tracks/bff/x.md", page("X"));
-  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff/x.md: pages — подстраницы нет в pages трека bff.md");
+  write("2/tracks/bff.md", BFF);
+  write("2/tracks/bff/x.md", page("X"));
+  expect(() => readModules(dir)).toThrow("modules/2/tracks/bff/x.md: pages — подстраницы нет в pages трека bff.md");
 });
 
 test("subpage directory without a track", () => {
   october();
-  write("2026-10/tracks/bff.md", BFF);
-  write("2026-10/tracks/ghost/a.md", page("A"));
-  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/ghost/a.md: pages — подстраницы нет в pages трека ghost.md");
+  write("2/tracks/bff.md", BFF);
+  write("2/tracks/ghost/a.md", page("A"));
+  expect(() => readModules(dir)).toThrow("modules/2/tracks/ghost/a.md: pages — подстраницы нет в pages трека ghost.md");
 });
 
 test("missing subpage file", () => {
   october();
-  write("2026-10/tracks/bff.md", BFF_PAGES);
-  write("2026-10/tracks/bff/auth.md", page("Авторизация и CSRF"));
-  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff.md: pages — нет файла bff/contract.md");
+  write("2/tracks/bff.md", BFF_PAGES);
+  write("2/tracks/bff/auth.md", page("Авторизация и CSRF"));
+  expect(() => readModules(dir)).toThrow("modules/2/tracks/bff.md: pages — нет файла bff/contract.md");
 });
 
 test("subpage YAML error names the file", () => {
   october();
-  write("2026-10/tracks/bff.md", BFF_PAGES);
-  write("2026-10/tracks/bff/contract.md", page("Контракт"));
-  write("2026-10/tracks/bff/auth.md", "---\ntitle: [x\n---\n");
-  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff/auth.md: frontmatter — ");
+  write("2/tracks/bff.md", BFF_PAGES);
+  write("2/tracks/bff/contract.md", page("Контракт"));
+  write("2/tracks/bff/auth.md", "---\ntitle: [x\n---\n");
+  expect(() => readModules(dir)).toThrow("modules/2/tracks/bff/auth.md: frontmatter — ");
 });
 
 test("errors name the file from site/", () => {
-  write("2026-10/index.md", "---\ntitle: Октябрь\n---\n");
-  write("2026-10/tracks/bff.md", BFF.replace("MrDuckVC", "MrDuck"));
-  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff.md: do — логина MrDuck нет в people.ts");
+  write("2/index.md", "---\ntitle: Октябрь\n---\n");
+  write("2/tracks/bff.md", BFF.replace("MrDuckVC", "MrDuck"));
+  expect(() => readModules(dir)).toThrow("modules/2/tracks/bff.md: do — логина MrDuck нет в people.ts");
 });
 
 test("YAML syntax errors name the file", () => {
-  write("2026-10/index.md", "---\ntitle: Октябрь\n---\n");
-  write("2026-10/tracks/bff.md", BFF.replace("  MrDuckVC: back\n", "  MrDuckVC: back\n  iRedTea: back\n"));
-  expect(() => readModules(dir)).toThrow("modules/2026-10/tracks/bff.md: frontmatter — duplicated mapping key");
-  write("2026-10/tracks/bff.md", BFF);
-  write("2026-10/index.md", "---\ntitle: [Октябрь\n---\n");
-  expect(() => readModules(dir)).toThrow("modules/2026-10/index.md: frontmatter — ");
+  write("2/index.md", "---\ntitle: Октябрь\n---\n");
+  write("2/tracks/bff.md", BFF.replace("  MrDuckVC: back\n", "  MrDuckVC: back\n  iRedTea: back\n"));
+  expect(() => readModules(dir)).toThrow("modules/2/tracks/bff.md: frontmatter — duplicated mapping key");
+  write("2/tracks/bff.md", BFF);
+  write("2/index.md", "---\ntitle: [Октябрь\n---\n");
+  expect(() => readModules(dir)).toThrow("modules/2/index.md: frontmatter — ");
 });
 
 test("rejects a stray directory", () => {
   write("drafts/notes.md", "черновик\n");
-  expect(() => readModules(dir)).toThrow("modules/drafts: каталог — drafts — нужен формат YYYY-MM");
+  expect(() => readModules(dir)).toThrow("modules/drafts: каталог — drafts — нужен номер модуля: 1, 2, 3…");
 });
 
 test("requires index.md", () => {
-  write("2026-10/tracks/bff.md", BFF);
-  expect(() => readModules(dir)).toThrow("modules/2026-10: index.md — нет файла страницы модуля");
+  write("2/tracks/bff.md", BFF);
+  expect(() => readModules(dir)).toThrow("modules/2: index.md — нет файла страницы модуля");
 });
 
 test("real site/modules is valid", () => {
-  const october = readModules("site/modules").find((m) => m.id === "2026-10");
+  const october = readModules("site/modules").find((m) => m.id === "2");
   expect(october?.title).toBe("Модуль №2");
   expect(october?.tracks).toHaveLength(35);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
@@ -222,8 +223,8 @@ const SNAPSHOT = {
 };
 
 function boardModules() {
-  write("2026-10/index.md", "---\ntitle: Октябрь\nsprints: [Sprint 5]\n---\n");
-  write("2026-10/tracks/bff.md", BFF);
+  write("2/index.md", "---\ntitle: Октябрь\nsprints: [Sprint 5]\n---\n");
+  write("2/tracks/bff.md", BFF);
   return readModules(dir);
 }
 
@@ -261,11 +262,11 @@ test("readBoard: valid snapshot is split by module", () => {
   write("board.json", JSON.stringify(SNAPSHOT));
   const board = readBoard(join(dir, "board.json"), modules);
   expect(board?.takenAt).toBe(SNAPSHOT.takenAt);
-  expect(board?.byModule["2026-10"]?.byTrack.bff?.map((x) => x.ref)).toEqual(["frontend#1"]);
+  expect(board?.byModule["2"]?.byTrack.bff?.map((x) => x.ref)).toEqual(["frontend#1"]);
 });
 
 test("real october module has four sprints", () => {
-  expect(readModules("site/modules").find((m) => m.id === "2026-10")?.sprints).toEqual(["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"]);
+  expect(readModules("site/modules").find((m) => m.id === "2")?.sprints).toEqual(["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"]);
 });
 
 test("README track example is a valid track", () => {
@@ -274,6 +275,6 @@ test("README track example is a valid track", () => {
   expect(block).toBeDefined();
   const source = (block ?? "").replace(/^ {2}/gm, "");
   const { data, content } = matter(source);
-  const track = parseTrack("README.md", "2026-10", "multibranch", data, content, PEOPLE);
+  const track = parseTrack("README.md", "2", "multibranch", data, content, PEOPLE);
   expect(track.mentors).toEqual(["YarikMix", "blackHATred"]);
 });

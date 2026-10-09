@@ -2,15 +2,15 @@ import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
 // Документы трека «BFF» модуля октября: страница трека и две подстраницы.
-export const TRACK = "site/modules/2026-10/tracks/bff.md";
-export const CONTRACT = "site/modules/2026-10/tracks/bff/contract.md";
-export const AUTH = "site/modules/2026-10/tracks/bff/auth.md";
+export const TRACK = "site/modules/2/tracks/bff.md";
+export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
+export const AUTH = "site/modules/2/tracks/bff/auth.md";
 export const BFF_PAGES = [TRACK, CONTRACT, AUTH];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
 export const TIP =
-  "Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2026-10/tracks/bff/auth).";
+  "Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2/tracks/bff/auth).";
 
 /** Первый блок `:::` страницы: после frontmatter и строки `# `, если она есть. */
 export function firstBlock(md: string): string {

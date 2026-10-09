@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { AREA_LABELS, doersOf, ModuleDataError, moduleSidebar, parseModule, parseTrack, subtracksOf, topTracks, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
+import { AREA_LABELS, checkModuleId, doersOf, ModuleDataError, moduleSidebar, parseModule, parseTrack, subtracksOf, topTracks, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
 test("PEOPLE: the team from the spec, valid", () => {
@@ -15,13 +15,13 @@ test("validatePeople: duplicate login and unknown area", () => {
 });
 
 test("ModuleDataError: message format", () => {
-  expect(new ModuleDataError("modules/2026-10/tracks/bff.md", "do", "пусто").message).toBe("modules/2026-10/tracks/bff.md: do — пусто");
+  expect(new ModuleDataError("modules/2/tracks/bff.md", "do", "пусто").message).toBe("modules/2/tracks/bff.md: do — пусто");
   expect(AREA_LABELS.fullstack).toBe("Фронт + бэк");
 });
 
-const FILE = "modules/2026-10/tracks/bff.md";
+const FILE = "modules/2/tracks/bff.md";
 const valid = (): Record<string, unknown> => ({ title: "BFF", area: "fullstack", do: { iRedTea: "front", MrDuckVC: "back" } });
-const track = (data: Record<string, unknown>, id = "bff", body = "") => parseTrack(`modules/2026-10/tracks/${id}.md`, "2026-10", id, data, body, PEOPLE);
+const track = (data: Record<string, unknown>, id = "bff", body = "") => parseTrack(`modules/2/tracks/${id}.md`, "2", id, data, body, PEOPLE);
 const fails = (data: Record<string, unknown>, message: string) => expect(() => track(data)).toThrow(`${FILE}: ${message}`);
 
 describe("parseTrack", () => {
@@ -29,7 +29,7 @@ describe("parseTrack", () => {
     const t = track(valid(), "bff", "\n  \n");
     expect(t).toEqual({
       id: "bff",
-      module: "2026-10",
+      module: "2",
       title: "BFF",
       label: "BFF",
       area: "fullstack",
@@ -39,13 +39,13 @@ describe("parseTrack", () => {
       related: [],
       hasBody: false,
       pages: [],
-      url: "/modules/2026-10/tracks/bff",
+      url: "/modules/2/tracks/bff",
     });
   });
 
   test("parseTrack keeps given pages", () => {
-    const page: TrackPage = { id: "auth", title: "Авторизация и CSRF", url: "/modules/2026-10/tracks/bff/auth" };
-    const t = parseTrack(FILE, "2026-10", "bff", valid(), "", PEOPLE, [page]);
+    const page: TrackPage = { id: "auth", title: "Авторизация и CSRF", url: "/modules/2/tracks/bff/auth" };
+    const t = parseTrack(FILE, "2", "bff", valid(), "", PEOPLE, [page]);
     expect(t.pages).toEqual([page]);
   });
 
@@ -143,7 +143,7 @@ describe("parseTrack", () => {
   });
 
   test("id must be lowercase latin, digits and dashes", () => {
-    expect(() => track(valid(), "BFF")).toThrow("modules/2026-10/tracks/BFF.md: id — имя файла BFF.md: только строчная латиница, цифры и дефис");
+    expect(() => track(valid(), "BFF")).toThrow("modules/2/tracks/BFF.md: id — имя файла BFF.md: только строчная латиница, цифры и дефис");
     expect(track(valid(), "2fa").id).toBe("2fa");
   });
 });
@@ -151,21 +151,21 @@ describe("parseTrack", () => {
 describe("parseModule", () => {
   const t = (id: string, title: string, related: unknown[] = []): Track =>
     track({ title, area: "team", do: { YarikMix: "team" }, related }, id);
-  const INDEX = "modules/2026-10/index.md";
+  const INDEX = "modules/2/index.md";
 
   test("builds a module with tracks sorted by title", () => {
-    const m = parseModule(INDEX, "2026-10", { title: "Модуль октября 2026" }, [t("b", "Яблоко"), t("a", "Арбуз", [{ track: "b", why: "w" }])]);
-    expect(m.id).toBe("2026-10");
-    expect(m.url).toBe("/modules/2026-10/");
+    const m = parseModule(INDEX, "2", { title: "Модуль октября 2026" }, [t("b", "Яблоко"), t("a", "Арбуз", [{ track: "b", why: "w" }])]);
+    expect(m.id).toBe("2");
+    expect(m.url).toBe("/modules/2/");
     expect(m.period).toBeUndefined();
     expect(m.tracks.map((x) => x.id)).toEqual(["a", "b"]);
   });
 
   test("part_of is checked against the module", () => {
     const p = (id: string, extra: Record<string, unknown> = {}) => track({ title: id, area: "team", do: { YarikMix: "team" }, ...extra }, id);
-    const mod = (...tracks: Track[]) => () => parseModule(INDEX, "2026-10", { title: "М" }, tracks);
-    const file = (id: string) => `modules/2026-10/tracks/${id}.md`;
-    expect(mod(p("a", { part_of: "x" }))).toThrow(`${file("a")}: part_of — трека x нет в модуле 2026-10`);
+    const mod = (...tracks: Track[]) => () => parseModule(INDEX, "2", { title: "М" }, tracks);
+    const file = (id: string) => `modules/2/tracks/${id}.md`;
+    expect(mod(p("a", { part_of: "x" }))).toThrow(`${file("a")}: part_of — трека x нет в модуле 2`);
     expect(mod(p("a", { part_of: "a" }))).toThrow(`${file("a")}: part_of — трек ссылается сам на себя`);
     expect(mod(p("a"), p("b", { part_of: "a" }), p("c", { part_of: "b" }))).toThrow(`${file("c")}: part_of — b сам подтрек: вложенность — один уровень`);
     expect(mod(p("a"), p("b", { part_of: "a", related: [{ track: "a", why: "w" }] }))).toThrow(
@@ -179,8 +179,8 @@ describe("parseModule", () => {
 
   test("do may be omitted only on a track with subtracks; doersOf takes them from subtracks", () => {
     const mk = (id: string, data: Record<string, unknown>) => track({ title: id, ...data }, id);
-    const mod = (...tracks: Track[]) => parseModule(INDEX, "2026-10", { title: "М" }, tracks);
-    const file = (id: string) => `modules/2026-10/tracks/${id}.md`;
+    const mod = (...tracks: Track[]) => parseModule(INDEX, "2", { title: "М" }, tracks);
+    const file = (id: string) => `modules/2/tracks/${id}.md`;
     const parent = mk("p", { area: "fullstack" });
     expect(parent.do).toEqual([]);
     expect(() => mod(parent)).toThrow(`${file("p")}: do — нужен хотя бы один исполнитель: логин → сторона, или подтреки через part_of`);
@@ -193,51 +193,53 @@ describe("parseModule", () => {
   });
 
   test("period is read", () => {
-    expect(parseModule(INDEX, "2026-10", { title: "М", period: "13.10 — 09.11" }, []).period).toBe("13.10 — 09.11");
+    expect(parseModule(INDEX, "2", { title: "М", period: "13.10 — 09.11" }, []).period).toBe("13.10 — 09.11");
   });
 
   test("title is required", () => {
-    expect(() => parseModule(INDEX, "2026-10", {}, [])).toThrow(`${INDEX}: title — нужна непустая строка`);
+    expect(() => parseModule(INDEX, "2", {}, [])).toThrow(`${INDEX}: title — нужна непустая строка`);
   });
 
   test("sprints are read, and default to an empty list", () => {
-    expect(parseModule(INDEX, "2026-10", { title: "М", sprints: ["Sprint 5", "Sprint 6"] }, []).sprints).toEqual(["Sprint 5", "Sprint 6"]);
-    expect(parseModule(INDEX, "2026-10", { title: "М" }, []).sprints).toEqual([]);
+    expect(parseModule(INDEX, "2", { title: "М", sprints: ["Sprint 5", "Sprint 6"] }, []).sprints).toEqual(["Sprint 5", "Sprint 6"]);
+    expect(parseModule(INDEX, "2", { title: "М" }, []).sprints).toEqual([]);
   });
 
   test("sprints are validated", () => {
-    expect(() => parseModule(INDEX, "2026-10", { title: "М", sprints: "Sprint 5" }, [])).toThrow(`${INDEX}: sprints — нужен список`);
-    expect(() => parseModule(INDEX, "2026-10", { title: "М", sprints: ["Sprint 5", "Спринт 6"] }, [])).toThrow(
+    expect(() => parseModule(INDEX, "2", { title: "М", sprints: "Sprint 5" }, [])).toThrow(`${INDEX}: sprints — нужен список`);
+    expect(() => parseModule(INDEX, "2", { title: "М", sprints: ["Sprint 5", "Спринт 6"] }, [])).toThrow(
       `${INDEX}: sprints[1] — нужен формат Sprint N`,
     );
-    expect(() => parseModule(INDEX, "2026-10", { title: "М", sprints: ["Sprint 5", "Sprint 5"] }, [])).toThrow(
+    expect(() => parseModule(INDEX, "2", { title: "М", sprints: ["Sprint 5", "Sprint 5"] }, [])).toThrow(
       `${INDEX}: sprints — Sprint 5 повторяется`,
     );
   });
 
   test("related must point to another track of the module", () => {
-    expect(() => parseModule(INDEX, "2026-10", { title: "М" }, [t("a", "А", [{ track: "ghost", why: "w" }])])).toThrow(
-      "modules/2026-10/tracks/a.md: related[0].track — трека ghost нет в модуле 2026-10",
+    expect(() => parseModule(INDEX, "2", { title: "М" }, [t("a", "А", [{ track: "ghost", why: "w" }])])).toThrow(
+      "modules/2/tracks/a.md: related[0].track — трека ghost нет в модуле 2",
     );
-    expect(() => parseModule(INDEX, "2026-10", { title: "М" }, [t("a", "А", [{ track: "a", why: "w" }])])).toThrow(
-      "modules/2026-10/tracks/a.md: related[0].track — трек ссылается сам на себя",
+    expect(() => parseModule(INDEX, "2", { title: "М" }, [t("a", "А", [{ track: "a", why: "w" }])])).toThrow(
+      "modules/2/tracks/a.md: related[0].track — трек ссылается сам на себя",
     );
   });
 
-  test("module directory must be YYYY-MM", () => {
-    expect(() => parseModule("modules/2026-13/index.md", "2026-13", { title: "М" }, [])).toThrow("modules/2026-13: каталог — 2026-13 — нужен формат YYYY-MM");
-    expect(() => parseModule("modules/drafts/index.md", "drafts", { title: "М" }, [])).toThrow("modules/drafts: каталог — drafts — нужен формат YYYY-MM");
+  test("module directory is a module number", () => {
+    for (const id of ["1", "2", "10"]) expect(() => checkModuleId(id)).not.toThrow();
+    for (const id of ["0", "02", "2026-10", "drafts"]) {
+      expect(() => parseModule(`modules/${id}/index.md`, id, { title: "М" }, [])).toThrow(`modules/${id}: каталог — ${id} — нужен номер модуля: 1, 2, 3…`);
+    }
   });
 });
 
 describe("trackPages", () => {
-  const TRACK = "modules/2026-10/tracks/bff.md";
-  const pages = (declared: unknown, found: { name: string; title: unknown }[]) => trackPages(TRACK, "2026-10", "bff", declared, found);
+  const TRACK = "modules/2/tracks/bff.md";
+  const pages = (declared: unknown, found: { name: string; title: unknown }[]) => trackPages(TRACK, "2", "bff", declared, found);
 
   test("returns pages in declared order with titles and urls", () => {
     expect(pages(["contract", "auth"], [{ name: "auth", title: "Авторизация и CSRF" }, { name: "contract", title: "Контракт" }])).toEqual([
-      { id: "contract", title: "Контракт", url: "/modules/2026-10/tracks/bff/contract" },
-      { id: "auth", title: "Авторизация и CSRF", url: "/modules/2026-10/tracks/bff/auth" },
+      { id: "contract", title: "Контракт", url: "/modules/2/tracks/bff/contract" },
+      { id: "auth", title: "Авторизация и CSRF", url: "/modules/2/tracks/bff/auth" },
     ]);
   });
 
@@ -260,53 +262,53 @@ describe("trackPages", () => {
   });
 
   test("file not in pages", () => {
-    expect(() => pages(undefined, [{ name: "x", title: "X" }])).toThrow("modules/2026-10/tracks/bff/x.md: pages — подстраницы нет в pages трека bff.md");
+    expect(() => pages(undefined, [{ name: "x", title: "X" }])).toThrow("modules/2/tracks/bff/x.md: pages — подстраницы нет в pages трека bff.md");
   });
 
   test("page needs a title", () => {
-    expect(() => pages(["auth"], [{ name: "auth", title: " " }])).toThrow("modules/2026-10/tracks/bff/auth.md: title — нужна непустая строка");
+    expect(() => pages(["auth"], [{ name: "auth", title: " " }])).toThrow("modules/2/tracks/bff/auth.md: title — нужна непустая строка");
   });
 });
 
 describe("moduleSidebar", () => {
   test("nests subpages under their track", () => {
-    const sub = (id: string, title: string): TrackPage => ({ id, title, url: `/modules/2026-10/tracks/bff/${id}` });
-    const bff = parseTrack(FILE, "2026-10", "bff", valid(), "", PEOPLE, [sub("contract", "Контракт"), sub("auth", "Авторизация и CSRF")]);
+    const sub = (id: string, title: string): TrackPage => ({ id, title, url: `/modules/2/tracks/bff/${id}` });
+    const bff = parseTrack(FILE, "2", "bff", valid(), "", PEOPLE, [sub("contract", "Контракт"), sub("auth", "Авторизация и CSRF")]);
     const xss = track({ title: "XSS", area: "front", do: { iRedTea: "front" } }, "xss");
-    const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Октябрь" }, [bff, xss]);
+    const m = parseModule("modules/2/index.md", "2", { title: "Октябрь" }, [bff, xss]);
     expect(moduleSidebar([m])).toEqual([
       {
         text: "Октябрь",
         items: [
-          { text: "Граф", link: "/modules/2026-10/" },
+          { text: "Граф", link: "/modules/2/" },
           {
             text: "BFF",
-            link: "/modules/2026-10/tracks/bff",
+            link: "/modules/2/tracks/bff",
             collapsed: false,
             items: [
-              { text: "Контракт", link: "/modules/2026-10/tracks/bff/contract" },
-              { text: "Авторизация и CSRF", link: "/modules/2026-10/tracks/bff/auth" },
+              { text: "Контракт", link: "/modules/2/tracks/bff/contract" },
+              { text: "Авторизация и CSRF", link: "/modules/2/tracks/bff/auth" },
             ],
           },
-          { text: "XSS", link: "/modules/2026-10/tracks/xss" },
+          { text: "XSS", link: "/modules/2/tracks/xss" },
         ],
       },
     ]);
   });
   test("subtrack is nested under its parent after the parent's subpages", () => {
-    const sub = (track: string, id: string, title: string): TrackPage => ({ id, title, url: `/modules/2026-10/tracks/${track}/${id}` });
-    const svc = parseTrack("modules/2026-10/tracks/svc.md", "2026-10", "svc", { title: "Сервис", area: "team", do: { YarikMix: "team" } }, "", PEOPLE, [sub("svc", "plan", "План")]);
-    const front = parseTrack("modules/2026-10/tracks/front.md", "2026-10", "front", { title: "Фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "svc" }, "", PEOPLE, [sub("front", "lsp", "LSP")]);
-    const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Октябрь" }, [svc, front]);
+    const sub = (track: string, id: string, title: string): TrackPage => ({ id, title, url: `/modules/2/tracks/${track}/${id}` });
+    const svc = parseTrack("modules/2/tracks/svc.md", "2", "svc", { title: "Сервис", area: "team", do: { YarikMix: "team" } }, "", PEOPLE, [sub("svc", "plan", "План")]);
+    const front = parseTrack("modules/2/tracks/front.md", "2", "front", { title: "Фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "svc" }, "", PEOPLE, [sub("front", "lsp", "LSP")]);
+    const m = parseModule("modules/2/index.md", "2", { title: "Октябрь" }, [svc, front]);
     expect(moduleSidebar([m])[0]?.items).toEqual([
-      { text: "Граф", link: "/modules/2026-10/" },
+      { text: "Граф", link: "/modules/2/" },
       {
         text: "Сервис",
-        link: "/modules/2026-10/tracks/svc",
+        link: "/modules/2/tracks/svc",
         collapsed: false,
         items: [
-          { text: "План", link: "/modules/2026-10/tracks/svc/plan" },
-          { text: "Фронт", link: "/modules/2026-10/tracks/front", collapsed: false, items: [{ text: "LSP", link: "/modules/2026-10/tracks/front/lsp" }] },
+          { text: "План", link: "/modules/2/tracks/svc/plan" },
+          { text: "Фронт", link: "/modules/2/tracks/front", collapsed: false, items: [{ text: "LSP", link: "/modules/2/tracks/front/lsp" }] },
         ],
       },
     ]);

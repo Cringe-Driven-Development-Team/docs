@@ -125,7 +125,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 ### Модули
 
 План учебного модуля (месяц разработки) — граф «люди — треки — подзадачи» на
-`/docs/modules/<YYYY-MM>/`, страница на каждый трек и архив `/docs/modules/`. Данные лежат в
+`/docs/modules/<номер>/`, страница на каждый трек и архив `/docs/modules/`. Данные лежат в
 `site/modules/`, меню модулей собирается из файлов само. Ошибка в данных роняет сборку и
 называет файл и поле.
 
@@ -135,9 +135,9 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 
 - **Человек** — строка в `site/modules/people.ts`: GitHub-логин, имя, роль, направление
   (`front`, `back`, `devops`, `fullstack`, `team`), `mentor: true` у менторов.
-- **Модуль** — каталог `site/modules/<YYYY-MM>/` с `index.md`: во frontmatter `title`,
+- **Модуль** — каталог `site/modules/<номер>/` (`2`, `3`, …) с `index.md`: во frontmatter `title`,
   необязательный `period` и `aside: false`, в тексте `<ModuleGraph />`.
-- **Трек** — файл `site/modules/<YYYY-MM>/tracks/<id>.md`, `id` — строчная латиница, цифры и дефис:
+- **Трек** — файл `site/modules/<номер>/tracks/<id>.md`, `id` — строчная латиница, цифры и дефис:
 
   ```yaml
   ---

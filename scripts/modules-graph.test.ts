@@ -16,8 +16,8 @@ import {
 } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
-const t = (id: string, data: Record<string, unknown>) => parseTrack(`modules/2026-10/tracks/${id}.md`, "2026-10", id, data, "", PEOPLE);
-const MODULE = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+const t = (id: string, data: Record<string, unknown>) => parseTrack(`modules/2/tracks/${id}.md`, "2", id, data, "", PEOPLE);
+const MODULE = parseModule("modules/2/index.md", "2", { title: "Тест" }, [
   t("multibranch", {
     title: "Multi-branch",
     area: "devops",
@@ -96,7 +96,7 @@ test("neighbours of a person include subtasks of their tracks", () => {
   expect([...neighbours(graph(), "track:ai-review")].sort()).toEqual(["person:YarikMix", "track:ai-review"]);
 });
 
-const NESTED = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+const NESTED = parseModule("modules/2/index.md", "2", { title: "Тест" }, [
   t("service", { title: "Сервис", area: "team", do: { YarikMix: "team" }, subtasks: [{ title: "Скиллы", subtasks: ["/apidog"] }] }),
   t("front", { title: "Фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "service" }),
 ]);
@@ -162,12 +162,12 @@ test("personLoad", () => {
 });
 
 test("pageRef: module and track pages by relative path", () => {
-  expect(pageRef("modules/2026-10/index.md")).toEqual({ module: "2026-10" });
-  expect(pageRef("modules/2026-10/tracks/2fa.md")).toEqual({ module: "2026-10", track: "2fa" });
+  expect(pageRef("modules/2/index.md")).toEqual({ module: "2" });
+  expect(pageRef("modules/2/tracks/2fa.md")).toEqual({ module: "2", track: "2fa" });
   expect(pageRef("modules/index.md")).toBeNull();
   expect(pageRef("bff/index.md")).toBeNull();
-  expect(pageRef("modules/2026-10/tracks/bff/contract.md")).toEqual({ module: "2026-10", track: "bff", page: "contract" });
-  expect(pageRef("modules/2026-10/tracks/bff/a/b.md")).toBeNull();
+  expect(pageRef("modules/2/tracks/bff/contract.md")).toEqual({ module: "2", track: "bff", page: "contract" });
+  expect(pageRef("modules/2/tracks/bff/a/b.md")).toBeNull();
 });
 
 test("nodePaint: people are neutral, tracks and subtasks take the track area", () => {
@@ -177,7 +177,7 @@ test("nodePaint: people are neutral, tracks and subtasks take the track area", (
 });
 
 test("parent without do: no person links to it, a person filter on a subtrack keeps it", () => {
-  const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+  const m = parseModule("modules/2/index.md", "2", { title: "Тест" }, [
     t("twofa", { title: "2FA", area: "fullstack" }),
     t("twofa-front", { title: "2FA: фронт", area: "front", do: { iRedTea: "front" }, part_of: "twofa" }),
     t("twofa-back", { title: "2FA: бэк", area: "back", do: { GrayMouse9: "back" }, part_of: "twofa" }),
@@ -198,7 +198,7 @@ test("parent without do: no person links to it, a person filter on a subtrack ke
 });
 
 test("a mentor of a parent without do gets a mentor link and keeps the parent in their filter", () => {
-  const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+  const m = parseModule("modules/2/index.md", "2", { title: "Тест" }, [
     t("prof", { title: "Профиль", area: "fullstack", mentors: ["YarikMix"] }),
     t("prof-front", { title: "Профиль: фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "prof" }),
     t("prof-back", { title: "Профиль: бэк", area: "back", do: { GrayMouse9: "back" }, part_of: "prof" }),
