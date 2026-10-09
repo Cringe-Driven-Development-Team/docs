@@ -76,15 +76,15 @@ export type Module = { id: string; title: string; period?: string; sprints: stri
 
 const TRACK_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SPRINT = /^Sprint \d+$/;
-const MODULE_ID = /^\d{4}-(0[1-9]|1[0-2])$/;
+const MODULE_ID = /^[1-9]\d*$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const nonEmpty = (value: unknown): value is string => typeof value === "string" && value.trim() !== "";
 
-/** Каталог модуля — `YYYY-MM`; иначе ошибка на `modules/<id>`. */
+/** Каталог модуля — его номер (`2`); иначе ошибка на `modules/<id>`. Спека 2026-10-09-module-number-urls. */
 export function checkModuleId(id: string): void {
-  if (!MODULE_ID.test(id)) throw new ModuleDataError(`modules/${id}`, "каталог", `${id} — нужен формат YYYY-MM`);
+  if (!MODULE_ID.test(id)) throw new ModuleDataError(`modules/${id}`, "каталог", `${id} — нужен номер модуля: 1, 2, 3…`);
 }
 
 function requireTitle(file: string, data: Record<string, unknown>): string {

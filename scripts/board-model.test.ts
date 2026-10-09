@@ -88,8 +88,8 @@ const mkModule = (id: string, sprints: string[], tracks: string[]): Module => ({
   tracks: tracks.map((t) => mkTrack(t, id)),
 });
 const modules: Module[] = [
-  mkModule("2026-10", ["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"], ["bff", "xss"]),
-  mkModule("2026-11", ["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"], ["bff"]),
+  mkModule("2", ["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"], ["bff", "xss"]),
+  mkModule("3", ["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"], ["bff"]),
 ];
 const sprintStarts = ["2026-10-12", "2026-10-19", "2026-10-26", "2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23", "2026-11-30"];
 const mkTask = (over: Partial<BoardTask> = {}): BoardTask => ({
@@ -121,7 +121,7 @@ describe("assignTasks", () => {
     const parent = mkTask({ ref: "frontend#1", track: "bff", sprint: "Sprint 6" });
     const child = mkTask({ ref: "frontend#2", parent: "frontend#1", sprint: "Sprint 6" });
     const r = assignTasks(modules, mkSnap([parent, child]));
-    expect(refs(at(r, "2026-10").byTrack.bff ?? [])).toEqual(["frontend#1", "frontend#2"]);
+    expect(refs(at(r, "2").byTrack.bff ?? [])).toEqual(["frontend#1", "frontend#2"]);
   });
 
   test("track from the right parent when repo#N would collide across organisations", () => {
@@ -129,25 +129,25 @@ describe("assignTasks", () => {
     const b = mkTask({ ref: "fe/r#8", track: "xss", sprint: "Sprint 6" });
     const child = mkTask({ ref: "r#2", parent: "go/r#8", sprint: "Sprint 6" });
     const r = assignTasks(modules, mkSnap([a, b, child]));
-    expect(refs(at(r, "2026-10").byTrack.bff ?? [])).toEqual(["go/r#8", "r#2"]);
-    expect(refs(at(r, "2026-10").byTrack.xss ?? [])).toEqual(["fe/r#8"]);
+    expect(refs(at(r, "2").byTrack.bff ?? [])).toEqual(["go/r#8", "r#2"]);
+    expect(refs(at(r, "2").byTrack.xss ?? [])).toEqual(["fe/r#8"]);
   });
 
   test("a missing parent gives no track", () => {
     const child = mkTask({ ref: "frontend#2", parent: "frontend#99", sprint: "Sprint 6" });
     const r = assignTasks(modules, mkSnap([child]));
-    expect(refs(at(r, "2026-10").untracked)).toEqual(["frontend#2"]);
+    expect(refs(at(r, "2").untracked)).toEqual(["frontend#2"]);
   });
 
   test("module by sprint", () => {
     const r = assignTasks(modules, mkSnap([mkTask({ track: "bff", sprint: "Sprint 9" })]));
-    expect(at(r, "2026-11").byTrack.bff ?? []).toHaveLength(1);
-    expect(at(r, "2026-10").byTrack.bff ?? []).toHaveLength(0);
+    expect(at(r, "3").byTrack.bff ?? []).toHaveLength(1);
+    expect(at(r, "2").byTrack.bff ?? []).toHaveLength(0);
   });
 
   test("sprint outside modules", () => {
     const r = assignTasks(modules, mkSnap([mkTask({ track: "bff", sprint: "Sprint 3" })]));
-    for (const id of ["2026-10", "2026-11"]) {
+    for (const id of ["2", "3"]) {
       expect(at(r, id).byTrack.bff ?? []).toHaveLength(0);
       expect(at(r, id).untracked).toHaveLength(0);
       expect(at(r, id).unknown).toHaveLength(0);
@@ -156,31 +156,31 @@ describe("assignTasks", () => {
 
   test("no sprint goes to the current module", () => {
     const r = assignTasks(modules, mkSnap([mkTask({ track: "bff" })], "2026-10-20T10:00:00Z"));
-    expect(at(r, "2026-10").byTrack.bff ?? []).toHaveLength(1);
-    expect(at(r, "2026-11").byTrack.bff ?? []).toHaveLength(0);
+    expect(at(r, "2").byTrack.bff ?? []).toHaveLength(1);
+    expect(at(r, "3").byTrack.bff ?? []).toHaveLength(0);
   });
 
   test("no sprint between modules goes to the newest", () => {
     const r = assignTasks(modules, mkSnap([mkTask({ track: "bff" })], "2026-12-20T10:00:00Z"));
-    expect(at(r, "2026-11").byTrack.bff ?? []).toHaveLength(1);
-    expect(at(r, "2026-10").byTrack.bff ?? []).toHaveLength(0);
+    expect(at(r, "3").byTrack.bff ?? []).toHaveLength(1);
+    expect(at(r, "2").byTrack.bff ?? []).toHaveLength(0);
   });
 
   test("untracked only from module sprints", () => {
     const none = assignTasks(modules, mkSnap([mkTask()]));
-    expect(at(none, "2026-10").untracked).toHaveLength(0);
-    expect(at(none, "2026-11").untracked).toHaveLength(0);
+    expect(at(none, "2").untracked).toHaveLength(0);
+    expect(at(none, "3").untracked).toHaveLength(0);
     const sp = assignTasks(modules, mkSnap([mkTask({ sprint: "Sprint 6" })]));
-    expect(at(sp, "2026-10").untracked).toHaveLength(1);
+    expect(at(sp, "2").untracked).toHaveLength(1);
   });
 
   test("unknown track", () => {
     const r = assignTasks(modules, mkSnap([mkTask({ track: "ghost", sprint: "Sprint 6" })]));
-    expect(at(r, "2026-10").unknown).toHaveLength(1);
+    expect(at(r, "2").unknown).toHaveLength(1);
   });
 
   test("every module has a key", () => {
-    expect(Object.keys(assignTasks(modules, mkSnap([]))).sort()).toEqual(["2026-10", "2026-11"]);
+    expect(Object.keys(assignTasks(modules, mkSnap([]))).sort()).toEqual(["2", "3"]);
   });
 });
 
@@ -241,13 +241,13 @@ describe("moduleTasks", () => {
     expect(moduleTasks(board, noSprints)).toBeNull();
   });
   test("a module with sprints gives its tasks, or an empty set when the snapshot has none for it", () => {
-    expect(moduleTasks(board, withSprints as Module)).toBe(board.byModule["2026-10"] as ModuleTasks);
+    expect(moduleTasks(board, withSprints as Module)).toBe(board.byModule["2"] as ModuleTasks);
     expect(moduleTasks({ ...board, byModule: {} }, withSprints as Module)).toEqual({ byTrack: {}, untracked: [], unknown: [] });
   });
 });
 
 test("tasksWithSubtracks: parent sums subtracks, others only own", () => {
-  const m: Module = { ...mkModule("2026-10", [], ["svc", "front", "xss"]) };
+  const m: Module = { ...mkModule("2", [], ["svc", "front", "xss"]) };
   m.tracks[1] = { ...m.tracks[1]!, partOf: "svc" };
   const a = mkTask({ ref: "frontend#1" });
   const b = mkTask({ ref: "frontend#2" });

@@ -1,7 +1,7 @@
 # CSRF: как устроено
 
 ::: tip
-Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2026-10/tracks/bff/auth).
+Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2/tracks/bff/auth).
 :::
 
 Как сервис [cellestial.ru](https://cellestial.ru) защищается от CSRF: какие cookie выдаёт бэк,

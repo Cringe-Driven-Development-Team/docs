@@ -54,7 +54,7 @@ export function readModules(modulesDir: string, people: readonly Person[] = PEOP
     });
     return parseModule(`modules/${id}/index.md`, id, readPage(index, `modules/${id}/index.md`).data, tracks);
   });
-  return modules.sort((a, b) => b.id.localeCompare(a.id));
+  return modules.sort((a, b) => Number(b.id) - Number(a.id));
 }
 
 /** Снимок доски; нет файла — `null`, сломанный снимок — предупреждение и `null`: сборку он не роняет (спека §4.5). */
