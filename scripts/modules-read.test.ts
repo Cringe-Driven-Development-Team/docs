@@ -106,12 +106,12 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(32);
+  expect(october?.tracks).toHaveLength(33);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [7, 5],
-    blackHATred: [1, 4],
+    blackHATred: [2, 4],
     ManInTheCoat: [10, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
@@ -183,11 +183,19 @@ test("real site/modules is valid", () => {
   ]);
   expect([track("figma")?.title, track("figma")?.area, track("figma")?.do]).toEqual(["Figma", "front", [{ login: "ManInTheCoat", side: "front" }]]);
   const grooming = track("runtime-grooming");
-  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
+  expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps"]]);
+  const execGrooming = track("file-exec-grooming");
+  expect([execGrooming?.label, execGrooming?.area, execGrooming?.do, execGrooming?.related.map((r) => r.track), execGrooming?.subtasks.length]).toEqual([
+    "Техгруминг исполнения файлов",
+    "back",
+    [{ login: "blackHATred", side: "back" }],
+    ["file-exec", "runtime-grooming"],
+    5,
+  ]);
   expect(grooming?.subtasks.map((s) => s.title)).toEqual([
     "Контейнеры в Selectel: Managed Kubernetes или Docker на своих VM",
     "Изоляция чужого кода",
-    "Декомпозиция «Исполнения файлов» и «Авто-VPS»",
+    "Декомпозиция «Авто-VPS»",
     "Архитектурные схемы",
   ]);
   expect(track("file-exec")?.hasBody).toBe(true);
