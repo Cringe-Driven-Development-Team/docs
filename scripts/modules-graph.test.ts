@@ -22,7 +22,7 @@ const MODULE = parseModule("modules/2026-10/index.md", "2026-10", { title: "Те
     title: "Multi-branch",
     area: "devops",
     do: { iRedTea: "devops" },
-    help: ["YarikMix", "blackHATred"],
+    mentors: ["YarikMix", "blackHATred"],
     related: [{ track: "bff", why: "общий конвейер" }],
   }),
   t("bff", { title: "BFF", area: "fullstack", do: { iRedTea: "front", MrDuckVC: "back" }, subtasks: ["tRPC", "Orval"] }),
@@ -36,7 +36,7 @@ describe("buildGraph", () => {
   test("default filter shows everything", () => {
     const tracks = MODULE.tracks.flatMap((tr) => [`track:${tr.id}`, ...tr.subtasks.map((_, i) => `subtask:${tr.id}/${i}`)]);
     expect(ids()).toEqual(["person:YarikMix", "person:blackHATred", "person:iRedTea", "person:MrDuckVC", ...tracks]);
-    expect(kinds()).toEqual(["do", "do", "do", "do", "help", "help", "part", "part", "related"]);
+    expect(kinds()).toEqual(["do", "do", "do", "do", "mentor", "mentor", "part", "part", "related"]);
   });
 
   test("track node carries progress only when total > 0", () => {
@@ -50,7 +50,7 @@ describe("buildGraph", () => {
   test("links carry side and why", () => {
     const { links } = graph();
     expect(links).toContainEqual({ source: "person:MrDuckVC", target: "track:bff", kind: "do", side: "back" });
-    expect(links).toContainEqual({ source: "person:YarikMix", target: "track:multibranch", kind: "help" });
+    expect(links).toContainEqual({ source: "person:YarikMix", target: "track:multibranch", kind: "mentor" });
     expect(links).toContainEqual({ source: "track:bff", target: "subtask:bff/1", kind: "part" });
     expect(links).toContainEqual({ source: "track:multibranch", target: "track:bff", kind: "related", why: "общий конвейер" });
   });
@@ -67,8 +67,12 @@ describe("buildGraph", () => {
     expect(ids({ people: ["blackHATred"] })).toEqual(["person:YarikMix", "person:blackHATred", "person:iRedTea", "track:multibranch"]);
   });
 
-  test("hidden help drops helpers and their-only tracks", () => {
-    expect(ids({ people: ["blackHATred"], hide: ["help"] })).toEqual(["person:blackHATred"]);
+  test("hidden mentors layer drops only mentor links", () => {
+    expect(kinds({ hide: ["mentors"] })).toEqual(["do", "do", "do", "do", "part", "part", "related"]);
+  });
+
+  test("hidden mentors drop mentors and their-only tracks", () => {
+    expect(ids({ people: ["blackHATred"], hide: ["mentors"] })).toEqual(["person:blackHATred"]);
   });
 
   test("area filter", () => {
@@ -145,14 +149,16 @@ describe("query", () => {
   test("stale query is ignored", () => {
     expect(filterFromQuery("?people=ghost&area=zzz&hide=foo", PEOPLE)).toEqual(DEFAULT_FILTER);
     expect(filterFromQuery("?people=ghost,iRedTea", PEOPLE).people).toEqual(["iRedTea"]);
+    expect(filterFromQuery("?hide=help", PEOPLE).hide).toEqual([]);
+    expect(filterFromQuery("?hide=mentors", PEOPLE).hide).toEqual(["mentors"]);
   });
 });
 
 test("personLoad", () => {
   const load = personLoad(MODULE, PEOPLE);
   expect(load.map((l) => l.login)).toEqual(PEOPLE.map((p) => p.login));
-  expect(load.find((l) => l.login === "YarikMix")).toEqual({ login: "YarikMix", doing: 1, helping: 1 });
-  expect(load.find((l) => l.login === "ManInTheCoat")).toEqual({ login: "ManInTheCoat", doing: 0, helping: 0 });
+  expect(load.find((l) => l.login === "YarikMix")).toEqual({ login: "YarikMix", doing: 1, mentoring: 1 });
+  expect(load.find((l) => l.login === "ManInTheCoat")).toEqual({ login: "ManInTheCoat", doing: 0, mentoring: 0 });
 });
 
 test("pageRef: module and track pages by relative path", () => {
@@ -186,7 +192,18 @@ test("parent without do: no person links to it, a person filter on a subtrack ke
   expect(byDenis.nodes.map((n) => n.id)).toEqual(["person:iRedTea", "track:twofa", "track:twofa-front"]);
   expect(byDenis.links.some((l) => l.kind === "sub" && l.target === "track:twofa-front")).toBe(true);
   expect(personLoad(m, PEOPLE).filter((l) => l.doing > 0)).toEqual([
-    { login: "iRedTea", doing: 1, helping: 0 },
-    { login: "GrayMouse9", doing: 1, helping: 0 },
+    { login: "iRedTea", doing: 1, mentoring: 0 },
+    { login: "GrayMouse9", doing: 1, mentoring: 0 },
   ]);
+});
+
+test("a mentor of a parent without do gets a mentor link and keeps the parent in their filter", () => {
+  const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+    t("prof", { title: "Профиль", area: "fullstack", mentors: ["YarikMix"] }),
+    t("prof-front", { title: "Профиль: фронт", area: "front", do: { ManInTheCoat: "front" }, part_of: "prof" }),
+    t("prof-back", { title: "Профиль: бэк", area: "back", do: { GrayMouse9: "back" }, part_of: "prof" }),
+  ]);
+  const g = (filter: Partial<Filter> = {}) => buildGraph(m, PEOPLE, { ...DEFAULT_FILTER, ...filter });
+  expect(g().links).toContainEqual({ source: "person:YarikMix", target: "track:prof", kind: "mentor" });
+  expect(g({ people: ["YarikMix"] }).nodes.map((n) => n.id)).toEqual(["person:YarikMix", "track:prof"]);
 });

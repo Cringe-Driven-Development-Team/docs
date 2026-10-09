@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { personLoad } from "../site/.vitepress/modules.ts";
+import matter from "gray-matter";
+import { parseTrack, personLoad } from "../site/.vitepress/modules.ts";
 import { readBoard, readModules } from "../site/.vitepress/modules-read.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
@@ -106,21 +107,21 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(33);
+  expect(october?.tracks).toHaveLength(35);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
-  const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
+  const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
-    YarikMix: [7, 5],
-    blackHATred: [2, 4],
+    YarikMix: [7, 7],
+    blackHATred: [2, 5],
     ManInTheCoat: [10, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
   const track = (id: string) => october!.tracks.find((t) => t.id === id);
-  expect([track("notebook-vps")?.area, track("notebook-vps")?.do, track("notebook-vps")?.help]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }], []]);
+  expect([track("notebook-vps")?.area, track("notebook-vps")?.do, track("notebook-vps")?.mentors]).toEqual(["back", [{ login: "MrDuckVC", side: "back" }, { login: "iRedTea", side: "devops" }], []]);
   expect(track("backend-refactor")?.do).toEqual([{ login: "GrayMouse9", side: "back" }]);
-  expect([track("monaco")?.help, track("monaco")?.subtasks.map((s) => s.title), track("monaco")?.hasBody]).toEqual([
+  expect([track("monaco")?.mentors, track("monaco")?.subtasks.map((s) => s.title), track("monaco")?.hasBody]).toEqual([
     ["blackHATred"],
     ["Просмотр кода, только чтение", "Ячейки code и text"],
     true,
@@ -132,7 +133,7 @@ test("real site/modules is valid", () => {
   ]);
   expect(track("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG", "Portal API"]);
   const libs = track("front-libs");
-  expect([libs?.do, libs?.help, libs?.related.map((r) => r.track)]).toEqual([[{ login: "ManInTheCoat", side: "front" }], ["YarikMix"], ["react"]]);
+  expect([libs?.do, libs?.mentors, libs?.related.map((r) => r.track)]).toEqual([[{ login: "ManInTheCoat", side: "front" }], ["YarikMix"], ["react"]]);
   expect([track("bff")?.subtasks.map((s) => s.title), track("bff")?.related.map((r) => r.track)]).toEqual([
     ["tRPC (server)", "Turborepo + bun workspaces", "Orval"],
     [],
@@ -158,7 +159,7 @@ test("real site/modules is valid", () => {
   expect(track("front-harness")?.related).toEqual([]);
   expect(track("service-harness")?.subtasks).toEqual([{ title: "Скиллы", subtasks: ["/apidog"] }]);
   const redis = track("redis-sessions");
-  expect([redis?.area, redis?.do, redis?.help, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
+  expect([redis?.area, redis?.do, redis?.mentors, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
     "back",
     [{ login: "GrayMouse9", side: "back" }, { login: "iRedTea", side: "devops" }],
     ["blackHATred"],
@@ -170,13 +171,24 @@ test("real site/modules is valid", () => {
     ["GitHub-алерты через webhook", "telegram-alerts", [{ login: "YarikMix", side: "team" }]],
     ["Apidog-алерты через webhook", "telegram-alerts", [{ login: "YarikMix", side: "team" }]],
   ]);
-  expect([track("2fa")?.area, track("2fa")?.do]).toEqual(["fullstack", []]);
+  expect([track("2fa")?.area, track("2fa")?.do, track("2fa")?.mentors]).toEqual(["fullstack", [], ["YarikMix"]]);
+  expect(track("xss")?.mentors).toEqual(["YarikMix"]);
+  expect([track("file-search")?.area, track("file-search")?.do, track("file-search")?.mentors, track("file-search")?.related.map((r) => r.track)]).toEqual([
+    "fullstack",
+    [],
+    ["blackHATred"],
+    [],
+  ]);
+  expect(["file-search-front", "file-search-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
+    ["Поиск по файлу: фронт", "front", [{ login: "ManInTheCoat", side: "front" }], "file-search"],
+    ["Поиск по файлу: бэк", "back", [{ login: "MrDuckVC", side: "back" }], "file-search"],
+  ]);
   expect(["2fa-front", "2fa-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
     ["2FA: фронт", "front", [{ login: "iRedTea", side: "front" }], "2fa"],
     ["2FA: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "2fa"],
   ]);
-  expect(track("bff")?.help).toEqual(["YarikMix"]);
-  expect([track("profile")?.area, track("profile")?.do, track("profile")?.help]).toEqual(["fullstack", [], ["YarikMix"]]);
+  expect(track("bff")?.mentors).toEqual(["YarikMix"]);
+  expect([track("profile")?.area, track("profile")?.do, track("profile")?.mentors]).toEqual(["fullstack", [], ["YarikMix"]]);
   expect(["profile-front", "profile-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
     ["Профиль: фронт", "front", [{ login: "ManInTheCoat", side: "front" }], "profile"],
     ["Профиль: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "profile"],
@@ -254,4 +266,14 @@ test("readBoard: valid snapshot is split by module", () => {
 
 test("real october module has four sprints", () => {
   expect(readModules("site/modules").find((m) => m.id === "2026-10")?.sprints).toEqual(["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"]);
+});
+
+test("README track example is a valid track", () => {
+  const readme = readFileSync("README.md", "utf8");
+  const block = /```yaml\n(  ---\n  title: Multi-branch[\s\S]*?)  ```/.exec(readme)?.[1];
+  expect(block).toBeDefined();
+  const source = (block ?? "").replace(/^ {2}/gm, "");
+  const { data, content } = matter(source);
+  const track = parseTrack("README.md", "2026-10", "multibranch", data, content, PEOPLE);
+  expect(track.mentors).toEqual(["YarikMix", "blackHATred"]);
 });

@@ -3,7 +3,7 @@ title: "React"
 area: front
 do:
   ManInTheCoat: front
-help: [YarikMix]
+mentors: [YarikMix]
 subtasks:
   - "refs"
   - "Поддержка SVG"

@@ -73,7 +73,7 @@ const mkTrack = (id: string, module: string): Track => ({
   label: id,
   area: "front",
   do: [],
-  help: [],
+  mentors: [],
   subtasks: [],
   related: [],
   hasBody: false,

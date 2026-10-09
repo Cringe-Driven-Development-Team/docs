@@ -4,7 +4,7 @@ area: fullstack
 do:
   iRedTea: front
   MrDuckVC: back
-help: [YarikMix]
+mentors: [YarikMix]
 subtasks:
   - "tRPC (server)"
   - "Turborepo + bun workspaces"

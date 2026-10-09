@@ -6,18 +6,18 @@ import { AREA_LABELS, AREAS, type Area, DEFAULT_FILTER, type Filter, type Layer,
 const props = defineProps<{ filter: Filter; people: readonly Person[]; load: Load[]; query: string }>();
 const emit = defineEmits<{ 'update:filter': [filter: Filter]; 'update:query': [query: string] }>();
 
-const LAYER_LABELS: Record<Layer, string> = { subtasks: 'Подзадачи', help: 'Помощь менторов', related: 'Связи между треками' };
-const max = computed(() => Math.max(1, ...props.load.map((l) => l.doing + l.helping)));
-const loadOf = (login: string) => props.load.find((l) => l.login === login) ?? { login, doing: 0, helping: 0 };
+const LAYER_LABELS: Record<Layer, string> = { subtasks: 'Подзадачи', mentors: 'Менторы', related: 'Связи между треками' };
+const max = computed(() => Math.max(1, ...props.load.map((l) => l.doing + l.mentoring)));
+const loadOf = (login: string) => props.load.find((l) => l.login === login) ?? { login, doing: 0, mentoring: 0 };
 const plural = (n: number, forms: [string, string, string]) => {
   const a = n % 10;
   const b = n % 100;
   return forms[a === 1 && b !== 11 ? 0 : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 1 : 2];
 };
 const loadText = (login: string) => {
-  const { doing, helping } = loadOf(login);
-  const parts = [doing ? `${doing} ${plural(doing, ['трек', 'трека', 'треков'])}` : '', helping ? `+${helping} помощь` : ''];
-  return parts.filter(Boolean).join(' ');
+  const { doing, mentoring } = loadOf(login);
+  const parts = [doing ? `${doing} ${plural(doing, ['трек', 'трека', 'треков'])}` : '', mentoring ? `ментор в ${mentoring}` : ''];
+  return parts.filter(Boolean).join(' · ');
 };
 const toggle = <T,>(list: readonly T[], value: T): T[] => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 const update = (patch: Partial<Filter>) => emit('update:filter', { ...props.filter, ...patch });
@@ -47,7 +47,7 @@ function reset(): void {
         <span class="count">{{ loadText(p.login) }}</span>
         <span class="bar">
           <i :style="{ width: `${(loadOf(p.login).doing / max) * 100}%`, background: `var(--cdd-area-${p.area})` }" />
-          <i class="help" :style="{ width: `${(loadOf(p.login).helping / max) * 100}%`, background: `var(--cdd-area-${p.area})` }" />
+          <i class="mentor" :style="{ width: `${(loadOf(p.login).mentoring / max) * 100}%`, background: `var(--cdd-area-${p.area})` }" />
         </span>
       </button>
     </section>
@@ -159,7 +159,7 @@ h3 {
   overflow: hidden;
   background: var(--vp-c-divider);
 }
-.bar i.help {
+.bar i.mentor {
   opacity: 0.45;
 }
 .chips {

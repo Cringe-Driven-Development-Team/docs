@@ -63,7 +63,7 @@ export type Track = {
   label: string;
   area: Area;
   do: Doer[];
-  help: string[];
+  mentors: string[];
   subtasks: Subtask[];
   related: Related[];
   /** Родитель подтрека — `part_of`; вложенность в один уровень. */
@@ -169,11 +169,17 @@ export function parseTrack(
     checkLogin(file, "do", login, people);
     return { login, side: side as Side };
   });
-  const help = strings(file, "help", fm.help);
-  for (const login of help) {
-    checkLogin(file, "help", login, people);
-    if (doers.some((d) => d.login === login)) throw new ModuleDataError(file, "help", `${login} уже исполнитель`);
-  }
+  // Спека 2026-10-09-mentors §4: help заменён на mentors.
+  if (fm.help !== undefined) throw new ModuleDataError(file, "help", "поле заменено на mentors");
+  const mentors = strings(file, "mentors", fm.mentors);
+  mentors.forEach((login, index) => {
+    checkLogin(file, "mentors", login, people);
+    if (!people.some((p) => p.login === login && p.mentor)) {
+      throw new ModuleDataError(file, "mentors", `${login} не ментор: в people.ts нет mentor: true`);
+    }
+    if (doers.some((d) => d.login === login)) throw new ModuleDataError(file, "mentors", `${login} уже исполнитель`);
+    if (mentors.indexOf(login) !== index) throw new ModuleDataError(file, "mentors", `${login} повторяется`);
+  });
   if (area === "fullstack" && doers.length > 0) checkFullstack(file, doers);
   const related = list(file, "related", fm.related).map((item, index): Related => {
     const entry = isRecord(item) ? item : {};
@@ -190,7 +196,7 @@ export function parseTrack(
     label: nonEmpty(fm.label) ? fm.label : title,
     area: area as Area,
     do: doers,
-    help,
+    mentors,
     subtasks: subtasks(file, fm.subtasks),
     related,
     ...(partOf ? { partOf } : {}),
@@ -288,7 +294,7 @@ export type GraphNode = {
   trackId?: string;
   progress?: Progress;
 };
-export type LinkKind = "do" | "help" | "part" | "related" | "sub";
+export type LinkKind = "do" | "mentor" | "part" | "related" | "sub";
 export type GraphLink = { source: string; target: string; kind: LinkKind; side?: Side; why?: string };
 export type Graph = { nodes: GraphNode[]; links: GraphLink[] };
 
@@ -298,7 +304,7 @@ export function nodePaint(node: Pick<GraphNode, "kind" | "area">): { neutral: tr
   return { neutral: false, area: node.area, alpha: node.kind === "subtask" ? 0.75 : 1 };
 }
 
-export const LAYERS = ["subtasks", "help", "related"] as const;
+export const LAYERS = ["subtasks", "mentors", "related"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Filter = { people: string[]; areas: Area[]; hide: Layer[] };
 export const DEFAULT_FILTER: Filter = { people: [], areas: [...AREAS], hide: [] };
@@ -314,9 +320,9 @@ export function buildGraph(
   filter: Filter,
   progress: Readonly<Record<string, Progress>> = {},
 ): Graph {
-  const showHelp = !filter.hide.includes("help");
-  // Фильтр по людям: трек без `do` виден по людям подтреков; узлы людей — только по своим `do` и `help`.
-  const participants = (t: Track, doers: readonly Doer[]) => [...doers.map((d) => d.login), ...(showHelp ? t.help : [])];
+  const showMentors = !filter.hide.includes("mentors");
+  // Фильтр по людям: трек без `do` виден по людям подтреков; узлы людей — только по своим `do` и `mentors`.
+  const participants = (t: Track, doers: readonly Doer[]) => [...doers.map((d) => d.login), ...(showMentors ? t.mentors : [])];
   const tracks = module.tracks.filter(
     (t) =>
       filter.areas.includes(t.area) &&
@@ -347,7 +353,7 @@ export function buildGraph(
       ...(trackProgress && trackProgress.total > 0 ? { progress: trackProgress } : {}),
     });
     for (const d of t.do) links.push({ source: personId(d.login), target: trackId(t.id), kind: "do", side: d.side });
-    if (showHelp) for (const login of t.help) links.push({ source: personId(login), target: trackId(t.id), kind: "help" });
+    if (showMentors) for (const login of t.mentors) links.push({ source: personId(login), target: trackId(t.id), kind: "mentor" });
     if (!showSubtasks) continue;
     t.subtasks.forEach((s, i) => {
       nodes.push({ id: subtaskId(t.id, i), kind: "subtask", label: s.title, title: s.title, area: t.area, trackId: t.id });
@@ -434,13 +440,13 @@ export function filterToQuery(filter: Filter): string {
   return parts.length > 0 ? `?${parts.join("&")}` : "";
 }
 
-export type Load = { login: string; doing: number; helping: number };
+export type Load = { login: string; doing: number; mentoring: number };
 
 export function personLoad(module: Module, people: readonly Person[]): Load[] {
   return people.map((p) => ({
     login: p.login,
     doing: module.tracks.filter((t) => t.do.some((d) => d.login === p.login)).length,
-    helping: module.tracks.filter((t) => t.help.includes(p.login)).length,
+    mentoring: module.tracks.filter((t) => t.mentors.includes(p.login)).length,
   }));
 }
 

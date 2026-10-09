@@ -188,7 +188,7 @@ onMounted(async () => {
     .nodeCanvasObject(drawNode)
     .linkColor(linkColor)
     .linkWidth((l) => (hot(l) ? 1.8 : l.kind === 'do' ? 1.1 : 0.8))
-    .linkLineDash((l) => (l.kind === 'help' ? [4, 3] : l.kind === 'related' ? [1, 3] : null))
+    .linkLineDash((l) => (l.kind === 'mentor' ? [4, 3] : l.kind === 'related' ? [1, 3] : null))
     .cooldownTicks(140)
     .onEngineStop(() => {
       if (!needFit) return;
