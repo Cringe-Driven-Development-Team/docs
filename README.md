@@ -179,7 +179,7 @@ dev-сервера. Формат и проверки — `docs/superpowers/specs
 #### Задачи с доски
 
 Граф показывает прогресс треков по задачам доски GitHub Projects. Привязка задачи к треку — поле
-«Трек» на доске: его значения создаёт `bunx module-graph board sync` по файлам треков. У модуля
+«Трек» на доске: его значения создаёт `./node_modules/.bin/module-graph board sync` по файлам треков. У модуля
 во frontmatter `index.md` список `sprints` (например `sprints: [Sprint 5, Sprint 6]`) определяет,
 к какому модулю относится задача по её спринту.
 
@@ -196,7 +196,7 @@ dev-сервера. Формат и проверки — `docs/superpowers/specs
 Локально снимок получают так:
 
 ```sh
-GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json
+GH_TOKEN="$(gh auth token)" ./node_modules/.bin/module-graph board snapshot site/modules/board.json
 ```
 
 Файл `site/modules/board.json` в git не попадает.

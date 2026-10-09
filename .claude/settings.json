@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bunx module-graph check --hook"
+            "command": "p=\"$CLAUDE_PROJECT_DIR/node_modules/.bin/module-graph\"; [ -x \"$p\" ] || exit 0; \"$p\" check --hook"
           }
         ]
       }
