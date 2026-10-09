@@ -111,7 +111,7 @@ test("real site/modules is valid", () => {
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
     YarikMix: [7, 5],
-    blackHATred: [1, 3],
+    blackHATred: [1, 4],
     ManInTheCoat: [10, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
@@ -158,9 +158,10 @@ test("real site/modules is valid", () => {
   expect(track("front-harness")?.related).toEqual([]);
   expect(track("service-harness")?.subtasks).toEqual([{ title: "Скиллы", subtasks: ["/apidog"] }]);
   const redis = track("redis-sessions");
-  expect([redis?.area, redis?.do, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
+  expect([redis?.area, redis?.do, redis?.help, redis?.related.map((r) => r.track), redis?.subtasks.length]).toEqual([
     "back",
     [{ login: "GrayMouse9", side: "back" }, { login: "iRedTea", side: "devops" }],
+    ["blackHATred"],
     ["bff", "profile"],
     4,
   ]);
