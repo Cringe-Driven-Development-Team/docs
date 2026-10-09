@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { personLoad } from "../site/.vitepress/modules.ts";
+import matter from "gray-matter";
+import { parseTrack, personLoad } from "../site/.vitepress/modules.ts";
 import { readBoard, readModules } from "../site/.vitepress/modules-read.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
@@ -254,4 +255,14 @@ test("readBoard: valid snapshot is split by module", () => {
 
 test("real october module has four sprints", () => {
   expect(readModules("site/modules").find((m) => m.id === "2026-10")?.sprints).toEqual(["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"]);
+});
+
+test("README track example is a valid track", () => {
+  const readme = readFileSync("README.md", "utf8");
+  const block = /```yaml\n(  ---\n  title: Multi-branch[\s\S]*?)  ```/.exec(readme)?.[1];
+  expect(block).toBeDefined();
+  const source = (block ?? "").replace(/^ {2}/gm, "");
+  const { data, content } = matter(source);
+  const track = parseTrack("README.md", "2026-10", "multibranch", data, content, PEOPLE);
+  expect(track.mentors).toEqual(["YarikMix", "blackHATred"]);
 });

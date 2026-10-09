@@ -146,7 +146,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
   area: devops                                 # front | back | devops | fullstack | team
   do:                                          # логин → сторона: front | back | devops | team
     iRedTea: devops
-  help: [YarikMix, blackHATred]                # необязательно
+  mentors: [YarikMix, blackHATred]             # необязательно; только люди с mentor: true в people.ts
   subtasks:                                    # необязательно
     - Откаты
   related:                                     # необязательно: связь с треком этого модуля

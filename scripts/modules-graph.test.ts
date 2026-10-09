@@ -67,6 +67,10 @@ describe("buildGraph", () => {
     expect(ids({ people: ["blackHATred"] })).toEqual(["person:YarikMix", "person:blackHATred", "person:iRedTea", "track:multibranch"]);
   });
 
+  test("hidden mentors layer drops only mentor links", () => {
+    expect(kinds({ hide: ["mentors"] })).toEqual(["do", "do", "do", "do", "part", "part", "related"]);
+  });
+
   test("hidden mentors drop mentors and their-only tracks", () => {
     expect(ids({ people: ["blackHATred"], hide: ["mentors"] })).toEqual(["person:blackHATred"]);
   });
