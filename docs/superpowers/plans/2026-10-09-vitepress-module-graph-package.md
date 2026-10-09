@@ -47,7 +47,7 @@
 (`gh api repos/TP-Prepare/release-please-playground/contents/<файл> -H "Accept: application/vnd.github.raw"`).
 
 **Interfaces:** Produces: скрипты корня `build`, `typecheck`, `test` (`bun run --filter '*' <скрипт>`); пакет
-собирается `tsdown` в `dist/` с сохранением структуры `src/` (`unbundle: true`).
+собирается `tsdown` в `dist/` с сохранением структуры `src/` (`unbundle: true`, `entry: ["src/**/*.ts", "!src/**/*.d.ts"]` — новые файлы следующих задач собираются без правки конфига).
 
 - [ ] **Step 1 (RED):** `test/package.test.ts`: `package.json` пакета — `name`, `version: "0.1.0"`, `engines.node: ">=22"`,
   `bin["module-graph"] === "dist/cli.mjs"`, `exports` содержит `"."`, `"./node"`, `"./theme"`, `"./style.css"`,
@@ -58,7 +58,7 @@
 - [ ] **Step 3:** файлы по образцу. Отличия от образца: один пакет; `exports` с `types`/`import` на `dist/index.mjs`,
   `dist/node/index.mjs`, `dist/theme/index.mjs` и `./style.css` → `dist/theme/style.css`;
   `sideEffects: ["*.css", "*.vue"]`; `.gitignore` с `node_modules/`, `dist/`, `.claude/worktrees/`, `.superpowers/`;
-  `ci.yml` дополнительно запускает `bun run --filter '*' test:site` (появится в задаче 6, до тех пор скрипт — `true`).
+  bun в CI — `1.3.14` (`oven-sh/setup-bun`), `engines.bun` корня — `">=1.3"`; `ci.yml` дополнительно запускает `bun run --filter '*' test:site` (появится в задаче 6, до тех пор скрипт — `true`).
   `src/index.ts` пока экспортирует `VERSION = "0.1.0"` для дымовой сборки.
 - [ ] **Step 4:** `bun install && bun run build && bun run typecheck && bun run test` → PASS; `ls packages/vitepress-module-graph/dist/index.mjs`.
 - [ ] **Step 5: Commit** `chore: каркас монорепозитория, release-please и пакет vitepress-module-graph`.
@@ -157,11 +157,11 @@
 
 **Interfaces:**
 - Consumes: Task 4 — `loadModuleDir`.
-- Produces: `main(args: readonly string[], env: Record<string, string | undefined>, stdin: string, cwd: string): Promise<number>` в `src/cli.ts`; `hookModulesDir(stdin: string, route: string): string | null`; доска — `sync(token, board: BoardConfig, tracks)`, `fetchSnapshot(token, board, takenAt)`, `ownerKind(token, owner): Promise<"organization" | "user">`.
+- Produces: `main(args: readonly string[], env: Record<string, string | undefined>, stdin: string, cwd: string): Promise<number>` в `src/cli.ts`; `hookModulesDir(stdin: string, exists?: (path: string) => boolean): string | null` — ближайшая папка-предок файла, в которой есть `people.yaml` (`exists` по умолчанию `existsSync`); доска — `sync(token, board: BoardConfig, tracks)`, `fetchSnapshot(token, board, takenAt)`, `ownerKind(token, owner): Promise<"organization" | "user">`.
 
 - [ ] **Step 1 (RED):** перенести тесты с новыми точками входа. Тексты и коды — спека §5. Новые и изменённые:
   - `check` без `--dir` в `cwd` с `site/modules` → `modules ok: 1 модуль, 35 треков` (фикстура `cdd`, скопированная во временный `site/modules`), код 0; `--dir test/fixtures/cdd/modules` — то же;
-  - `--hook` с `route: /course/modules/` в `module-graph.yaml`: путь `/x/course/modules/2/tracks/bff.md` → проверяется `/x/course/modules`; путь `/x/modules/2/tracks/bff.md` при отсутствии там `people.yaml` → 0 молча; `C:\x\site\modules\2\tracks\bff.md` → `C:/x/site/modules`;
+  - `--hook` с `route: /course/modules/` во временной папке `<tmp>/course/modules` (с `people.yaml`): правка `<tmp>/course/modules/2/tracks/bff.md` со сломанным треком → код 2; путь в папке без `people.yaml` среди предков → 0 молча; `hookModulesDir` с `exists`-заглушкой: `C:\x\site\modules\2\tracks\bff.md` → `C:/x/site/modules`;
   - `board sync` без раздела `board` → stderr `module-graph: modules/module-graph.yaml: board — нет раздела; нужен { owner, project, field }`, код 1;
   - `board …` без `GH_TOKEN` → `не задан GH_TOKEN`, код 1; токен в тексте ошибки → `***`;
   - `ownerKind`: ответ `repositoryOwner.__typename: "User"` → `"user"`; GraphQL-запросы `sync`/`fetchSnapshot` используют `user(login:)` для пользователя (проверка по телу запроса в подменённом `fetch`);
@@ -170,7 +170,7 @@
   - неизвестная команда → stderr начинается с `использование: module-graph check [--dir <папка>] [--hook] | board sync | board snapshot <файл>`, код 1.
   `test/cli-node.test.ts`: после `bun run build` — `node dist/cli.mjs check --dir test/fixtures/cdd/modules` → код 0, stdout `modules ok: 1 модуль, 35 треков\n`.
 - [ ] **Step 2:** `bun test test/cli-*.test.ts` → FAIL.
-- [ ] **Step 3:** реализовать; `dist/cli.mjs` начинается с `#!/usr/bin/env node`; `stdin` читается только при `--hook`.
+- [ ] **Step 3:** реализовать; `dist/cli.mjs` начинается с `#!/usr/bin/env node` (при необходимости — правка `tsdown.config.ts`); `stdin` читается только при `--hook`.
 - [ ] **Step 4:** `bun run build && bun test && bun run typecheck` → PASS.
 - [ ] **Step 5: Commit** `feat(cli): module-graph check и board sync/snapshot на module-graph.yaml`.
 
