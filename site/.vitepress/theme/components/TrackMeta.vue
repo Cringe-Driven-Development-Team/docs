@@ -4,7 +4,7 @@
 import { computed } from 'vue';
 import { useData, withBase } from 'vitepress';
 import { AREA_LABELS, pageRef, SIDE_LABELS, subtracksOf } from '../../modules.ts';
-import { moduleTasks, tasksWithSubtracks, trackProgress } from '../../board.ts';
+import { moduleTasks, noTasksNote, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import TaskList from './TaskList.vue';
 
@@ -98,7 +98,7 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
     <template v-if="tasks">
       <h2 id="задачи">Задачи<template v-if="progress && progress.total > 0"> · {{ progress.done }} из {{ progress.total }} готово</template></h2>
       <TaskList v-if="tasks.length" :tasks="tasks" :people="data.people" />
-      <p v-else>Задач пока нет: их привязывают на груминге полем «Трек» на доске</p>
+      <p v-else>{{ noTasksNote(progress?.total ?? 0) }}</p>
     </template>
     <div v-if="!found.track.hasBody" class="info custom-block">
       <p class="custom-block-title">Описание ещё не написано</p>

@@ -3,7 +3,7 @@
 import { computed } from 'vue';
 import { withBase } from 'vitepress';
 import { AREA_LABELS, type Module, type Person, SIDE_LABELS, subtaskByNodeId, subtracksOf, type Track } from '../../modules.ts';
-import { type ModuleTasks, tasksWithSubtracks, trackProgress } from '../../board.ts';
+import { type ModuleTasks, noTasksNote, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import TaskList from './TaskList.vue';
 
 // tasks: null — снимка доски нет, блоков задач в карточке нет.
@@ -136,7 +136,7 @@ const view = computed(() => {
       <template v-if="view.tasks && view.progress">
         <h4>Задачи · {{ view.progress.done }} из {{ view.progress.total }} готово</h4>
         <TaskList v-if="view.tasks.length" :tasks="view.tasks" :people="people" />
-        <p v-else class="none">Задач пока нет: их привязывают на груминге полем «Трек» на доске</p>
+        <p v-else class="none">{{ noTasksNote(view.progress.total) }}</p>
       </template>
       <a class="page" :href="withBase(view.t.url)">Открыть страницу трека</a>
     </template>

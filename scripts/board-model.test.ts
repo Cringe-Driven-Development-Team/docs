@@ -6,6 +6,7 @@ import {
   parseSnapshot,
   sortTasks,
   statusRank,
+  noTasksNote,
   tasksWithSubtracks,
   trackProgress,
   type BoardData,
@@ -254,4 +255,9 @@ test("tasksWithSubtracks: parent sums subtracks, others only own", () => {
   expect(tasksWithSubtracks(m, { svc: [a], front: [b] }, "svc")).toEqual([a, b]);
   expect(tasksWithSubtracks(m, { svc: [a], front: [b] }, "front")).toEqual([b]);
   expect(tasksWithSubtracks(m, {}, "xss")).toEqual([]);
+});
+
+test("noTasksNote: parent without own tasks points to subtracks", () => {
+  expect(noTasksNote(3)).toBe("Своих задач нет — задачи в подтреках");
+  expect(noTasksNote(0)).toBe("Задач пока нет: их привязывают на груминге полем «Трек» на доске");
 });

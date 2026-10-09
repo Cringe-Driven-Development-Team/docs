@@ -161,6 +161,11 @@ export function tasksWithSubtracks(module: Module, byTrack: Readonly<Record<stri
   return [...(byTrack[id] ?? []), ...subtracksOf(module, id).flatMap((t) => byTrack[t.id] ?? [])];
 }
 
+/** Текст вместо пустого списка своих задач; `withSubtracks` — сколько задач вместе с подтреками. */
+export function noTasksNote(withSubtracks: number): string {
+  return withSubtracks > 0 ? "Своих задач нет — задачи в подтреках" : "Задач пока нет: их привязывают на груминге полем «Трек» на доске";
+}
+
 export const STATUS_ORDER = ["In progress", "In review", "Ready", "Backlog", "Done"] as const;
 
 /** Место статуса в `STATUS_ORDER`: без статуса — как Backlog, статус вне списка — сразу после Backlog. */
