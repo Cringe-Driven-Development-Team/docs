@@ -145,8 +145,10 @@ test("real site/modules is valid", () => {
   expect([track("ai-review")?.label, track("ai-review")?.subtasks.map((s) => s.title)]).toEqual(["ИИ-код-ревью", []]);
   const testing = track("ai-testing");
   expect([testing?.do, testing?.related.map((r) => r.track)]).toEqual([[{ login: "YarikMix", side: "team" }], ["multibranch"]]);
-  expect([track("service-harness")?.label, track("service-harness")?.subtasks.map((s) => s.title)]).toEqual(["Harness сервиса", ["Скиллы: /apidog"]]);
-  expect(track("front-harness")?.related.map((r) => r.track)).toEqual(["service-harness"]);
+  expect(track("service-harness")?.label).toBe("Harness сервиса");
+  expect(track("front-harness")?.partOf).toBe("service-harness");
+  expect(track("front-harness")?.related).toEqual([]);
+  expect(track("service-harness")?.subtasks).toEqual([{ title: "Скиллы", subtasks: ["/apidog"] }]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
   expect(grooming?.subtasks.map((s) => s.title)).toEqual([
