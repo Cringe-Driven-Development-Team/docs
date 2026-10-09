@@ -2,6 +2,7 @@
 // (site/architecture/), здесь — переадресация старых якорей #<схема> и #<папка>/<схема>.
 // Ещё отдаёт имена схем и размеры PNG сборке сайта.
 // Использование: bun scripts/build-index.ts
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { HIDDEN_FOLDERS, ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
 import { type ImageSize, parsePngSize } from "../site/.vitepress/png-size.ts";
@@ -68,10 +69,31 @@ export const INDEX_FILE = join("dist", "diagrams", "index.html");
 // Старые страницы раздела /bff/ переехали в трек модуля (спека 2026-10-08-bff-into-module §5.4).
 // Цели относительные: так переадресация работает и в превью веток.
 export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
-  { file: "bff/index.html", target: "../modules/2026-10/tracks/bff" },
-  { file: "bff/contract.html", target: "../modules/2026-10/tracks/bff/contract" },
-  { file: "bff/auth.html", target: "../modules/2026-10/tracks/bff/auth" },
+  { file: "bff/index.html", target: "../modules/2/tracks/bff" },
+  { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
+  { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
 ];
+
+// Модули переехали с YYYY-MM на номер (спека 2026-10-09-module-number-urls §3): старый адрес каждой
+// собранной страницы модуля переадресует на новый.
+export const MODULE_MOVES: readonly { from: string; to: string }[] = [{ from: "2026-10", to: "2" }];
+
+/** Заглушки старых адресов: по `.html` из `dist/modules/<to>/`, цель относительная и без `.html`. */
+export function moduleRedirects(dist: string, moves = MODULE_MOVES): { file: string; target: string }[] {
+  return moves.flatMap(({ from, to }) => {
+    const root = join(dist, "modules", to);
+    if (!existsSync(root)) return [];
+    return readdirSync(root, { recursive: true, encoding: "utf8" })
+      .filter((name) => name.endsWith(".html"))
+      .map((name) => name.split("\\").join("/"))
+      .sort()
+      .map((name) => {
+        const up = "../".repeat(name.split("/").length);
+        const page = name.endsWith("index.html") ? name.slice(0, -"index.html".length) : name.slice(0, -".html".length);
+        return { file: `modules/${from}/${name}`, target: `${up}${to}/${page}` };
+      });
+  });
+}
 
 /** Страница-переадресация на `target` с тем же якорем; без JS — ссылка. */
 export function renderPageRedirect(target: string): string {
@@ -93,9 +115,9 @@ export function renderPageRedirect(target: string): string {
 `;
 }
 
-/** Пишет страницы-переадресации `PAGE_REDIRECTS` в `dist`. */
+/** Пишет страницы-переадресации `PAGE_REDIRECTS` и старые адреса модулей в `dist`. */
 export async function writePageRedirects(dist = "dist"): Promise<void> {
-  for (const { file, target } of PAGE_REDIRECTS) await Bun.write(join(dist, file), renderPageRedirect(target));
+  for (const { file, target } of [...PAGE_REDIRECTS, ...moduleRedirects(dist)]) await Bun.write(join(dist, file), renderPageRedirect(target));
 }
 
 if (import.meta.main) {
@@ -103,4 +125,5 @@ if (import.meta.main) {
   console.error(`${INDEX_FILE}: переадресация на architecture/`);
   await writePageRedirects();
   console.error(`dist/bff/: переадресация ${PAGE_REDIRECTS.length} страниц на трек модуля`);
+  console.error(`dist/modules/: переадресация ${moduleRedirects("dist").length} старых адресов модулей`);
 }

@@ -1,9 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
-import { diagramNames, indexNames, PAGE_REDIRECTS, pngSize, pngSizes, renderPageRedirect, renderRedirect, writePageRedirects } from "./build-index.ts";
+import { diagramNames, indexNames, MODULE_MOVES, moduleRedirects, PAGE_REDIRECTS, pngSize, pngSizes, renderPageRedirect, renderRedirect, writePageRedirects } from "./build-index.ts";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -91,9 +91,9 @@ test("renderRedirect: noindex, link to architecture/ and a script that follows d
 
 test("PAGE_REDIRECTS: old BFF pages to the track, relative targets", () => {
   expect(PAGE_REDIRECTS).toEqual([
-    { file: "bff/index.html", target: "../modules/2026-10/tracks/bff" },
-    { file: "bff/contract.html", target: "../modules/2026-10/tracks/bff/contract" },
-    { file: "bff/auth.html", target: "../modules/2026-10/tracks/bff/auth" },
+    { file: "bff/index.html", target: "../modules/2/tracks/bff" },
+    { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
+    { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
   ]);
   for (const { target } of PAGE_REDIRECTS) expect(target.startsWith("/")).toBe(false);
 });
@@ -124,4 +124,34 @@ test("writePageRedirects writes three files", async () => {
   for (const { file, target } of PAGE_REDIRECTS) {
     expect(await Bun.file(join(dir, file)).text()).toBe(renderPageRedirect(target));
   }
+});
+
+function moduleDist(): string {
+  const dir = mkdtempSync(join(tmpdir(), "module-moves-"));
+  tempDirs.push(dir);
+  for (const file of ["modules/2/index.html", "modules/2/tracks/bff.html", "modules/2/tracks/bff/auth.html", "modules/index.html"]) {
+    mkdirSync(dirname(join(dir, file)), { recursive: true });
+    writeFileSync(join(dir, file), "<html></html>");
+  }
+  return dir;
+}
+
+test("MODULE_MOVES: 2026-10 moved to 2", () => {
+  expect(MODULE_MOVES).toEqual([{ from: "2026-10", to: "2" }]);
+});
+
+test("moduleRedirects: every built page of the new module gets its old address, relative targets", () => {
+  expect(moduleRedirects(moduleDist())).toEqual([
+    { file: "modules/2026-10/index.html", target: "../2/" },
+    { file: "modules/2026-10/tracks/bff.html", target: "../../2/tracks/bff" },
+    { file: "modules/2026-10/tracks/bff/auth.html", target: "../../../2/tracks/bff/auth" },
+  ]);
+  expect(moduleRedirects(mkdtempSync(join(tmpdir(), "module-moves-empty-")))).toEqual([]);
+});
+
+test("writePageRedirects writes old module pages too", async () => {
+  const dir = moduleDist();
+  await writePageRedirects(dir);
+  expect(await Bun.file(join(dir, "modules/2026-10/tracks/bff/auth.html")).text()).toBe(renderPageRedirect("../../../2/tracks/bff/auth"));
+  expect(await Bun.file(join(dir, "modules/2/tracks/bff.html")).text()).toBe("<html></html>");
 });
