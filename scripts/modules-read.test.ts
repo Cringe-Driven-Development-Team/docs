@@ -106,11 +106,11 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль октября 2026");
-  expect(october?.tracks).toHaveLength(22);
+  expect(october?.tracks).toHaveLength(24);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
-    YarikMix: [4, 3],
+    YarikMix: [6, 3],
     blackHATred: [1, 4],
     ManInTheCoat: [9, 0],
     iRedTea: [6, 0],
@@ -142,6 +142,11 @@ test("real site/modules is valid", () => {
     ["CSP и nosniff в Caddy"],
     ["monaco", "file-exec", "file-search"],
   ]);
+  expect([track("ai-review")?.label, track("ai-review")?.subtasks]).toEqual(["ИИ-код-ревью", []]);
+  const testing = track("ai-testing");
+  expect([testing?.do, testing?.related.map((r) => r.track)]).toEqual([[{ login: "YarikMix", side: "team" }], ["multibranch"]]);
+  expect([track("service-harness")?.label, track("service-harness")?.subtasks]).toEqual(["Harness сервиса", ["Скиллы: /apidog"]]);
+  expect(track("front-harness")?.related.map((r) => r.track)).toEqual(["service-harness"]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);
   expect(grooming?.subtasks).toEqual([
