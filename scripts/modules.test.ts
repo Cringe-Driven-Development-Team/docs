@@ -148,6 +148,22 @@ describe("parseModule", () => {
     expect(m.tracks.map((x) => x.id)).toEqual(["a", "b"]);
   });
 
+  test("part_of is checked against the module", () => {
+    const p = (id: string, extra: Record<string, unknown> = {}) => track({ title: id, area: "team", do: { YarikMix: "team" }, ...extra }, id);
+    const mod = (...tracks: Track[]) => () => parseModule(INDEX, "2026-10", { title: "М" }, tracks);
+    const file = (id: string) => `modules/2026-10/tracks/${id}.md`;
+    expect(mod(p("a", { part_of: "x" }))).toThrow(`${file("a")}: part_of — трека x нет в модуле 2026-10`);
+    expect(mod(p("a", { part_of: "a" }))).toThrow(`${file("a")}: part_of — трек ссылается сам на себя`);
+    expect(mod(p("a"), p("b", { part_of: "a" }), p("c", { part_of: "b" }))).toThrow(`${file("c")}: part_of — b сам подтрек: вложенность — один уровень`);
+    expect(mod(p("a"), p("b", { part_of: "a", related: [{ track: "a", why: "w" }] }))).toThrow(
+      `${file("b")}: related[0].track — a — родитель или подтрек, связь уже есть через part_of`,
+    );
+    expect(mod(p("a", { related: [{ track: "b", why: "w" }] }), p("b", { part_of: "a" }))).toThrow(
+      `${file("a")}: related[0].track — b — родитель или подтрек, связь уже есть через part_of`,
+    );
+    expect(mod(p("a"), p("b", { part_of: "a" }))().tracks.find((t) => t.id === "b")?.partOf).toBe("a");
+  });
+
   test("period is read", () => {
     expect(parseModule(INDEX, "2026-10", { title: "М", period: "13.10 — 09.11" }, []).period).toBe("13.10 — 09.11");
   });

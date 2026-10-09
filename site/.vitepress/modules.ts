@@ -237,6 +237,21 @@ export function parseModule(file: string, id: string, data: unknown, tracks: Tra
       if (!ids.has(r.track)) throw new ModuleDataError(trackFile, `related[${index}].track`, `трека ${r.track} нет в модуле ${id}`);
     });
   }
+  const byId = new Map(tracks.map((t) => [t.id, t]));
+  for (const t of tracks) {
+    if (t.partOf === undefined) continue;
+    const trackFile = `modules/${id}/tracks/${t.id}.md`;
+    if (t.partOf === t.id) throw new ModuleDataError(trackFile, "part_of", "трек ссылается сам на себя");
+    const parent = byId.get(t.partOf);
+    if (!parent) throw new ModuleDataError(trackFile, "part_of", `трека ${t.partOf} нет в модуле ${id}`);
+    if (parent.partOf !== undefined) throw new ModuleDataError(trackFile, "part_of", `${parent.id} сам подтрек: вложенность — один уровень`);
+  }
+  for (const t of tracks) {
+    t.related.forEach((r, index) => {
+      if (t.partOf !== r.track && byId.get(r.track)?.partOf !== t.id) return;
+      throw new ModuleDataError(`modules/${id}/tracks/${t.id}.md`, `related[${index}].track`, `${r.track} — родитель или подтрек, связь уже есть через part_of`);
+    });
+  }
   const sprints: string[] = [];
   list(file, "sprints", fm.sprints).forEach((item, index) => {
     if (typeof item !== "string" || !SPRINT.test(item)) throw new ModuleDataError(file, `sprints[${index}]`, "нужен формат Sprint N");
