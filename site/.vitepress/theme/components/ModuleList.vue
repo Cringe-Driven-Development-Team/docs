@@ -5,7 +5,7 @@ import type { Module } from '../../modules.ts';
 import { moduleTasks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 
-const peopleCount = (m: Module) => new Set(m.tracks.flatMap((t) => [...t.do.map((d) => d.login), ...t.help])).size;
+const peopleCount = (m: Module) => new Set(m.tracks.flatMap((t) => [...t.do.map((d) => d.login), ...t.mentors])).size;
 // done / total по всем трекам модуля; «—» без снимка доски или без sprints у модуля.
 function taskCount(m: Module): string {
   const tasks = moduleTasks(data.board, m);

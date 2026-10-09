@@ -8,7 +8,7 @@ import { data } from '../../../modules/modules.data.ts';
 const props = defineProps<{ module: Module }>();
 const name = (login: string) => data.people.find((p) => p.login === login)?.name ?? login;
 const who = (t: Track) =>
-  doersOf(props.module, t).map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') + (t.help.length ? `; помогают: ${t.help.map(name).join(', ')}` : '');
+  doersOf(props.module, t).map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') + (t.mentors.length ? `; менторы: ${t.mentors.map(name).join(', ')}` : '');
 const groups = computed(() =>
   AREAS.map((area) => ({ area, tracks: topTracks(props.module).filter((t) => t.area === area) })).filter((g) => g.tracks.length > 0),
 );

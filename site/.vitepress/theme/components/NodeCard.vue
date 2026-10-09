@@ -14,7 +14,7 @@ const person = (login: string) => props.people.find((p) => p.login === login);
 const trackById = (id: string) => props.module.tracks.find((t) => t.id === id);
 const sideOf = (t: Track, login: string) => {
   const side = doersOf(props.module, t).find((d) => d.login === login)?.side;
-  return side ? SIDE_LABELS[side] : 'помогает';
+  return side ? SIDE_LABELS[side] : 'ментор';
 };
 
 const view = computed(() => {
@@ -23,17 +23,17 @@ const view = computed(() => {
     const p = person(rest);
     if (!p) return null;
     const doing = props.module.tracks.filter((t) => t.do.some((d) => d.login === p.login));
-    const helping = props.module.tracks.filter((t) => t.help.includes(p.login));
+    const mentoring = props.module.tracks.filter((t) => t.mentors.includes(p.login));
     const mates = new Map<string, string[]>();
-    for (const t of [...doing, ...helping]) {
-      for (const login of [...t.do.map((d) => d.login), ...t.help]) {
+    for (const t of [...doing, ...mentoring]) {
+      for (const login of [...t.do.map((d) => d.login), ...t.mentors]) {
         if (login !== p.login) mates.set(login, [...(mates.get(login) ?? []), t.label]);
       }
     }
     const tasks = props.tasks;
     const all = tasks ? [...Object.values(tasks.byTrack).flat(), ...tasks.untracked, ...tasks.unknown] : null;
     const open = all?.filter((t) => t.assignees.includes(p.login) && t.state === 'open' && t.status !== 'Done') ?? null;
-    return { kind: 'person' as const, p, doing, helping, mates: [...mates], open };
+    return { kind: 'person' as const, p, doing, mentoring, mates: [...mates], open };
   }
   if (kind === 'track') {
     const t = trackById(rest);
@@ -67,9 +67,9 @@ const view = computed(() => {
           <span class="side">{{ sideOf(t, view.p.login) }}</span>
         </li>
       </ul>
-      <h4 v-if="view.helping.length">Помогает · {{ view.helping.length }}</h4>
+      <h4 v-if="view.mentoring.length">Ментор · {{ view.mentoring.length }}</h4>
       <ul>
-        <li v-for="t in view.helping" :key="t.id">
+        <li v-for="t in view.mentoring" :key="t.id">
           <button type="button" class="go" @click="emit('select', `track:${t.id}`)">{{ t.label }}</button>
         </li>
       </ul>
@@ -96,9 +96,9 @@ const view = computed(() => {
           <span class="side">{{ SIDE_LABELS[d.side] }}</span>
         </li>
       </ul>
-      <h4 v-if="view.t.help.length">Помогают</h4>
+      <h4 v-if="view.t.mentors.length">Менторы</h4>
       <ul>
-        <li v-for="login in view.t.help" :key="login">
+        <li v-for="login in view.t.mentors" :key="login">
           <button type="button" class="go" @click="emit('select', `person:${login}`)">{{ person(login)?.name ?? login }}</button>
         </li>
       </ul>
@@ -166,7 +166,7 @@ const view = computed(() => {
       </ul>
       <h4>Кто</h4>
       <ul>
-        <li v-for="login in [...doersOf(module, view.t).map((d) => d.login), ...view.t.help]" :key="login">
+        <li v-for="login in [...doersOf(module, view.t).map((d) => d.login), ...view.t.mentors]" :key="login">
           <button type="button" class="go" @click="emit('select', `person:${login}`)">{{ person(login)?.name ?? login }}</button>
           <span class="side">{{ sideOf(view.t, login) }}</span>
         </li>

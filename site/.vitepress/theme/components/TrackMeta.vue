@@ -53,9 +53,9 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
     <dl>
       <dt>Делают</dt>
       <dd>{{ doersOf(found.module, found.track).map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') }}</dd>
-      <template v-if="found.track.help.length">
-        <dt>Помогают</dt>
-        <dd>{{ found.track.help.map(name).join(', ') }}</dd>
+      <template v-if="found.track.mentors.length">
+        <dt>Менторы</dt>
+        <dd>{{ found.track.mentors.map(name).join(', ') }}</dd>
       </template>
       <template v-if="found.track.partOf">
         <dt>Входит в трек</dt>
