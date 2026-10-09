@@ -5,7 +5,7 @@
 //                                                        тишина при успехе, код 2 и ошибка в stderr при сбое
 // Спека: docs/superpowers/specs/2026-10-09-modules-check-design.md
 import { join } from "node:path";
-import { readModules } from "../site/.vitepress/modules-read.ts";
+import type { readModules } from "../site/.vitepress/modules-read.ts";
 
 type ReadModules = typeof readModules;
 
@@ -22,9 +22,11 @@ function plural(n: number, forms: readonly [string, string, string]): string {
 }
 
 // Читает и проверяет все модули; бросает ModuleDataError с текстом сборки.
-// read — валидатор нужного репозитория (по умолчанию свой, подключённый статически).
-export function checkModules(dir: string, read: ReadModules = readModules): string {
-  const modules = read(dir);
+// Валидатор — site/.vitepress/modules-read.ts репозитория этого каталога, подключается динамически:
+// статический импорт ронял бы bun стеком до try при синтаксической ошибке в people.ts.
+export async function checkModules(dir: string): Promise<string> {
+  const mod = (await import(join(dir, "..", ".vitepress", "modules-read.ts"))) as { readModules: ReadModules };
+  const modules = mod.readModules(dir);
   const tracks = modules.reduce((sum, m) => sum + m.tracks.length, 0);
   const m = modules.length;
   return `modules ok: ${m} ${plural(m, ["модуль", "модуля", "модулей"])}, ${tracks} ${plural(tracks, ["трек", "трека", "треков"])}`;
@@ -54,10 +56,7 @@ if (import.meta.main) {
     if (dir) {
       try {
         // Валидатор и people.ts — из репозитория правимого файла (worktree), не из того, где лежит скрипт.
-        // Импорт внутри try: синтаксическая ошибка в источнике даёт сообщение, а не стек.
-        const root = dir.slice(0, -"/site/modules".length);
-        const mod = (await import(join(root, "site/.vitepress/modules-read.ts"))) as { readModules: ReadModules };
-        checkModules(dir, mod.readModules);
+        await checkModules(dir);
       } catch (e) {
         console.error(errorText(e));
         process.exit(2);
@@ -65,7 +64,7 @@ if (import.meta.main) {
     }
   } else {
     try {
-      console.log(checkModules(join(import.meta.dir, "..", "site", "modules")));
+      console.log(await checkModules(join(import.meta.dir, "..", "site", "modules")));
     } catch (e) {
       console.error(errorText(e));
       process.exit(1);

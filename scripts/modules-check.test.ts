@@ -40,8 +40,8 @@ function setup(track: string): string {
   return write("2/tracks/bff.md", track);
 }
 
-function run(args: string[], stdin?: string) {
-  const p = Bun.spawnSync(["bun", "scripts/modules-check.ts", ...args], {
+function run(args: string[], stdin?: string, script = "scripts/modules-check.ts") {
+  const p = Bun.spawnSync(["bun", script, ...args], {
     cwd: join(import.meta.dir, ".."),
     stdin: stdin === undefined ? "ignore" : new TextEncoder().encode(stdin),
   });
@@ -49,14 +49,14 @@ function run(args: string[], stdin?: string) {
 }
 const hookInput = (file: string) => JSON.stringify({ tool_input: { file_path: file } });
 
-test("checkModules: строка успеха", () => {
+test("checkModules: строка успеха", async () => {
   setup(GOOD);
-  expect(checkModules(dir)).toBe("modules ok: 1 модуль, 1 трек");
+  expect(await checkModules(dir)).toBe("modules ok: 1 модуль, 1 трек");
 });
 
-test("checkModules: сломанный трек бросает с текстом сборки", () => {
+test("checkModules: сломанный трек бросает с текстом сборки", async () => {
   setup(BAD);
-  expect(() => checkModules(dir)).toThrow(
+  await expect(checkModules(dir)).rejects.toThrow(
     "modules/2/tracks/bff.md: do — нужен хотя бы один исполнитель: логин → сторона",
   );
 });
@@ -128,4 +128,46 @@ test("--hook: сломанный people.ts — код 2, сообщение бе
 test("hookModulesDir: пути Windows и последнее вхождение", () => {
   expect(hookModulesDir(hookInput("C:\\repo\\site\\modules\\2\\tracks\\bff.md"))).toBe("C:/repo/site/modules");
   expect(hookModulesDir(hookInput("/a/site/modules/b/site/modules/2/x.md"))).toBe("/a/site/modules/b/site/modules");
+});
+
+// Сам скрипт лежит в temp-репозитории со сломанным people.ts: статический импорт валидатора ронял бы bun до try.
+function brokenScriptRepo(): { script: string; modules: string } {
+  fakeRepo("export const PEOPLE = [;\n", "iRedTea");
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  copyFileSync(join(import.meta.dir, "modules-check.ts"), join(root, "scripts", "modules-check.ts"));
+  return { script: join(root, "scripts", "modules-check.ts"), modules: dir };
+}
+
+test("--hook из репозитория со сломанным people.ts: путь вне модулей — тишина и код 0", () => {
+  const { script } = brokenScriptRepo();
+  const r = run(["--hook"], hookInput(join(root, "README.md")), script);
+  expect(r).toEqual({ code: 0, out: "", err: "" });
+});
+
+test("--hook из репозитория со сломанным people.ts: путь в модулях — код 2 без стека", () => {
+  const { script, modules } = brokenScriptRepo();
+  const r = run(["--hook"], hookInput(join(modules, "2", "tracks", "bff.md")), script);
+  expect(r.code).toBe(2);
+  expect(r.out).toBe("");
+  expect(r.err.trim()).not.toBe("");
+  expect(r.err).not.toMatch(/^\s+at /m);
+});
+
+test("без флага из репозитория со сломанным people.ts: код 1 без стека", () => {
+  const { script } = brokenScriptRepo();
+  const r = run([], undefined, script);
+  expect(r.code).toBe(1);
+  expect(r.err.trim()).not.toBe("");
+  expect(r.err).not.toMatch(/^\s+at /m);
+});
+
+test("без флага: сломанный трек — код 1 и текст ошибки", () => {
+  fakeRepo(readFileSync(join(import.meta.dir, "..", "site", "modules", "people.ts"), "utf8"), "iRedTea");
+  write("2/tracks/bff.md", BAD);
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  copyFileSync(join(import.meta.dir, "modules-check.ts"), join(root, "scripts", "modules-check.ts"));
+  const r = run([], undefined, join(root, "scripts", "modules-check.ts"));
+  expect(r.code).toBe(1);
+  expect(r.err).toContain("do — нужен хотя бы один исполнитель");
+  expect(r.out).toBe("");
 });
