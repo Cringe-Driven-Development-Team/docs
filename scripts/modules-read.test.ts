@@ -106,7 +106,7 @@ test("requires index.md", () => {
 test("real site/modules is valid", () => {
   const october = readModules("site/modules").find((m) => m.id === "2026-10");
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(27);
+  expect(october?.tracks).toHaveLength(29);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, PEOPLE).map((l) => [l.login, [l.doing, l.helping]]));
   expect(load).toEqual({
@@ -168,6 +168,11 @@ test("real site/modules is valid", () => {
   expect(["github-alerts", "apidog-alerts"].map((id) => [track(id)?.label, track(id)?.partOf, track(id)?.do])).toEqual([
     ["GitHub-алерты через webhook", "telegram-alerts", [{ login: "YarikMix", side: "team" }]],
     ["Apidog-алерты через webhook", "telegram-alerts", [{ login: "YarikMix", side: "team" }]],
+  ]);
+  expect([track("2fa")?.area, track("2fa")?.do]).toEqual(["fullstack", []]);
+  expect(["2fa-front", "2fa-back"].map((id) => [track(id)?.label, track(id)?.area, track(id)?.do, track(id)?.partOf])).toEqual([
+    ["2FA: фронт", "front", [{ login: "iRedTea", side: "front" }], "2fa"],
+    ["2FA: бэк", "back", [{ login: "GrayMouse9", side: "back" }], "2fa"],
   ]);
   const grooming = track("runtime-grooming");
   expect([grooming?.do, grooming?.related.map((r) => r.track)]).toEqual([[{ login: "blackHATred", side: "back" }], ["notebook-vps", "file-exec"]]);

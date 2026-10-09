@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { AREA_LABELS, ModuleDataError, moduleSidebar, parseModule, parseTrack, subtracksOf, topTracks, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
+import { AREA_LABELS, doersOf, ModuleDataError, moduleSidebar, parseModule, parseTrack, subtracksOf, topTracks, type Track, type TrackPage, trackPages, validatePeople } from "../site/.vitepress/modules.ts";
 import { PEOPLE } from "../site/modules/people.ts";
 
 test("PEOPLE: the team from the spec, valid", () => {
@@ -64,7 +64,6 @@ describe("parseTrack", () => {
   });
 
   test("do needs at least one doer", () => {
-    fails({ ...valid(), do: undefined }, "do — нужен хотя бы один исполнитель: логин → сторона");
     fails({ ...valid(), do: {} }, "do — нужен хотя бы один исполнитель: логин → сторона");
     fails({ ...valid(), do: ["iRedTea"] }, "do — нужен хотя бы один исполнитель: логин → сторона");
   });
@@ -162,6 +161,21 @@ describe("parseModule", () => {
       `${file("a")}: related[0].track — b — родитель или подтрек, связь уже есть через part_of`,
     );
     expect(mod(p("a"), p("b", { part_of: "a" }))().tracks.find((t) => t.id === "b")?.partOf).toBe("a");
+  });
+
+  test("do may be omitted only on a track with subtracks; doersOf takes them from subtracks", () => {
+    const mk = (id: string, data: Record<string, unknown>) => track({ title: id, ...data }, id);
+    const mod = (...tracks: Track[]) => parseModule(INDEX, "2026-10", { title: "М" }, tracks);
+    const file = (id: string) => `modules/2026-10/tracks/${id}.md`;
+    const parent = mk("p", { area: "fullstack" });
+    expect(parent.do).toEqual([]);
+    expect(() => mod(parent)).toThrow(`${file("p")}: do — нужен хотя бы один исполнитель: логин → сторона, или подтреки через part_of`);
+    const front = mk("f", { area: "front", do: { iRedTea: "front" }, part_of: "p" });
+    expect(() => mod(parent, front)).toThrow(`${file("p")}: do — у трека «Фронт + бэк» нужны исполнители со стороны front и back`);
+    const back = mk("b", { area: "back", do: { GrayMouse9: "back" }, part_of: "p" });
+    const m = mod(parent, front, back);
+    expect(doersOf(m, m.tracks.find((t) => t.id === "p")!)).toEqual([{ login: "GrayMouse9", side: "back" }, { login: "iRedTea", side: "front" }]);
+    expect(doersOf(m, m.tracks.find((t) => t.id === "f")!)).toEqual([{ login: "iRedTea", side: "front" }]);
   });
 
   test("period is read", () => {

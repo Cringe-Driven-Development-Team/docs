@@ -3,7 +3,7 @@
 // связи, задачи со снимка доски. На подстранице трека — только строка «Трек · модуль» над заголовком.
 import { computed } from 'vue';
 import { useData, withBase } from 'vitepress';
-import { AREA_LABELS, pageRef, SIDE_LABELS, subtracksOf } from '../../modules.ts';
+import { AREA_LABELS, doersOf, pageRef, SIDE_LABELS, subtracksOf } from '../../modules.ts';
 import { moduleTasks, noTasksNote, tasksWithSubtracks, trackProgress } from '../../board.ts';
 import { data } from '../../../modules/modules.data.ts';
 import TaskList from './TaskList.vue';
@@ -52,7 +52,7 @@ const urlOf = (id: string) => withBase(`/modules/${found.value?.module.id}/track
     <h1>{{ found.track.title }}</h1>
     <dl>
       <dt>Делают</dt>
-      <dd>{{ found.track.do.map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') }}</dd>
+      <dd>{{ doersOf(found.module, found.track).map((d) => `${name(d.login)} (${SIDE_LABELS[d.side]})`).join(', ') }}</dd>
       <template v-if="found.track.help.length">
         <dt>Помогают</dt>
         <dd>{{ found.track.help.map(name).join(', ') }}</dd>

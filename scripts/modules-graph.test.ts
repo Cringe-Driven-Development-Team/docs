@@ -169,3 +169,24 @@ test("nodePaint: people are neutral, tracks and subtasks take the track area", (
   expect(nodePaint({ kind: "track", area: "devops" })).toEqual({ neutral: false, area: "devops", alpha: 1 });
   expect(nodePaint({ kind: "subtask", area: "back" })).toEqual({ neutral: false, area: "back", alpha: 0.75 });
 });
+
+test("parent without do: no person links to it, a person filter on a subtrack keeps it", () => {
+  const m = parseModule("modules/2026-10/index.md", "2026-10", { title: "Тест" }, [
+    t("twofa", { title: "2FA", area: "fullstack" }),
+    t("twofa-front", { title: "2FA: фронт", area: "front", do: { iRedTea: "front" }, part_of: "twofa" }),
+    t("twofa-back", { title: "2FA: бэк", area: "back", do: { GrayMouse9: "back" }, part_of: "twofa" }),
+  ]);
+  const g = (filter: Partial<Filter> = {}) => buildGraph(m, PEOPLE, { ...DEFAULT_FILTER, ...filter });
+  expect(g().links.filter((l) => l.target === "track:twofa")).toEqual([]);
+  expect(g().links.filter((l) => l.kind === "do").map((l) => `${l.source}>${l.target}`)).toEqual([
+    "person:GrayMouse9>track:twofa-back",
+    "person:iRedTea>track:twofa-front",
+  ]);
+  const byDenis = g({ people: ["iRedTea"] });
+  expect(byDenis.nodes.map((n) => n.id)).toEqual(["person:iRedTea", "track:twofa", "track:twofa-front"]);
+  expect(byDenis.links.some((l) => l.kind === "sub" && l.target === "track:twofa-front")).toBe(true);
+  expect(personLoad(m, PEOPLE).filter((l) => l.doing > 0)).toEqual([
+    { login: "iRedTea", doing: 1, helping: 0 },
+    { login: "GrayMouse9", doing: 1, helping: 0 },
+  ]);
+});

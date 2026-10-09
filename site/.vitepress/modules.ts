@@ -45,6 +45,12 @@ export function validatePeople(people: readonly Person[], file = "modules/people
 }
 
 export type Doer = { login: string; side: Side };
+
+function checkFullstack(file: string, doers: readonly Doer[]): void {
+  if (!(doers.some((d) => d.side === "front") && doers.some((d) => d.side === "back"))) {
+    throw new ModuleDataError(file, "do", "у трека «Фронт + бэк» нужны исполнители со стороны front и back");
+  }
+}
 export type Related = { track: string; why: string };
 /** Подзадача трека; вложенные — только строки (спека 2026-10-09-subtracks §4). */
 export type Subtask = { title: string; subtasks: string[] };
@@ -152,10 +158,11 @@ export function parseTrack(
   if (typeof area !== "string" || !(AREAS as readonly string[]).includes(area)) {
     throw new ModuleDataError(file, "area", `неизвестное направление ${String(area)}; допустимо: ${AREAS.join(", ")}`);
   }
-  if (!isRecord(fm.do) || Object.keys(fm.do).length === 0) {
+  // Без `do` — только у трека с подтреками: проверяет parseModule.
+  if (fm.do !== undefined && (!isRecord(fm.do) || Object.keys(fm.do).length === 0)) {
     throw new ModuleDataError(file, "do", "нужен хотя бы один исполнитель: логин → сторона");
   }
-  const doers: Doer[] = Object.entries(fm.do).map(([login, side]) => {
+  const doers: Doer[] = Object.entries(isRecord(fm.do) ? fm.do : {}).map(([login, side]) => {
     if (typeof side !== "string" || !(SIDES as readonly string[]).includes(side)) {
       throw new ModuleDataError(file, `do.${login}`, `неизвестная сторона ${String(side)}; допустимо: ${SIDES.join(", ")}`);
     }
@@ -167,9 +174,7 @@ export function parseTrack(
     checkLogin(file, "help", login, people);
     if (doers.some((d) => d.login === login)) throw new ModuleDataError(file, "help", `${login} уже исполнитель`);
   }
-  if (area === "fullstack" && !(doers.some((d) => d.side === "front") && doers.some((d) => d.side === "back"))) {
-    throw new ModuleDataError(file, "do", "у трека «Фронт + бэк» нужны исполнители со стороны front и back");
-  }
+  if (area === "fullstack" && doers.length > 0) checkFullstack(file, doers);
   const related = list(file, "related", fm.related).map((item, index): Related => {
     const entry = isRecord(item) ? item : {};
     if (!nonEmpty(entry.track)) throw new ModuleDataError(file, `related[${index}].track`, "нужна непустая строка");
@@ -247,6 +252,15 @@ export function parseModule(file: string, id: string, data: unknown, tracks: Tra
     if (parent.partOf !== undefined) throw new ModuleDataError(trackFile, "part_of", `${parent.id} сам подтрек: вложенность — один уровень`);
   }
   for (const t of tracks) {
+    if (t.do.length > 0) continue;
+    const trackFile = `modules/${id}/tracks/${t.id}.md`;
+    const subDoers = tracks.filter((s) => s.partOf === t.id).flatMap((s) => s.do);
+    if (subDoers.length === 0) {
+      throw new ModuleDataError(trackFile, "do", "нужен хотя бы один исполнитель: логин → сторона, или подтреки через part_of");
+    }
+    if (t.area === "fullstack") checkFullstack(trackFile, subDoers);
+  }
+  for (const t of tracks) {
     t.related.forEach((r, index) => {
       if (t.partOf !== r.track && byId.get(r.track)?.partOf !== t.id) return;
       throw new ModuleDataError(`modules/${id}/tracks/${t.id}.md`, `related[${index}].track`, `${r.track} — родитель или подтрек, связь уже есть через part_of`);
@@ -301,11 +315,14 @@ export function buildGraph(
   progress: Readonly<Record<string, Progress>> = {},
 ): Graph {
   const showHelp = !filter.hide.includes("help");
-  const participants = (t: Track) => [...t.do.map((d) => d.login), ...(showHelp ? t.help : [])];
+  // Фильтр по людям: трек без `do` виден по людям подтреков; узлы людей — только по своим `do` и `help`.
+  const participants = (t: Track, doers: readonly Doer[]) => [...doers.map((d) => d.login), ...(showHelp ? t.help : [])];
   const tracks = module.tracks.filter(
-    (t) => filter.areas.includes(t.area) && (filter.people.length === 0 || participants(t).some((l) => filter.people.includes(l))),
+    (t) =>
+      filter.areas.includes(t.area) &&
+      (filter.people.length === 0 || participants(t, doersOf(module, t)).some((l) => filter.people.includes(l))),
   );
-  const logins = new Set([...filter.people, ...tracks.flatMap(participants)]);
+  const logins = new Set([...filter.people, ...tracks.flatMap((t) => participants(t, t.do))]);
   const nodes: GraphNode[] = people
     .filter((p) => logins.has(p.login))
     .map((p) => ({
@@ -446,6 +463,16 @@ export function topTracks(module: Module): Track[] {
 /** Подтреки трека в порядке `module.tracks`. */
 export function subtracksOf(module: Module, id: string): Track[] {
   return module.tracks.filter((t) => t.partOf === id);
+}
+
+/** Исполнители трека; у трека без `do` — исполнители его подтреков (в порядке подтреков, без повторов). */
+export function doersOf(module: Module, track: Track): Doer[] {
+  if (track.do.length > 0) return track.do;
+  const result: Doer[] = [];
+  for (const d of subtracksOf(module, track.id).flatMap((s) => s.do)) {
+    if (!result.some((r) => r.login === d.login && r.side === d.side)) result.push(d);
+  }
+  return result;
 }
 
 /** Меню раздела «Модули»: по модулю — граф и треки; в пункте трека — подстраницы, затем подтреки. */
