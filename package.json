@@ -11,7 +11,7 @@
     "typecheck": "tsc",
     "validate": "bun scripts/eraser.ts validate",
     "check": "bun scripts/check-colors.ts",
-    "prepare": "lefthook install",
+    "prepare": "bun scripts/install-hooks.ts",
     "modules:check": "bun scripts/modules-check.ts",
     "render": "bun scripts/docker.ts render",
     "render:native": "bun scripts/eraser.ts render -f html && bun scripts/eraser.ts render -f png",
