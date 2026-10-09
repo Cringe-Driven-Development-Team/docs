@@ -35,6 +35,7 @@
 - `bun run render`, `bun run build`, `bun run site` идут в Docker-образе из `Dockerfile`, как в CI:
   Docker Desktop должен быть запущен. Без Docker — `DIAGRAMS_NATIVE=1 bun run <скрипт>`.
 - Перед коммитом: `bun run typecheck && bun run test && bun run build`.
+- Треки (`site/modules/**`) проверяет `bun run modules:check` — за секунду; у агента — хук после правки.
 - `bun run site` из git worktree в Docker не работает — запускай из основного клона.
 - Сайт — VitePress в `site/` (главная `/docs/`), схемы — страница `/docs/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку

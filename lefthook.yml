@@ -1,0 +1,6 @@
+# Pre-commit: проверка треков (site/modules/**) за секунду; ставится через `bun install` (prepare).
+pre-commit:
+  commands:
+    modules-check:
+      glob: "site/modules/**"
+      run: bun run modules:check
