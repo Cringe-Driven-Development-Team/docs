@@ -15,12 +15,14 @@ test("every root diagram is on /architecture/ with a heading and a Diagram", () 
   expect(headings).toEqual(ORDER);
 });
 
-test("config: Architecture goes to /architecture/ without target, branch previews only on main", () => {
+test("config: Architecture goes to /architecture/ without target, no branch previews in the nav", () => {
   const config = readFileSync("site/.vitepress/config.mts", "utf8");
   expect(config).toContain("link: '/architecture/'");
   expect(config).toContain("activeMatch: '^/architecture/'");
   expect(config).not.toContain("link: '/diagrams/'");
-  expect(config).toMatch(/SITE_BASE === '\/docs\/'[\s\S]{0,200}link: '\/branches\/'/);
+  // Список превью веток — по ссылке из README, в меню сайта его нет
+  expect(config).not.toContain("link: '/branches/'");
+  expect(config).not.toContain("Превью веток");
   const home = readFileSync("site/index.md", "utf8");
   expect(home).not.toContain("/diagrams/");
   expect(home).toContain("/architecture/");

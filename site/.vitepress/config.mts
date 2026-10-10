@@ -27,8 +27,6 @@ export default withMermaid(
         { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
-        // Список превью веток есть только на сборке main (Pages); target — страница вне VitePress.
-        ...(SITE_BASE === '/docs/' ? [{ text: 'Превью веток', link: '/branches/', target: '_self' }] : []),
       ],
       sidebar: {
         '/modules/': moduleSidebar(modules),
