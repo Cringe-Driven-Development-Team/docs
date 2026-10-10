@@ -258,7 +258,7 @@ async function main(argv: string[]): Promise<number> {
   }
 
   await Bun.write(join(previewsDir, "index.html"), renderPreviewsIndex(entries));
-  // Список превью — в меню сайта («Превью веток»); старый индекс — только переадресация.
+  // Список превью — по ссылке из README (раздел «Превью веток»); старый индекс — только переадресация.
   await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
   await writePageRedirects();
   if (process.env.GITHUB_STEP_SUMMARY) {
