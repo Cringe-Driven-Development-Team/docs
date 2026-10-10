@@ -20,10 +20,10 @@ export type SpawnError = { code: string | undefined; message: string };
 export type NodeProbeResult = { error: SpawnError } | { exitCode: number | null; stdout: string };
 export type NodeVerdict = "ok" | "missing" | "bun" | "failed";
 
-// Корень и один уровень подпапок. Пути с "/" на любой платформе: они попадают
-// в аргументы CLI, сообщения и HTML.
+// Корень и два уровня подпапок (схемы плана модуля — diagrams/modules/<N>/). Пути с "/"
+// на любой платформе: они попадают в аргументы CLI, сообщения и HTML.
 export function listDiagrams(dir = DIAGRAMS_DIR): string[] {
-  const names = [...new Bun.Glob("*.json").scanSync(dir), ...new Bun.Glob("*/*.json").scanSync(dir)];
+  const names = ["*.json", "*/*.json", "*/*/*.json"].flatMap((pattern) => [...new Bun.Glob(pattern).scanSync(dir)]);
   return names.map((name) => `${dir}/${name}`.replaceAll("\\", "/")).sort();
 }
 

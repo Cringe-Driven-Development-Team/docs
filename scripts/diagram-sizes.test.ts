@@ -1,8 +1,10 @@
 import { expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
 import { parsePngSize } from "../site/.vitepress/png-size.ts";
-import { canvasSize } from "../site/.vitepress/theme/diagrams.data.ts";
+import { canvasSize, names } from "../site/.vitepress/theme/diagrams.data.ts";
 
 test("canvasSize: half of the PNG, rounded; no PNG — 1600×900 and not rendered", () => {
   expect(canvasSize({ width: 3272, height: 1464 })).toEqual({ width: 1636, height: 732, rendered: true });
@@ -18,6 +20,19 @@ test("parsePngSize: IHDR width and height; short or non-PNG bytes — undefined"
   expect(parsePngSize(bytes)).toEqual({ width: 3744, height: 2264 });
   expect(parsePngSize(bytes.slice(0, 20))).toBeUndefined();
   expect(parsePngSize(new TextEncoder().encode("not a png at all, just some text"))).toBeUndefined();
+});
+
+test("names: root diagrams plus PNGs of every hidden folder, including modules/2", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sizes-"));
+  try {
+    for (const file of ["bff/ci.png", "modules/2/bff-contract.png", "modules/2/notes.txt"]) {
+      mkdirSync(join(dir, file, ".."), { recursive: true });
+      writeFileSync(join(dir, file), "");
+    }
+    expect(names(dir)).toEqual([...ROOT_NAMES, "bff/ci", "modules/2/bff-contract"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 const built = existsSync("dist/deployment.png");
