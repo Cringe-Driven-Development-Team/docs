@@ -1,6 +1,4 @@
-<h1 align="center">docs</h1>
-
-<p align="center">Документация и архитектура проекта «Colab» команды «Cringe Driven Development»</p>
+<h1 align="center">Документация и архитектура проекта «Colab» команды «Cringe Driven Development»</h1>
 
 <p align="center">
 <a href="https://cringe-driven-development-team.github.io/docs/"><img src="https://img.shields.io/badge/Сайт-5C73E7?style=for-the-badge&logo=vitepress&logoColor=white" alt="Сайт документации"></a>
