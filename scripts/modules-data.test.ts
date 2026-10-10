@@ -10,14 +10,14 @@ const october = modules.find((m) => m.id === "2");
 
 test("real site/modules is valid", () => {
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(42);
+  expect(october?.tracks).toHaveLength(40);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, people).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
-    YarikMix: [7, 10],
+    YarikMix: [7, 8],
     blackHATred: [2, 5],
-    ManInTheCoat: [12, 0],
-    iRedTea: [13, 0],
+    ManInTheCoat: [11, 0],
+    iRedTea: [12, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
@@ -31,21 +31,27 @@ test("UI Kit: modals and snackbars are subtracks linked to React Portal API", ()
     expect(byId.get(id)?.partOf, id).toBe("ui-kit");
     expect(byId.get(id)?.related.map((r) => r.track), id).toEqual(["react-portal"]);
   }
-  for (const id of ["ui-kit", "react-hook-form"]) {
+  for (const id of ["ui-kit"]) {
     expect(byId.get(id)?.do.map((d) => d.login), id).toEqual(["ManInTheCoat"]);
     expect(byId.get(id)?.mentors, id).toEqual(["YarikMix"]);
   }
 });
 
-test("Zod: schemas from the Go contract by Orval, a monorepo package for BFF and forms", () => {
+test("Orval stays in module 2, Zod and React Hook Form move to module 3", () => {
   const byId = new Map(october!.tracks.map((t) => [t.id, t]));
   expect(byId.get("bff")?.subtasks.map((s) => s.title)).toEqual(["tRPC (server)", "Turborepo + bun workspaces"]);
   expect(byId.get("bff-orval")?.partOf).toBe("bff");
-  expect(byId.get("bff-orval")?.do.map((d) => d.login)).toEqual(["iRedTea"]);
-  expect(byId.get("zod")?.do.map((d) => d.login)).toEqual(["iRedTea"]);
-  expect(byId.get("zod")?.mentors).toEqual(["YarikMix"]);
-  expect(byId.get("zod")?.related.map((r) => r.track)).toEqual(["bff-orval", "front-libs"]);
-  expect(byId.get("react-hook-form")?.related.map((r) => r.track)).toEqual(["zod", "front-libs"]);
+  expect(byId.has("zod")).toBe(false);
+  expect(byId.has("react-hook-form")).toBe(false);
+  const third = modules.find((m) => m.id === "3");
+  expect(third?.title).toBe("Модуль №3");
+  expect(third?.sprints).toEqual(["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"]);
+  const tracks = new Map(third!.tracks.map((t) => [t.id, t]));
+  expect([...tracks.keys()].sort()).toEqual(["react-hook-form", "zod"]);
+  expect(tracks.get("zod")?.do.map((d) => d.login)).toEqual(["iRedTea"]);
+  expect(tracks.get("react-hook-form")?.do.map((d) => d.login)).toEqual(["ManInTheCoat"]);
+  for (const t of tracks.values()) expect(t.mentors, t.id).toEqual(["YarikMix"]);
+  expect(tracks.get("react-hook-form")?.related.map((r) => r.track)).toEqual(["zod"]);
 });
 
 test("real october module has four sprints", () => {
