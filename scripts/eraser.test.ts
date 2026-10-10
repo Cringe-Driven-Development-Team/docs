@@ -9,7 +9,7 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-test("listDiagrams returns *.json from the root and one level of subfolders, sorted, with / separators", async () => {
+test("listDiagrams returns *.json from the root and two levels of subfolders, sorted, with / separators", async () => {
   const dir = mkdtempSync(join(tmpdir(), "eraser-"));
   tempDirs.push(dir);
   await Bun.write(join(dir, "b.json"), "{}");
@@ -17,8 +17,9 @@ test("listDiagrams returns *.json from the root and one level of subfolders, sor
   await Bun.write(join(dir, "notes.md"), "");
   await Bun.write(join(dir, "frozen", "a.json"), "{}");
   await Bun.write(join(dir, "frozen", "deep", "c.json"), "{}");
+  await Bun.write(join(dir, "frozen", "deep", "deeper", "d.json"), "{}");
   const prefix = dir.replaceAll("\\", "/");
-  expect(listDiagrams(dir)).toEqual([`${prefix}/a.json`, `${prefix}/b.json`, `${prefix}/frozen/a.json`]);
+  expect(listDiagrams(dir)).toEqual([`${prefix}/a.json`, `${prefix}/b.json`, `${prefix}/frozen/a.json`, `${prefix}/frozen/deep/c.json`]);
 });
 
 test("renderBatches groups files by folder: root into dist, a subfolder into dist/<folder>", () => {
@@ -26,6 +27,12 @@ test("renderBatches groups files by folder: root into dist, a subfolder into dis
   expect(renderBatches(files)).toEqual([
     { outDir: "dist", files: ["diagrams/ci.json", "diagrams/cd.json"] },
     { outDir: "dist/frozen-k3s", files: ["diagrams/frozen-k3s/cd.json", "diagrams/frozen-k3s/ci.json"] },
+  ]);
+});
+
+test("renderBatches: a two-level folder goes into dist/<folder>/<sub>", () => {
+  expect(renderBatches(["diagrams/modules/2/bff-contract.json"])).toEqual([
+    { outDir: "dist/modules/2", files: ["diagrams/modules/2/bff-contract.json"] },
   ]);
 });
 

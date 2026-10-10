@@ -18,7 +18,7 @@ export function canvasSize(png: ImageSize | undefined): DiagramSize {
 }
 
 // Схемы корня и замороженных папок, у которых есть PNG в dist/.
-function names(dist: string): string[] {
+export function names(dist: string): string[] {
   const hidden = HIDDEN_FOLDERS.flatMap((folder) => {
     const dir = join(dist, folder);
     if (!existsSync(dir)) return [];

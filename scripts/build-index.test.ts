@@ -20,6 +20,10 @@ test("diagramNames: names of *.json relative to the dir without extension, subfo
   expect(diagramNames(dir)).toEqual(["cd", "ci", "frozen-k3s/ci"]);
 });
 
+test("indexNames drops diagrams of modules/2", () => {
+  expect(indexNames(["ci", "modules/2/bff-contract", "bff/ci"])).toEqual(["ci"]);
+});
+
 test("indexNames: drops diagrams of bff/ and frozen-k3s/, keeps the root and other folders", () => {
   expect(indexNames(["cd", "bff/ci", "frozen-k3s/ci", "bff-next/ci", "other/ci"])).toEqual(["cd", "bff-next/ci", "other/ci"]);
 });

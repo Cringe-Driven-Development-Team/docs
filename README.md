@@ -18,8 +18,8 @@
 
 ## Диаграммы
 
-Архитектурные схемы как код. Исходники в `diagrams/*.json` и
-`diagrams/<папка>/*.json` в формате
+Архитектурные схемы как код. Исходники в `diagrams/*.json`,
+`diagrams/<папка>/*.json` и `diagrams/modules/<N>/*.json` в формате
 [eraser-diagrams](https://github.com/eraserlabs/eraser-diagrams), рендер
 в HTML и PNG, публикация на GitHub Pages:
 **https://cringe-driven-development-team.github.io/docs/**
@@ -66,6 +66,14 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | [cd](https://cringe-driven-development-team.github.io/docs/frozen-k3s/cd.html) | CD через Argo CD, канарейка, превью на Coolify |
 | [integrations](https://cringe-driven-development-team.github.io/docs/frozen-k3s/integrations.html) | Внешние сервисы и кто с ними говорит |
 | [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
+
+Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
+(`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через
+`<Diagram name="modules/2/<имя>" />`:
+
+| Схема | Что показывает |
+| --- | --- |
+| [bff-contract](https://cringe-driven-development-team.github.io/docs/modules/2/bff-contract.html) | Контракт BFF: генерация кода, что коммитится, что работает в проде |
 
 Схемы MVP показаны на странице «Архитектура» (`/docs/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент

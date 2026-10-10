@@ -1,5 +1,6 @@
 // Схемы корня diagrams/ — они на странице «Архитектура»; тест сверяет список с diagrams/*.json.
 export const ROOT_NAMES: readonly string[] = ["cd", "ci", "contract", "deployment", "frontend", "infra"];
 
-// Замороженные папки: в меню не показываются, их схемы открываются по прямому адресу.
-export const HIDDEN_FOLDERS: readonly string[] = ["bff", "frozen-k3s"];
+// Папки вне раздела «Архитектура»: замороженные варианты и схемы планов модулей. Схемы открываются
+// по прямому адресу и встраиваются в страницы через <Diagram>.
+export const HIDDEN_FOLDERS: readonly string[] = ["bff", "frozen-k3s", "modules/2"];

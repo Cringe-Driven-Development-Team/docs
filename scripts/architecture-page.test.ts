@@ -26,6 +26,12 @@ test("config: Architecture goes to /architecture/ without target, branch preview
   expect(home).toContain("/architecture/");
 });
 
+test("docs tell where module plan diagrams live", () => {
+  for (const file of ["README.md", "CLAUDE.md", ".claude/skills/eraser-diagrams/SKILL.md"]) {
+    expect(readFileSync(file, "utf8"), file).toContain("diagrams/modules/");
+  }
+});
+
 test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => {
   for (const file of ["README.md", "CLAUDE.md"]) {
     const text = readFileSync(file, "utf8");

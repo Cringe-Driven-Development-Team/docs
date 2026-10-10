@@ -23,26 +23,11 @@ Go от Orval и свой клиент tRPC) и [Авторизация и CSRF]
 
 ## Как устроен контракт
 
-```mermaid
-flowchart TB
-    D["Apidog: контракт Go"] -->|"spec/openapi.json"| O["Orval"]
-    O -.->|"goZod"| Z["@cdd/schemas"]
-    subgraph CL["Клиент"]
-        F["Формы"] --> T["@cdd-team/trpc-client"]
-    end
-    subgraph SRV["BFF"]
-        R["Роутер tRPC"] --> GC["Клиент к Go"]
-    end
-    O -.->|"goApi"| GC
-    Z ~~~ F
-    Z -.->|"вход процедур"| R
-    R -.->|"типы AppRouter"| T
-    T -->|"/api/trpc"| R
-    GC -->|"/api/v1"| G["Go API"]
-    D -.->|"make generate"| G
-```
+<Diagram name="modules/2/bff-contract" />
 
-Сплошные стрелки — вызовы во время работы, пунктирные — генерация, импорт и типы при сборке.
+Слева — то, что делается до выкатки, на ноуте или в CI. Orval — генератор кода, а не сервис: команда
+`bun run sync` запускает его, и он пишет файлы в репозиторий. В проде его нет. Справа — то, что работает в
+проде. Между ними — сгенерированные файлы: они попадают в сборку BFF и Go.
 
 - **Генерация.** Контракт Go ведётся в Apidog: Go забирает его через `make generate`, монорепа — через
   `bun run sync` в `spec/openapi.json`. Orval строит по нему клиент к Go для BFF и zod-схемы операций в пакет
