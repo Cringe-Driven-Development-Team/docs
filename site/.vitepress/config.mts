@@ -15,6 +15,8 @@ export default withMermaid(
     description: 'Документация команды: архитектура и безопасность сервиса cellestial.ru',
     base: SITE_BASE,
     cleanUrls: true,
+    // Логотип cellestial.ru (src/assets/logo-mark.svg фронта). VitePress не добавляет base к ссылкам в head.
+    head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }]],
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
     vite: { ssr: { noExternal: ['@tp-prepare/vitepress-module-graph'] } },
     markdown: { codeCopyButtonTitle: 'Копировать код' },
