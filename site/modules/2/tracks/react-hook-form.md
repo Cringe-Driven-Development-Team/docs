@@ -5,6 +5,8 @@ do:
   ManInTheCoat: front
 mentors: [YarikMix]
 related:
+  - track: zod
+    why: "Формы валидируются схемами из @cdd-team/schemas через zodResolver"
   - track: front-libs
-    why: "Связан с монорепой библиотек"
+    why: "Обвязка форм — пакетом монорепы библиотек"
 ---

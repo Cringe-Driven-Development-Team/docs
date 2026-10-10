@@ -2,9 +2,11 @@
 title: "Zod"
 area: front
 do:
-  ManInTheCoat: front
+  iRedTea: front
 mentors: [YarikMix]
 related:
+  - track: bff-orval
+    why: "Схемы генерирует Orval из контракта Go"
   - track: front-libs
-    why: "Связан с монорепой библиотек"
+    why: "Пакет схем @cdd-team/schemas — в монорепе: его импортируют BFF и клиент"
 ---
