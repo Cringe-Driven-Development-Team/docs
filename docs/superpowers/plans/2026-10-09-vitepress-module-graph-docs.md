@@ -27,7 +27,7 @@
 
 - Docker-сборка (`bun run build`): пакет ставится в контейнере из npm по `bun.lock`, `.vue` из `node_modules` компилируются (полная сборка в задаче 1).
 - Превью ветки (`/docs/branches/<ветка>/…`): ссылки пакета идут через `withBase`, граф и шапки открываются под префиксом (Chrome в задаче 2 — превью PR).
-- Хук агента в worktree без `node_modules`: `bunx module-graph check --hook` не ломает правку (ручная проверка в задаче 2).
+- Хук агента в worktree без `node_modules`: хук не ломает правку (ручная проверка в задаче 2).
 - Старый `board.json` из артефакта Pages, снятый ещё `scripts/board.ts`: пакет читает его без предупреждения (задача 2, подложенный снимок).
 - Тёмная тема: цвета направлений — `dark` из `module-graph.yaml` (сравнение снимков в задаче 2 в обеих темах).
 
@@ -59,7 +59,7 @@
 
 **Interfaces:** Consumes: bin `module-graph` из пакета.
 
-- [ ] **Step 1:** `pages.yml`, задача `board`: `bunx module-graph board sync` и `bunx module-graph board snapshot board.json`, `env` — только `GH_TOKEN`; остальное в задаче не меняется. `.claude/settings.json`: команда `bunx module-graph check --hook`.
+- [ ] **Step 1:** `pages.yml`, задача `board`: `./node_modules/.bin/module-graph board sync` и `./node_modules/.bin/module-graph board snapshot board.json`, `env` — только `GH_TOKEN`; остальное в задаче не меняется. `.claude/settings.json`: команда `p="$CLAUDE_PROJECT_DIR/node_modules/@tp-prepare/vitepress-module-graph/dist/cli.mjs"; [ -f "$p" ] || exit 0; bun "$p" check --hook` (без `bunx`: посторонний пакет `module-graph`).
 - [ ] **Step 2:** README, раздел про треки: файлы папки модулей — `people.yaml` и `module-graph.yaml` (по строке, что в них), ссылка на README пакета на npm; пример трека остаётся (его проверяет тест задачи 1).
 - [ ] **Step 3:** хук вручную: правка трека в worktree с `do: {}` через Edit → агент получает `do — нужен хотя бы один исполнитель…`; после исправления — молча; правка `README.md` — молча. Пробную правку откатить.
 - [ ] **Step 4:** `bun run typecheck && bun run test && DIAGRAMS_NATIVE=1 bun run build` → `site ok`; `scripts/workflows.test.ts` среди зелёных.

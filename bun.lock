@@ -10,7 +10,6 @@
         "@panzoom/panzoom": "4.6.2",
         "@tp-prepare/vitepress-module-graph": "0.1.0",
         "@types/bun": "1.4.2",
-        "force-graph": "1.51.4",
         "gray-matter": "4.0.3",
         "lefthook": "2.1.14",
         "mermaid": "^11",

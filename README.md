@@ -174,7 +174,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
   `pages` или запись без файла роняют сборку.
 
 В `vitepress dev` новый трек появится на графе сразу, а в меню — после перезапуска
-dev-сервера. Формат и проверки — `docs/superpowers/specs/2026-10-08-module-graph-design.md`.
+dev-сервера. Формат и проверки — [README пакета](https://github.com/TP-Prepare/frontend-packages/blob/main/packages/vitepress-module-graph/README.md) и `docs/superpowers/specs/2026-10-09-vitepress-module-graph-design.md` §4.
 
 #### Задачи с доски
 

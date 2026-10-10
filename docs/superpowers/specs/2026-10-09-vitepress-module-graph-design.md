@@ -223,9 +223,9 @@ board: { owner: Cringe-Driven-Development-Team, project: 1, field: Трек }
 - `site/modules/people.ts` → `people.yaml`; добавить `module-graph.yaml` со всеми разделами явно, включая `board`.
 - Подключение — §3.2; `--cdd-area-*` из `custom.css` убрать.
 - `package.json`: `@tp-prepare/vitepress-module-graph` точной версией, `modules:check` → `module-graph check`.
-- `pages.yml`, задача `board`: `bunx module-graph board sync` и `bunx module-graph board snapshot board.json`; поток
+- `pages.yml`, задача `board`: `./node_modules/.bin/module-graph board sync` и `./node_modules/.bin/module-graph board snapshot board.json`; поток
   артефакта прежний (`board.json` → `site/modules` в задаче `build`); `BOARD_*` не передаются.
-- `.claude/settings.json`: `bunx module-graph check --hook`. `lefthook.yml` и `ci.yml` вызывают `bun run modules:check`
+- `.claude/settings.json`: `bun node_modules/@tp-prepare/vitepress-module-graph/dist/cli.mjs check --hook`. Решение: хук и задача `board` вызывают только установленный CLI (не `bunx`): существует посторонний нескоупленный npm-пакет `module-graph`, и `bunx` скачал бы его при отсутствии локального bin; хук молча пропускается, если пакет не установлен. Файл `cli.mjs` запускается через bun, потому что на Windows `.bin` содержит shim-ы `.exe`/`.bunx`. `lefthook.yml` и `ci.yml` вызывают `bun run modules:check`
   и не меняются.
 - README: раздел про треки — файлы `people.yaml` и `module-graph.yaml`, ссылка на README пакета. Тест «пример из
   README разбирается» остаётся и разбирает пример через пакет.
