@@ -16,8 +16,8 @@ test("real site/modules is valid", () => {
   expect(load).toEqual({
     YarikMix: [7, 10],
     blackHATred: [2, 5],
-    ManInTheCoat: [16, 0],
-    iRedTea: [8, 0],
+    ManInTheCoat: [13, 0],
+    iRedTea: [11, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
