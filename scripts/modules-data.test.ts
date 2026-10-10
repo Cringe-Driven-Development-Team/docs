@@ -54,6 +54,16 @@ test("Orval stays in module 2, Zod and React Hook Form move to module 3", () => 
   expect(tracks.get("react-hook-form")?.related.map((r) => r.track)).toEqual(["zod"]);
 });
 
+test("Figma: screens of profile and notebook are subtasks linked to their tracks", () => {
+  const figma = october!.tracks.find((t) => t.id === "figma");
+  expect(figma?.do.map((d) => d.login)).toEqual(["ManInTheCoat"]);
+  expect(figma?.subtasks.map((s) => s.title)).toEqual([
+    "Экран профиля",
+    "Экран блокнота: импорт и исполнение файла, поиск по файлу",
+  ]);
+  expect(figma?.related.map((r) => r.track)).toEqual(["profile", "file-exec", "file-search"]);
+});
+
 test("real october module has four sprints", () => {
   expect(october?.sprints).toEqual(["Sprint 5", "Sprint 6", "Sprint 7", "Sprint 8"]);
 });
