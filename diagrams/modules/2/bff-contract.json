@@ -1,0 +1,48 @@
+{
+  "entities": [
+    { "tag": "Group", "id": "apidog", "color": "green", "x": 0, "y": 200, "width": 180, "height": 220, "isContainer": true, "title": { "text": "Apidog", "icon": "cloud" } },
+    { "tag": "Icon", "id": "apidog-contract", "x": 40, "y": 240, "containerId": "apidog", "icon": "file-code", "texts": [{ "text": "Контракт Go" }] },
+
+    { "tag": "Group", "id": "laptop", "color": "white", "x": 260, "y": 0, "width": 560, "height": 560, "isContainer": true, "title": { "text": "Генерация кода: ноут или CI", "icon": "laptop" } },
+    { "tag": "Group", "id": "fe-sync", "color": "white", "styleMode": "plain", "x": 280, "y": 40, "width": 520, "height": 200, "containerId": "laptop", "isContainer": true, "title": { "text": "bun run sync (монорепа фронта)" } },
+    { "tag": "Activity", "id": "fe-export", "x": 320, "y": 100, "width": 120, "height": 60, "containerId": "fe-sync", "texts": [{ "text": "apidog: выгрузка контракта" }] },
+    { "tag": "Icon", "id": "fe-spec", "x": 480, "y": 80, "containerId": "fe-sync", "icon": "file-code", "texts": [{ "text": "spec/openapi.json" }] },
+    { "tag": "Activity", "id": "fe-orval", "x": 640, "y": 100, "width": 120, "height": 60, "containerId": "fe-sync", "texts": [{ "text": "Orval — генератор кода" }] },
+    { "tag": "Group", "id": "be-generate", "color": "white", "styleMode": "plain", "x": 280, "y": 400, "width": 520, "height": 140, "containerId": "laptop", "isContainer": true, "title": { "text": "make generate (бэк)" } },
+    { "tag": "Activity", "id": "be-export", "x": 320, "y": 460, "width": 140, "height": 60, "containerId": "be-generate", "texts": [{ "text": "cmd/apidog" }] },
+    { "tag": "Activity", "id": "be-codegen", "x": 640, "y": 460, "width": 120, "height": 60, "containerId": "be-generate", "texts": [{ "text": "oapi-codegen" }] },
+
+    { "tag": "Group", "id": "github", "color": "purple", "x": 900, "y": 0, "width": 220, "height": 600, "isContainer": true, "title": { "text": "GitHub", "icon": "github" } },
+    { "tag": "Group", "id": "repo-frontend", "color": "purple", "styleMode": "plain", "x": 920, "y": 40, "width": 180, "height": 340, "containerId": "github", "isContainer": true, "title": { "text": "Монорепа фронта" } },
+    { "tag": "Icon", "id": "gen-schemas", "x": 960, "y": 80, "containerId": "repo-frontend", "icon": "typescript", "texts": [{ "text": "zod-схемы: пакет @cdd/schemas" }] },
+    { "tag": "Icon", "id": "gen-go-client", "x": 960, "y": 240, "containerId": "repo-frontend", "icon": "typescript", "texts": [{ "text": "клиент к Go: apps/bff/src/go" }] },
+    { "tag": "Group", "id": "repo-backend", "color": "purple", "styleMode": "plain", "x": 920, "y": 400, "width": 180, "height": 180, "containerId": "github", "isContainer": true, "title": { "text": "Бэкенд" } },
+    { "tag": "Icon", "id": "gen-go-server", "x": 960, "y": 440, "containerId": "repo-backend", "icon": "go", "texts": [{ "text": "api.gen.go" }] },
+
+    { "tag": "Group", "id": "vps", "color": "blue", "x": 1200, "y": 0, "width": 260, "height": 600, "isContainer": true, "title": { "text": "Прод: VPS в Selectel", "icon": "server" } },
+    { "tag": "Group", "id": "bff", "color": "blue", "styleMode": "plain", "x": 1220, "y": 40, "width": 220, "height": 340, "containerId": "vps", "isContainer": true, "title": { "text": "BFF" } },
+    { "tag": "Icon", "id": "bff-router", "x": 1280, "y": 80, "containerId": "bff", "icon": "server", "texts": [{ "text": "Роутер tRPC: проверяет вход zod-схемами" }] },
+    { "tag": "Icon", "id": "bff-go-client", "x": 1280, "y": 240, "containerId": "bff", "icon": "typescript", "texts": [{ "text": "Клиент к Go" }] },
+    { "tag": "Icon", "id": "go-api", "x": 1280, "y": 440, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
+
+    { "tag": "Icon", "id": "client", "x": 1560, "y": 80, "icon": "globe", "texts": [{ "text": "Браузер: формы и свой tRPC-клиент" }] },
+
+    { "tag": "Legend", "id": "legend", "x": 1740, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+  ],
+  "connections": [
+    { "tag": "Relationship", "from": "apidog-contract", "to": "fe-export", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "apidog-contract", "to": "be-export", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "fe-export", "to": "fe-spec", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "fe-spec", "to": "fe-orval", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "fe-orval", "to": "gen-schemas", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "fe-orval", "to": "gen-go-client", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "be-export", "to": "be-codegen" },
+    { "tag": "Relationship", "from": "be-codegen", "to": "gen-go-server", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "gen-schemas", "to": "bff-router", "label": "в сборку" },
+    { "tag": "Relationship", "from": "gen-go-client", "to": "bff-go-client", "label": "в сборку" },
+    { "tag": "Relationship", "from": "gen-go-server", "to": "go-api", "label": "в сборку" },
+    { "tag": "Relationship", "from": "client", "to": "bff-router", "label": "/api/trpc", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "bff-router", "to": "bff-go-client" },
+    { "tag": "Relationship", "from": "bff-go-client", "to": "go-api", "label": "/api/v1" }
+  ]
+}
