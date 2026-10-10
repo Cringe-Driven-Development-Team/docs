@@ -286,3 +286,23 @@ test("клиент tRPC — пакет @cdd-team/trpc-client из frontend-packa
     expect(md, file).not.toContain("пакет `packages/trpc-client`");
   }
 });
+
+test("в треке есть схема контракта: генерация, BFF и клиент", () => {
+  const part = section(readFileSync(TRACK, "utf8"), "Как устроен контракт");
+  const diagram = /```mermaid\n([\s\S]*?)```/.exec(part)?.[1] ?? "";
+  for (const needle of ["Apidog", "spec/openapi.json", "Orval", "@cdd/schemas", "@cdd-team/zod", "@cdd-team/react-hook-form", "@cdd-team/trpc-client", "AppRouter", "/api/trpc", "Go API"]) {
+    expect(diagram, needle).toContain(needle);
+  }
+  expect(diagram).toContain("-.->");
+  expect(part).toContain("./bff/contract");
+});
+
+test("«Контракт»: схемы Orval — пакет @cdd/schemas для BFF и форм клиента", () => {
+  const md = readFileSync(CONTRACT, "utf8");
+  expect(section(md, "Источники правды")).toContain("@cdd/schemas");
+  expect(section(md, "Генерация Orval")).toContain("target: 'packages/schemas/src/zod.ts'");
+  expect(md).not.toContain("apps/bff/src/go/zod.ts");
+  expect(section(md, "Роутер")).toContain("from '@cdd/schemas'");
+  const client = section(md, "Клиент");
+  for (const needle of ["@cdd-team/zod", "@cdd-team/react-hook-form", "resolve", "alias"]) expect(client, needle).toContain(needle);
+});

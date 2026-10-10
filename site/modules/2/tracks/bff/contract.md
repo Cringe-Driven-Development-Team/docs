@@ -6,7 +6,7 @@ title: Контракт
 
 Между клиентом и BFF контракт — роутер tRPC: процедуры описаны кодом в BFF, фронт получает их типы
 импортом `@cdd/bff` из монорепы фронта. Между BFF и Go контракт остаётся spec-first: Go описан в Apidog, а клиент к нему и
-схемы входа генерирует Orval.
+схемы входа генерирует Orval. Схемы лежат в пакете `@cdd/schemas`: их берут и роутер BFF, и формы клиента.
 
 ## Источники правды
 
@@ -15,22 +15,23 @@ flowchart LR
     D["Apidog: контракт Go"] -->|"make generate: cmd/apidog и oapi-codegen"| G["Go: сервер"]
     D -->|"bun run sync"| S["spec/openapi.json"]
     S -->|"Orval goApi"| GA["apps/bff/src/go: клиент к Go"]
-    S -->|"Orval goZod"| GZ["apps/bff/src/go: zod-схемы"]
+    S -->|"Orval goZod"| GZ["packages/schemas: @cdd/schemas"]
     GA --> R["apps/bff/src/router: роутер tRPC"]
     GZ --> R
     R -->|"import type AppRouter"| C["apps/client"]
+    GZ -->|"формы, zod заменён на @cdd-team/zod"| C
 ```
 
 - **Go ↔ BFF.** Контракт Go ведётся в Apidog. Go забирает его сам: `make generate` в бэкенде запускает
   [`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31)
   и затем `oapi-codegen`. Монорепа выгружает тот же контракт в `spec/openapi.json`, и Orval строит по нему
-  клиент к Go и zod-схемы операций для BFF.
+  клиент к Go для BFF и zod-схемы операций в пакет `@cdd/schemas`.
 - **Клиент ↔ BFF.** Контракт — роутер tRPC в `apps/bff/src/router/`. Клиент делает
   `import type { AppRouter } from '@cdd/bff'`: в бандл не попадает ни строчки кода BFF.
 - **Apidog описывает только Go.** Публичного OpenAPI у BFF нет: overlay, публичный контракт и их проверки
   в CI больше не нужны.
 - **Валидация.** Вход процедур проверяют zod-схемы, сгенерированные из контракта Go: правило поля
-  описано один раз, в Apidog. Выход не проверяется во время работы — типы ответа берутся из Orval, а Go —
+  описано один раз, в Apidog. Те же схемы проверяют формы клиента ещё до запроса — см. [«Клиент»](#клиент). Выход не проверяется во время работы — типы ответа берутся из Orval, а Go —
   наш сервис.
 
 ## Что меняется в контракте Go
@@ -77,11 +78,11 @@ export default defineConfig({
       override: { mutator: { path: 'apps/bff/src/go/fetch.ts', name: 'bearerFetch' } }, // Authorization: Bearer <access>; на двух VPS ещё X-BFF-Key
     },
   },
-  // zod-схемы входа процедур
+  // zod-схемы операций — пакет @cdd/schemas: вход процедур BFF и формы клиента
   goZod: {
     input: { target: 'spec/openapi.json' },
     output: {
-      target: 'apps/bff/src/go/zod.ts',
+      target: 'packages/schemas/src/zod.ts',
       client: 'zod',
     },
   },
@@ -118,7 +119,7 @@ access. Как устроены `createContext` и обе процедуры —
 // apps/bff/src/router/cells.ts
 import { z } from 'zod';
 import { authedProcedure, router } from '../trpc';
-import { CreateCellBody } from '../go/zod';
+import { CreateCellBody } from '@cdd/schemas';
 
 export const cells = router({
   create: authedProcedure
@@ -270,6 +271,22 @@ test('ошибка createContext на батч — один конверт дл�
 ```
 
 *Пример; так же проверяются одиночный вызов и конверт ошибки процедуры.*
+
+**Формы.** Поля форм клиент проверяет теми же схемами, что и BFF, ещё до запроса: схемы — из
+`@cdd/schemas`, формы — на своём `@cdd-team/react-hook-form`. Orval пишет в схемах `import { z } from 'zod'`,
+а сторонних runtime-библиотек на клиенте нет, поэтому сборка клиента подменяет `zod` на свой
+`@cdd-team/zod`; оба пакета живут в `frontend-packages`:
+
+```ts
+// apps/client/vite.config.ts
+export default defineConfig({
+  resolve: { alias: { zod: '@cdd-team/zod' } },
+});
+```
+
+`@cdd-team/zod` реализует то подмножество API zod, которое выдаёт Orval goZod; BFF на сервере работает на
+настоящем `zod`. Ошибку `zodError` от BFF (см. [«Ошибки»](#ошибки)) форма раскладывает по полям так же, как
+свою.
 
 ## Какие вызовы BFF принимает
 

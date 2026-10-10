@@ -6,7 +6,7 @@ do:
 mentors: [YarikMix]
 related:
   - track: bff-orval
-    why: "Схемы генерирует Orval из контракта Go"
+    why: "Схемы от Orval на клиенте работают на своём Zod"
   - track: front-libs
-    why: "Пакет схем @cdd-team/schemas — в монорепе: его импортируют BFF и клиент"
+    why: "Свой Zod — пакет @cdd-team/zod в монорепе библиотек"
 ---

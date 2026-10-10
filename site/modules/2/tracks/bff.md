@@ -21,6 +21,38 @@ pages: [contract, auth]
 Go от Orval и свой клиент tRPC) и [Авторизация и CSRF](./bff/auth) (сессия, refresh и защита от CSRF по
 сценариям).
 
+## Как устроен контракт
+
+```mermaid
+flowchart TB
+    D["Apidog: контракт Go"] -->|"spec/openapi.json"| O["Orval"]
+    O -.->|"goZod"| Z["@cdd/schemas"]
+    subgraph CL["Клиент: zod → @cdd-team/zod"]
+        F["Формы: @cdd-team/react-hook-form"] --> T["@cdd-team/trpc-client"]
+    end
+    subgraph SRV["BFF"]
+        R["Роутер tRPC"] --> GC["Клиент к Go"]
+    end
+    O -.->|"goApi"| GC
+    Z -.->|"поля форм"| F
+    Z -.->|"вход процедур"| R
+    R -.->|"типы AppRouter"| T
+    T -->|"/api/trpc"| R
+    GC -->|"/api/v1"| G["Go API"]
+    D -.->|"make generate"| G
+```
+
+Сплошные стрелки — вызовы во время работы, пунктирные — генерация, импорт и типы при сборке.
+
+- **Генерация.** Контракт Go ведётся в Apidog: Go забирает его через `make generate`, монорепа — через
+  `bun run sync` в `spec/openapi.json`. Orval строит по нему клиент к Go для BFF и zod-схемы операций в пакет
+  `@cdd/schemas`.
+- **BFF.** Процедуры роутера проверяют вход схемами из `@cdd/schemas` на настоящем `zod` и ходят в Go
+  клиентом от Orval.
+- **Клиент.** Свой клиент tRPC берёт типы процедур из `import type AppRouter` — кода BFF в бандле нет.
+  Формы на своём React Hook Form проверяют поля теми же схемами ещё до запроса; сборка клиента подменяет
+  `zod` на свой `@cdd-team/zod`. Подробности — [«Контракт»](./bff/contract).
+
 ## Было и стало
 
 Сейчас токены кладёт в cookie сам Go API, а браузер получает их напрямую:

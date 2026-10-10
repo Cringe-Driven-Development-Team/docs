@@ -6,7 +6,7 @@ do:
 mentors: [YarikMix]
 related:
   - track: zod
-    why: "Формы валидируются схемами из @cdd-team/schemas через zodResolver"
+    why: "Формы валидируются схемами из @cdd/schemas"
   - track: front-libs
-    why: "Обвязка форм — пакетом монорепы библиотек"
+    why: "Свой React Hook Form — пакет @cdd-team/react-hook-form в монорепе библиотек"
 ---
