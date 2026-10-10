@@ -8,12 +8,11 @@ mentors: [YarikMix]
 subtasks:
   - "tRPC (server)"
   - "Turborepo + bun workspaces"
-  - "Orval"
 pages: [contract, auth]
 ---
 
 «tRPC (server)» — роутер tRPC в BFF, делает Валентин; остальные подзадачи — со стороны фронта (Денис).
-Свой клиент tRPC — подтрек [«tRPC (client)»](./trpc-client): пакет `@cdd-team/trpc-client` живёт в монорепе фронтовых
+Клиент к Go и zod-схемы из контракта Go — подтрек [«Orval»](./bff-orval). Свой клиент tRPC — подтрек [«tRPC (client)»](./trpc-client): пакет `@cdd-team/trpc-client` живёт в монорепе фронтовых
 библиотек [`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages).
 
 Браузер ходит только в BFF (Backend for Frontend): клиент вызывает процедуры tRPC, а BFF ходит в Go API.
