@@ -27,14 +27,14 @@ Go от Orval и свой клиент tRPC) и [Авторизация и CSRF]
 flowchart TB
     D["Apidog: контракт Go"] -->|"spec/openapi.json"| O["Orval"]
     O -.->|"goZod"| Z["@cdd/schemas"]
-    subgraph CL["Клиент: zod → @cdd-team/zod"]
-        F["Формы: @cdd-team/react-hook-form"] --> T["@cdd-team/trpc-client"]
+    subgraph CL["Клиент"]
+        F["Формы"] --> T["@cdd-team/trpc-client"]
     end
     subgraph SRV["BFF"]
         R["Роутер tRPC"] --> GC["Клиент к Go"]
     end
     O -.->|"goApi"| GC
-    Z -.->|"поля форм"| F
+    Z ~~~ F
     Z -.->|"вход процедур"| R
     R -.->|"типы AppRouter"| T
     T -->|"/api/trpc"| R
@@ -50,8 +50,11 @@ flowchart TB
 - **BFF.** Процедуры роутера проверяют вход схемами из `@cdd/schemas` на настоящем `zod` и ходят в Go
   клиентом от Orval.
 - **Клиент.** Свой клиент tRPC берёт типы процедур из `import type AppRouter` — кода BFF в бандле нет.
-  Формы на своём React Hook Form проверяют поля теми же схемами ещё до запроса; сборка клиента подменяет
-  `zod` на свой `@cdd-team/zod`. Подробности — [«Контракт»](./bff/contract).
+  Формы проверяют поля своими правилами, как сейчас, а ошибку входа от BFF (`zodError`) раскладывают по полям.
+  Подробности — [«Контракт»](./bff/contract).
+
+В [модуле №3](/modules/3/) появляется свой `zod`: на нём работают и BFF, и формы клиента, а схемы из
+`@cdd/schemas` проверяют поля ещё до запроса.
 
 ## Было и стало
 
