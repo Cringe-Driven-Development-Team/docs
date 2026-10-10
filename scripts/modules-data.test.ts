@@ -10,17 +10,34 @@ const october = modules.find((m) => m.id === "2");
 
 test("real site/modules is valid", () => {
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(35);
+  expect(october?.tracks).toHaveLength(41);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, people).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
-    YarikMix: [7, 7],
+    YarikMix: [7, 10],
     blackHATred: [2, 5],
-    ManInTheCoat: [10, 0],
+    ManInTheCoat: [16, 0],
     iRedTea: [8, 0],
     GrayMouse9: [5, 0],
     MrDuckVC: [4, 0],
   });
+});
+
+test("UI Kit: modals and snackbars are subtracks linked to React Portal API", () => {
+  const byId = new Map(october!.tracks.map((t) => [t.id, t]));
+  expect(byId.get("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG"]);
+  expect(byId.get("react-portal")?.partOf).toBe("react");
+  for (const id of ["ui-kit-modals", "ui-kit-snackbars"]) {
+    expect(byId.get(id)?.partOf, id).toBe("ui-kit");
+    expect(byId.get(id)?.related.map((r) => r.track), id).toEqual(["react-portal"]);
+  }
+  for (const id of ["ui-kit", "zod", "react-hook-form"]) {
+    expect(byId.get(id)?.do.map((d) => d.login), id).toEqual(["ManInTheCoat"]);
+    expect(byId.get(id)?.mentors, id).toEqual(["YarikMix"]);
+  }
+  for (const id of ["zod", "react-hook-form"]) {
+    expect(byId.get(id)?.related.map((r) => r.track), id).toEqual(["front-libs"]);
+  }
 });
 
 test("real october module has four sprints", () => {
