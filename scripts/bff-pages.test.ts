@@ -288,16 +288,15 @@ test("клиент tRPC — пакет @cdd-team/trpc-client из frontend-packa
 });
 
 test("в треке есть схема контракта: генерация, BFF и клиент", () => {
-  const part = section(readFileSync(TRACK, "utf8"), "Как устроен контракт");
-  const diagram = /```mermaid\n([\s\S]*?)```/.exec(part)?.[1] ?? "";
-  for (const needle of ["Apidog", "spec/openapi.json", "Orval", "@cdd/schemas", "@cdd-team/trpc-client", "AppRouter", "/api/trpc", "Go API"]) {
-    expect(diagram, needle).toContain(needle);
-  }
-  // свой zod — модуль №3: в модуле №2 схемы работают только в BFF
-  expect(diagram).not.toContain("@cdd-team/zod");
+  const md = readFileSync(TRACK, "utf8");
+  const part = section(md, "Как устроен контракт");
+  expect(part).toContain('<Diagram name="modules/2/bff-contract" />');
+  expect(part).not.toContain("```mermaid");
+  // имена целей конфига Orval — только на подстранице «Контракт», рядом с самим конфигом
+  expect(md).not.toMatch(/goZod|goApi/);
   expect(part).toContain("/modules/3/");
-  expect(diagram).toContain("-.->");
   expect(part).toContain("./bff/contract");
+  expect(part).toContain("@cdd/schemas");
 });
 
 test("«Контракт»: схемы Orval — пакет @cdd/schemas для BFF, свой zod — модуль №3", () => {
