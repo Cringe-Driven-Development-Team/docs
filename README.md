@@ -1,6 +1,20 @@
-# docs
+<h1 align="center">Документация и архитектура проекта «Colab» команды «Cringe Driven Development»</h1>
 
-Документация сервиса Cringe-Driven-Development-Team.
+<p align="center">
+<a href="https://cringe-driven-development-team.github.io/docs/"><img src="https://img.shields.io/badge/Сайт-5C73E7?style=for-the-badge&logo=vitepress&logoColor=white" alt="Сайт документации"></a>
+<a href="https://cringe-driven-development-team.github.io/docs/architecture/"><img src="https://img.shields.io/badge/Архитектура-EC2C40?style=for-the-badge&logo=eraser&logoColor=white" alt="Диаграммы архитектуры"></a>
+<a href="https://cringe-driven-development-team.github.io/docs/modules/"><img src="https://img.shields.io/badge/Модули-2EA44F?style=for-the-badge&logo=roadmapdotsh&logoColor=white" alt="Планы модулей"></a>
+<a href="https://github.com/orgs/Cringe-Driven-Development-Team/projects/1"><img src="https://img.shields.io/badge/Доска_задач-1F6FEB?style=for-the-badge&logo=github&logoColor=white" alt="Доска задач"></a>
+<br>
+<a href="https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Фронтенд-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="Репозиторий фронтенда"></a>
+<a href="https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Бэкенд-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Репозиторий бэкенда"></a>
+<a href="https://github.com/Cringe-Driven-Development-Team"><img src="https://img.shields.io/badge/Организация-24292E?style=for-the-badge&logo=github&logoColor=white" alt="Организация команды"></a>
+</p>
+
+<p align="center"><img src=".github/assets/nanami.gif" alt="" width="426"></p>
+
+**Содержание:** [Диаграммы](#диаграммы) · [Локально](#локально) · [Как править](#как-править) ·
+[Сайт](#сайт) · [Модули](#модули) · [Превью веток](#превью-веток)
 
 ## Диаграммы
 
