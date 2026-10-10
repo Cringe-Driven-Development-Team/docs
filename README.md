@@ -7,6 +7,7 @@
 <a href="https://cringe-driven-development-team.github.io/docs/architecture/"><img src="https://img.shields.io/badge/Архитектура-EC2C40?style=for-the-badge&logo=eraser&logoColor=white" alt="Диаграммы архитектуры"></a>
 <a href="https://cringe-driven-development-team.github.io/docs/modules/"><img src="https://img.shields.io/badge/Модули-2EA44F?style=for-the-badge&logo=roadmapdotsh&logoColor=white" alt="Планы модулей"></a>
 <a href="https://github.com/orgs/Cringe-Driven-Development-Team/projects/1"><img src="https://img.shields.io/badge/Доска_задач-1F6FEB?style=for-the-badge&logo=github&logoColor=white" alt="Доска задач"></a>
+<br>
 <a href="https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Фронтенд-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="Репозиторий фронтенда"></a>
 <a href="https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Бэкенд-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Репозиторий бэкенда"></a>
 <a href="https://github.com/Cringe-Driven-Development-Team"><img src="https://img.shields.io/badge/Организация-24292E?style=for-the-badge&logo=github&logoColor=white" alt="Организация команды"></a>
