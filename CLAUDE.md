@@ -35,13 +35,13 @@
 - `bun run render`, `bun run build`, `bun run site` идут в Docker-образе из `Dockerfile`, как в CI:
   Docker Desktop должен быть запущен. Без Docker — `DIAGRAMS_NATIVE=1 bun run <скрипт>`.
 - Перед коммитом: `bun run typecheck && bun run test && bun run build`.
-- Треки (`site/modules/**`) проверяет `bun run modules:check` — за секунду; у агента — хук после правки.
+- Треки (`site/modules/**`) проверяет `bun run modules:check` — за секунду; у агента — хук после правки (`bun node_modules/@tp-prepare/vitepress-module-graph/dist/cli.mjs check --hook`; без установленного пакета молчит).
 - `bun run site` из git worktree в Docker не работает — запускай из основного клона.
 - Сайт — VitePress в `site/` (главная `/docs/`), схемы — страница `/docs/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
   на конкретном SHA.
-- Модули — `site/modules/`: люди в `people.ts`, модуль — каталог с номером (`2`), трек — `tracks/<id>.md`; формат и
-  проверки — `docs/superpowers/specs/2026-10-08-module-graph-design.md` §4.3–4.4. Подстраницы трека —
+- Модули — `site/modules/`: люди в `people.yaml`, настройки графа в `module-graph.yaml`, модуль — каталог с номером (`2`), трек — `tracks/<id>.md`; формат и
+  проверки — [README пакета](https://github.com/TP-Prepare/frontend-packages/blob/main/packages/vitepress-module-graph/README.md) и `docs/superpowers/specs/2026-10-09-vitepress-module-graph-design.md` §4. Подстраницы трека —
   `tracks/<id>/<page>.md` и список `pages` во frontmatter трека
   (`docs/superpowers/specs/2026-10-08-bff-into-module-design.md` §5). Меню модулей строится само.
 

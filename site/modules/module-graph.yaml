@@ -1,0 +1,11 @@
+# Настройки графа модулей; значения по умолчанию записаны явно.
+route: /modules/
+areas:
+  front:     { label: Фронт,               color: "#2c6bd4", dark: "#5f95f1" }
+  back:      { label: Бэк,                 color: "#13886b", dark: "#3fbc9c" }
+  devops:    { label: DevOps,              color: "#b07710", dark: "#e1a740" }
+  fullstack: { label: Фронт + бэк,         color: "#c9445a", dark: "#e47584", needs: [front, back] }
+  team:      { label: Инструменты команды, color: "#6b7c1c", dark: "#a9ba5c" }
+sides: { front: фронт, back: бэк, devops: devops, team: команда }
+sprint: "Sprint {n}"
+board: { owner: Cringe-Driven-Development-Team, project: 1, field: Трек }

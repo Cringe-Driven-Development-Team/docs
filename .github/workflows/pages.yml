@@ -43,11 +43,11 @@ jobs:
         with:
           bun-version: 1.3.13
       - run: bun install --frozen-lockfile
-      - run: bun scripts/board.ts sync
+      - run: ./node_modules/.bin/module-graph board sync
         env:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
       - if: "!cancelled()"
-        run: bun scripts/board.ts snapshot board.json
+        run: ./node_modules/.bin/module-graph board snapshot board.json
         env:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
       - uses: actions/upload-artifact@v4

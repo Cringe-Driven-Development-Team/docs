@@ -2,8 +2,7 @@
 import { defineConfig } from 'vitepress';
 import { withMermaid } from 'vitepress-plugin-mermaid';
 import { fileURLToPath } from 'node:url';
-import { moduleSidebar } from './modules.ts';
-import { readModules } from './modules-read.ts';
+import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/node';
 import { SITE_BASE } from './site.ts';
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
@@ -16,6 +15,8 @@ export default withMermaid(
     description: 'Документация команды: архитектура и безопасность сервиса cellestial.ru',
     base: SITE_BASE,
     cleanUrls: true,
+    // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
+    vite: { ssr: { noExternal: ['@tp-prepare/vitepress-module-graph'] } },
     markdown: { codeCopyButtonTitle: 'Копировать код' },
     // Сообщения не сжимаются под ширину колонки, длинные переносятся; широкая схема прокручивается.
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },

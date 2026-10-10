@@ -1,14 +1,14 @@
 // Тема по умолчанию; на главной старый якорь индекса схем (#contract) переводит на «Архитектуру».
-// Модули: граф и архив — глобальные компоненты, шапка трека — в слоте doc-before.
+// Модули: граф, архив и шапка трека — из пакета @tp-prepare/vitepress-module-graph (шапка — в слоте doc-before).
 import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
 import { h, nextTick, onMounted, watch } from 'vue';
 import { HIDDEN_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
 import { diagramTarget } from '../site.ts';
-import ModuleGraph from './components/ModuleGraph.vue';
-import ModuleList from './components/ModuleList.vue';
-import TrackMeta from './components/TrackMeta.vue';
+import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-graph/theme';
+import '@tp-prepare/vitepress-module-graph/style.css';
+import { data } from '../../modules/modules.data.ts';
 import Diagram from './Diagram.vue';
 import './custom.css';
 
@@ -43,10 +43,9 @@ function scrollToHashAfterMermaid(): void {
 
 const theme: Theme = {
   extends: DefaultTheme,
-  Layout: () => h(DefaultTheme.Layout, null, { 'doc-before': () => h(TrackMeta) }),
+  Layout: () => h(DefaultTheme.Layout, null, { 'doc-before': trackHeader }),
   enhanceApp({ app }) {
-    app.component('ModuleGraph', ModuleGraph);
-    app.component('ModuleList', ModuleList);
+    installModuleGraph(app, data);
     app.component('Diagram', Diagram);
   },
   setup() {
