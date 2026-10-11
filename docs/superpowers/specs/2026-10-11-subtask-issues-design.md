@@ -77,13 +77,14 @@ export type Subtask = { title: string; issues: string[]; subtasks: SubtaskLeaf[]
 Новая чистая функция в `src/model/board.ts`:
 
 ```ts
-export type SubtaskIssue = { ref: string; task: BoardTask | null; url: string };
-export function subtaskIssues(issues: readonly string[], byRef: Readonly<Record<string, BoardTask>>, owner: string): SubtaskIssue[];
+export type SubtaskIssue = { ref: string; task: BoardTask | null; url: string | null };
+export function subtaskIssues(issues: readonly string[], byRef: Readonly<Record<string, BoardTask>>, owner: string | null): SubtaskIssue[];
 ```
 
 - Задача в снимке: `task` — она, `url` — `task.url`.
 - Задачи нет: `task: null`, `url` — `https://github.com/<владелец>/<репо>/issues/<N>`, где владелец берётся из
-  номера, а если его там нет — `owner` (`config.board.owner`).
+  номера, а если его там нет — `owner` (`config.board.owner`). Без `board` в конфиге (`owner === null`) и без
+  владельца в номере — `url: null`, номер показывается текстом.
 - Порядок — как в `issues`.
 
 ## 5. Карточка подзадачи
