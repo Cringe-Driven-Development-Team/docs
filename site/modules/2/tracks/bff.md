@@ -42,6 +42,17 @@ Go от Orval и свой клиент tRPC) и [Авторизация и CSRF]
 В [модуле №3](/modules/3/) появляется свой `zod`: на нём работают и BFF, и формы клиента, а схемы из
 `@cdd/schemas` проверяют поля ещё до запроса.
 
+## Монорепа фронта
+
+<Diagram name="modules/2/frontend-monorepo" />
+
+Задача [frontend#44](https://github.com/Cringe-Driven-Development-Team/frontend/issues/44) делает репозиторий
+фронта монорепой на bun workspaces и Turborepo. В ней три workspace: `apps/client` — React-приложение,
+`apps/bff` — BFF на Hono с роутером tRPC и `packages/schemas` — пакет `@cdd/schemas` с zod-схемами. Клиент берёт
+у BFF только типы (`import type AppRouter`), кода BFF в его бандле нет. Turborepo сначала собирает зависимости
+(`^build`), повторный запуск без изменений берёт из кеша. Как Orval генерирует клиент к Go и схемы — в
+[«Как устроен контракт»](#как-устроен-контракт).
+
 ## Было и стало
 
 Сейчас токены кладёт в cookie сам Go API, а браузер получает их напрямую:

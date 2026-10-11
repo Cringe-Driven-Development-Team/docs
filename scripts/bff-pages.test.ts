@@ -309,3 +309,16 @@ test("«Контракт»: схемы Orval — пакет @cdd/schemas для 
   for (const needle of ["src/utils/credentials.ts", "zodError", "/modules/3/tracks/zod", "/modules/3/tracks/react-hook-form"]) expect(client, needle).toContain(needle);
   expect(md).not.toContain("resolve: { alias");
 });
+
+test("в треке есть схема монорепы фронта", () => {
+  const md = readFileSync(TRACK, "utf8");
+  const part = section(md, "Монорепа фронта");
+  expect(part).toContain('<Diagram name="modules/2/frontend-monorepo" />');
+  expect(part).toContain("#как-устроен-контракт");
+  expect(part).toContain("frontend/issues/44");
+  // порядок разделов: контракт → монорепа → было и стало
+  const at = (title: string) => md.indexOf(`\n## ${title}\n`);
+  expect(at("Как устроен контракт")).toBeGreaterThan(-1);
+  expect(at("Как устроен контракт")).toBeLessThan(at("Монорепа фронта"));
+  expect(at("Монорепа фронта")).toBeLessThan(at("Было и стало"));
+});

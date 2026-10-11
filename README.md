@@ -74,6 +74,7 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | Схема | Что показывает |
 | --- | --- |
 | [bff-contract](https://cringe-driven-development-team.github.io/docs/modules/2/bff-contract.html) | Контракт BFF: генерация кода, что коммитится, что работает в проде |
+| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, импорты между ними, пакеты npm, задачи Turborepo |
 
 Схемы MVP показаны на странице «Архитектура» (`/docs/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
