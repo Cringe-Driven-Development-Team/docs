@@ -350,3 +350,13 @@ test("подстраница «Сервис BFF»: ссылки на сосед�
     expect(readFileSync(file, "utf8"), heading).toContain(heading);
   }
 });
+
+test("подстраница «Сервис BFF»: шаблоны Ansible в строковом коде не съедает Vue", () => {
+  // В блоках ``` VitePress ставит v-pre, а `{{ … }}` в строке Vue подставляет как выражение — имя пропадает.
+  const prose = readFileSync(SERVICE, "utf8").replace(/^```[\s\S]*?^```/gm, "");
+  const inline = prose.match(/`[^`\n]+`/g) ?? [];
+  expect(inline.filter((code) => code.includes("{{"))).toEqual([]);
+  expect(prose).toContain("APP_ORIGIN=https://{{ app_domain }}");
+  // в HTML-теге markdown-it-emoji превращает «:$» в 😒 — двоеточие пишется сущностью
+  expect(prose.match(/<code v-pre>[^<]*<\/code>/g)?.filter((code) => code.includes(":$")) ?? []).toEqual([]);
+});

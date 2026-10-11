@@ -190,7 +190,7 @@ BFF встаёт на ту же VPS рядом с Go API по образцу с�
 
 **Compose** —
 [`ansible/roles/app/templates/compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L18-L52).
-Сервис `api` там берёт образ `{{ app_backend_image }}:${BACKEND_IMAGE_TAG:?…}`
+Сервис `api` там берёт образ <code v-pre>{{ app_backend_image }}&#58;${BACKEND_IMAGE_TAG:?…}</code>
 ([`:19`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L19)),
 ждёт `postgres` через `depends_on`
 ([`:42`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L42))
@@ -225,8 +225,9 @@ BFF встаёт на ту же VPS рядом с Go API по образцу с�
 - `PORT` не задаётся: в общем `.env` уже есть `PORT=8080` для `api`, а BFF хватает значения по
   умолчанию `3000`.
 - `app_bff_image` — в `roles/app/defaults/main.yml` рядом с `app_backend_image`, имя образа — то, что
-  публикует CI. `BFF_IMAGE_TAG` и `SESSION_KEY` попадают в `.env` через `env.j2`, как `BACKEND_IMAGE_TAG`
-  и секреты Go.
+  публикует CI. `BFF_IMAGE_TAG`, `SESSION_KEY` и `APP_ORIGIN` попадают в `.env` через `env.j2`, как
+  `BACKEND_IMAGE_TAG` и секреты Go; `APP_ORIGIN` там — <code v-pre>APP_ORIGIN=https://{{ app_domain }}</code>
+  (`app_domain` уже есть в `group_vars/all/vars.yml`). Без любой из трёх compose не поднимет сервис.
 
 **Caddy** —
 [`ansible/roles/caddy/templates/Caddyfile.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L5-L15).
