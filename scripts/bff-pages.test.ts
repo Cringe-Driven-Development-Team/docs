@@ -5,6 +5,8 @@ import { existsSync, readFileSync } from "node:fs";
 export const TRACK = "site/modules/2/tracks/bff.md";
 export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
+export const SERVICE = "site/modules/2/tracks/bff/service.md";
+// SERVICE сюда не входит: проверка «нет IPv4» ниже ловит 127.0.0.1 из healthcheck; свои проверки — в тестах «Сервис BFF».
 export const BFF_PAGES = [TRACK, CONTRACT, AUTH];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
@@ -36,7 +38,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [contract, auth]");
+  expect(md).toContain("pages: [contract, auth, service]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -321,4 +323,30 @@ test("в треке есть схема монорепы фронта", () => {
   expect(at("Как устроен контракт")).toBeGreaterThan(-1);
   expect(at("Как устроен контракт")).toBeLessThan(at("Монорепа фронта"));
   expect(at("Монорепа фронта")).toBeLessThan(at("Было и стало"));
+});
+
+test("подстраница «Сервис BFF»: разделы по порядку и ключевые решения", () => {
+  const md = readFileSync(SERVICE, "utf8");
+  expect(md).toContain("title: Сервис BFF");
+  const order = ["## Каркас", "## Переменные окружения", "## Health check", "## Ошибки и логи", "## Сборка и образ", "## На проде"].map((h) => md.indexOf(h));
+  expect(order.every((i) => i > 0)).toBe(true);
+  expect([...order].sort((a, b) => a - b)).toEqual(order);
+  for (const s of ["fetchRequestHandler", "@trpc/server/adapters/fetch", "resHeaders", "/health", "SESSION_KEY", "APP_ORIGIN", "GO_API_URL", "oven/bun:", "-alpine", "bun build", "--target bun", "bff:3000", "service_healthy", "BFF_IMAGE_TAG", "frontend/issues/4"]) expect(md, s).toContain(s);
+  expect(md).not.toContain("@hono/trpc-server");
+  // значения ключа нет; строка compose `SESSION_KEY: ${SESSION_KEY:?…}` — подстановка, не значение
+  expect(md).not.toMatch(/(?<!\$\{)SESSION_KEY\s*[:=]\s*(?!\$\{SESSION_KEY:)\S{8,}/);
+  // реальных адресов нет; 127.0.0.1 — адрес healthcheck внутри контейнера
+  expect(md.replaceAll("127.0.0.1", "")).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
+});
+
+test("подстраница «Сервис BFF»: ссылки на соседей ведут на существующие заголовки", () => {
+  const md = readFileSync(SERVICE, "utf8");
+  for (const [link, file, heading] of [
+    ["./contract#роутер", CONTRACT, "## Роутер"],
+    ["./auth#как-bff-обрабатывает-вызов", AUTH, "## Как BFF обрабатывает вызов"],
+    ["../bff#переключение", TRACK, "## Переключение"],
+  ] as const) {
+    expect(md, link).toContain(link);
+    expect(readFileSync(file, "utf8"), heading).toContain(heading);
+  }
 });
