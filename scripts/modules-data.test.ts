@@ -26,6 +26,7 @@ test("real site/modules is valid", () => {
 test("UI Kit: modals and snackbars are subtracks linked to React Portal API", () => {
   const byId = new Map(october!.tracks.map((t) => [t.id, t]));
   expect(byId.get("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG"]);
+  expect(byId.get("react")?.subtasks.map((s) => s.issues)).toEqual([["react#15"], ["react#3"]]);
   expect(byId.get("react-portal")?.partOf).toBe("react");
   for (const id of ["ui-kit-modals", "ui-kit-snackbars"]) {
     expect(byId.get(id)?.partOf, id).toBe("ui-kit");

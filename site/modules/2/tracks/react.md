@@ -5,6 +5,8 @@ do:
   ManInTheCoat: front
 mentors: [YarikMix]
 subtasks:
-  - "refs"
-  - "Поддержка SVG"
+  - title: "refs"
+    issues: [react#15]
+  - title: "Поддержка SVG"
+    issues: [react#3]
 ---
