@@ -5,8 +5,10 @@ do:
   ManInTheCoat: front
 mentors: [blackHATred]
 subtasks:
-  - "Просмотр кода, только чтение"
-  - "Ячейки code и text"
+  - title: "Просмотр кода, только чтение"
+    issues: [frontend#37]
+  - title: "Ячейки code и text"
+    issues: [frontend#38]
 ---
 
 Свой редактор растягиваем на два модуля. Саша предлагал ввод уже во втором модуле — по опыту прошлого

@@ -26,6 +26,14 @@ test("real site/modules is valid", () => {
   expect(october?.tracks.some((t) => t.partOf === "file-search")).toBe(false);
 });
 
+test("Monaco: subtasks are linked to their frontend issues", () => {
+  const monaco = october?.tracks.find((t) => t.id === "monaco");
+  expect(monaco?.subtasks.map((s) => [s.title, s.issues])).toEqual([
+    ["Просмотр кода, только чтение", ["frontend#37"]],
+    ["Ячейки code и text", ["frontend#38"]],
+  ]);
+});
+
 test("UI Kit: modals and snackbars are subtracks linked to React Portal API", () => {
   const byId = new Map(october!.tracks.map((t) => [t.id, t]));
   expect(byId.get("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG"]);
