@@ -34,6 +34,13 @@ test("Monaco: subtasks are linked to their frontend issues", () => {
   ]);
 });
 
+test("Денис: devops and BFF subtasks are linked to their issues", () => {
+  const issues = (track: string, title: string) => october?.tracks.find((t) => t.id === track)?.subtasks.find((s) => s.title === title)?.issues;
+  expect(issues("bff", "Turborepo + bun workspaces")).toEqual(["frontend#44"]);
+  expect(issues("redis-sessions", "Redis в compose через Ansible")).toEqual(["infra#46"]);
+  expect(issues("xss", "CSP и nosniff в Caddy")).toEqual(["infra#47"]);
+});
+
 test("UI Kit: modals and snackbars are subtracks linked to React Portal API", () => {
   const byId = new Map(october!.tracks.map((t) => [t.id, t]));
   expect(byId.get("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG"]);
