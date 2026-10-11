@@ -1,8 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
+import { HIDDEN_FOLDERS, ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
 import { diagramNames, indexNames, MODULE_MOVES, moduleRedirects, PAGE_REDIRECTS, pngSize, pngSizes, renderPageRedirect, renderRedirect, writePageRedirects } from "./build-index.ts";
 
 const tempDirs: string[] = [];
@@ -21,11 +21,11 @@ test("diagramNames: names of *.json relative to the dir without extension, subfo
 });
 
 test("indexNames drops diagrams of modules/2", () => {
-  expect(indexNames(["ci", "modules/2/bff-contract", "bff/ci"])).toEqual(["ci"]);
+  expect(indexNames(["ci", "modules/2/bff-contract", "frozen-k3s/ci"])).toEqual(["ci"]);
 });
 
-test("indexNames: drops diagrams of bff/ and frozen-k3s/, keeps the root and other folders", () => {
-  expect(indexNames(["cd", "bff/ci", "frozen-k3s/ci", "bff-next/ci", "other/ci"])).toEqual(["cd", "bff-next/ci", "other/ci"]);
+test("indexNames: drops diagrams of frozen-k3s/ and modules/2/, keeps the root and other folders", () => {
+  expect(indexNames(["cd", "frozen-k3s/ci", "modules/2/x", "bff-next/ci", "other/ci"])).toEqual(["cd", "bff-next/ci", "other/ci"]);
 });
 
 // Минимальный заголовок PNG: сигнатура, длина и тип чанка IHDR, ширина, высота.
@@ -61,10 +61,10 @@ test("pngSizes: sizes only for diagrams whose PNG exists, subfolder names keep t
   const dir = mkdtempSync(join(tmpdir(), "index-"));
   tempDirs.push(dir);
   await Bun.write(join(dir, "ci.png"), pngHeader(10, 20));
-  await Bun.write(join(dir, "bff", "cd.png"), pngHeader(30, 40));
-  expect(await pngSizes(["ci", "bff/cd", "contract"], dir)).toEqual({
+  await Bun.write(join(dir, "frozen-k3s", "cd.png"), pngHeader(30, 40));
+  expect(await pngSizes(["ci", "frozen-k3s/cd", "contract"], dir)).toEqual({
     ci: { width: 10, height: 20 },
-    "bff/cd": { width: 30, height: 40 },
+    "frozen-k3s/cd": { width: 30, height: 40 },
   });
 });
 
@@ -88,26 +88,37 @@ test("renderRedirect: noindex, link to architecture/ and a script that follows d
   expect(html).toContain('["ci","contract"]');
   expect(followRedirect(html, "#ci")).toBe("../architecture/#ci");
   expect(followRedirect(html, "#bff/ci")).toBe("../bff/ci.html");
+  expect(followRedirect(html, "#frozen-k3s/ci")).toBe("../frozen-k3s/ci.html");
   expect(followRedirect(html, "#frozen-k3s/cd")).toBe("../frozen-k3s/cd.html");
   expect(followRedirect(html, "")).toBe("../architecture/");
   expect(followRedirect(html, "#nope")).toBe("../architecture/");
 });
 
-test("PAGE_REDIRECTS: old BFF pages to the track, relative targets", () => {
+test("PAGE_REDIRECTS: old BFF pages to the track, removed bff diagrams to the current ones, relative targets", () => {
   expect(PAGE_REDIRECTS).toEqual([
     { file: "bff/index.html", target: "../modules/2/tracks/bff" },
     { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
     { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
+    { file: "bff/deployment.html", target: "../deployment.html" },
+    { file: "bff/ci.html", target: "../ci.html" },
+    { file: "bff/cd.html", target: "../cd.html" },
+    { file: "bff/infra.html", target: "../infra.html" },
+    { file: "bff/frontend-monorepo.html", target: "../modules/2/frontend-monorepo.html" },
   ]);
   for (const { target } of PAGE_REDIRECTS) expect(target.startsWith("/")).toBe(false);
 });
 
-test("PAGE_REDIRECTS do not collide with frozen bff diagrams", () => {
-  const frozen = diagramNames()
-    .filter((name) => name.startsWith("bff/"))
-    .map((name) => `${name}.html`);
-  expect(frozen.length).toBeGreaterThan(0);
-  for (const { file } of PAGE_REDIRECTS) expect(frozen).not.toContain(file);
+test("PAGE_REDIRECTS: frozen bff diagrams lead to existing diagrams", () => {
+  for (const { file, target } of PAGE_REDIRECTS.filter((r) => r.target.endsWith(".html"))) {
+    expect(target.startsWith("/"), file).toBe(false);
+    const name = target.replace(/^(\.\.\/)+/, "").replace(/\.html$/, "");
+    expect(existsSync(`diagrams/${name}.json`), file).toBe(true);
+  }
+});
+
+test("frozen bff folder is gone", () => {
+  expect(HIDDEN_FOLDERS).not.toContain("bff");
+  expect(existsSync("diagrams/bff")).toBe(false);
 });
 
 test("renderPageRedirect keeps the hash and is not indexed", () => {
@@ -121,7 +132,7 @@ test("renderPageRedirect keeps the hash and is not indexed", () => {
   expect(followRedirect(html, "#%D0%B4%D0%B2%D0%B5")).toBe("../modules/2026-10/tracks/bff/auth#%D0%B4%D0%B2%D0%B5");
 });
 
-test("writePageRedirects writes three files", async () => {
+test("writePageRedirects writes every PAGE_REDIRECTS file", async () => {
   const dir = mkdtempSync(join(tmpdir(), "redirects-"));
   tempDirs.push(dir);
   await writePageRedirects(dir);

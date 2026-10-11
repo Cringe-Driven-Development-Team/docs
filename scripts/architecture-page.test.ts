@@ -42,3 +42,9 @@ test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => 
     expect(text, file).toContain("site/architecture/index.md");
   }
 });
+
+test("page has no links to the removed bff diagrams, keeps frozen k3s", () => {
+  const page = readFileSync(PAGE, "utf8");
+  expect(page).not.toContain("../bff/");
+  expect(page).toContain("../frozen-k3s/deployment.html");
+});

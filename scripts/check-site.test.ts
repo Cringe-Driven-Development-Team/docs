@@ -24,12 +24,12 @@ test("htmlPages: skips 404.html, branches/ and the given diagram pages", () => {
     "index.html": "",
     "404.html": "",
     "contract.html": "",
-    "bff/ci.html": "",
+    "frozen-k3s/ci.html": "",
     "branches/x/index.html": "",
     "diagrams/index.html": "",
     "security/csrf/index.html": "",
   });
-  expect(htmlPages(dist, ["contract", "bff/ci"])).toEqual(["diagrams/index.html", "index.html", "security/csrf/index.html"]);
+  expect(htmlPages(dist, ["contract", "frozen-k3s/ci"])).toEqual(["diagrams/index.html", "index.html", "security/csrf/index.html"]);
 });
 
 test("checkSite: broken link, missing anchor and missing image are reported, diagrams/ resolves to its index", () => {

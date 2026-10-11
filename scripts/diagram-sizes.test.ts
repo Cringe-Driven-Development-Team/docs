@@ -25,11 +25,11 @@ test("parsePngSize: IHDR width and height; short or non-PNG bytes — undefined"
 test("names: root diagrams plus PNGs of every hidden folder, including modules/2", () => {
   const dir = mkdtempSync(join(tmpdir(), "sizes-"));
   try {
-    for (const file of ["bff/ci.png", "modules/2/bff-contract.png", "modules/2/notes.txt"]) {
+    for (const file of ["frozen-k3s/ci.png", "modules/2/bff-contract.png", "modules/2/notes.txt"]) {
       mkdirSync(join(dir, file, ".."), { recursive: true });
       writeFileSync(join(dir, file), "");
     }
-    expect(names(dir)).toEqual([...ROOT_NAMES, "bff/ci", "modules/2/bff-contract"]);
+    expect(names(dir)).toEqual([...ROOT_NAMES, "frozen-k3s/ci", "modules/2/bff-contract"]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
