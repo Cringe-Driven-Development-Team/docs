@@ -28,13 +28,11 @@
 (коммит `e8fd4bb`). Спеки и планы в `docs/superpowers/` написаны до переноса,
 адреса в них старые.
 
-Архитектур три. **MVP: одна VPS** это рабочая, с ней идёт вся текущая
+Архитектур две. **MVP: одна VPS** это рабочая, с ней идёт вся текущая
 работа: одна VPS с Caddy, Go API и Postgres, фронт ходит в Go API напрямую;
 дизайн в `docs/superpowers/specs/2026-09-29-mvp-single-vps-design.md`.
-**BFF: две VPS** заморожена в `diagrams/bff/`, её схемы не правятся; дизайн
-в `docs/superpowers/specs/2026-09-16-mvp-compose-design.md`. **Frozen: k3s**
-заморожена в `diagrams/frozen-k3s/`, её схемы не правятся; дизайн в
-`docs/superpowers/specs/2026-09-15-frontend-monorepo-design.md`.
+**Frozen: k3s** заморожена в `diagrams/frozen-k3s/`, её схемы не правятся;
+дизайн в `docs/superpowers/specs/2026-09-15-frontend-monorepo-design.md`.
 
 MVP (`diagrams/`):
 
@@ -46,16 +44,6 @@ MVP (`diagrams/`):
 | [frontend](https://cringe-driven-development-team.github.io/docs/frontend.html) | Репа клиента, контракт из Apidog, модель релизов |
 | [contract](https://cringe-driven-development-team.github.io/docs/contract.html) | Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
 | [infra](https://cringe-driven-development-team.github.io/docs/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
-
-BFF: две VPS (`diagrams/bff/`):
-
-| Схема | Что показывает |
-| --- | --- |
-| [deployment](https://cringe-driven-development-team.github.io/docs/bff/deployment.html) | Два VPS в Selectel с Docker Compose, S3/CDN, клиент |
-| [ci](https://cringe-driven-development-team.github.io/docs/bff/ci.html) | GitHub-репозитории, CI-пайплайны, GHCR, S3 |
-| [cd](https://cringe-driven-development-team.github.io/docs/bff/cd.html) | CD и откат через ansible-playbook из GitHub Actions |
-| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/bff/frontend-monorepo.html) | Монорепа клиента и BFF, контракт tRPC, модель релизов |
-| [infra](https://cringe-driven-development-team.github.io/docs/bff/infra.html) | Проекты Selectel, стейт Pulumi, домен; две VPS |
 
 Frozen: k3s (`diagrams/frozen-k3s/`):
 
@@ -74,6 +62,7 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | Схема | Что показывает |
 | --- | --- |
 | [bff-contract](https://cringe-driven-development-team.github.io/docs/modules/2/bff-contract.html) | Контракт BFF: генерация кода, что коммитится, что работает в проде |
+| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, импорты между ними, пакеты npm, задачи Turborepo |
 
 Схемы MVP показаны на странице «Архитектура» (`/docs/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
@@ -81,9 +70,9 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 имя в `ROOT_NAMES` (`site/.vitepress/diagram-names.ts`: по нему берутся размеры и переадресуются
 старые якоря) и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/architecture/index.md`:
 тесты `scripts/build-index.test.ts` и `scripts/architecture-page.test.ts` упадут, если чего-то нет. Схема из подпапки
-рендерится в `dist/<папка>/<name>.html` и `.png`. Замороженные `bff/` и `frozen-k3s/`
-(`HIDDEN_FOLDERS` в `site/.vitepress/diagram-names.ts`) в меню не показываются, их схемы
-открываются по ссылкам из таблиц выше.
+рендерится в `dist/<папка>/<name>.html` и `.png`. Замороженная `frozen-k3s/`
+(`HIDDEN_FOLDERS` в `site/.vitepress/diagram-names.ts`) в меню не показывается, её схемы
+открываются по ссылкам из таблицы выше.
 
 ### Локально
 
@@ -135,7 +124,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 [VitePress](https://vitepress.dev/): исходники страниц в `site/`, конфиг и меню в
 `site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/docs/architecture/`), их файлы —
 по прежним адресам `/docs/<name>.html` и `.png`. Старый индекс `/docs/diagrams/` — переадресация:
-`#contract` ведёт на `/docs/architecture/#contract`, `#bff/ci` — на `/docs/bff/ci.html`; так же
+`#contract` ведёт на `/docs/architecture/#contract`, `#frozen-k3s/ci` — на `/docs/frozen-k3s/ci.html`; так же
 главная переводит старые ссылки `/docs/#contract`.
 
 `bun run build` после рендера схем собирает VitePress (`bun run site:vitepress`) и переносит

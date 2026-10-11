@@ -8,12 +8,8 @@ aside: false
 рендер [eraser-diagrams](https://github.com/eraserlabs/eraser-diagrams). Масштаб — кнопками или
 Ctrl/⌘ + колесо, щипок на телефоне; схему можно двигать; «HTML» под схемой открывает её целиком.
 
-Замороженные варианты в меню не показываются, их схемы открываются по прямым адресам:
+Замороженный вариант в меню не показывается, его схемы открываются по прямым адресам:
 
-- BFF на двух VPS: <a href="../bff/deployment.html" target="_self">deployment</a>,
-  <a href="../bff/ci.html" target="_self">ci</a>, <a href="../bff/cd.html" target="_self">cd</a>,
-  <a href="../bff/frontend-monorepo.html" target="_self">frontend-monorepo</a>,
-  <a href="../bff/infra.html" target="_self">infra</a>;
 - k3s: <a href="../frozen-k3s/deployment.html" target="_self">deployment</a>,
   <a href="../frozen-k3s/ci.html" target="_self">ci</a>, <a href="../frozen-k3s/cd.html" target="_self">cd</a>,
   <a href="../frozen-k3s/integrations.html" target="_self">integrations</a>,

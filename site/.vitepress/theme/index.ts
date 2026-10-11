@@ -4,7 +4,7 @@ import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
 import { h, nextTick, onMounted, watch } from 'vue';
-import { HIDDEN_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
+import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
 import { diagramTarget } from '../site.ts';
 import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-graph/theme';
 import '@tp-prepare/vitepress-module-graph/style.css';
@@ -53,7 +53,7 @@ const theme: Theme = {
     onMounted(() => {
       const base = import.meta.env.BASE_URL;
       if (location.pathname === base) {
-        const target = diagramTarget(location.hash, ROOT_NAMES, HIDDEN_FOLDERS);
+        const target = diagramTarget(location.hash, ROOT_NAMES, [...HIDDEN_FOLDERS, ...LEGACY_FOLDERS]);
         if (target) {
           location.replace(base + target);
           return;

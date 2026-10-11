@@ -4,7 +4,7 @@
 // Использование: bun scripts/build-index.ts
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { HIDDEN_FOLDERS, ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
+import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
 import { type ImageSize, parsePngSize } from "../site/.vitepress/png-size.ts";
 import { diagramTarget } from "../site/.vitepress/site.ts";
 import { DIAGRAMS_DIR, listDiagrams } from "./eraser.ts";
@@ -55,7 +55,7 @@ export function renderRedirect(rootNames: readonly string[]): string {
   <p>Схемы переехали на страницу <a href="../architecture/">«Архитектура»</a>.</p>
   <script>
     const diagramTarget = ${String(diagramTarget)};
-    const target = diagramTarget(location.hash, ${JSON.stringify(rootNames)}, ${JSON.stringify(HIDDEN_FOLDERS)});
+    const target = diagramTarget(location.hash, ${JSON.stringify(rootNames)}, ${JSON.stringify([...HIDDEN_FOLDERS, ...LEGACY_FOLDERS])});
     location.replace("../" + (target ?? "architecture/"));
   </script>
 </body>
@@ -72,6 +72,13 @@ export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
   { file: "bff/index.html", target: "../modules/2/tracks/bff" },
   { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
   { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
+  // Схемы замороженного варианта «BFF: две VPS» удалены (спека 2026-10-11-frontend-monorepo-diagram) —
+  // их адреса ведут на актуальные.
+  { file: "bff/deployment.html", target: "../deployment.html" },
+  { file: "bff/ci.html", target: "../ci.html" },
+  { file: "bff/cd.html", target: "../cd.html" },
+  { file: "bff/infra.html", target: "../infra.html" },
+  { file: "bff/frontend-monorepo.html", target: "../modules/2/frontend-monorepo.html" },
 ];
 
 // Модули переехали с YYYY-MM на номер (спека 2026-10-09-module-number-urls §3): старый адрес каждой
@@ -125,6 +132,6 @@ if (import.meta.main) {
   await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
   console.error(`${INDEX_FILE}: переадресация на architecture/`);
   await writePageRedirects();
-  console.error(`dist/bff/: переадресация ${PAGE_REDIRECTS.length} страниц на трек модуля`);
+  console.error(`dist/bff/: переадресация ${PAGE_REDIRECTS.length} старых адресов раздела bff/`);
   console.error(`dist/modules/: переадресация ${moduleRedirects("dist").length} старых адресов модулей`);
 }
