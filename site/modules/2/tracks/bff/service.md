@@ -42,7 +42,7 @@ app.all('/api/trpc/*', (c) =>
   }),
 );
 app.onError((err, c) => {
-  console.error(JSON.stringify({ time: new Date().toISOString(), level: 'error', path: c.req.path, error: String(err) }));
+  console.log(JSON.stringify({ time: new Date().toISOString(), level: 'error', path: c.req.path, error: String(err) }));
   return c.text('Internal Server Error', 500);
 });
 
@@ -80,7 +80,7 @@ const Env = z.object({
     .refine((s) => Buffer.from(s, 'base64').length === 32, 'нужно ровно 32 байта'),
   APP_ORIGIN: z.string().url().refine((s) => new URL(s).origin === s, 'только origin, без пути и слэша'),
   GO_API_URL: z.string().url(),
-  PORT: z.coerce.number().int().default(3000),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000), // пустой PORT иначе стал бы 0
 });
 
 const parsed = Env.safeParse(process.env);
@@ -116,8 +116,9 @@ export const env = parsed.data;
   query string: в `?input=` у query лежит вход процедуры. `procedure` — часть пути после `/api/trpc/`, у
   батча — имена через запятую. `/health` не логируется: compose дёргает его каждые 5 с.
 - **Никогда не логируются:** cookie, `Authorization`, вход процедур, токены, `SESSION_KEY`.
-- **Ошибка процедуры.** `onError` адаптера пишет строку с `procedure`, `code` и `appCode` (`appCode` — тот
-  же, что `errorFormatter` кладёт в ответ, см. [«Ошибки»](./contract#ошибки)). Для
+- **Ошибка процедуры.** `onError` адаптера пишет строку с `procedure`, `code` и `appCode`. Он получает
+  `TRPCError`, а не готовый ответ, поэтому `appCode` считает той же функцией, что и `errorFormatter`
+  (`appCodeOf(error)`, см. [«Ошибки»](./contract#ошибки)). Для
   `INTERNAL_SERVER_ERROR` — ещё стек исключения, только в лог.
 - **Неожиданное исключение** клиент получает как `INTERNAL_SERVER_ERROR` без стека и текста исключения:
   `errorFormatter` подменяет `message` на `Internal Server Error`, а `initTRPC.create` получает
@@ -159,10 +160,12 @@ BFF собирается в один файл: `apps/bff/dist/bff.js`. Зада�
 bun build src/index.ts --target bun --outfile dist/bff.js
 ```
 
-В бандл входят `@cdd/schemas` и клиент к Go от Orval, поэтому `node_modules` в образе не нужен.
+В бандл входят все зависимости: `hono`, `@trpc/server`, `zod`, `@cdd/schemas` и клиент к Go от Orval, поэтому
+`node_modules` в образе не нужен.
 Turborepo собирает зависимости раньше (`^build`), см. [«Монорепа фронта»](../bff#монорепа-фронта).
 
-`apps/bff/Dockerfile`:
+`apps/bff/Dockerfile`; контекст сборки — `apps/bff` (`docker build apps/bff`), поэтому `COPY dist/bff.js .`
+находит бандл:
 
 ```dockerfile
 FROM oven/bun:1.4.3-alpine
@@ -186,7 +189,8 @@ CMD ["bun", "bff.js"]
 
 ## На проде
 
-BFF встаёт на ту же VPS рядом с Go API по образцу сервиса `api`. В `infra` меняются три места.
+BFF встаёт на ту же VPS рядом с Go API по образцу сервиса `api`. В `infra` меняются compose, выкатка в роли
+`app`, Caddy и секреты.
 
 **Compose** —
 [`ansible/roles/app/templates/compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L18-L52).
@@ -222,12 +226,24 @@ BFF встаёт на ту же VPS рядом с Go API по образцу с�
 *Пример.*
 
 - Порты не публикуются: BFF виден только из сети `app`, снаружи — через Caddy.
-- `PORT` не задаётся: в общем `.env` уже есть `PORT=8080` для `api`, а BFF хватает значения по
-  умолчанию `3000`.
+- `PORT` не задаётся, BFF хватает значения по умолчанию `3000`. Ловушка — скопировать `${PORT:-8080}` у
+  `api` как `${PORT:-3000}`: подстановка compose возьмёт `PORT=8080` из общего `.env`.
 - `app_bff_image` — в `roles/app/defaults/main.yml` рядом с `app_backend_image`, имя образа — то, что
   публикует CI. `BFF_IMAGE_TAG`, `SESSION_KEY` и `APP_ORIGIN` попадают в `.env` через `env.j2`, как
   `BACKEND_IMAGE_TAG` и секреты Go; `APP_ORIGIN` там — <code v-pre>APP_ORIGIN=https://{{ app_domain }}</code>
   (`app_domain` уже есть в `group_vars/all/vars.yml`). Без любой из трёх compose не поднимет сервис.
+
+**Выкатка** — задачи роли `app`. Сейчас из GHCR тянется только `api`
+([`pull-api.yml:17-22`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/pull-api.yml#L17-L22)), `caddy` и `postgres` — если их ещё нет
+([`main.yml:25-31`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/main.yml#L25-L31)), а compose стартует с `pull: never`
+([`main.yml:33-39`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/main.yml#L33-L39)). Без правки образа `bff` на VPS нет, и сервис не стартует.
+
+- `pull-api.yml`: `services: [api, bff]` — образ BFF тянется под тем же временным входом в GHCR.
+- Тег — extra var `bff_image_tag` рядом с `backend_image_tag`; в `env.j2` —
+  <code v-pre>BFF_IMAGE_TAG={{ bff_image_tag }}</code>.
+- `validate.yml`: `bff_image_tag` проверяется как `backend_image_tag`, по `^sha-[0-9a-f]{7,40}$`
+  ([`:2-8`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/validate.yml#L2-L8)); `session_key` — рядом с `jwt_secret` в проверке секретов
+  ([`:27-37`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/validate.yml#L27-L37)).
 
 **Caddy** —
 [`ansible/roles/caddy/templates/Caddyfile.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L5-L15).

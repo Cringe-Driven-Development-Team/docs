@@ -180,8 +180,8 @@ flowchart LR
   партнёрам, и для них это `Authorization: Bearer` или OAuth, а не cookie.
 - **BFF → Go** идёт на приватный адрес VPS2. Файрвол VPS2 (security group) пускает порт API и SSH
   только с VPS1; порт Postgres наружу не открыт вообще.
-- **Адрес Go** BFF берёт из переменной `GO_API_URL`: на одной VPS это `http://api:8080`, на двух —
-  `http://<приватный адрес VPS2>:8080`. На VPS2 compose публикует порт API только на приватном
+- **Адрес Go** BFF берёт из переменной `GO_API_URL`: на одной VPS это `http://api:8080/api/v1`, на двух —
+  `http://<приватный адрес VPS2>:8080/api/v1`. На VPS2 compose публикует порт API только на приватном
   интерфейсе.
 - **S2S-ключ.** BFF шлёт заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает значение за постоянное
   время (`crypto/subtle.ConstantTimeCompare`, для ключа фиксированной длины этого достаточно) и

@@ -345,6 +345,10 @@ test("подстраница «Сервис BFF»: ссылки на сосед�
     ["./contract#роутер", CONTRACT, "## Роутер"],
     ["./auth#как-bff-обрабатывает-вызов", AUTH, "## Как BFF обрабатывает вызов"],
     ["../bff#переключение", TRACK, "## Переключение"],
+    ["../bff#монорепа-фронта", TRACK, "## Монорепа фронта"],
+    ["./contract#ошибки", CONTRACT, "## Ошибки"],
+    ["(#переменные-окружения)", SERVICE, "## Переменные окружения"],
+    ["(#на-проде)", SERVICE, "## На проде"],
   ] as const) {
     expect(md, link).toContain(link);
     expect(readFileSync(file, "utf8"), heading).toContain(heading);
@@ -357,6 +361,10 @@ test("подстраница «Сервис BFF»: шаблоны Ansible в с�
   const inline = prose.match(/`[^`\n]+`/g) ?? [];
   expect(inline.filter((code) => code.includes("{{"))).toEqual([]);
   expect(prose).toContain("APP_ORIGIN=https://{{ app_domain }}");
+  // выкатка: роль app тянет образ bff вместе с api и проверяет его тег и ключ
+  const prod = section(readFileSync(SERVICE, "utf8"), "На проде");
+  for (const needle of ["pull-api.yml", "pull: never", "bff_image_tag", "BFF_IMAGE_TAG={{ bff_image_tag }}", "validate.yml", "session_key"]) expect(prod, needle).toContain(needle);
+  expect(prod).not.toContain("три места");
   // в HTML-теге markdown-it-emoji превращает «:$» в 😒 — двоеточие пишется сущностью
   expect(prose.match(/<code v-pre>[^<]*<\/code>/g)?.filter((code) => code.includes(":$")) ?? []).toEqual([]);
 });
