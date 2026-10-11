@@ -46,12 +46,11 @@ Go от Orval и свой клиент tRPC) и [Авторизация и CSRF]
 
 <Diagram name="modules/2/frontend-monorepo" />
 
-Задача [frontend#44](https://github.com/Cringe-Driven-Development-Team/frontend/issues/44) делает репозиторий
-фронта монорепой на bun workspaces и Turborepo. В ней три workspace: `apps/client` — React-приложение,
-`apps/bff` — BFF на Hono с роутером tRPC и `packages/schemas` — пакет `@cdd/schemas` с zod-схемами. Клиент берёт
-у BFF только типы (`import type AppRouter`), кода BFF в его бандле нет. Turborepo сначала собирает зависимости
-(`^build`), повторный запуск без изменений берёт из кеша. Как Orval генерирует клиент к Go и схемы — в
-[«Как устроен контракт»](#как-устроен-контракт).
+[frontend#44](https://github.com/Cringe-Driven-Development-Team/frontend/issues/44) делает репозиторий фронта
+монорепой на bun workspaces и Turborepo из трёх workspace: `apps/client`, `apps/bff` и `packages/schemas`
+(`@cdd/schemas`); библиотеки — пакеты `@cdd-team/*` из npm (монорепа `frontend-packages`). Клиент берёт у BFF
+только типы (`import type AppRouter`), а Turborepo сначала собирает зависимости (`^build`) и повторный запуск
+без изменений берёт из кеша. Генерация клиента к Go и схем — в [«Как устроен контракт»](#как-устроен-контракт).
 
 ## Было и стало
 

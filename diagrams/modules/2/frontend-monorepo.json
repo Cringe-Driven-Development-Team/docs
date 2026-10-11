@@ -1,31 +1,31 @@
 {
   "entities": [
-    { "tag": "Group", "id": "npm", "color": "green", "x": 0, "y": 40, "width": 340, "height": 420, "isContainer": true, "title": { "text": "npm: пакеты frontend-packages", "icon": "npm" } },
-    { "tag": "Icon", "id": "pkg-react", "x": 120, "y": 100, "containerId": "npm", "icon": "npm", "texts": [{ "text": "@cdd-team/react" }] },
-    { "tag": "Icon", "id": "pkg-zustand", "x": 120, "y": 220, "containerId": "npm", "icon": "npm", "texts": [{ "text": "@cdd-team/zustand" }] },
-    { "tag": "Icon", "id": "pkg-trpc-client", "x": 120, "y": 340, "containerId": "npm", "icon": "npm", "texts": [{ "text": "@cdd-team/trpc-client" }] },
+    { "tag": "Group", "id": "github", "color": "purple", "x": 0, "y": 0, "width": 1780, "height": 300, "isContainer": true, "title": { "text": "GitHub", "icon": "github" } },
+    { "tag": "Group", "id": "monorepo", "color": "purple", "styleMode": "plain", "x": 20, "y": 40, "width": 1740, "height": 240, "containerId": "github", "isContainer": true, "title": { "text": "Монорепа фронта: frontend-park-mail-ru/2026_2_Cringe_Driven_Development" } },
 
-    { "tag": "Group", "id": "github", "color": "purple", "x": 500, "y": 0, "width": 1900, "height": 320, "isContainer": true, "title": { "text": "GitHub", "icon": "github" } },
-    { "tag": "Group", "id": "monorepo", "color": "purple", "styleMode": "plain", "x": 520, "y": 40, "width": 1860, "height": 260, "containerId": "github", "isContainer": true, "title": { "text": "Монорепа фронта: frontend-park-mail-ru/2026_2_Cringe_Driven_Development" } },
+    { "tag": "Group", "id": "ws-client", "color": "purple", "styleMode": "plain", "x": 40, "y": 80, "width": 300, "height": 180, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/client — React-приложение" } },
+    { "tag": "Icon", "id": "client-app", "x": 80, "y": 120, "containerId": "ws-client", "icon": "react", "texts": [{ "text": "Экраны и сторы" }] },
 
-    { "tag": "Group", "id": "ws-client", "color": "purple", "styleMode": "plain", "x": 540, "y": 80, "width": 360, "height": 200, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/client — React-приложение" } },
-    { "tag": "Icon", "id": "client-app", "x": 580, "y": 120, "containerId": "ws-client", "icon": "react", "texts": [{ "text": "Экраны и сторы" }] },
+    { "tag": "Group", "id": "ws-bff", "color": "purple", "styleMode": "plain", "x": 660, "y": 80, "width": 440, "height": 180, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/bff — Hono, роутер tRPC, клиент к Go (Orval)" } },
+    { "tag": "Icon", "id": "bff-router", "x": 700, "y": 120, "containerId": "ws-bff", "icon": "trpc", "texts": [{ "text": "Роутер tRPC: AppRouter" }] },
+    { "tag": "Icon", "id": "bff-go-client", "x": 840, "y": 120, "containerId": "ws-bff", "icon": "typescript", "texts": [{ "text": "src/go: клиент к Go" }] },
 
-    { "tag": "Group", "id": "ws-bff", "color": "purple", "styleMode": "plain", "x": 1220, "y": 80, "width": 460, "height": 200, "containerId": "monorepo", "isContainer": true, "title": { "text": "apps/bff — Hono, роутер tRPC, клиент к Go (Orval)" } },
-    { "tag": "Icon", "id": "bff-router", "x": 1260, "y": 120, "containerId": "ws-bff", "icon": "trpc", "texts": [{ "text": "Роутер tRPC: AppRouter" }] },
-    { "tag": "Icon", "id": "bff-go-client", "x": 1400, "y": 120, "containerId": "ws-bff", "icon": "typescript", "texts": [{ "text": "src/go: клиент к Go" }] },
+    { "tag": "Group", "id": "ws-schemas", "color": "purple", "styleMode": "plain", "x": 1320, "y": 80, "width": 420, "height": 180, "containerId": "monorepo", "isContainer": true, "title": { "text": "packages/schemas — @cdd/schemas, zod-схемы" } },
+    { "tag": "Icon", "id": "schemas-zod", "x": 1360, "y": 120, "containerId": "ws-schemas", "icon": "typescript", "texts": [{ "text": "zod-схемы операций Go" }] },
 
-    { "tag": "Group", "id": "ws-schemas", "color": "purple", "styleMode": "plain", "x": 1900, "y": 80, "width": 460, "height": 200, "containerId": "monorepo", "isContainer": true, "title": { "text": "packages/schemas — @cdd/schemas, zod-схемы" } },
-    { "tag": "Icon", "id": "schemas-zod", "x": 2000, "y": 120, "containerId": "ws-schemas", "icon": "typescript", "texts": [{ "text": "zod-схемы операций Go" }] },
+    { "tag": "Group", "id": "npm", "color": "green", "x": 20, "y": 400, "width": 460, "height": 180, "isContainer": true, "title": { "text": "npm: пакеты @cdd-team/ из frontend-packages", "icon": "npm" } },
+    { "tag": "Icon", "id": "pkg-react", "x": 80, "y": 460, "containerId": "npm", "icon": "npm", "texts": [{ "text": "react" }] },
+    { "tag": "Icon", "id": "pkg-zustand", "x": 220, "y": 460, "containerId": "npm", "icon": "npm", "texts": [{ "text": "zustand" }] },
+    { "tag": "Icon", "id": "pkg-trpc-client", "x": 360, "y": 460, "containerId": "npm", "icon": "npm", "texts": [{ "text": "trpc-client" }] },
 
-    { "tag": "Group", "id": "turbo", "color": "white", "x": 500, "y": 400, "width": 720, "height": 180, "isContainer": true, "title": { "text": "Turborepo: ноут или CI", "icon": "laptop" } },
-    { "tag": "Activity", "id": "t-build", "x": 540, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "build" }] },
-    { "tag": "Activity", "id": "t-lint", "x": 700, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "lint" }] },
-    { "tag": "Activity", "id": "t-typecheck", "x": 860, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "typecheck" }] },
-    { "tag": "Activity", "id": "t-test", "x": 1020, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "test" }] },
-    { "tag": "Textbox", "id": "turbo-order", "x": 540, "y": 520, "width": 640, "containerId": "turbo", "text": "Сначала задачи зависимостей (`^build`): packages/schemas → apps/bff → apps/client. Повторный запуск без изменений берётся из кеша." },
+    { "tag": "Group", "id": "turbo", "color": "white", "x": 560, "y": 400, "width": 720, "height": 180, "isContainer": true, "title": { "text": "Turborepo: ноут или CI", "icon": "laptop" } },
+    { "tag": "Activity", "id": "t-build", "x": 600, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "build" }] },
+    { "tag": "Activity", "id": "t-lint", "x": 760, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "lint" }] },
+    { "tag": "Activity", "id": "t-typecheck", "x": 920, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "typecheck" }] },
+    { "tag": "Activity", "id": "t-test", "x": 1080, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "test" }] },
+    { "tag": "Textbox", "id": "turbo-order", "x": 600, "y": 520, "width": 640, "containerId": "turbo", "text": "Сначала задачи зависимостей (`^build`): packages/schemas → apps/bff → apps/client. Повторный запуск без изменений берётся из кеша." },
 
-    { "tag": "Legend", "id": "legend", "x": 2500, "y": 0, "width": 340, "entries": [{ "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+    { "tag": "Legend", "id": "legend", "x": 1820, "y": 0, "width": 340, "entries": [{ "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
     { "tag": "Relationship", "from": "ws-client", "to": "ws-bff", "label": "import type AppRouter — только типы" },

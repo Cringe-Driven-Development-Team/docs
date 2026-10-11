@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { indexNames } from "./build-index.ts";
 
 // Схема монорепы фронта (план модуля №2). Спека: docs/superpowers/specs/2026-10-11-frontend-monorepo-diagram-design.md §3.
-type Entity = { id: string; tag: string; color?: string; containerId?: string };
+type Entity = { id: string; tag: string; color?: string; containerId?: string; title?: { text: string }; texts?: { text: string }[] };
 type Connection = { from: string; to: string; label?: string };
 
 const doc = JSON.parse(readFileSync("diagrams/modules/2/frontend-monorepo.json", "utf8")) as { entities: Entity[]; connections: Connection[] };
@@ -37,8 +37,12 @@ test("frontend-monorepo: imports between workspaces", () => {
 
 test("frontend-monorepo: texts name the real packages", () => {
   const text = JSON.stringify(doc);
-  for (const s of ["apps/client", "apps/bff", "packages/schemas", "@cdd/schemas", "@cdd-team/react", "@cdd-team/zustand", "@cdd-team/trpc-client", "^build"]) expect(text, s).toContain(s);
+  for (const s of ["apps/client", "apps/bff", "packages/schemas", "@cdd/schemas", "^build"]) expect(text, s).toContain(s);
   expect(text).not.toMatch(/apps\/web|TanStack|GHCR|@maninthecoat|@iredtea/);
+  // скоуп @cdd-team/ — в заголовке группы npm, имена пакетов — подписи иконок в ней
+  const scope = byId.get("npm")?.title?.text.match(/@cdd-team\//)?.[0];
+  const packages = ["pkg-react", "pkg-zustand", "pkg-trpc-client"].map((id) => `${scope}${byId.get(id)?.texts?.[0]?.text}`);
+  expect(packages).toEqual(["@cdd-team/react", "@cdd-team/zustand", "@cdd-team/trpc-client"]);
 });
 
 test("frontend-monorepo: hidden from the Architecture index", () => {
