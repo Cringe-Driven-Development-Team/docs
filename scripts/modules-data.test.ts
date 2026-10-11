@@ -10,17 +10,20 @@ const october = modules.find((m) => m.id === "2");
 
 test("real site/modules is valid", () => {
   expect(october?.title).toBe("Модуль №2");
-  expect(october?.tracks).toHaveLength(40);
+  expect(october?.tracks).toHaveLength(38);
   expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
   const load = Object.fromEntries(personLoad(october!, people).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
-    YarikMix: [7, 8],
-    blackHATred: [2, 5],
+    YarikMix: [7, 9],
+    blackHATred: [2, 4],
     ManInTheCoat: [11, 0],
     iRedTea: [12, 0],
     GrayMouse9: [5, 0],
-    MrDuckVC: [4, 0],
+    MrDuckVC: [3, 0],
   });
+  const search = october?.tracks.find((t) => t.id === "file-search");
+  expect([search?.area, search?.do, search?.mentors]).toEqual(["front", [{ login: "ManInTheCoat", side: "front" }], ["YarikMix"]]);
+  expect(october?.tracks.some((t) => t.partOf === "file-search")).toBe(false);
 });
 
 test("UI Kit: modals and snackbars are subtracks linked to React Portal API", () => {
