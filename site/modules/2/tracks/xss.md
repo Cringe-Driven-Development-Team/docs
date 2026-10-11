@@ -5,7 +5,8 @@ do:
   iRedTea: front
 mentors: [YarikMix]
 subtasks:
-  - "CSP и nosniff в Caddy"
+  - title: "CSP и nosniff в Caddy"
+    issues: [infra#47]
 related:
   - track: monaco
     why: "Свой редактор: код и подсветка — текстовыми узлами, без innerHTML"

@@ -7,7 +7,8 @@ do:
   iRedTea: devops
 mentors: [blackHATred]
 subtasks:
-  - "Redis в compose через Ansible"
+  - title: "Redis в compose через Ansible"
+    issues: [infra#46]
   - "Refresh-сессии в Redis вместо refresh_sessions"
   - "Отзыв refresh-токена"
   - "Смена пароля — отзыв всех сессий, кроме текущей"

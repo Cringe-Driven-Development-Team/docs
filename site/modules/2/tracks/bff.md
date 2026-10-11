@@ -7,7 +7,8 @@ do:
 mentors: [YarikMix]
 subtasks:
   - "tRPC (server)"
-  - "Turborepo + bun workspaces"
+  - title: "Turborepo + bun workspaces"
+    issues: [frontend#44]
 pages: [contract, auth]
 ---
 
