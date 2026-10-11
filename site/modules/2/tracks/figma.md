@@ -4,8 +4,10 @@ area: front
 do:
   ManInTheCoat: front
 subtasks:
-  - "Экран профиля"
-  - "Экран блокнота: импорт и исполнение файла, поиск по файлу"
+  - title: "Экран профиля"
+    issues: [figma#5]
+  - title: "Экран блокнота: импорт и исполнение файла, поиск по файлу"
+    issues: [figma#6]
 related:
   - track: profile
     why: "Макет экрана профиля"

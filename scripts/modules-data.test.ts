@@ -61,6 +61,7 @@ test("Figma: screens of profile and notebook are subtasks linked to their tracks
     "Экран профиля",
     "Экран блокнота: импорт и исполнение файла, поиск по файлу",
   ]);
+  expect(figma?.subtasks.map((s) => s.issues)).toEqual([["figma#5"], ["figma#6"]]);
   expect(figma?.related.map((r) => r.track)).toEqual(["profile", "file-exec", "file-search"]);
 });
 

@@ -171,8 +171,10 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
   do:                                          # логин → сторона: front | back | devops | team
     iRedTea: devops
   mentors: [YarikMix, blackHATred]             # необязательно; только люди с mentor: true в people.yaml
-  subtasks:                                    # необязательно
+  subtasks:                                    # необязательно: строка или { title, issues }
     - Откаты
+    - title: Стенд ветки
+      issues: [infra#12]                       # номера задач с доски, видны в карточке подзадачи
   related:                                     # необязательно: связь с треком этого модуля
     - track: ai-review
       why: Агентам Stagehand нужен стенд ветки
