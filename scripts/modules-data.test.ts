@@ -11,7 +11,7 @@ const october = modules.find((m) => m.id === "2");
 test("real site/modules is valid", () => {
   expect(october?.title).toBe("Модуль №2");
   expect(october?.tracks).toHaveLength(38);
-  expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF"]);
+  expect(october?.tracks.find((t) => t.id === "bff")?.pages.map((p) => p.title)).toEqual(["Контракт", "Авторизация и CSRF", "Сервис BFF"]);
   const load = Object.fromEntries(personLoad(october!, people).map((l) => [l.login, [l.doing, l.mentoring]]));
   expect(load).toEqual({
     YarikMix: [7, 9],
