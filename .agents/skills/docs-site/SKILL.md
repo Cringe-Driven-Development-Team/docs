@@ -5,6 +5,8 @@ description: Правка страниц сайта VitePress в site/ — но�
 
 # Страницы сайта VitePress
 
+Этот скилл правится в `.agents/skills/docs-site/`, затем `bun run skills:sync`. Команды ниже — bash (на Windows Git Bash).
+
 Применяй при правке `site/**/*.md`, меню в `site/.vitepress/config.mts`, переадресаций в
 `scripts/build-index.ts`. Поля frontmatter треков и модулей (`do`, `subtasks`, `pages`, …) — скилл
 `docs-modules`; JSON схем в `diagrams/` — скилл `eraser-diagrams`.
@@ -130,7 +132,8 @@ Markdown страницы — шаблон Vue. Ошибки ниже видны
   в списке `…/docs/branches/`.
 - Push в ветку запускает workflow Pages на ней: в проверках PR видна только job `dispatch`, она лишь
   запускает Pages на `main`. Превью собирает этот запуск на `main` (вкладка Actions): `main` и все живые
-  ветки, на превью всех веток вместе — 30 минут, на шаг — 5. Не уложилась — ветка в списке «не
+  ветки, бюджеты времени — константы `SITE_BRANCH_BUDGET_MS` (на все ветки вместе) и
+  `BRANCH_STEP_TIMEOUT_MS` (на шаг) в `scripts/build-site.ts`. Не уложилась — ветка в списке «не
   собралась» с шагом `time budget`. Pages кэширует 10 минут — Ctrl+F5.
 - Превью нет: найди ветку в списке `…/docs/branches/` и шаг, на котором она упала. Упала на своём шаге —
   повтори `bun run build` локально и чини. `time budget` — не твоя ошибка: проверь локальной сборкой, а

@@ -50,6 +50,7 @@ function removeEmptyDirs(root: string): void {
 }
 
 export function syncSkills(from: string = FROM, to: string = TO): void {
+  if (!existsSync(from)) throw new Error(`нет исходного каталога ${from}: синхронизировать нечего, копию не трогаю`);
   for (const path of extraFiles(from, to)) rmSync(join(to, path));
   for (const path of listFiles(from)) {
     const copy = join(to, path);

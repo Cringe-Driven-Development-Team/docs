@@ -23,7 +23,10 @@ afterEach(() => {
 
 test("копия .claude/skills совпадает с .agents/skills", () => {
   const diff = diffSkills();
-  expect(diff, `скиллы правятся в .agents/skills, затем bun run skills:sync:\n${diff.join("\n")}`).toEqual([]);
+  expect(
+    diff,
+    `копия разошлась с .agents/skills. Если правил копию (.claude/skills) — сначала перенеси правку в .agents/skills/<путь> (смотри git diff .claude/skills), иначе sync её перезапишет; затем bun run skills:sync:\n${diff.join("\n")}`,
+  ).toEqual([]);
 });
 
 test("diffSkills: нет файла, лишний файл, другое содержимое, вложенная папка", () => {
@@ -67,6 +70,19 @@ test("syncSkills копирует вложенные папки и удаляе�
   expect(readFileSync(join(to, "c/refs/deep/note.md"), "utf8")).toBe("вложенный");
   expect(existsSync(join(to, "d"))).toBe(false);
   expect(readFileSync(join(to, "README.md"), "utf8")).toBe("readme");
+});
+
+test("syncSkills: нет исходного каталога — ошибка, копия не тронута", () => {
+  const to = makeTree({ "a/SKILL.md": "x" });
+  expect(() => syncSkills(join(to, "нет-такого"), to)).toThrow(/нет исходного каталога/);
+  expect(readFileSync(join(to, "a/SKILL.md"), "utf8")).toBe("x");
+});
+
+test("в обоих деревьях есть SKILL.md репозиторных скиллов", () => {
+  for (const name of ["eraser-diagrams", "docs-modules", "docs-site"]) {
+    expect(existsSync(`.agents/skills/${name}/SKILL.md`), `.agents/skills/${name}`).toBe(true);
+    expect(existsSync(`.claude/skills/${name}/SKILL.md`), `.claude/skills/${name}`).toBe(true);
+  }
 });
 
 test("syncSkills создаёт каталог копии, если его нет", () => {

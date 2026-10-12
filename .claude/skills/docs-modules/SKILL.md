@@ -5,6 +5,8 @@ description: Правка данных модулей и треков в site/mo
 
 # Данные модулей и треков
 
+Этот скилл правится в `.agents/skills/docs-modules/`, затем `bun run skills:sync`. Команды ниже — bash (на Windows Git Bash).
+
 Применяй при любой правке `site/modules/**`: frontmatter треков и модулей, `people.yaml`,
 `module-graph.yaml`. Текст страниц, ссылки, подстраницы как документы и переадресации старых адресов —
 скилл `docs-site`.
@@ -35,8 +37,8 @@ description: Правка данных модулей и треков в site/mo
 | --- | --- | --- |
 | `title` | строка | обязательно |
 | `label` | строка | подпись на графе; нет — берётся `title` |
-| `area` | ключ `areas` | `front`, `back`, `devops`, `fullstack`, `team`; у `fullstack` нужны стороны `front` и `back`: у трека со своим `do` — в его `do`, у родителя без `do` — у подтреков вместе |
-| `do` | `логин: сторона` | сторона из `sides`: `front`, `back`, `devops`, `team`; логин есть в `people.yaml`; если поле есть — не пустое |
+| `area` | ключ `areas` | ключ `areas` из `site/modules/module-graph.yaml`; у `fullstack` нужны стороны `front` и `back`: у трека со своим `do` — в его `do`, у родителя без `do` — у подтреков вместе |
+| `do` | `логин: сторона` | сторона — ключ `sides` из `site/modules/module-graph.yaml`; логин есть в `people.yaml`; если поле есть — не пустое |
 | `mentors` | список логинов | у каждого `mentor: true` в `people.yaml`; не исполнитель этого же трека; без повторов |
 | `subtasks` | список | элемент — строка или `{ title, issues, subtasks }`; вложенный — строка или `{ title, issues }`; глубже нельзя; других ключей нет; соседние `title` не повторяются |
 | `issues` | список `репо#N` | **только внутри подзадачи** (любого уровня); не пустой, без повторов |
@@ -68,7 +70,7 @@ description: Правка данных модулей и треков в site/mo
 - «— нет на доске» у задачи в карточке подзадачи значит одно: номера **нет в снимке доски вообще** — задача
   не добавлена в проект или в `issues` опечатка (репозиторий, номер). Это не про поле «Трек».
 - Снимок доски снимает job `board` workflow Pages при каждом запуске на `main`: push в `main`, push в любую
-  ветку (job `dispatch` запускает Pages на `main`) и расписание — ежечасно 06:07–23:07 МСК (cron в
+  ветку (job `dispatch` запускает Pages на `main`) и расписание — по расписанию (cron в
   `.github/workflows/pages.yml`). Правка на доске появится на сайте после следующего запуска.
 - Переименовал `id` трека — задачи на доске остались со старым значением «Трека» и пропали с графа.
   Это правка доски: скажи пользователю.
@@ -79,8 +81,9 @@ description: Правка данных модулей и треков в site/mo
 
 1. Посмотри живой граф и страницу трека: `https://cringe-driven-development-team.github.io/docs/modules/<N>/`.
 2. Сними свежий снимок (только чтение) и найди задачу:
-   `GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json`, затем
-   `bun -e 'const b = await Bun.file("site/modules/board.json").json(); console.log(b.tasks.filter(t => t.ref.toLowerCase() === "<репо#N>"), b.sprints)'`.
+   `GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json`
+   (PowerShell: `$env:GH_TOKEN = (gh auth token); bunx module-graph board snapshot site/modules/board.json`), затем
+   `bun -e 'const b = await Bun.file("site/modules/board.json").json(); console.log(b.tasks.filter(t => t.ref.toLowerCase() === "<репо#N>".toLowerCase()), b.sprints)'`.
 3. Причина по снимку:
    - задачи нет в снимке — её нет на доске;
    - `track` пустой (и у родителя, если это sub-issue) или не равен `id` трека — поле «Трек» на доске;
@@ -100,7 +103,8 @@ description: Правка данных модулей и треков в site/mo
   `cdd-tasks`.
 - Не запускай `module-graph board sync` локально: он переписывает список значений поля на доске.
   Снимок для себя (только чтение):
-  `GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json`.
+  `GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json`
+  (PowerShell: `$env:GH_TOKEN = (gh auth token); bunx module-graph board snapshot site/modules/board.json`).
 
 ## Удаление, слияние, перенос трека или подтрека
 
@@ -152,8 +156,7 @@ description: Правка данных модулей и треков в site/mo
 2. `bun test scripts/modules-data.test.ts`.
 3. Убедись, что разобралось то, что ты задумал, а не пропущено молча:
    `bun -e 'import {loadModuleDir} from "@tp-prepare/vitepress-module-graph/node"; const m = loadModuleDir("site/modules").modules.find(m => m.id === "<N>"); console.log(JSON.stringify(m.tracks.find(t => t.id === "<id>"), null, 2))'`.
-4. Перед коммитом: `bun run typecheck && bun run test`; поменялись ссылки или страницы — ещё
-   `bun run build`.
+4. Перед коммитом (`AGENTS.md`, «Сборка»): `bun run typecheck && bun run test && bun run build`.
 
 ## Ошибки `check` и что делать
 

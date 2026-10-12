@@ -97,11 +97,12 @@ bun run site       # build + превью всех веток origin в dist/bra
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
 bun run typecheck  # строгая проверка типов скриптов
+bun run skills:sync # копия скиллов .claude/skills из .agents/skills; правь скиллы только в .agents/skills
 ```
 
 ### Как править
 
-Диаграммы правит агент Claude Code по скиллу
+Диаграммы правит агент (правила — `AGENTS.md`) по скиллу
 `.agents/skills/eraser-diagrams/SKILL.md`: изменить JSON, `bun run validate`,
 `bun run check`, `bun run render`, посмотреть PNG, поправить координаты.
 Цвета групп и стрелок задаёт конвенция, её проверяет `bun run check`. Координаты
