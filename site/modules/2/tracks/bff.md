@@ -9,7 +9,7 @@ subtasks:
   - "tRPC (server)"
   - title: "Turborepo + bun workspaces"
     issues: [frontend#44]
-pages: [contract, auth]
+pages: [contract, auth, service]
 ---
 
 «tRPC (server)» — роутер tRPC в BFF, делает Валентин; остальные подзадачи — со стороны фронта (Денис).
@@ -19,8 +19,8 @@ pages: [contract, auth]
 Браузер ходит только в BFF (Backend for Frontend): клиент вызывает процедуры tRPC, а BFF ходит в Go API.
 Токены остаются на сервере и в браузер не попадают: у пользователя только зашифрованная cookie сессии.
 Страница описывает целевое состояние трека; остальные — [Контракт](./bff/contract) (роутер tRPC, клиент к
-Go от Orval и свой клиент tRPC) и [Авторизация и CSRF](./bff/auth) (сессия, refresh и защита от CSRF по
-сценариям).
+Go от Orval и свой клиент tRPC), [Авторизация и CSRF](./bff/auth) (сессия, refresh и защита от CSRF по
+сценариям) и [Сервис BFF](./bff/service) (каркас, переменные, health check, образ и запуск).
 
 ## Как устроен контракт
 
@@ -120,7 +120,8 @@ refresh не доходят до браузера, а значит, XSS на с�
 
 ### BFF
 
-Новый сервис на Hono с роутером tRPC на `/api/trpc` (см. [«Роутер»](./bff/contract#роутер)).
+Новый сервис на Hono с роутером tRPC на `/api/trpc` (см. [«Роутер»](./bff/contract#роутер)); каркас,
+переменные окружения, логи, образ и запуск — [«Сервис BFF»](./bff/service).
 `createContext` проверяет `X-CSRF`, `Origin` и `Sec-Fetch-Site` и расшифровывает cookie сессии;
 `authedProcedure` требует сессию и сам обновляет access. Вызовы Go — fetch-клиент от Orval, вход
 процедур — zod-схемы от Orval из контракта Go. Работает без своего хранилища. Гонка backend#12
@@ -179,8 +180,8 @@ flowchart LR
   партнёрам, и для них это `Authorization: Bearer` или OAuth, а не cookie.
 - **BFF → Go** идёт на приватный адрес VPS2. Файрвол VPS2 (security group) пускает порт API и SSH
   только с VPS1; порт Postgres наружу не открыт вообще.
-- **Адрес Go** BFF берёт из переменной `GO_API_URL`: на одной VPS это `http://api:8080`, на двух —
-  `http://<приватный адрес VPS2>:8080`. На VPS2 compose публикует порт API только на приватном
+- **Адрес Go** BFF берёт из переменной `GO_API_URL`: на одной VPS это `http://api:8080/api/v1`, на двух —
+  `http://<приватный адрес VPS2>:8080/api/v1`. На VPS2 compose публикует порт API только на приватном
   интерфейсе.
 - **S2S-ключ.** BFF шлёт заголовок `X-BFF-Key: <BFF_API_KEY>`, Go сравнивает значение за постоянное
   время (`crypto/subtle.ConstantTimeCompare`, для ключа фиксированной длины этого достаточно) и
