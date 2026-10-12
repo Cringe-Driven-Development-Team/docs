@@ -12,7 +12,7 @@ subtasks:
 pages: [contract, auth, service]
 ---
 
-«tRPC (server)» — роутер tRPC в BFF, делает Валентин; остальные подзадачи — со стороны фронта (Денис).
+Подзадачи трека, включая «tRPC (server)» — роутер tRPC в BFF, делает Денис; Валентин — изменения на стороне Go (см. [«Go API»](#go-api)).
 Клиент к Go и zod-схемы из контракта Go — подтрек [«Orval»](./bff-orval). Свой клиент tRPC — подтрек [«tRPC (client)»](./trpc-client): пакет `@cdd-team/trpc-client` живёт в монорепе фронтовых
 библиотек [`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages).
 

@@ -325,6 +325,13 @@ test("в треке есть схема монорепы фронта", () => {
   expect(at("Монорепа фронта")).toBeLessThan(at("Было и стало"));
 });
 
+test("tRPC (server) делает Денис, Валентин — сторона Go", () => {
+  const md = readFileSync(TRACK, "utf8");
+  expect(md).toContain("включая «tRPC (server)» — роутер tRPC в BFF, делает Денис");
+  expect(md).toContain("Валентин — изменения на стороне Go");
+  expect(md).not.toContain("делает Валентин");
+});
+
 test("подстраница «Сервис BFF»: разделы по порядку и ключевые решения", () => {
   const md = readFileSync(SERVICE, "utf8");
   expect(md).toContain("title: Сервис BFF");
