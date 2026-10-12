@@ -199,7 +199,7 @@ test("в «Обзоре» есть раздел «Две VPS»", () => {
 });
 
 test("правило модулей записано", () => {
-  const claude = readFileSync("CLAUDE.md", "utf8");
+  const claude = readFileSync("AGENTS.md", "utf8");
   expect(claude).toContain("## Что где лежит");
   expect(claude).toContain("Схемы корня описывают прод");
   expect(claude).toContain("tracks/<id>/<page>.md");

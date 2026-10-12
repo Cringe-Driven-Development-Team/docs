@@ -25,7 +25,8 @@
     "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run index && bun run mermaid && bun run site:vitepress && bun run site:check",
     "site": "bun scripts/docker.ts site",
     "site:native": "bun scripts/build-site.ts",
-    "icons": "bun scripts/fetch-icons.ts"
+    "icons": "bun scripts/fetch-icons.ts",
+    "skills:sync": "bun scripts/skills-sync.ts"
   },
   "devDependencies": {
     "@eraserlabs/diagrams-cli": "0.1.0",
