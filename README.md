@@ -102,7 +102,7 @@ bun run typecheck  # строгая проверка типов скриптов
 ### Как править
 
 Диаграммы правит агент Claude Code по скиллу
-`.claude/skills/eraser-diagrams/SKILL.md`: изменить JSON, `bun run validate`,
+`.agents/skills/eraser-diagrams/SKILL.md`: изменить JSON, `bun run validate`,
 `bun run check`, `bun run render`, посмотреть PNG, поправить координаты.
 Цвета групп и стрелок задаёт конвенция, её проверяет `bun run check`. Координаты
 абсолютные, автораскладки узлов нет. Имена иконок в `icons.txt`.
@@ -110,7 +110,7 @@ bun run typecheck  # строгая проверка типов скриптов
 `<link>`, `@import`, `url()`; ссылки `https://…` допустимы только внутри
 `<a href>` (CLI делает их из подписей стрелок).
 
-Правила для агента Claude Code в этом репозитории — `CLAUDE.md`.
+Правила для агентов в этом репозитории — `AGENTS.md` (Claude Code подключает его через `CLAUDE.md`).
 
 CI на pull request валидирует и рендерит схемы, артефакт `diagrams`
 содержит `dist/`. Push в `main` публикует `dist/` на Pages. В настройках

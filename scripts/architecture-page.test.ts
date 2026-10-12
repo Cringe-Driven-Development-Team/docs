@@ -29,13 +29,13 @@ test("config: Architecture goes to /architecture/ without target, no branch prev
 });
 
 test("docs tell where module plan diagrams live", () => {
-  for (const file of ["README.md", "CLAUDE.md", ".claude/skills/eraser-diagrams/SKILL.md"]) {
+  for (const file of ["README.md", "AGENTS.md", ".agents/skills/eraser-diagrams/SKILL.md"]) {
     expect(readFileSync(file, "utf8"), file).toContain("diagrams/modules/");
   }
 });
 
 test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => {
-  for (const file of ["README.md", "CLAUDE.md"]) {
+  for (const file of ["README.md", "AGENTS.md"]) {
     const text = readFileSync(file, "utf8");
     expect(text, file).toContain("site/.vitepress/diagram-names.ts");
     expect(text, file).toContain("ROOT_NAMES");
