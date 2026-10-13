@@ -63,6 +63,7 @@
   Claude Code.
 - Правка скилла — только в `.agents/skills/<имя>/`, затем `bun run skills:sync`; `bun run test` падает, если
   копия разошлась.
+- Где держать скилл — в репозитории, в маркетплейсе `agent-plugins` или у себя: `docs/skills-placement.md`.
 - `eraser-diagrams` — править схемы в `diagrams/`: формат, цвета, раскладка, цикл validate → check → render.
 - `docs-modules` — править данные модулей и треков в `site/modules/` (подзадачи, задачи, подтреки, связи,
   ошибки `module-graph check`).
