@@ -39,7 +39,7 @@
 - Перед коммитом: `bun run typecheck && bun run test && bun run build`.
 - Треки (`site/modules/**`) проверяет `bun run modules:check` (`module-graph check`) — за секунду. В Claude Code его запускает хук после каждой правки (`bun node_modules/@tp-prepare/vitepress-module-graph/dist/cli.mjs check --hook`; без установленного пакета молчит), в остальных агентах — pre-commit `lefthook` при коммите. Перед коммитом прогони `bun run modules:check` сам.
 - `bun run site` из git worktree в Docker не работает — запускай из основного клона.
-- Сайт — VitePress в `site/` (главная `/docs/`), схемы — страница `/docs/architecture/`. Новая страница — файл в
+- Сайт — VitePress в `site/` (главная `/`), схемы — страница `/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
   на конкретном SHA.
 - Модули — `site/modules/`: люди в `people.yaml`, настройки графа в `module-graph.yaml`, модуль — каталог с номером (`2`), трек — `tracks/<id>.md`; формат и

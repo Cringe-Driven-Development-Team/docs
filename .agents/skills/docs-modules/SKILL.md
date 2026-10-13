@@ -79,7 +79,7 @@ description: Правка данных модулей и треков в site/mo
 
 Файлы трека не правь, пока не нашёл причину. Задачи трека берутся из снимка доски, а не из файлов.
 
-1. Посмотри живой граф и страницу трека: `https://cringe-driven-development-team.github.io/docs/modules/<N>/`.
+1. Посмотри живой граф и страницу трека: `https://docs.cellestial.ru/modules/<N>/`.
 2. Сними свежий снимок (только чтение) и найди задачу:
    `GH_TOKEN="$(gh auth token)" bunx module-graph board snapshot site/modules/board.json`
    (PowerShell: `$env:GH_TOKEN = (gh auth token); bunx module-graph board snapshot site/modules/board.json`), затем

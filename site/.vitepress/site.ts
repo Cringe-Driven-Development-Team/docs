@@ -1,10 +1,10 @@
-// Базовый путь сайта: /docs/ на main, /docs/branches/<slug>/ в превью ветки (SITE_BASE задаёт build-site.ts).
+// Базовый путь сайта: / на docs.cellestial.ru, /branches/<slug>/ в превью ветки (SITE_BASE задаёт build-site.ts).
 function normalizeBase(value: string): string {
   const trimmed = value.replace(/^\/+|\/+$/g, "");
   return trimmed === "" ? "/" : `/${trimmed}/`;
 }
 
-export const SITE_BASE: string = normalizeBase(process.env.SITE_BASE ?? "/docs/");
+export const SITE_BASE: string = normalizeBase(process.env.SITE_BASE ?? "/");
 
 /**
  * Куда ведёт старый якорь индекса схем (`/docs/diagrams/#ci`, `/docs/#bff/ci`): путь от корня сайта

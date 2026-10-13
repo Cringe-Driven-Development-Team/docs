@@ -91,10 +91,10 @@ description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*
 7. Поправь координаты (кратно 20), повтори с шага 2.
 8. Перед коммитом: `bun run typecheck`, `bun run test` и `bun run build` (то же, что делает CI).
 9. После push ветки превью появится через несколько минут по адресу
-   `https://cringe-driven-development-team.github.io/docs/branches/<slug>/`, где slug это имя
+   `https://docs.cellestial.ru/branches/<slug>/`, где slug это имя
    ветки, в котором всё, кроме латиницы, цифр, `.`, `_` и `-`, заменено на
    `-`. Ссылку можно дать в PR. Точный адрес в списке
-   `https://cringe-driven-development-team.github.io/docs/branches/`.
+   `https://docs.cellestial.ru/branches/`.
    В проверках PR эта сборка не видна: превью собирает отдельный запуск
    workflow Pages на `main` (вкладка Actions), около 4 минут. Pages кэширует
    страницы на 10 минут — если превью не обновилось, обнови с Ctrl+F5.
