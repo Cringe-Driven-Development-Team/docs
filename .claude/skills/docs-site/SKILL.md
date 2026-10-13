@@ -13,9 +13,9 @@ description: Правка страниц сайта VitePress в site/ — но�
 
 ## Адреса и ссылки
 
-- Сайт под `/docs/`, `cleanUrls`: `site/a/b.md` → `/docs/a/b` (файл сборки `a/b.html`),
-  `site/a/index.md` → `/docs/a/` (`a/index.html`).
-- Ссылка внутри сайта — от корня без `/docs/` (`/modules/2/tracks/bff`) или относительная
+- Сайт на `https://docs.cellestial.ru/`, `cleanUrls`: `site/a/b.md` → `/a/b` (файл сборки `a/b.html`),
+  `site/a/index.md` → `/a/` (`a/index.html`).
+- Ссылка внутри сайта — от корня сайта (`/modules/2/tracks/bff`) или относительная
   (`./contract`, `../bff#якорь`), без `.md`. База подставится сама, и ссылка работает в превью ветки.
 - Ссылку на несуществующую страницу роняет сборка VitePress. Якорь (`#…`) проверяет только
   `bun run site:check` внутри `bun run build`; в `bun run test` его нет — см. «Тесты страниц».
@@ -87,15 +87,15 @@ Markdown страницы — шаблон Vue. Ошибки ниже видны
 переименование трека или записи в `pages`. Подстраницы трека — тоже, каждая своей строкой.
 
 1. Строка в `PAGE_REDIRECTS` (`scripts/build-index.ts`): `{ file: "<старый путь>.html", target: "<цель>" }`.
-   - `file` — путь от корня сайта без `/docs/`: `modules/2/tracks/x.html`, для `index.md` —
+   - `file` — путь от корня сайта: `modules/2/tracks/x.html`, для `index.md` —
      `<каталог>/index.html`.
    - `target` — **относительный**, от каталога `file`: столько `../`, сколько каталогов в `file`, затем
      новый путь страницы без `.html` (страница `index.md` — путь каталога со `/` на конце: `../modules/3/`,
-     не `…/index`); для HTML схемы — с `.html`. Абсолютный `/docs/…` ломает превью
+     не `…/index`); для HTML схемы — с `.html`. Абсолютный `/…` ломает переадресации в превью
      веток; тест запрещает `/` в начале.
    - Удалено без замены — цель: ближайшая живая страница (родительский трек, граф модуля
      `modules/<N>/`, раздел).
-   - Сверка цели: `node -e 'console.log(new URL("<target>", "https://x/docs/<file>").pathname)'` печатает
+   - Сверка цели: `node -e 'console.log(new URL("<target>", "https://docs.cellestial.ru/<file>").pathname)'` печатает
      новый адрес.
    - Старый адрес не должен совпасть с живой страницей: сборка падает «файлы VitePress совпали с файлами
      схем».
@@ -127,15 +127,15 @@ Markdown страницы — шаблон Vue. Ошибки ниже видны
   без Docker `DIAGRAMS_NATIVE=1 bun run build`).
 - Ветка и worktree в `.claude/worktrees/<имя>`, PR в `main`. Описание PR — разделы «Что», «Решения»,
   «Проверка» и ссылка на превью:
-  `https://cringe-driven-development-team.github.io/docs/branches/<slug>/<путь>`; `<slug>` — имя ветки,
+  `https://docs.cellestial.ru/branches/<slug>/<путь>`; `<slug>` — имя ветки,
   где всё, кроме латиницы, цифр, `.`, `_`, `-`, заменено на `-` (`docs/x` → `docs-x`). Точный адрес —
-  в списке `…/docs/branches/`.
+  в списке `…/branches/`.
 - Push в ветку запускает workflow Pages на ней: в проверках PR видна только job `dispatch`, она лишь
   запускает Pages на `main`. Превью собирает этот запуск на `main` (вкладка Actions): `main` и все живые
   ветки, бюджеты времени — константы `SITE_BRANCH_BUDGET_MS` (на все ветки вместе) и
   `BRANCH_STEP_TIMEOUT_MS` (на шаг) в `scripts/build-site.ts`. Не уложилась — ветка в списке «не
   собралась» с шагом `time budget`. Pages кэширует 10 минут — Ctrl+F5.
-- Превью нет: найди ветку в списке `…/docs/branches/` и шаг, на котором она упала. Упала на своём шаге —
+- Превью нет: найди ветку в списке `…/branches/` и шаг, на котором она упала. Упала на своём шаге —
   повтори `bun run build` локально и чини. `time budget` — не твоя ошибка: проверь локальной сборкой, а
-  после мержа — на проде `https://cringe-driven-development-team.github.io/docs/<путь>`.
+  после мержа — на проде `https://docs.cellestial.ru/<путь>`.
 - Влитые ветки удаляются сами, их превью пропадает со следующей сборкой — после мержа проверяй прод.

@@ -27,7 +27,7 @@ title: Контекст всего сервиса для агента фронт
 | Инфра | [`infra`](https://github.com/Cringe-Driven-Development-Team/infra) |
 | Статика (картинки, шрифты) | [`static`](https://github.com/Cringe-Driven-Development-Team/static) |
 | npm-пакеты команды | [`react`](https://github.com/Cringe-Driven-Development-Team/react) — `@maninthecoat/react`, [`zustand-cdd`](https://github.com/Cringe-Driven-Development-Team/zustand-cdd) — `@maninthecoat/zustand`, [`openapi-cdd`](https://github.com/Cringe-Driven-Development-Team/openapi-cdd) — `@iredtea/openapi` |
-| Документация | [`docs`](https://github.com/Cringe-Driven-Development-Team/docs), сайт — [cringe-driven-development-team.github.io/docs](https://cringe-driven-development-team.github.io/docs/) |
+| Документация | [`docs`](https://github.com/Cringe-Driven-Development-Team/docs), сайт — [docs.cellestial.ru](https://docs.cellestial.ru/) |
 
 **Документация делится на две части:** страницы вне модулей описывают, как работает прод (архитектура,
 CSRF); модули — план: что делаем в текущем модуле, по трекам.
@@ -67,9 +67,9 @@ Code — его настройки и MCP-серверы. Запуск из об
 
 | Вопрос | Где ответ |
 | --- | --- |
-| Как устроен прод | [Архитектура](https://cringe-driven-development-team.github.io/docs/architecture/) |
-| Авторизация, CSRF | [CSRF](https://cringe-driven-development-team.github.io/docs/security/csrf/) |
-| Что делаем в текущем модуле | трек модуля в [документации](https://cringe-driven-development-team.github.io/docs/) |
+| Как устроен прод | [Архитектура](https://docs.cellestial.ru/architecture/) |
+| Авторизация, CSRF | [CSRF](https://docs.cellestial.ru/security/csrf/) |
+| Что делаем в текущем модуле | трек модуля в [документации](https://docs.cellestial.ru/) |
 | Ручка бэка: поля, ошибки, код | контракт — `spec/openapi.json`; код — `../backend` |
 | Окружение, деплой | `../infra` |
 | Общие пакеты | `../react`, `../zustand-cdd`, `../openapi-cdd` |

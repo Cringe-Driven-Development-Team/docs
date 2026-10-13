@@ -1,9 +1,9 @@
 <h1 align="center">Документация и архитектура проекта «Colab» команды «Cringe Driven Development»</h1>
 
 <p align="center">
-<a href="https://cringe-driven-development-team.github.io/docs/"><img src="https://img.shields.io/badge/Сайт-5C73E7?style=for-the-badge&logo=vitepress&logoColor=white" alt="Сайт документации"></a>
-<a href="https://cringe-driven-development-team.github.io/docs/architecture/"><img src="https://img.shields.io/badge/Архитектура-EC2C40?style=for-the-badge&logo=eraser&logoColor=white" alt="Диаграммы архитектуры"></a>
-<a href="https://cringe-driven-development-team.github.io/docs/modules/"><img src="https://img.shields.io/badge/Модули-2EA44F?style=for-the-badge&logo=roadmapdotsh&logoColor=white" alt="Планы модулей"></a>
+<a href="https://docs.cellestial.ru/"><img src="https://img.shields.io/badge/Сайт-5C73E7?style=for-the-badge&logo=vitepress&logoColor=white" alt="Сайт документации"></a>
+<a href="https://docs.cellestial.ru/architecture/"><img src="https://img.shields.io/badge/Архитектура-EC2C40?style=for-the-badge&logo=eraser&logoColor=white" alt="Диаграммы архитектуры"></a>
+<a href="https://docs.cellestial.ru/modules/"><img src="https://img.shields.io/badge/Модули-2EA44F?style=for-the-badge&logo=roadmapdotsh&logoColor=white" alt="Планы модулей"></a>
 <a href="https://github.com/orgs/Cringe-Driven-Development-Team/projects/1"><img src="https://img.shields.io/badge/Доска_задач-1F6FEB?style=for-the-badge&logo=github&logoColor=white" alt="Доска задач"></a>
 <br>
 <a href="https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Фронтенд-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="Репозиторий фронтенда"></a>
@@ -22,7 +22,7 @@
 `diagrams/<папка>/*.json` и `diagrams/modules/<N>/*.json` в формате
 [eraser-diagrams](https://github.com/eraserlabs/eraser-diagrams), рендер
 в HTML и PNG, публикация на GitHub Pages:
-**https://cringe-driven-development-team.github.io/docs/**
+**https://docs.cellestial.ru/**
 
 Пайплайн перенесён из [YarikMix/diagrams](https://github.com/YarikMix/diagrams)
 (коммит `e8fd4bb`). Спеки и планы в `docs/superpowers/` написаны до переноса,
@@ -38,22 +38,22 @@ MVP (`diagrams/`):
 
 | Схема | Что показывает |
 | --- | --- |
-| [deployment](https://cringe-driven-development-team.github.io/docs/deployment.html) | Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
-| [ci](https://cringe-driven-development-team.github.io/docs/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, S3 |
-| [cd](https://cringe-driven-development-team.github.io/docs/cd.html) | CD фронта через S3, откат, выкладка статики в бакет статики за CDN, CD бэка через ansible-playbook |
-| [frontend](https://cringe-driven-development-team.github.io/docs/frontend.html) | Репа клиента, контракт из Apidog, модель релизов |
-| [contract](https://cringe-driven-development-team.github.io/docs/contract.html) | Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
-| [infra](https://cringe-driven-development-team.github.io/docs/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
+| [deployment](https://docs.cellestial.ru/deployment.html) | Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
+| [ci](https://docs.cellestial.ru/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, S3 |
+| [cd](https://docs.cellestial.ru/cd.html) | CD фронта через S3, откат, выкладка статики в бакет статики за CDN, CD бэка через ansible-playbook |
+| [frontend](https://docs.cellestial.ru/frontend.html) | Репа клиента, контракт из Apidog, модель релизов |
+| [contract](https://docs.cellestial.ru/contract.html) | Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
+| [infra](https://docs.cellestial.ru/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
 
 Frozen: k3s (`diagrams/frozen-k3s/`):
 
 | Схема | Что показывает |
 | --- | --- |
-| [deployment](https://cringe-driven-development-team.github.io/docs/frozen-k3s/deployment.html) | VPS в Selectel, k3s, S3/CDN, клиент |
-| [ci](https://cringe-driven-development-team.github.io/docs/frozen-k3s/ci.html) | GitHub-репозитории, CI-пайплайны и их цели |
-| [cd](https://cringe-driven-development-team.github.io/docs/frozen-k3s/cd.html) | CD через Argo CD, канарейка, превью на Coolify |
-| [integrations](https://cringe-driven-development-team.github.io/docs/frozen-k3s/integrations.html) | Внешние сервисы и кто с ними говорит |
-| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
+| [deployment](https://docs.cellestial.ru/frozen-k3s/deployment.html) | VPS в Selectel, k3s, S3/CDN, клиент |
+| [ci](https://docs.cellestial.ru/frozen-k3s/ci.html) | GitHub-репозитории, CI-пайплайны и их цели |
+| [cd](https://docs.cellestial.ru/frozen-k3s/cd.html) | CD через Argo CD, канарейка, превью на Coolify |
+| [integrations](https://docs.cellestial.ru/frozen-k3s/integrations.html) | Внешние сервисы и кто с ними говорит |
+| [frontend-monorepo](https://docs.cellestial.ru/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
 
 Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
 (`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через
@@ -61,10 +61,10 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 
 | Схема | Что показывает |
 | --- | --- |
-| [bff-contract](https://cringe-driven-development-team.github.io/docs/modules/2/bff-contract.html) | Контракт BFF: генерация кода, что коммитится, что работает в проде |
-| [frontend-monorepo](https://cringe-driven-development-team.github.io/docs/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, импорты между ними, пакеты npm, задачи Turborepo |
+| [bff-contract](https://docs.cellestial.ru/modules/2/bff-contract.html) | Контракт BFF: генерация кода, что коммитится, что работает в проде |
+| [frontend-monorepo](https://docs.cellestial.ru/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, импорты между ними, пакеты npm, задачи Turborepo |
 
-Схемы MVP показаны на странице «Архитектура» (`/docs/architecture/`) живыми карточками:
+Схемы MVP показаны на странице «Архитектура» (`/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
 `site/.vitepress/theme/Diagram.vue`). Добавил схему в корень `diagrams/` — добавь строку в таблицу,
 имя в `ROOT_NAMES` (`site/.vitepress/diagram-names.ts`: по нему берутся размеры и переадресуются
@@ -92,7 +92,7 @@ bun run check      # цветовая конвенция и легенды, бе
 bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
 bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/; в Docker
 bun run build      # validate + check + warm + render + переадресация индекса + VitePress + site:check; в Docker
-bun run site:dev   # VitePress локально: http://localhost:5173/docs/
+bun run site:dev   # VitePress локально: http://localhost:5173/
 bun run site       # build + превью всех веток origin в dist/branches/; в Docker
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
@@ -121,12 +121,12 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 
 ### Сайт
 
-Главная `https://cringe-driven-development-team.github.io/docs/` — документация на
+Главная `https://docs.cellestial.ru/` — документация на
 [VitePress](https://vitepress.dev/): исходники страниц в `site/`, конфиг и меню в
-`site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/docs/architecture/`), их файлы —
-по прежним адресам `/docs/<name>.html` и `.png`. Старый индекс `/docs/diagrams/` — переадресация:
-`#contract` ведёт на `/docs/architecture/#contract`, `#frozen-k3s/ci` — на `/docs/frozen-k3s/ci.html`; так же
-главная переводит старые ссылки `/docs/#contract`.
+`site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/architecture/`), их файлы —
+по адресам `/<name>.html` и `.png`. Старый индекс `/diagrams/` — переадресация:
+`#contract` ведёт на `/architecture/#contract`, `#frozen-k3s/ci` — на `/frozen-k3s/ci.html`; так же
+главная переводит старые ссылки `/#contract`.
 
 `bun run build` после рендера схем собирает VitePress (`bun run site:vitepress`) и переносит
 его в `dist/`: если файл VitePress совпал с файлом схемы, сборка падает, а не затирает схему.
@@ -137,7 +137,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 ### Модули
 
 План учебного модуля (месяц разработки) — граф «люди — треки — подзадачи» на
-`/docs/modules/<номер>/`, страница на каждый трек и архив `/docs/modules/`. Данные лежат в
+`/modules/<номер>/`, страница на каждый трек и архив `/modules/`. Данные лежат в
 `site/modules/`, меню модулей собирается из файлов само. Ошибка в данных роняет сборку и
 называет файл и поле.
 
@@ -218,10 +218,10 @@ GH_TOKEN="$(gh auth token)" ./node_modules/.bin/module-graph board snapshot site
 ### Превью веток
 
 Push в любую ветку публикует её сайт и схемы по адресу
-`https://cringe-driven-development-team.github.io/docs/branches/<slug>/`, где slug это имя
+`https://docs.cellestial.ru/branches/<slug>/`, где slug это имя
 ветки, в котором всё, кроме латиницы, цифр, `.`, `_` и `-`, заменено на
 `-`: `feature/new-vps` становится `feature-new-vps`. Список всех превью:
-**https://cringe-driven-development-team.github.io/docs/branches/**
+**https://docs.cellestial.ru/branches/**
 Точный адрес ищи в этом списке: при совпадении имён к slug добавляется
 короткий SHA.
 

@@ -31,7 +31,7 @@ export type PreviewEntry = SluggedBranch & BuildResult;
 
 // Базовый путь VitePress в превью ветки; ветки без VitePress переменную игнорируют.
 export function branchSiteBase(slug: string): string {
-  return `/docs/branches/${slug}/`;
+  return `/branches/${slug}/`;
 }
 
 export function branchSlug(name: string): string {

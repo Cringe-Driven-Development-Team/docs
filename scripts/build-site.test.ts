@@ -87,7 +87,7 @@ test("renderSummary lists every branch with its preview path or failed step", ()
 });
 
 test("branchSiteBase: site base path of a branch preview", () => {
-  expect(branchSiteBase("docs-vitepress-csrf")).toBe("/docs/branches/docs-vitepress-csrf/");
+  expect(branchSiteBase("docs-vitepress-csrf")).toBe("/branches/docs-vitepress-csrf/");
 });
 
 test("renderPreviewsIndex: the back link leads to the main site", () => {
