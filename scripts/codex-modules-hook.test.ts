@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -92,4 +92,14 @@ test(".git-файл: проверяет данные своей копии из 
   expect(results[0]!.exitCode).toBe(2);
   expect(results[0]!.stdout.toString()).toBe("");
   expect(results[0]!.stderr.toString()).toContain("example.md");
+});
+
+test("старая ветка без скрипта хука: молча пропускает проверку", () => {
+  const root = fixture();
+  unlinkSync(join(root, "scripts/codex-modules-hook.ts"));
+  const results = runHooks(root, "Bash");
+  expect(results).toHaveLength(1);
+  expect(results[0]!.exitCode).toBe(0);
+  expect(results[0]!.stdout.toString()).toBe("");
+  expect(results[0]!.stderr.toString()).toBe("");
 });

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun \"$(git rev-parse --show-toplevel)/scripts/codex-modules-hook.ts\"",
+            "command": "bun -e 'const p = process.argv[1]; if (require(\"node:fs\").existsSync(p)) require(p);' \"$(git rev-parse --show-toplevel)/scripts/codex-modules-hook.ts\"",
             "timeout": 30,
             "statusMessage": "Проверка модулей"
           }
