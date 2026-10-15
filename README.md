@@ -92,13 +92,53 @@ bun run check      # цветовая конвенция и легенды, бе
 bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
 bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/; в Docker
 bun run build      # validate + check + warm + render + переадресация индекса + VitePress + site:check; в Docker
-bun run site:dev   # VitePress локально: http://localhost:5173/
+bun run site:dev   # dev-сервер для правок: http://localhost:5173/ (известная ошибка fastdom — ниже)
 bun run site       # build + превью всех веток origin в dist/branches/; в Docker
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
 bun run typecheck  # строгая проверка типов скриптов
 bun run skills:sync # копия скиллов .claude/skills из .agents/skills; правь скиллы только в .agents/skills
 ```
+
+#### Офлайн-чтение на macOS
+
+Для чтения всей документации со схемами собери статическую копию в `dist/`, затем запусти
+локальный сервер. Нужны установленные зависимости (`bun install`) и Chrome Beta. Первую подготовку
+и сборку делай с интернетом: могут докачиваться зависимости и иконки.
+
+Из корня клона (например, `~/projects/cdd-docs`) собери документацию через установленный браузер:
+
+```bash
+cd ~/projects/cdd-docs
+
+DIAGRAMS_NATIVE=1 \
+CHROMIUM_PATH="/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta" \
+bun run build
+```
+
+Если установлен обычный Google Chrome, укажи вместо этого
+`CHROMIUM_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`.
+
+После успешной сборки запусти готовую копию:
+
+```bash
+bunx vite preview --host 127.0.0.1 --port 4173 --strictPort
+```
+
+Открой **http://127.0.0.1:4173/**. Пока сервер работает, страницы, поиск, графы модулей и схемы
+доступны без интернета. Внешние ссылки на GitHub и другие сайты требуют сети. Остановка сервера —
+Ctrl+C в терминале. Если порт 4173 занят, останови прежний сервер или выбери другой порт.
+
+Пересобирай после обновления документации. Для повторного чтения той же копии достаточно команды
+`bunx vite preview`: Docker и повторный рендер схем не нужны.
+
+Этот способ обходит две известные ошибки текущей конфигурации:
+
+- **Белый экран в `bun run site:dev`** с ошибкой `fastdom.js … does not provide an export named 'default'`:
+  Mermaid в dev-режиме неправильно подключает `fastdom`. В статической сборке ошибка не воспроизводится.
+- **Ошибка сборки Docker на ARM64** `executable doesn't exist at /usr/local/bin/chromium`:
+  Dockerfile ищет браузер в `chrome-linux64/chrome`, а в ARM64-образе он лежит в `chrome-linux/chrome`.
+  Команда с `DIAGRAMS_NATIVE=1` и `CHROMIUM_PATH` выше использует браузер на хосте.
 
 ### Как править
 
