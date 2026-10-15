@@ -37,7 +37,11 @@
 - `bun run render`, `bun run build`, `bun run site` идут в Docker-образе из `Dockerfile`, как в CI:
   Docker Desktop должен быть запущен. Без Docker — `DIAGRAMS_NATIVE=1 bun run <скрипт>`.
 - Перед коммитом: `bun run typecheck && bun run test && bun run build`.
-- Треки (`site/modules/**`) проверяет `bun run modules:check` (`module-graph check`) — за секунду. В Claude Code его запускает хук после каждой правки (`bun node_modules/@tp-prepare/vitepress-module-graph/dist/cli.mjs check --hook`; без установленного пакета молчит), в остальных агентах — pre-commit `lefthook` при коммите. Перед коммитом прогони `bun run modules:check` сам.
+- Треки (`site/modules/**`) проверяет `bun run modules:check` (`module-graph check`) — за секунду.
+  В Claude Code хук запускает `check --hook` после правки файла модуля. В Codex хук
+  `.codex/hooks.json` проверяет все модули после `apply_patch` и shell-команд; запуск и доверие —
+  [README](./README.md#работа-в-codex). Оба хука молчат при успехе и без установленного пакета.
+  Pre-commit `lefthook` проверяет модули при коммите. Перед коммитом прогони `bun run modules:check` сам.
 - `bun run site` из git worktree в Docker не работает — запускай из основного клона.
 - Сайт — VitePress в `site/` (главная `/`), схемы — страница `/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
