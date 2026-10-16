@@ -19,15 +19,17 @@
     { "tag": "Group", "id": "repo-backend", "color": "purple", "styleMode": "plain", "x": 920, "y": 400, "width": 180, "height": 180, "containerId": "github", "isContainer": true, "title": { "text": "Бэкенд" } },
     { "tag": "Icon", "id": "gen-go-server", "x": 960, "y": 440, "containerId": "repo-backend", "icon": "go", "texts": [{ "text": "api.gen.go" }] },
 
-    { "tag": "Group", "id": "vps", "color": "blue", "x": 1200, "y": 0, "width": 260, "height": 600, "isContainer": true, "title": { "text": "Прод: VPS в Selectel", "icon": "server" } },
-    { "tag": "Group", "id": "bff", "color": "blue", "styleMode": "plain", "x": 1220, "y": 40, "width": 220, "height": 340, "containerId": "vps", "isContainer": true, "title": { "text": "BFF" } },
+    { "tag": "Group", "id": "vps", "color": "blue", "x": 1200, "y": 0, "width": 620, "height": 840, "isContainer": true, "title": { "text": "Прод: VPS в Selectel", "icon": "server" } },
+    { "tag": "Group", "id": "bff", "color": "blue", "styleMode": "plain", "x": 1220, "y": 40, "width": 580, "height": 620, "containerId": "vps", "isContainer": true, "title": { "text": "BFF" } },
     { "tag": "Icon", "id": "bff-router", "x": 1280, "y": 80, "containerId": "bff", "icon": "server", "texts": [{ "text": "Роутер tRPC: проверяет вход zod-схемами" }] },
-    { "tag": "Icon", "id": "bff-go-client", "x": 1280, "y": 240, "containerId": "bff", "icon": "typescript", "texts": [{ "text": "Клиент к Go" }] },
-    { "tag": "Icon", "id": "go-api", "x": 1280, "y": 440, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
+    { "tag": "Icon", "id": "bff-go-client", "x": 1280, "y": 300, "containerId": "bff", "icon": "typescript", "texts": [{ "text": "Клиент к Go" }] },
+    { "tag": "Icon", "id": "go-api", "x": 1280, "y": 700, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
 
-    { "tag": "Icon", "id": "client", "x": 1560, "y": 80, "icon": "globe", "texts": [{ "text": "Браузер: формы и свой tRPC-клиент" }] },
+    { "tag": "Icon", "id": "client", "x": 1980, "y": 300, "icon": "globe", "texts": [{ "text": "Браузер: HTML и tRPC-клиент" }] },
+    { "tag": "Icon", "id": "html-template", "x": 1600, "y": 80, "containerId": "bff", "icon": "file-code", "texts": [{ "text": "index.html: локальный шаблон" }] },
+    { "tag": "Icon", "id": "bff-bootstrap", "x": 1600, "y": 300, "containerId": "bff", "icon": "server", "texts": [{ "text": "HTML bootstrap: только { user }" }] },
 
-    { "tag": "Legend", "id": "legend", "x": 1740, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+    { "tag": "Legend", "id": "legend", "x": 2180, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
     { "tag": "Relationship", "from": "apidog-contract", "to": "fe-export", "color": "black", "lineStyle": "dashed" },
@@ -43,6 +45,10 @@
     { "tag": "Relationship", "from": "gen-go-server", "to": "go-api", "label": "в сборку" },
     { "tag": "Relationship", "from": "client", "to": "bff-router", "label": "/api/trpc", "color": "orange", "lineStyle": "solid" },
     { "tag": "Relationship", "from": "bff-router", "to": "bff-go-client" },
-    { "tag": "Relationship", "from": "bff-go-client", "to": "go-api", "label": "/api/v1" }
+    { "tag": "Relationship", "from": "bff-go-client", "to": "go-api", "label": "/api/v1" },
+    { "tag": "Relationship", "from": "client", "to": "bff-bootstrap", "label": "GET HTML", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "html-template", "to": "bff-bootstrap", "label": "шаблон из образа" },
+    { "tag": "Relationship", "from": "bff-bootstrap", "to": "bff-go-client", "label": "GET /users/me: общая сессия" },
+    { "tag": "Relationship", "from": "bff-bootstrap", "to": "client", "label": "HTML с { user }" }
   ]
 }

@@ -1,0 +1,367 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "vps",
+      "color": "blue",
+      "x": 420,
+      "y": 0,
+      "width": 2720,
+      "height": 1760,
+      "isContainer": true,
+      "title": {
+        "text": "Проект BFF: инфраструктура в Selectel"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "color": "blue",
+      "x": 780,
+      "y": 60,
+      "width": 2040,
+      "height": 1640,
+      "isContainer": true,
+      "title": {
+        "text": "BFF — компоненты одного процесса Bun"
+      },
+      "containerId": "vps",
+      "styleMode": "plain"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 80,
+      "y": 240,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "caddy",
+      "x": 500,
+      "y": 240,
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Caddy"
+        }
+      ],
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "html-handler",
+      "x": 920,
+      "y": 240,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "2. HTML-хендлер"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "session-client",
+      "x": 1420,
+      "y": 240,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "3. Сессия и Go-клиент"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "go-api",
+      "x": 2940,
+      "y": 240,
+      "icon": "go",
+      "texts": [
+        {
+          "text": "Go API"
+        }
+      ],
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "guest-data",
+      "x": 920,
+      "y": 820,
+      "icon": "user",
+      "texts": [
+        {
+          "text": "Гость\n{ user: null }"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "serializer",
+      "x": 1920,
+      "y": 820,
+      "icon": "braces",
+      "texts": [
+        {
+          "text": "5. serialize-javascript"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "html-rewriter",
+      "x": 2500,
+      "y": 820,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "6. Bun HTMLRewriter"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "html-template",
+      "x": 2500,
+      "y": 240,
+      "icon": "file-code",
+      "texts": [
+        {
+          "text": "index.html\nлокальный шаблон"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "html-ok",
+      "x": 2500,
+      "y": 1320,
+      "icon": "file",
+      "texts": [
+        {
+          "text": "7. HTML 200"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "html-unavailable",
+      "x": 1420,
+      "y": 1320,
+      "icon": "alert-triangle",
+      "texts": [
+        {
+          "text": "HTML 503"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "client-start",
+      "x": 0,
+      "y": 620,
+      "width": 340,
+      "text": "**7. Старт клиента — только HTML 200**\n\n`textContent` → `JSON.parse()`\n\n→ инициализировать стор\n\n→ первый рендер\n\nстартового RPC users.me нет"
+    },
+    {
+      "tag": "Textbox",
+      "id": "session-policy",
+      "x": 1280,
+      "y": 440,
+      "width": 400,
+      "text": "Общий с tRPC слой:\nсессия, refresh, Orval-клиент Go.\nОдин refresh и повтор после 401\nдля HTML и RPC; без вызова своего tRPC.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "guest-policy",
+      "x": 840,
+      "y": 1020,
+      "width": 400,
+      "text": "**Нет сессии:** Go не вызывается.\n\nПодтверждённо недействительная сессия: удаление cookie.\nВ том числе отклонённый refresh или повторный 401.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "serialization-policy",
+      "x": 1820,
+      "y": 1020,
+      "width": 400,
+      "text": "`serialize-javascript`\n`isJSON: true`\nтолько `{ user }`\n\nБез токенов и служебных ответов Go.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "template-policy",
+      "x": 2360,
+      "y": 420,
+      "width": 400,
+      "text": "`index.html` из образа BFF:\nпрочитан и проверен при старте,\nхранится в памяти.\nБез S3/CDN на запрос.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "rewrite-policy",
+      "x": 2360,
+      "y": 1020,
+      "width": 400,
+      "text": "`script#bootstrap`\n`type=application/json`\n`setInnerContent`: `html: true`\nпосле безопасной сериализации.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "unavailable-policy",
+      "x": 1280,
+      "y": 1480,
+      "width": 500,
+      "text": "**503:** сессия сохраняется,\nприложение не запускается.\nПосле успешного refresh новая cookie\nпередаётся даже с HTML 503.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "response-policy",
+      "x": 0,
+      "y": 1440,
+      "width": 700,
+      "text": "**Общая политика HTML 200 и 503, включая гостевые**\n\n`Cache-Control: private, no-store`\nНовая cookie или удаление cookie — в заголовках до тела."
+    },
+    {
+      "tag": "Textbox",
+      "id": "client-entry",
+      "x": 0,
+      "y": 40,
+      "width": 340,
+      "text": "**1. Открытие страницы**\n\nВключая GET по внешней ссылке.\nCookie сессии: `SameSite=Lax`."
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 3220,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "caddy",
+      "label": "1. GET HTML · SameSite=Lax",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "html-handler",
+      "label": "2. HTML-запрос"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-handler",
+      "to": "session-client",
+      "label": "3. Общая сессия"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session-client",
+      "to": "go-api",
+      "label": "4. GET /users/me"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "session-client",
+      "label": "4. Ответ Go: DTO или ошибка → BFF"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session-client",
+      "to": "serializer",
+      "label": "5. Успешный DTO → { user }"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session-client",
+      "to": "guest-data",
+      "label": "Гость: нет сессии / сессия недействительна"
+    },
+    {
+      "tag": "Relationship",
+      "from": "guest-data",
+      "to": "serializer",
+      "label": "5. { user: null }"
+    },
+    {
+      "tag": "Relationship",
+      "from": "serializer",
+      "to": "html-rewriter",
+      "label": "6. Безопасный JSON"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-template",
+      "to": "html-rewriter",
+      "label": "6. Шаблон из памяти"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-rewriter",
+      "to": "html-ok",
+      "label": "7. Готовый HTML"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-ok",
+      "to": "caddy",
+      "label": "7. HTML 200"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session-client",
+      "to": "html-unavailable",
+      "label": "сеть / таймаут / 5xx / S2S"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-unavailable",
+      "to": "caddy",
+      "label": "HTML 503"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "client",
+      "label": "7. HTML 200 или 503"
+    }
+  ]
+}

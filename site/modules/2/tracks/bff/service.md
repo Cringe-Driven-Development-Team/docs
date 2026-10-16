@@ -5,58 +5,59 @@ title: Сервис BFF
 # Миграция на BFF: сервис
 
 Как устроен сам BFF как программа: точка входа, переменные окружения, health check, логи, образ и запуск
-на проде. Роутер и процедуры — [«Контракт»](./contract), сессия и CSRF —
+на проде. HTML и начальный пользователь — [«Серверный bootstrap»](./bootstrap). Роутер и процедуры — [«Контракт»](./contract), сессия и CSRF —
 [«Авторизация и CSRF»](./auth). Страница описывает целевое состояние: нашёл решение лучше — поправь её в
 том же PR, что и код.
 
 ## Каркас
 
-BFF — сервер на Hono под Bun. Точка входа `apps/bff/src/index.ts` делает пять шагов:
+BFF — сервер на Hono под Bun. Точка входа `apps/bff/src/index.ts`:
 
 1. проверяет переменные окружения (см. [«Переменные окружения»](#переменные-окружения));
-2. создаёт `new Hono()`;
-3. отвечает на `GET /health`;
-4. отдаёт `/api/trpc/*` адаптеру tRPC — `fetchRequestHandler` из `@trpc/server/adapters/fetch`;
-5. экспортирует `{ port, fetch }`: из такого `export default` Bun сам поднимает HTTP-сервер.
+2. читает HTML-шаблон из фиксированного пути образа в память, проверяет единственный
+   `script#bootstrap` и `type="application/json"`; ошибка — отказ старта, без раздачи пустого HTML;
+3. создаёт `new Hono()` и access log;
+4. отвечает на внутренний `GET /health` без вызова Go;
+5. отдаёт `/api/trpc` и `/api/trpc/*` официальному `fetchRequestHandler` из
+   `@trpc/server/adapters/fetch`, не оборачивая ошибки RPC в HTML;
+6. отвергает остальные `/api/*`, отдельно раздаёт публичные файлы из явного списка сборки;
+7. для GET/HEAD с `Accept: text/html` включает HTML-хендлер с общей сессией и bootstrap,
+   включая прямые ссылки на клиентские экраны; остальные запросы — ошибка маршрутизации;
+8. экспортирует `{ port, fetch }`: Bun поднимает HTTP-сервер.
+
+Маршруты API, служебные и public обрабатываются до SPA fallback; HEAD сохраняет статус и заголовки
+соответствующего GET, но не содержит тела. Чужой URL не выбирает произвольный файл образа.
+[Проверка и преобразование шаблона](./bootstrap#вставка-данных) используют Bun HTMLRewriter и
+серверный serialize-javascript; на каждый ответ создаётся отдельный преобразователь.
+
+Фрагмент подключения адаптера, не полный сервер:
 
 ```ts
-// apps/bff/src/index.ts
-import { env } from './env'; // первым: неверные переменные — выход до старта сервера
-import { Hono } from 'hono';
+// Внутри обработчика Hono; appRouter и createContext — модули приложения.
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from './router';
 import { createContext } from './context';
-import { accessLog, logTrpcError } from './log';
 
-const app = new Hono();
-
-app.use(accessLog);
-app.get('/health', (c) => c.text('ok'));
-app.all('/api/trpc/*', (c) =>
-  fetchRequestHandler({
+export function handleTrpc(req: Request): Promise<Response> {
+  return fetchRequestHandler({
     endpoint: '/api/trpc',
-    req: c.req.raw,
+    req,
     router: appRouter,
-    createContext, // ({ req, resHeaders }): CSRF и сессия из req, resHeaders — для Set-Cookie
-    onError: logTrpcError,
-  }),
-);
-app.onError((err, c) => {
-  console.log(JSON.stringify({ time: new Date().toISOString(), level: 'error', path: c.req.path, error: String(err) }));
-  return c.text('Internal Server Error', 500);
-});
-
-export default { port: env.PORT, fetch: app.fetch };
+    createContext, // ({ req, resHeaders }): сначала CSRF; resHeaders — для Set-Cookie
+  });
+}
 ```
 
-*Пример; имена модулей — на усмотрение, порядок шагов — такой.*
+*Пример подключения; обработчик регистрируется на обоих путях tRPC, `onError: logTrpcError`
+добавляет лог ошибок процедур. Проверка шаблона и HTML-маршрут входят в каркас выше.*
 
 - `appRouter` — роутер из [«Контракта»](./contract#роутер).
-- `createContext` — из [«Авторизации и CSRF»](./auth#как-bff-обрабатывает-вызов). Адаптер передаёт ему
-  `req` и `resHeaders`: он проверяет CSRF и расшифровывает cookie сессии из `req`, а `resHeaders` кладёт в
-  контекст — через него процедуры ставят новую cookie (`Set-Cookie`). Отдельного middleware Hono для этих
-  проверок нет — правила в одном месте.
-- Адаптер берёт стандартный `Request` (`c.req.raw`) и возвращает `Response`; Hono отдаёт его как есть.
+- `createContext` — из [«Авторизации и CSRF»](./auth#как-bff-обрабатывает-вызов). Адаптер передаёт
+  `req` и `resHeaders`: сначала CSRF, затем общий слой сессии; через `resHeaders` процедуры ставят
+  `Set-Cookie`. Отдельного Hono middleware для CSRF нет. HTML вызывает общий слой сессии напрямую,
+  без собственного HTTP-запроса к tRPC.
+- Адаптер возвращает `Response`, Hono отдаёт его как есть. HTML-хендлер завершает решение о cookie
+  до отправки тела, включая ответ 503 после успешного refresh.
 
 ## Переменные окружения
 
@@ -105,8 +106,8 @@ export const env = parsed.data;
 не вызывает: живость Go проверяет healthcheck сервиса `api` в compose, а BFF стартует после него
 (`depends_on … service_healthy`, см. [«На проде»](#на-проде)).
 
-Путь лежит вне `/api/trpc`, и маршрута на него в Caddy нет: снаружи `/health` попадает в SPA. Проверяет
-его только compose изнутри контейнера.
+Путь лежит вне `/api/trpc`: Caddy явно запрещает внешний `/health`, в SPA он не попадает.
+Проверяет его только compose изнутри контейнера.
 
 ## Ошибки и логи
 
@@ -115,7 +116,7 @@ export const env = parsed.data;
 - **Запрос — одна строка:** `time`, `method`, `path`, `procedure` (для tRPC), `status`, `ms`. `path` — без
   query string: в `?input=` у query лежит вход процедуры. `procedure` — часть пути после `/api/trpc/`, у
   батча — имена через запятую. `/health` не логируется: compose дёргает его каждые 5 с.
-- **Никогда не логируются:** cookie, `Authorization`, вход процедур, токены, `SESSION_KEY`.
+- **Никогда не логируются:** cookie, `Authorization`, вход процедур, токены, `SESSION_KEY`, JSON пользователя из bootstrap.
 - **Ошибка процедуры.** `onError` адаптера пишет строку с `procedure`, `code` и `appCode`. Он получает
   `TRPCError`, а не готовый ответ, поэтому `appCode` считает той же функцией, что и `errorFormatter`
   (`appCodeOf(error)`, см. [«Ошибки»](./contract#ошибки)). Для
@@ -124,7 +125,11 @@ export const env = parsed.data;
   `errorFormatter` подменяет `message` на `Internal Server Error`, а `initTRPC.create` получает
   `isDev: false`. Без него tRPC решает по `NODE_ENV`, уйдёт ли стек в `data.stack`, а в образе
   `NODE_ENV` не задан.
-- **Ошибки вне tRPC** ловит `app.onError`: в лог — строка с `path` и текстом ошибки, клиенту — `500` с телом
+- **Ошибки HTML при обращении к Go:** сеть, таймаут, `5xx`, `403 s2s_forbidden` и неожиданные ответы
+  дают страницу временной недоступности с HTTP `503`, без деталей и запуска приложения. Сессия не
+  удаляется; успешный refresh сохраняет новую cookie даже при последующем 503. Общий клиент Go
+  имеет конечный таймаут. Bootstrap HTML, включая гостевой, и HTML 503 — `Cache-Control: private, no-store`.
+- **Прочие ошибки вне tRPC** ловит `app.onError`: в лог — строка с `path` и текстом ошибки, клиенту — `500` с телом
   `Internal Server Error`.
 
 ```ts
@@ -161,23 +166,28 @@ bun build src/index.ts --target bun --outfile dist/bff.js
 ```
 
 В бандл входят все зависимости: `hono`, `@trpc/server`, `zod`, `@cdd/schemas` и клиент к Go от Orval, поэтому
-`node_modules` в образе не нужен.
+`serialize-javascript` также включён в серверный бандл, но не в клиентский; `node_modules` в образе не нужен.
 Turborepo собирает зависимости раньше (`^build`), см. [«Монорепа фронта»](../bff#монорепа-фронта).
 
-`apps/bff/Dockerfile`; контекст сборки — `apps/bff` (`docker build apps/bff`), поэтому `COPY dist/bff.js .`
-находит бандл:
+Упаковка — отдельный шаг после сборок клиента Vite и BFF Bun, вне `build` пакета BFF.
+Обратная зависимость `bff#build` от `client#build` создаст цикл: клиент уже зависит от типов BFF.
+`apps/bff/Dockerfile`; контекст сборки — корень монорепы:
+`docker build -f apps/bff/Dockerfile .`. Потребляются готовые результаты обеих сборок:
 
 ```dockerfile
 FROM oven/bun:1.4.3-alpine
 WORKDIR /app
-COPY dist/bff.js .
+COPY apps/bff/dist/bff.js ./bff.js
+COPY apps/client/dist/index.html ./client/index.html
 USER bun
 EXPOSE 3000
 CMD ["bun", "bff.js"]
 ```
 
 *Пример; `1.4.3-alpine` — последний тег на 12.10.2026, монорепа требует bun не ниже 1.4.0. Версия
-закрепляется точной, без `latest`.*
+закрепляется точной, без `latest`. Если сборка содержит favicon, robots, manifest или другие файлы
+основного origin, упаковка дополнительно копирует только их по явному списку в `./client/public/`;
+JS/CSS остаются в CDN. Шаблон читается по фиксированному `/app/client/index.html`.*
 
 - **Почему бандл на alpine.** В alpine есть `wget` для healthcheck и shell для отладки. Бинарник
   `bun build --compile` на distroless отвергнут: ни `wget`, ни shell. Исходники с `node_modules` —
@@ -185,7 +195,9 @@ CMD ["bun", "bff.js"]
 - **Пользователь `bun`** уже есть в образе `oven/bun`: сервис работает не от root.
 
 Образ публикуется в GHCR с тегом по SHA коммита. Собирает и публикует его CI из
-[frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4).
+[frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4). HTML и BFF — один SHA;
+публикация ассетов предшествует выкладке образа. Полный [выпуск и откат](./bootstrap#выпуск-и-откат)
+включает запрет выкладки при ошибке загрузки и сохранение ассетов предыдущего образа.
 
 ## На проде
 
@@ -251,20 +263,33 @@ BFF встаёт на ту же VPS рядом с Go API по образцу с�
 ([`:5-7`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L5-L7))
 и `handle` для SPA
 ([`:15`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L15)).
-Перед SPA встаёт маршрут на BFF:
+HTML больше не читается из корня S3: Caddy передаёт его в BFF. Маршруты до HTML fallback:
 
 ```txt
-	handle /api/trpc/* {
-		reverse_proxy bff:3000
-	}
+  @trpc path /api/trpc /api/trpc/*
+  handle @trpc {
+    reverse_proxy bff:3000
+  }
+  @blocked path /api /api/* /health /health/*
+  handle @blocked {
+    respond 404
+  }
+  handle {
+    reverse_proxy bff:3000
+  }
 ```
 
-Снаружи `/api/v1` при переключении пропадает: браузер ходит только в BFF — см.
+*Проект маршрутизации. В последнем обработчике BFF сначала раздаёт public по явному списку,
+затем принимает только GET/HEAD HTML с `Accept: text/html`; прочее — ошибка. Ассеты по CDN-адресам
+остаются в CDN. `/health` Caddy наружу не публикует, API-ошибки не поглощаются SPA fallback.*
+
+Снаружи `/api/v1` при переключении пропадает: браузер ходит в BFF — см.
 [«Переключение»](../bff#переключение).
 
 **Секреты.** `SESSION_KEY` — в Ansible Vault, как остальные секреты: `vault_session_key` в `vault.yml` и
 открытое имя `session_key` в `vars.yml`. `APP_ORIGIN` не секрет и лежит открыто.
 
 CI из [frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4) собирает
-`dist/bff.js`, образ и публикует его в GHCR. Compose, `.env` и Caddy правятся в `infra` отдельной задачей;
+`dist/bff.js` и клиент Vite из одного коммита, публикует ассеты, затем упаковывает HTML
+и серверный бандл в образ и публикует его в GHCR. Отдельного promote клиента после playbook нет. Compose, `.env` и Caddy правятся в `infra` отдельной задачей;
 она пока не заведена.

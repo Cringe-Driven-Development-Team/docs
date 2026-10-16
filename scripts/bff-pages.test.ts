@@ -1,13 +1,14 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Документы трека «BFF» модуля октября: страница трека и две подстраницы.
+// Документы трека «BFF» модуля октября: страница трека и четыре подстраницы.
 export const TRACK = "site/modules/2/tracks/bff.md";
 export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
 export const SERVICE = "site/modules/2/tracks/bff/service.md";
 // SERVICE сюда не входит: проверка «нет IPv4» ниже ловит 127.0.0.1 из healthcheck; свои проверки — в тестах «Сервис BFF».
-export const BFF_PAGES = [TRACK, CONTRACT, AUTH];
+export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
+export const BFF_PAGES = [TRACK, CONTRACT, AUTH, BOOTSTRAP];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
@@ -38,7 +39,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [contract, auth, service]");
+  expect(md).toContain("pages: [contract, auth, service, bootstrap]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -374,4 +375,62 @@ test("подстраница «Сервис BFF»: шаблоны Ansible в с�
   expect(prod).not.toContain("три места");
   // в HTML-теге markdown-it-emoji превращает «:$» в 😒 — двоеточие пишется сущностью
   expect(prose.match(/<code v-pre>[^<]*<\/code>/g)?.filter((code) => code.includes(":$")) ?? []).toEqual([]);
+});
+
+
+test("bootstrap: контракт, преобразование и старт клиента", () => {
+  const md = readFileSync(BOOTSTRAP, "utf8");
+  expect(md).toContain("title: Серверный bootstrap");
+  expect(md.split("\n").filter((line) => line.startsWith("## ")).map((line) => line.slice(3))).toEqual([
+    "Контракт", "HTML-запрос", "Вставка данных", "Старт клиента", "Ошибки", "Кеширование", "Разработка", "Выпуск и откат", "Проверка",
+  ]);
+  expect(section(md, "Контракт")).toContain('<script id="bootstrap" type="application/json"></script>');
+  for (const value of ["HTMLRewriter", "serialize-javascript", "isJSON: true", "html: true"]) {
+    expect(section(md, "Вставка данных"), value).toContain(value);
+  }
+  for (const value of ["textContent", "JSON.parse", "ошибка запуска"]) {
+    expect(section(md, "Старт клиента"), value).toContain(value);
+  }
+  expect(section(readFileSync(CONTRACT, "utf8"), "Источники правды")).toContain("BootstrapData");
+  expect(section(readFileSync(CONTRACT, "utf8"), "Роутер")).toContain("users.me");
+  expect(section(readFileSync(AUTH, "utf8"), "Cookie сессии")).toContain("| `SameSite` | `Lax` |");
+});
+
+test("bootstrap: сессия, ошибки, кеширование и выпуск", () => {
+  const md = readFileSync(BOOTSTRAP, "utf8");
+  const errors = section(md, "Ошибки");
+  for (const value of ["user: null", "503", "refresh", "новая cookie", "BAD_GATEWAY"]) expect(errors, value).toContain(value);
+  expect(section(md, "Вставка данных")).toContain("отказ старта");
+  const cache = section(md, "Кеширование");
+  for (const value of ["гостевые", "private, no-store", "PWA"]) expect(cache, value).toContain(value);
+  const release = section(md, "Выпуск и откат");
+  expect(release.indexOf("Загрузить ассеты")).toBeGreaterThan(-1);
+  expect(release.indexOf("Загрузить ассеты")).toBeLessThan(release.indexOf("Выкатить образ"));
+  expect(release).toContain("Ошибка загрузки запрещает выкладку");
+  expect(section(md, "Проверка")).toContain("Проект: проверить после внедрения");
+  const allowed = section(readFileSync(CONTRACT, "utf8"), "Какие вызовы BFF принимает");
+  expect(allowed).toContain("HTML-хендлер");
+  expect(allowed).toContain("GET /users/me");
+});
+
+test("bootstrap: новые ссылки с якорями ведут на существующие заголовки", () => {
+  for (const [source, link, target, heading] of [
+    [TRACK, "./bff/bootstrap#выпуск-и-откат", BOOTSTRAP, "## Выпуск и откат"],
+    [CONTRACT, "./bootstrap#контракт", BOOTSTRAP, "## Контракт"],
+    [AUTH, "./bootstrap#html-запрос", BOOTSTRAP, "## HTML-запрос"],
+    [SERVICE, "./bootstrap#вставка-данных", BOOTSTRAP, "## Вставка данных"],
+    [SERVICE, "./bootstrap#выпуск-и-откат", BOOTSTRAP, "## Выпуск и откат"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(link!);
+    expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
+  }
+});
+
+test("bootstrap: схема встроена в начале HTML-потока до нумерованных шагов", () => {
+  const part = section(readFileSync(BOOTSTRAP, "utf8"), "HTML-запрос");
+  expect(part).toContain('<Diagram name="modules/2/bff-bootstrap" />');
+  expect(part).toContain("Поток:");
+  expect(part).toContain("1. BFF");
+  expect(part.indexOf("<Diagram")).toBeGreaterThan(part.indexOf("Поток:"));
+  expect(part.indexOf("<Diagram")).toBeLessThan(part.indexOf("1. BFF"));
 });

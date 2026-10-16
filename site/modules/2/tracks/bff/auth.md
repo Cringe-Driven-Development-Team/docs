@@ -19,7 +19,7 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 | `HttpOnly` | да |
 | `Secure` | да |
 | `Path` | `/` |
-| `SameSite` | `Strict` |
+| `SameSite` | `Lax` |
 | `Domain` | не задаётся |
 | `Max-Age` | `refresh_expires_in` из ответа Go |
 
@@ -43,6 +43,9 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 > The BFF SHOULD enable the SameSite=Strict flag for its cookies.
 
+Здесь сознательно выбрано `Lax` вместо рекомендации `Strict`: на внешнем GET верхнего уровня
+сессия нужна уже при получении HTML с пользователем. Остальные атрибуты и шифрование сохраняются.
+
 > The BFF SHOULD start the name of its cookie with a prefix indicating the cookie was set via HTTP, for example, by using the __Host-Http- prefix defined in [COOKIES].
 
 Шифрование там же:
@@ -65,8 +68,8 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 1. `createContext` проверяет CSRF (раздел «CSRF» ниже). Не прошли — `FORBIDDEN` с `appCode: csrf_invalid`
    (HTTP `403`): роутер не вызывается, в Go ничего не уходит.
-2. `createContext` расшифровывает cookie `__Host-Http-session` в `ctx.session`; cookie нет или она не
-   расшифровывается — `null`.
+2. `createContext` вызывает общий слой сессии: тот расшифровывает cookie `__Host-Http-session`
+   в `ctx.session`; cookie нет или она не расшифровывается — `null`.
 3. Все процедуры, кроме `auth.*`, построены на `authedProcedure`: без сессии — `UNAUTHORIZED` (HTTP `401`).
    Несуществующая процедура — `NOT_FOUND` от tRPC (см. [«Контракт»](./contract#какие-вызовы-bff-принимает)).
 4. Если до `accessExp` меньше 30 с, `authedProcedure` обновляет токены через refresh до вызова Go.
@@ -92,7 +95,20 @@ BFF держит всю сессию в одной cookie `__Host-Http-session`.
 
 Одновременные refresh объединяются. Ключ — SHA-256 refresh-токена, результат держится в памяти
 10 с: вторая вкладка со старой cookie получает те же новые токены. Если Go отвергает refresh
-(`401`), BFF стирает cookie (`Max-Age=0`) и отвечает `UNAUTHORIZED`.
+(`401`), BFF стирает cookie (`Max-Age=0`) и отвечает `UNAUTHORIZED` на RPC.
+
+Чтение сессии, клиент Go и политика refresh — общий слой для RPC и HTML. В `createContext`
+CSRF остаётся первым; HTML-хендлер вызывает слой после маршрутизации, без внутреннего HTTP-вызова
+собственного tRPC. Одновременный HTML/RPC использует то же объединение refresh, без новой гонки.
+Запросы ограничены конечным таймаутом общего клиента Go.
+
+Для [HTML-запроса](./bootstrap#html-запрос) нет cookie или она недействительна — гостевой HTML
+с `user: null`, недействительная cookie удаляется; без cookie Go не вызывается. Отклонённый refresh
+и повторный `401` тоже дают гостя. Сеть, таймаут, `5xx`, `403 s2s_forbidden` и другие неожиданные
+ответы дают HTML `503`, без запуска приложения и без удаления сессии. Если refresh успешен,
+новая cookie сохраняется даже при последующем сбое `users/me` и HTML 503: старый refresh уже
+отозван. Любая новая или удаляемая cookie записывается до тела HTML-ответа. У RPC сохраняются
+конверты и `BAD_GATEWAY` для инфраструктурных ошибок.
 
 ## CSRF
 
@@ -104,8 +120,9 @@ cookie, и для каждого вызова, включая вход, реги
    живёт на том же origin.
 2. Для `POST` (mutation и батч мутаций): `Origin` равен `APP_ORIGIN`, а `Sec-Fetch-Site`, если он
    есть, равен `same-origin`; иначе `403 csrf_invalid`.
-3. `SameSite=Strict`: cookie не уходит на межсайтовые запросы. SPA это не мешает: HTML отдаётся без
-   cookie, а запросы к API делает страница того же сайта.
+3. `SameSite=Lax`: cookie не уходит с межсайтовыми fetch и POST, но передаётся на GET-навигации
+   верхнего уровня, чтобы пользователь был в первом HTML. Внешний GET HTML разрешён без `X-CSRF`
+   и с `Sec-Fetch-Site: cross-site`; он не меняет предметные данные и не выполняет logout.
 
 Ещё раньше tRPC сам разбирает запрос: тело не в JSON (`application/x-www-form-urlencoded` и
 `text/plain` — так шлёт обычная HTML-форма) он отклоняет `415 UNSUPPORTED_MEDIA_TYPE`, не вызывая
@@ -123,9 +140,9 @@ cookie, и для каждого вызова, включая вход, реги
 
 WebSocket (будущая потоковая отдача вывода рантайма) устроен иначе. Браузерный API не умеет ставить
 свои заголовки, так что `X-CSRF: 1` на upgrade поставить нельзя: upgrade освобождён от `X-CSRF` и
-защищён проверкой `Origin` плюс `SameSite=Strict`. Нет `Origin` или он не равен `APP_ORIGIN` — `403`.
+защищён проверкой `Origin` плюс `SameSite=Lax`. Нет `Origin` или он не равен `APP_ORIGIN` — `403`.
 Причина в том, что у WebSocket нет CORS и preflight (Cross-Site WebSocket Hijacking): cookie
-`SameSite=Strict` не уйдёт на рукопожатие с чужого сайта, но уйдёт с поддомена того же сайта
+`SameSite=Lax` не уйдёт на рукопожатие с чужого сайта, но уйдёт с поддомена того же сайта
 ([сценарий](#запрос-с-поддомена)), поэтому проверка `Origin` обязательна.
 
 Фронту больше не нужно читать cookie, повторять запрос после `403` и обновлять токены на `401`:
@@ -301,14 +318,14 @@ sequenceDiagram
   B->>P: OPTIONS /api/trpc/notebooks.create
   P-->>B: без разрешения CORS
   Note over B: основной запрос не отправлен
-  Note over B,P: SameSite=Strict: cookie на межсайтовые запросы не уходит
+  Note over B,P: SameSite=Lax: cookie на межсайтовые POST и fetch не уходит
 ```
 
 *Проект: проверить после внедрения.*
 
 ### Запрос с поддомена
 
-Поддомен (скажем, захваченный) находится на том же сайте, поэтому `SameSite=Strict` не помогает:
+Поддомен (скажем, захваченный) находится на том же сайте, поэтому `SameSite=Lax` не помогает:
 cookie уходит вместе с запросом. Это именно тот случай, который `SameSite` один не закрывает
 ([§6.1.3.3.1](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.1)):
 
@@ -325,7 +342,7 @@ sequenceDiagram
   participant E as Чужой сайт
   E->>B: форма с поддомена, POST /api/trpc/notebooks.create
   B->>P: POST /api/trpc/notebooks.create, Cookie __Host-Http-session, Origin поддомена, без X-CSRF
-  Note over P: same-site - cookie ушла, Strict её не останавливает. Sec-Fetch-Site: same-site, Origin не равен APP_ORIGIN
+  Note over P: same-site - cookie ушла, Lax её не останавливает. Sec-Fetch-Site: same-site, Origin не равен APP_ORIGIN
   P-->>B: 415 UNSUPPORTED_MEDIA_TYPE, multipart - 403 FORBIDDEN csrf_invalid
 ```
 
@@ -333,20 +350,24 @@ sequenceDiagram
 
 ### Переход по внешней ссылке
 
-Пользователь переходит на сайт по ссылке с чужого сайта. Cookie `Strict` на такую навигацию не
-уходит, и Caddy отдаёт `index.html` без неё. Дальше запросы к API делает уже страница нашего сайта, и
-cookie с ними идёт.
+Пользователь переходит с GitHub или Telegram в обычном браузере с сохранённой сессией.
+Cookie `Lax` передаётся на GET-навигации верхнего уровня. Caddy передаёт HTML-запрос BFF;
+тот определяет пользователя общим слоем сессии и отдаёт его в первом HTML, без стартового `users.me`.
+Встроенный браузер другого приложения со своим хранилищем cookie может оставаться гостем.
 
 ```mermaid
 sequenceDiagram
   participant E as Чужой сайт
   participant B as Браузер
   participant P as BFF
+  participant A as Go API
   E->>B: переход по ссылке на наш сайт
-  Note over B: Caddy отдаёт index.html, cookie на навигацию не уходит
-  Note over B: страница уже наша, same-site
-  B->>P: GET /api/trpc/users.me, Cookie __Host-Http-session, X-CSRF: 1
-  P-->>B: 200
+  B->>P: GET HTML через Caddy, Cookie Lax, Sec-Fetch-Site cross-site
+  Note over P: HTML не требует X-CSRF, общий слой сессии и refresh
+  P->>A: GET /api/v1/users/me, Authorization Bearer
+  A-->>P: 200 User
+  P-->>B: 200 HTML с BootstrapData, при refresh новая cookie до тела
+  Note over B: стор получает пользователя до первого рендера
 ```
 
 *Проект: проверить после внедрения.*
@@ -354,18 +375,18 @@ sequenceDiagram
 ### Первый вход после переезда
 
 У пользователя в браузере старые cookie `access_token`, `refresh_token` и `__Host-csrf`, а новой
-`__Host-Http-session` нет. Первый же запрос получает `401`, пользователь входит заново, и ответ
-входа ставит новую cookie и стирает три старые.
+`__Host-Http-session` нет. HTML содержит `user: null` без вызова Go; клиент показывает форму входа.
+Пользователь входит заново, и ответ входа ставит новую cookie и стирает три старые.
 
 ```mermaid
 sequenceDiagram
   participant F as Фронт
   participant B as Браузер
   participant P as BFF
-  F->>B: GET /api/trpc/users.me, X-CSRF: 1
-  B->>P: GET /api/trpc/users.me, старые cookie, без __Host-Http-session
-  P-->>B: 401 UNAUTHORIZED
-  B-->>F: 401
+  B->>P: GET HTML через Caddy, старые cookie, без __Host-Http-session
+  Note over P: Go не вызывается
+  P-->>B: 200 HTML с user null
+  B-->>F: bootstrap user null
   Note over F: гость - показать форму входа
   F->>B: POST /api/trpc/auth.login, X-CSRF: 1
   B->>P: POST /api/trpc/auth.login

@@ -9,18 +9,20 @@ subtasks:
   - "tRPC (server)"
   - title: "Turborepo + bun workspaces"
     issues: [frontend#44]
-pages: [contract, auth, service]
+pages: [contract, auth, service, bootstrap]
 ---
 
 Подзадачи трека, включая «tRPC (server)» — роутер tRPC в BFF, делает Денис; Валентин — изменения на стороне Go (см. [«Go API»](#go-api)).
 Клиент к Go и zod-схемы из контракта Go — подтрек [«Orval»](./bff-orval). Свой клиент tRPC — подтрек [«tRPC (client)»](./trpc-client): пакет `@cdd-team/trpc-client` живёт в монорепе фронтовых
 библиотек [`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages).
 
-Браузер ходит только в BFF (Backend for Frontend): клиент вызывает процедуры tRPC, а BFF ходит в Go API.
+Браузер получает HTML с пользователем из BFF (Backend for Frontend), затем вызывает процедуры tRPC;
+BFF ходит в Go API общим клиентом с единой обработкой сессии и refresh.
 Токены остаются на сервере и в браузер не попадают: у пользователя только зашифрованная cookie сессии.
 Страница описывает целевое состояние трека; остальные — [Контракт](./bff/contract) (роутер tRPC, клиент к
 Go от Orval и свой клиент tRPC), [Авторизация и CSRF](./bff/auth) (сессия, refresh и защита от CSRF по
-сценариям) и [Сервис BFF](./bff/service) (каркас, переменные, health check, образ и запуск).
+сценариям), [Сервис BFF](./bff/service) (каркас, переменные, health check, образ и запуск) и
+[Серверный bootstrap](./bff/bootstrap) (пользователь в HTML, старт клиента, выпуск и откат).
 
 ## Как устроен контракт
 
@@ -35,7 +37,7 @@ Go от Orval и свой клиент tRPC), [Авторизация и CSRF](.
   `@cdd/schemas`.
 - **BFF.** Процедуры роутера проверяют вход схемами из `@cdd/schemas` на настоящем `zod` и ходят в Go
   клиентом от Orval.
-- **Клиент.** Свой клиент tRPC берёт типы процедур из `import type AppRouter` — кода BFF в бандле нет.
+- **Клиент.** Свой клиент tRPC берёт типы процедур из `import type AppRouter`; начальные данные HTML — из `import type BootstrapData`. Кода BFF в бандле нет.
   Формы проверяют поля своими правилами, как сейчас, а ошибку входа от BFF (`zodError`) раскладывают по полям.
   Подробности — [«Контракт»](./bff/contract).
 
@@ -49,8 +51,10 @@ Go от Orval и свой клиент tRPC), [Авторизация и CSRF](.
 [frontend#44](https://github.com/Cringe-Driven-Development-Team/frontend/issues/44) делает репозиторий фронта
 монорепой на bun workspaces и Turborepo из трёх workspace: `apps/client`, `apps/bff` и `packages/schemas`
 (`@cdd/schemas`); библиотеки — пакеты `@cdd-team/*` из npm (монорепа `frontend-packages`). Клиент берёт у BFF
-только типы (`import type AppRouter`), а Turborepo сначала собирает зависимости (`^build`) и повторный запуск
-без изменений берёт из кеша. Генерация клиента к Go и схем — в [«Как устроен контракт»](#как-устроен-контракт).
+только типы (`import type AppRouter` и `BootstrapData`), а Turborepo сначала собирает зависимости (`^build`) и повторный запуск
+без изменений берёт из кеша. Vite собирает клиент и HTML, Bun build — BFF. Упаковка общего образа
+с HTML выполняется после обеих сборок вне `bff#build`, чтобы не создать цикл с клиентом.
+[Выпуск и откат](./bff/bootstrap#выпуск-и-откат) связывают HTML и BFF одним SHA; ассеты идут в CDN. Генерация клиента к Go и схем — в [«Как устроен контракт»](#как-устроен-контракт).
 
 ## Было и стало
 
@@ -68,6 +72,9 @@ flowchart LR
 flowchart LR
     B["Браузер"] -->|"cookie __Host-Http-session и заголовок X-CSRF: 1"| C["Caddy"]
     C -->|"/api/trpc/* на bff:3000"| P["BFF"]
+    B -->|"GET HTML, cookie; без X-CSRF"| C
+    C -->|"HTML на bff:3000"| P
+    P -->|"HTML с BootstrapData"| B
     P -->|"GO_API_URL, на одной VPS http://api:8080/api/v1, и Authorization: Bearer"| A["Go API"]
 ```
 
@@ -84,7 +91,7 @@ flowchart LR
 | `access_token` (сейчас) | `/api/v1` | да | `Lax` | Go API |
 | `refresh_token` (сейчас) | `/api/v1/auth` | да | `Lax` | Go API |
 | `__Host-csrf` (сейчас) | `/` | **нет** | `Lax` | фронт читает из `document.cookie`, Go сверяет |
-| `__Host-Http-session` (после) | `/` | да | `Strict` | только BFF; в браузере JavaScript её не видит |
+| `__Host-Http-session` (после) | `/` | да | `Lax` | только BFF; в браузере JavaScript её не видит |
 
 Подробности про нынешние cookie — в разделе [CSRF](/security/csrf/). `__Host-Http-session` —
 `Secure`, без `Domain`, срок `Max-Age` равен `refresh_expires_in`.
@@ -114,16 +121,18 @@ refresh не доходят до браузера, а значит, XSS на с�
 Клиент создаётся в
 [`src/api/client.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/client.ts#L29)
 с `baseUrl: '/api/v1'` и `credentials: 'include'`. Его заменяет свой клиент tRPC (`@cdd-team/trpc-client` из
-[`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages), см. [«Клиент»](./bff/contract#клиент)): типы процедур — `import type { AppRouter }` из BFF, на каждый
+[`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages), см. [«Клиент»](./bff/contract#клиент)): типы процедур и HTML — `import type { AppRouter, BootstrapData }` из BFF, на каждый
 вызов `X-CSRF: 1`, cookie он не читает. Refresh на `401` и повтор после `403` уходят; `UNAUTHORIZED`
-означает гостя и форму входа; старт приложения — `users.me`. Задача frontend#34 становится не нужна.
+означает гостя и форму входа. До первого рендера клиент читает JSON из HTML в свой стор сессии,
+без стартового `users.me`; процедура остаётся для явного обновления. Некорректный bootstrap — ошибка
+запуска. Задача frontend#34 становится не нужна.
 
 ### BFF
 
 Новый сервис на Hono с роутером tRPC на `/api/trpc` (см. [«Роутер»](./bff/contract#роутер)); каркас,
 переменные окружения, логи, образ и запуск — [«Сервис BFF»](./bff/service).
-`createContext` проверяет `X-CSRF`, `Origin` и `Sec-Fetch-Site` и расшифровывает cookie сессии;
-`authedProcedure` требует сессию и сам обновляет access. Вызовы Go — fetch-клиент от Orval, вход
+`createContext` сначала проверяет `X-CSRF`, `Origin` и `Sec-Fetch-Site`, затем вызывает общий слой
+сессии. Его же использует HTML-хендлер; `authedProcedure` требует сессию, а refresh общий для HTML/RPC. Вызовы Go — fetch-клиент от Orval, вход
 процедур — zod-схемы от Orval из контракта Go. Работает без своего хранилища. Гонка backend#12
 решается внутри BFF, пока он один экземпляр — см. сценарий [«Две вкладки»](./bff/auth#две-вкладки).
 
@@ -138,13 +147,14 @@ refresh не доходят до браузера, а значит, XSS на с�
 ### Infra
 
 В compose появляется сервис `bff` с `SESSION_KEY` и `APP_ORIGIN`, а Caddy направляет `/api/trpc/*` на
-`bff:3000`.
+`bff:3000`, как и HTML. Корневой HTML из S3 заменяется шаблоном из образа BFF; ассеты
+остаются в CDN. API, public и внутренний `/health` обрабатываются до HTML fallback.
 
 ## Переключение
 
-Go, BFF и Caddy выкатываются одним прогоном playbook, сразу после него промоутится релиз клиента.
-Пока клиент не промоутнут, старый клиент ходит на `/api/v1`, которого снаружи больше нет, и получает
-ошибки: это окно длится столько, сколько проходит между двумя шагами. Ответы BFF на `auth.login`,
+Ассеты клиента загружаются заранее, затем Go, BFF и Caddy переключаются одним прогоном playbook
+с принятым коротким окном недоступности. Образ BFF содержит HTML того же коммита; отдельного promote
+клиента после playbook нет. Откат возвращает предыдущий образ вместе с HTML и сохранёнными ассетами. Ответы BFF на `auth.login`,
 `auth.register` и `auth.logout` стирают три старые cookie с их
 `Path`: `access_token` (`/api/v1`), `refresh_token` (`/api/v1/auth`) и `__Host-csrf` (`/`). Каждый
 пользователь один раз входит заново — см. сценарий
@@ -187,7 +197,7 @@ flowchart LR
   время (`crypto/subtle.ConstantTimeCompare`, для ключа фиксированной длины этого достаточно) и
   проверяет ключ раньше Bearer. Без ключа или с неверным — `403` с кодом `s2s_forbidden`, не `401`:
   на `401` BFF обновил бы токены, refresh с тем же ключом тоже получил бы отказ, и BFF стёр бы cookie
-  сессии. BFF считает `s2s_forbidden` инфраструктурной ошибкой: отвечает клиенту `502`, пишет в лог,
+  сессии. BFF считает `s2s_forbidden` инфраструктурной ошибкой: отвечает RPC-клиенту `BAD_GATEWAY` (HTTP `502`), а на HTML-запрос — страницей `503`, пишет в лог,
   refresh не делает и сессию не трогает. `BFF_API_KEY` лежит в `.env` обеих машин. Ротация: Go на время
   переключения принимает два ключа, старый и новый. Сильнее — mTLS между VPS1 и VPS2.
 - **Без TLS внутри частной сети** — принятый риск MVP: Selectel изолирует приватную сеть. mTLS его бы
@@ -217,7 +227,7 @@ flowchart LR
 
 ## tRPC
 
-Между клиентом и BFF всё ходит через tRPC, клиент переключается разом: проект учебный, реальных
+После начального HTML с bootstrap вызовы клиента к BFF идут через tRPC, клиент переключается разом: проект учебный, реальных
 пользователей нет. Девять процедур названы по ресурсам Go (`auth.*`, `users.me`, `notebooks.*`,
 `cells.*`); если экрану нужно больше одного вызова Go, для него заводится процедура `views.*`. Клиент
 tRPC свой, типы он берёт из `AppRouter`. Подробности — [«Контракт»](./bff/contract).
