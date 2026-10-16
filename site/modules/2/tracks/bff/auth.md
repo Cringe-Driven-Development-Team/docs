@@ -4,7 +4,7 @@ title: Авторизация и CSRF
 
 # Миграция на BFF: авторизация и CSRF
 
-Как BFF хранит сессию, обновляет токены и защищается от CSRF, а затем десять сценариев по шагам.
+Как BFF будет хранить сессию и обновлять токены: три схемы CSRF и семь сценариев сессии по шагам.
 Общая картина — [«Обзор»](../bff), формат ручек — [«Контракт»](./contract). Как защита устроена сейчас —
 в разделе [CSRF](/security/csrf/).
 
@@ -124,10 +124,6 @@ cookie, и для каждого вызова, включая вход, реги
    верхнего уровня, чтобы пользователь был в первом HTML. Внешний GET HTML разрешён без `X-CSRF`
    и с `Sec-Fetch-Site: cross-site`; он не меняет предметные данные и не выполняет logout.
 
-Ещё раньше tRPC сам разбирает запрос: тело не в JSON (`application/x-www-form-urlencoded` и
-`text/plain` — так шлёт обычная HTML-форма) он отклоняет `415 UNSUPPORTED_MEDIA_TYPE`, не вызывая
-`createContext`. Форма с `multipart/form-data` доходит до проверок CSRF и получает `403`.
-
 Первое правило — прямой путь из RFC
 ([§6.1.3.3.2](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.2)):
 
@@ -141,9 +137,73 @@ cookie, и для каждого вызова, включая вход, реги
 Фронту больше не нужно читать cookie, повторять запрос после `403` и обновлять токены на `401`:
 `401` означает гостя и форму входа.
 
+### Запрос нашего клиента
+
+Код нашего tRPC-клиента отправляет защищённую mutation `POST /api/trpc/notebooks.create` с JSON-телом,
+постоянным заголовком `X-CSRF: 1` и `credentials: same-origin`. Браузер сам прикладывает cookie
+`__Host-Http-session`; JavaScript её не читает. Для POST браузер также задаёт `Origin` и Fetch Metadata:
+это сведения браузера о запросе, а не доверенные поля из JSON-тела.
+
+<Diagram name="modules/2/bff-csrf-client" />
+
+`X-CSRF: 1` — не секрет и не случайный токен. Отдельного получения CSRF-токена нет: чужому origin
+для отправки такого заголовка нужно разрешение CORS, которого BFF не выдаёт.
+
+BFF в `createContext` сначала проверяет `X-CSRF: 1`, точное равенство `Origin` и `APP_ORIGIN`,
+а также `Sec-Fetch-Site: same-origin`, если заголовок есть. Только после этого читает сессию
+и вызывает Go. Успешная CSRF-проверка не доказывает наличие действительной сессии: защищённая
+процедура требует её отдельно, а login/register не требуют уже существующей сессии.
+Проверка CSRF обязательна и для login/register/logout.
+
+### Атака с чужого сайта
+
+HTML-форма не умеет ставить `X-CSRF`. Тело с `application/x-www-form-urlencoded` или `text/plain`
+адаптер tRPC отклоняет как `415 UNSUPPORTED_MEDIA_TYPE` до `createContext`. Форма с
+`multipart/form-data` доходит до CSRF-проверки и получает `403 csrf_invalid` из-за отсутствия
+заголовка. В Go запрос не уходит ни в том, ни в другом случае.
+
+Cross-origin `fetch` с `X-CSRF: 1` и JSON вызывает preflight `OPTIONS`. BFF не выдаёт разрешающие
+CORS-заголовки, поэтому браузер не отправляет основной запрос. Это отказ preflight в браузере,
+а не `403` на выполненную mutation. `SameSite=Lax` дополнительно не отправляет сессионную cookie
+на cross-site fetch и POST; защита не полагается только на этот атрибут.
+
+<Diagram name="modules/2/bff-csrf-foreign" />
+
+#### Запрос с поддомена
+
+Поддомен (скажем, захваченный) может быть same-site, но остаётся другим origin. `SameSite=Lax`
+не исключает отправку cookie на наш сайт: он один этот случай не закрывает
+([§6.1.3.3.1](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.1)):
+
+> As a result, a subdomain-takeover attack against b.example.com can enable CSRF attacks against the BFF of a.example.com.
+
+Обычную форму с поддомена tRPC отклонит `415` ещё до `createContext`, а форма с `multipart/form-data`
+не может поставить `X-CSRF` и получит `403 csrf_invalid`. Для fetch с заголовком по-прежнему нужен
+CORS. Точные POST-проверки `Origin` и `Sec-Fetch-Site` обязательны: origin поддомена не равен
+`APP_ORIGIN`, а `Sec-Fetch-Site: same-site` не равен `same-origin`. Они остаются второй линией
+при ошибке в проверке заголовка или настройке CORS.
+
+### Переход по внешней ссылке
+
+Пользователь переходит с GitHub или Telegram в обычном браузере с сохранённой сессией.
+Это GET HTML верхнего уровня через Caddy в BFF; cookie `Lax` передаётся. Такой запрос не требует
+`X-CSRF` и допускает `Sec-Fetch-Site: cross-site`.
+
+<Diagram name="modules/2/bff-csrf-navigation" />
+
+HTML-хендлер использует общий слой сессии и refresh. При действительной сессии общий Go-клиент
+получает пользователя; без сессии Go для определения пользователя не вызывается.
+HTML содержит BootstrapData — только пользователя или `user: null`; стор инициализируется
+до первого рендера, без стартового `users.me` из браузера. Подробные правила ошибок, HTML `503`,
+записи cookie до тела ответа и безопасной сериализации — в [«Данные в первом HTML»](./bootstrap).
+
+GET HTML не меняет предметные данные и не выполняет logout. Последующие RPC снова проходят
+обычные CSRF-проверки: разрешённый внешний переход не отменяет защиту API.
+Встроенный браузер другого приложения со своим хранилищем cookie может оставаться гостем.
+
 ## Сценарии
 
-Участники: `F` — код фронта, `B` — браузер, `P` — BFF, `A` — Go API, `E` — чужой сайт.
+Участники: `F` — код фронта, `B` — браузер, `P` — BFF, `A` — Go API.
 
 ### Вход
 
@@ -287,80 +347,6 @@ sequenceDiagram
   P-->>B: 401 UNAUTHORIZED, Set-Cookie Max-Age=0
   B-->>F: 401
   Note over F: гость - показать форму входа
-```
-
-*Проект: проверить после внедрения.*
-
-### Атака с чужого сайта
-
-Обычная форма с чужого сайта шлёт тело не в JSON, и tRPC отклоняет её `415 UNSUPPORTED_MEDIA_TYPE`
-ещё до проверок BFF; форма с `multipart/form-data` доходит до них и получает `403 csrf_invalid`:
-поставить `X-CSRF` она не может. В Go запрос не уходит ни в том, ни в другом случае. `fetch` с заголовком требует preflight, а BFF не разрешает CORS никому, так что
-браузер не отправит основной запрос.
-
-```mermaid
-sequenceDiagram
-  participant B as Браузер
-  participant P as BFF
-  participant E as Чужой сайт
-  E->>B: форма, POST /api/trpc/notebooks.create
-  B->>P: POST без X-CSRF, тело формы
-  P-->>B: 415 UNSUPPORTED_MEDIA_TYPE, multipart - 403 FORBIDDEN csrf_invalid
-  Note over P: в Go запрос не уходит
-  E->>B: fetch с заголовком X-CSRF: 1
-  B->>P: OPTIONS /api/trpc/notebooks.create
-  P-->>B: без разрешения CORS
-  Note over B: основной запрос не отправлен
-  Note over B,P: SameSite=Lax: cookie на межсайтовые POST и fetch не уходит
-```
-
-*Проект: проверить после внедрения.*
-
-### Запрос с поддомена
-
-Поддомен (скажем, захваченный) находится на том же сайте, поэтому `SameSite=Lax` не помогает:
-cookie уходит вместе с запросом. Это именно тот случай, который `SameSite` один не закрывает
-([§6.1.3.3.1](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.3.1)):
-
-> As a result, a subdomain-takeover attack against b.example.com can enable CSRF attacks against the BFF of a.example.com.
-
-Обычную форму с поддомена tRPC отклонит `415` ещё до проверок BFF, а форма с `multipart/form-data`
-не может поставить `X-CSRF` и отклоняется по отсутствию заголовка. Проверка `Origin` и `Sec-Fetch-Site` — вторая линия: она сработала бы и при ошибке в
-проверке заголовка или в настройке CORS.
-
-```mermaid
-sequenceDiagram
-  participant B as Браузер
-  participant P as BFF
-  participant E as Чужой сайт
-  E->>B: форма с поддомена, POST /api/trpc/notebooks.create
-  B->>P: POST /api/trpc/notebooks.create, Cookie __Host-Http-session, Origin поддомена, без X-CSRF
-  Note over P: same-site - cookie ушла, Lax её не останавливает. Sec-Fetch-Site: same-site, Origin не равен APP_ORIGIN
-  P-->>B: 415 UNSUPPORTED_MEDIA_TYPE, multipart - 403 FORBIDDEN csrf_invalid
-```
-
-*Проект: проверить после внедрения.*
-
-### Переход по внешней ссылке
-
-Пользователь переходит с GitHub или Telegram в обычном браузере с сохранённой сессией.
-Cookie `Lax` передаётся на GET-навигации верхнего уровня. Caddy передаёт HTML-запрос BFF;
-тот определяет пользователя общим слоем сессии и отдаёт его в первом HTML, без стартового `users.me`.
-Встроенный браузер другого приложения со своим хранилищем cookie может оставаться гостем.
-
-```mermaid
-sequenceDiagram
-  participant E as Чужой сайт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  E->>B: переход по ссылке на наш сайт
-  B->>P: GET HTML через Caddy, Cookie Lax, Sec-Fetch-Site cross-site
-  Note over P: HTML не требует X-CSRF, общий слой сессии и refresh
-  P->>A: GET /api/v1/users/me, Authorization Bearer
-  A-->>P: 200 User
-  P-->>B: 200 HTML с BootstrapData, при refresh новая cookie до тела
-  Note over B: стор получает пользователя до первого рендера
 ```
 
 *Проект: проверить после внедрения.*
