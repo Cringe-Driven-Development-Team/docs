@@ -49,12 +49,12 @@ test("в треке есть раздел tRPC и подстраницы", () =>
   expect(trpc).not.toContain("/api/v1");
 });
 
-/** Подраздел `### <title>` до следующего заголовка `##` или `###`. */
-function subsection(md: string, title: string): string {
-  const start = md.indexOf(`\n### ${title}\n`);
+/** Подраздел до следующего заголовка того же или более высокого уровня. */
+function subsection(md: string, title: string, level: 3 | 4 = 3): string {
+  const start = md.indexOf(`\n${"#".repeat(level)} ${title}\n`);
   if (start === -1) return "";
   const rest = md.slice(start + 1).split("\n").slice(1).join("\n");
-  const next = rest.search(/^##+ /m);
+  const next = rest.search(new RegExp(`^#{1,${level}} `, "m"));
   return next === -1 ? rest : rest.slice(0, next);
 }
 
@@ -110,14 +110,52 @@ function scenarios(md: string): { title: string; body: string }[] {
     });
 }
 
-test("в «Авторизация и CSRF» десять сценариев со схемой и пометкой", () => {
+test("в «Авторизация и CSRF» семь сценариев сессии со схемой и пометкой", () => {
   expect(existsSync(AUTH)).toBe(true);
   const list = scenarios(readFileSync(AUTH, "utf8"));
-  expect(list.length).toBe(10);
+  expect(list.map((s) => s.title)).toEqual([
+    "Вход", "Запрос данных", "Access истёк", "Две вкладки", "Выход",
+    "Сессия кончилась", "Первый вход после переезда",
+  ]);
   for (const { title, body } of list) {
     expect(body.match(/```mermaid/g)?.length, title).toBe(1);
-    expect(body, title).toContain("sequenceDiagram");
-    expect(body, title).toContain("*Проект: проверить после внедрения.*");
+    expect(body.match(/sequenceDiagram/g)?.length, title).toBe(1);
+    expect(body.split("*Проект: проверить после внедрения.*").length - 1, title).toBe(1);
+  }
+});
+
+test("CSRF: три подраздела со своими схемами и прежними заголовками-якорями", () => {
+  const auth = readFileSync(AUTH, "utf8");
+  const csrf = section(auth, "CSRF");
+  const diagrams = [
+    ["Запрос нашего клиента", "client"],
+    ["Атака с чужого сайта", "foreign"],
+    ["Переход по внешней ссылке", "navigation"],
+  ];
+  expect(csrf.split("\n").filter((line) => line.startsWith("### "))).toEqual(
+    diagrams.map(([title]) => `### ${title}`),
+  );
+  for (const [title, name] of diagrams) {
+    const component = `<Diagram name="modules/2/bff-csrf-${name}" />`;
+    const part = subsection(csrf, title!);
+    expect(part, title).toContain(component);
+    expect(part.slice(0, part.indexOf(component)).trim().length, title).toBeGreaterThan(20);
+    expect(auth.split(component).length - 1, name).toBe(1);
+  }
+  expect(csrf.match(/<Diagram /g)?.length).toBe(3);
+  expect(csrf).not.toContain("```mermaid");
+  expect(subsection(csrf, "Атака с чужого сайта")).toContain("#### Запрос с поддомена");
+  for (const heading of [
+    "### Атака с чужого сайта", "#### Запрос с поддомена", "### Переход по внешней ссылке",
+  ]) expect(auth.split("\n").filter((line) => line === heading).length, heading).toBe(1);
+  expect(auth).not.toContain("WebSocket");
+  expect(auth).toContain("три схемы CSRF и семь сценариев сессии");
+  expect(subsection(csrf, "Переход по внешней ссылке")).toContain("](./bootstrap)");
+
+  const readme = readFileSync("README.md", "utf8");
+  for (const [, name] of diagrams) {
+    const link = `[bff-csrf-${name}](https://docs.cellestial.ru/modules/2/bff-csrf-${name}.html)`;
+    expect(readme.split("\n").filter((line) => line.startsWith("| ") && line.includes(link)).length, name).toBe(1);
   }
 });
 
@@ -244,8 +282,8 @@ test("ссылки на старые разделы", () => {
 
 test("не-JSON до createContext — 415, а не 403", () => {
   const auth = readFileSync(AUTH, "utf8");
-  for (const title of ["Атака с чужого сайта", "Запрос с поддомена"]) {
-    expect(subsection(auth, title), title).toContain("415");
+  for (const [title, level] of [["Атака с чужого сайта", 3], ["Запрос с поддомена", 4]] as const) {
+    expect(subsection(auth, title, level), title).toContain("415");
   }
   expect(section(auth, "CSRF")).toContain("первыми из проверок BFF");
   expect(section(readFileSync(CONTRACT, "utf8"), "Какие вызовы BFF принимает")).toContain("Content-Type: application/json");

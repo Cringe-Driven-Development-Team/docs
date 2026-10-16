@@ -1,0 +1,209 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "foreign",
+      "x": 0,
+      "y": 0,
+      "width": 340,
+      "height": 260,
+      "isContainer": true,
+      "color": "green",
+      "title": {
+        "text": "Чужой сайт"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 940,
+      "y": 0,
+      "width": 1000,
+      "height": 860,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "Проект BFF · один процесс Bun"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "attack-code",
+      "x": 100,
+      "y": 100,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Форма / fetch"
+        }
+      ],
+      "containerId": "foreign"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 540,
+      "y": 100,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "trpc-adapter",
+      "x": 1020,
+      "y": 100,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Адаптер tRPC"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "form-415",
+      "x": 1420,
+      "y": 80,
+      "width": 460,
+      "text": "**415 UNSUPPORTED_MEDIA_TYPE**\n\n`application/x-www-form-urlencoded`\nили `text/plain`\n\nОтказ до createContext. Go не вызывается.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "csrf-check",
+      "x": 1020,
+      "y": 400,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "CSRF"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "csrf-403",
+      "x": 1420,
+      "y": 400,
+      "width": 460,
+      "text": "**403 csrf_invalid**\n\nmultipart без X-CSRF.\nGo не вызывается.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "preflight-response",
+      "x": 980,
+      "y": 680,
+      "width": 440,
+      "text": "**Preflight для fetch**\n\nJSON + `X-CSRF: 1`: BFF отвечает без разрешающих CORS-заголовков.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "browser-blocked",
+      "x": 540,
+      "y": 680,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "Основной запрос\nне отправлен"
+        }
+      ]
+    },
+    {
+      "tag": "Textbox",
+      "id": "cookie-policy",
+      "x": 0,
+      "y": 340,
+      "width": 760,
+      "text": "**Форма не умеет ставить X-CSRF.**\n\nSameSite=Lax не отправляет сессионную cookie на cross-site fetch и POST. Это дополнительный слой защиты."
+    },
+    {
+      "tag": "Textbox",
+      "id": "subdomain-policy",
+      "x": 0,
+      "y": 500,
+      "width": 760,
+      "text": "**Поддомен: same-site, но другой origin**\n\nLax-cookie может отправляться. Заголовок/CORS и проверки `Origin` = `APP_ORIGIN`, Fetch Metadata остаются обязательными."
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 2000,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "attack-code",
+      "to": "client",
+      "label": "Запустить форму / fetch"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "trpc-adapter",
+      "label": "POST формы",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "form-415",
+      "label": "urlencoded / plain"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "csrf-check",
+      "label": "multipart"
+    },
+    {
+      "tag": "Relationship",
+      "from": "csrf-check",
+      "to": "csrf-403",
+      "label": "Нет X-CSRF"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "preflight-response",
+      "label": "OPTIONS · preflight",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "preflight-response",
+      "to": "browser-blocked",
+      "label": "Нет разрешения CORS"
+    }
+  ]
+}

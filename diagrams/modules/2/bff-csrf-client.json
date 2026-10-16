@@ -1,0 +1,170 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "vps",
+      "x": 840,
+      "y": 0,
+      "width": 1160,
+      "height": 600,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "Проект BFF · инфраструктура"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 880,
+      "y": 60,
+      "width": 800,
+      "height": 500,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "BFF · один процесс Bun"
+      },
+      "containerId": "vps",
+      "styleMode": "plain"
+    },
+    {
+      "tag": "Icon",
+      "id": "app-code",
+      "x": 100,
+      "y": 160,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Наш tRPC-клиент"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 500,
+      "y": 160,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "csrf-check",
+      "x": 980,
+      "y": 160,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "1. CSRF"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "session",
+      "x": 1420,
+      "y": 160,
+      "icon": "user",
+      "texts": [
+        {
+          "text": "2. Сессия"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "go-api",
+      "x": 1820,
+      "y": 160,
+      "icon": "go",
+      "texts": [
+        {
+          "text": "3. Go API"
+        }
+      ],
+      "containerId": "vps"
+    },
+    {
+      "tag": "Textbox",
+      "id": "client-policy",
+      "x": 0,
+      "y": 360,
+      "width": 720,
+      "text": "**Код:** постоянный `X-CSRF: 1` · `credentials: same-origin`.\n\n**Браузер** сам добавляет cookie `__Host-Http-session`; JS её не читает. Он же задаёт Origin и Fetch Metadata.\n\n`X-CSRF: 1` — не секрет и не случайный токен. Чужому origin нужно разрешение CORS; отдельного получения CSRF-токена нет."
+    },
+    {
+      "tag": "Textbox",
+      "id": "csrf-policy",
+      "x": 920,
+      "y": 360,
+      "width": 360,
+      "text": "**JSON POST · createContext**\n\n`X-CSRF: 1`\n`Origin` = `APP_ORIGIN`\n`Sec-Fetch-Site: same-origin`, если есть.\n\nВключая login/register/logout.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "session-policy",
+      "x": 1340,
+      "y": 360,
+      "width": 300,
+      "text": "Успех CSRF не доказывает действительную сессию.\n\nlogin/register — public: не требуют существующей сессии.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 2060,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "app-code",
+      "to": "client",
+      "label": "X-CSRF: 1"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "csrf-check",
+      "label": "POST /api/trpc/notebooks.create",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "csrf-check",
+      "to": "session",
+      "label": "Проверки пройдены"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "go-api",
+      "label": "Защищённая mutation"
+    }
+  ]
+}
