@@ -1,0 +1,255 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "foreign",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 240,
+      "isContainer": true,
+      "color": "green",
+      "title": {
+        "text": "Внешняя ссылка"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "vps",
+      "x": 780,
+      "y": 0,
+      "width": 1360,
+      "height": 880,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "Проект BFF · инфраструктура"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 1140,
+      "y": 60,
+      "width": 760,
+      "height": 760,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "BFF · один процесс Bun"
+      },
+      "containerId": "vps",
+      "styleMode": "plain"
+    },
+    {
+      "tag": "Icon",
+      "id": "external-link",
+      "x": 80,
+      "y": 80,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "GitHub / Telegram"
+        }
+      ],
+      "containerId": "foreign"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 440,
+      "y": 100,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Обычный браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "caddy",
+      "x": 860,
+      "y": 100,
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Caddy"
+        }
+      ],
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "html-handler",
+      "x": 1200,
+      "y": 180,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "HTML-хендлер"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "session",
+      "x": 1660,
+      "y": 180,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "Общая сессия\nи refresh"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "go-api",
+      "x": 1980,
+      "y": 180,
+      "icon": "go",
+      "texts": [
+        {
+          "text": "Go API"
+        }
+      ],
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "guest",
+      "x": 1660,
+      "y": 500,
+      "icon": "user",
+      "texts": [
+        {
+          "text": "{ user: null }\nGo не вызывается"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "html-policy",
+      "x": 0,
+      "y": 360,
+      "width": 660,
+      "text": "**Top-level GET HTML**\n\nБез X-CSRF. `Sec-Fetch-Site: cross-site` допустим.\n\nGET не меняет предметные данные и не выполняет logout."
+    },
+    {
+      "tag": "Textbox",
+      "id": "bootstrap-policy",
+      "x": 0,
+      "y": 620,
+      "width": 660,
+      "text": "**HTML с BootstrapData: только `{ user }` или `{ user: null }`**\n\nКлиент инициализирует стор до первого рендера.\n\nВстроенный браузер другого приложения может иметь отдельное хранилище cookie и оставаться гостем."
+    },
+    {
+      "tag": "Textbox",
+      "id": "rpc-policy",
+      "x": 1180,
+      "y": 700,
+      "width": 680,
+      "text": "**Дальнейшие RPC** снова с `X-CSRF: 1`, проверками Origin и Fetch Metadata. Разрешение GET HTML не отменяет защиту API.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 2200,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "external-link",
+      "to": "client",
+      "label": "Открыть ссылку"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "caddy",
+      "label": "GET HTML · Lax-cookie",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "html-handler",
+      "label": "HTML-запрос"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-handler",
+      "to": "session",
+      "label": "Сессия / refresh"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "go-api",
+      "label": "GET /users/me"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "session",
+      "label": "Пользователь"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "html-handler",
+      "label": "{ user }"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "guest",
+      "label": "Нет сессии"
+    },
+    {
+      "tag": "Relationship",
+      "from": "guest",
+      "to": "html-handler",
+      "label": "{ user: null }"
+    },
+    {
+      "tag": "Relationship",
+      "from": "html-handler",
+      "to": "caddy",
+      "label": "HTML + BootstrapData"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "client",
+      "label": "HTML"
+    }
+  ]
+}
