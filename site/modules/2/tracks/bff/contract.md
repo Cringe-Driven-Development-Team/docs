@@ -4,7 +4,7 @@ title: Контракт
 
 # Миграция на BFF: контракт
 
-Между клиентом и BFF контракт — роутер tRPC: процедуры описаны кодом в BFF, фронт получает их типы
+Для API между клиентом и BFF контракт — роутер tRPC: процедуры описаны кодом в BFF, фронт получает их типы
 импортом `@cdd/bff` из монорепы фронта. Между BFF и Go контракт остаётся spec-first: Go описан в Apidog, а клиент к нему и
 схемы входа генерирует Orval. Схемы лежат в пакете `@cdd/schemas`, их берёт роутер BFF.
 
@@ -18,7 +18,7 @@ flowchart LR
     S -->|"Orval goZod"| GZ["packages/schemas: @cdd/schemas"]
     GA --> R["apps/bff/src/router: роутер tRPC"]
     GZ --> R
-    R -->|"import type AppRouter"| C["apps/client"]
+    R -->|"import type AppRouter, BootstrapData"| C["apps/client"]
 ```
 
 - **Go ↔ BFF.** Контракт Go ведётся в Apidog. Go забирает его сам: `make generate` в бэкенде запускает
@@ -27,6 +27,20 @@ flowchart LR
   клиент к Go для BFF и zod-схемы операций в пакет `@cdd/schemas`.
 - **Клиент ↔ BFF.** Контракт — роутер tRPC в `apps/bff/src/router/`. Клиент делает
   `import type { AppRouter } from '@cdd/bff'`: в бандл не попадает ни строчки кода BFF.
+- **HTML → клиент.** Второй контракт — `BootstrapData = { user: CurrentUser | null }`, экспортируемый
+  BFF через `import type`. `CurrentUser` выводится из результата `users.me`, без ручной копии DTO.
+  Это данные HTML, не новая процедура tRPC. В них только пользователь; токенов, сроков, cookie,
+  ключей и служебных ответов Go нет. [Подробности](./bootstrap#контракт).
+
+  ```ts
+  // apps/bff/src/bootstrap-types.ts — пример определения и экспорта из пакета @cdd/bff
+  import type { inferRouterOutputs } from '@trpc/server';
+  import type { AppRouter } from './router';
+
+  type CurrentUser = inferRouterOutputs<AppRouter>['users']['me'];
+  export type BootstrapData = { user: CurrentUser | null };
+  ```
+
 - **Apidog описывает только Go.** Публичного OpenAPI у BFF нет: overlay, публичный контракт и их проверки
   в CI больше не нужны.
 - **Валидация.** Вход процедур проверяют zod-схемы, сгенерированные из контракта Go: правило поля
@@ -107,6 +121,9 @@ export default defineConfig({
 | `notebooks.create` | mutation | `POST /notebooks` | тело создания |
 | `cells.create` | mutation | `POST /notebooks/{id}/cells` | `{ notebookId, …тело }` |
 | `cells.delete` | mutation | `DELETE /notebooks/{id}/cells/{index}` | `{ notebookId, index }` |
+
+`users.me` остаётся для явного обновления пользователя. При старте клиент читает `BootstrapData`
+из HTML, отдельного вызова нет.
 
 Процедуры обновления токенов нет: refresh делает сам BFF (см.
 [«Авторизация и CSRF»](./auth#access-истек)). `auth.login` и `auth.register` построены на `publicProcedure`, `auth.logout` — на
@@ -286,10 +303,13 @@ test('ошибка createContext на батч — один конверт дл�
 
 > When implementing a dynamically configurable proxy, the BFF MUST ensure that it only allows requests to explicitly permitted hosts and paths.
 
-BFF ничего не проксирует, поэтому требование выполняется устройством: Go вызывается только из процедур
-роутера и только сгенерированным клиентом, а путь и метод каждого вызова Go заданы в коде процедуры.
+BFF ничего не проксирует: процедуры роутера вызывают Go сгенерированным клиентом, путь и метод
+заданы в коде. HTML-хендлер использует тот же общий клиент с фиксированным `GET /users/me` и общей
+логикой refresh; произвольный путь из URL браузера в Go не передаётся. Он не вызывает tRPC по HTTP.
+API, публичные и служебные маршруты обрабатываются до HTML fallback; внешние `/api/v1` и остальные
+неизвестные `/api/*` не становятся SPA-страницей.
 
-Проверки CSRF идут раньше роутера (см. [«Авторизация и CSRF»](./auth#как-bff-обрабатывает-вызов)), поэтому
+Для RPC проверки CSRF идут раньше роутера (см. [«Авторизация и CSRF»](./auth#как-bff-обрабатывает-вызов)), поэтому
 вызов без `X-CSRF` получит `403`. Вызов несуществующей процедуры получает `404 NOT_FOUND` от tRPC без
 запроса в Go:
 
