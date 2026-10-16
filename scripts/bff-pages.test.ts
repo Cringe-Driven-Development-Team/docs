@@ -425,3 +425,12 @@ test("bootstrap: новые ссылки с якорями ведут на су�
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
   }
 });
+
+test("bootstrap: схема встроена в начале HTML-потока до нумерованных шагов", () => {
+  const part = section(readFileSync(BOOTSTRAP, "utf8"), "HTML-запрос");
+  expect(part).toContain('<Diagram name="modules/2/bff-bootstrap" />');
+  expect(part).toContain("Поток:");
+  expect(part).toContain("1. BFF");
+  expect(part.indexOf("<Diagram")).toBeGreaterThan(part.indexOf("Поток:"));
+  expect(part.indexOf("<Diagram")).toBeLessThan(part.indexOf("1. BFF"));
+});

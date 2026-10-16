@@ -62,6 +62,7 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | Схема | Что показывает |
 | --- | --- |
 | [bff-contract](https://docs.cellestial.ru/modules/2/bff-contract.html) | Контракт BFF: генерация и сборка кода, HTML bootstrap из локального шаблона, RPC к Go |
+| [bff-bootstrap](https://docs.cellestial.ru/modules/2/bff-bootstrap.html) | Первый HTML: общая с RPC сессия, пользователь или гость, безопасный JSON в локальном шаблоне и HTML 503 |
 | [frontend-monorepo](https://docs.cellestial.ru/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, общие типы, пакеты npm, Vite и Bun build, упаковка общего образа |
 
 Схемы MVP показаны на странице «Архитектура» (`/architecture/`) живыми карточками:

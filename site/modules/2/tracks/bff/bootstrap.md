@@ -32,6 +32,8 @@ Access/refresh-токены, сроки токенов, зашифрованна
 Caddy передаёт HTML и tRPC в BFF вместо чтения корневого `index.html` из S3; JS/CSS и другие ассеты
 по адресам CDN браузер получает напрямую из CDN.
 
+<Diagram name="modules/2/bff-bootstrap" />
+
 1. BFF читает и расшифровывает `__Host-Http-session`. Нет cookie — HTTP `200` и `{ user: null }`,
    Go для определения пользователя не вызывается. Повреждённая cookie или истёкший refresh — тот же
    гость с удалением недействительной cookie.
