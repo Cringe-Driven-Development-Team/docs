@@ -18,18 +18,33 @@
     { "tag": "Icon", "id": "pkg-zustand", "x": 220, "y": 460, "containerId": "npm", "icon": "npm", "texts": [{ "text": "zustand" }] },
     { "tag": "Icon", "id": "pkg-trpc-client", "x": 360, "y": 460, "containerId": "npm", "icon": "npm", "texts": [{ "text": "trpc-client" }] },
 
-    { "tag": "Group", "id": "turbo", "color": "white", "x": 560, "y": 400, "width": 720, "height": 180, "isContainer": true, "title": { "text": "Turborepo: ноут или CI", "icon": "laptop" } },
+    { "tag": "Group", "id": "turbo", "color": "white", "x": 560, "y": 400, "width": 1200, "height": 820, "isContainer": true, "title": { "text": "Turborepo и упаковка: ноут или CI", "icon": "laptop" } },
     { "tag": "Activity", "id": "t-build", "x": 600, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "build" }] },
-    { "tag": "Activity", "id": "t-lint", "x": 760, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "lint" }] },
-    { "tag": "Activity", "id": "t-typecheck", "x": 920, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "typecheck" }] },
-    { "tag": "Activity", "id": "t-test", "x": 1080, "y": 440, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "test" }] },
-    { "tag": "Textbox", "id": "turbo-order", "x": 600, "y": 520, "width": 640, "containerId": "turbo", "text": "Сначала задачи зависимостей (`^build`): packages/schemas → apps/bff → apps/client. Повторный запуск без изменений берётся из кеша." },
+    { "tag": "Activity", "id": "t-lint", "x": 600, "y": 1040, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "lint" }] },
+    { "tag": "Activity", "id": "t-typecheck", "x": 800, "y": 1040, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "typecheck" }] },
+    { "tag": "Activity", "id": "t-test", "x": 1000, "y": 1040, "width": 120, "height": 60, "containerId": "turbo", "texts": [{ "text": "test" }] },
+    { "tag": "Textbox", "id": "turbo-order", "x": 600, "y": 1140, "width": 1080, "containerId": "turbo", "text": "Сначала задачи зависимостей (`^build`): packages/schemas → apps/bff → apps/client. Упаковка отдельно, после обеих сборок; не часть bff#build. Повторный запуск без изменений берётся из кеша." },
+    { "tag": "Activity", "id": "client-build", "x": 800, "y": 540, "width": 160, "height": 60, "containerId": "turbo", "texts": [{ "text": "Vite: build клиента" }] },
+    { "tag": "Activity", "id": "bff-build", "x": 800, "y": 820, "width": 160, "height": 60, "containerId": "turbo", "texts": [{ "text": "bun build --target bun" }] },
+    { "tag": "Icon", "id": "client-html", "x": 1100, "y": 520, "containerId": "turbo", "icon": "file-code", "texts": [{ "text": "index.html: ссылки на JS/CSS своего SHA в CDN" }] },
+    { "tag": "Icon", "id": "bff-bundle", "x": 1100, "y": 800, "containerId": "turbo", "icon": "file-code", "texts": [{ "text": "Серверный бандл bff.js" }] },
+    { "tag": "Activity", "id": "package-image", "x": 1400, "y": 680, "width": 160, "height": 60, "containerId": "turbo", "texts": [{ "text": "Упаковка образа" }] },
+    { "tag": "Icon", "id": "bff-image", "x": 1600, "y": 660, "containerId": "turbo", "icon": "package", "texts": [{ "text": "Образ BFF + index.html и публичные файлы" }] },
 
-    { "tag": "Legend", "id": "legend", "x": 1820, "y": 0, "width": 340, "entries": [{ "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+    { "tag": "Legend", "id": "legend", "x": 1820, "y": 0, "width": 340, "entries": [{ "text": "GitHub", "color": "#c43dcf" }, { "text": "Внешние сервисы", "color": "#30a050" }, { "text": "Рабочее место", "color": "#242424" }, { "text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
-    { "tag": "Relationship", "from": "ws-client", "to": "ws-bff", "label": "import type AppRouter — только типы" },
+    { "tag": "Relationship", "from": "ws-client", "to": "ws-bff", "label": "import type AppRouter, BootstrapData — только типы" },
     { "tag": "Relationship", "from": "ws-bff", "to": "ws-schemas", "label": "схемы входа процедур" },
-    { "tag": "Relationship", "from": "ws-client", "to": "npm", "label": "зависимости" }
+    { "tag": "Relationship", "from": "ws-client", "to": "npm", "label": "зависимости" },
+    { "tag": "Relationship", "from": "ws-client", "to": "client-build", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "ws-bff", "to": "bff-build", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "t-build", "to": "client-build" },
+    { "tag": "Relationship", "from": "t-build", "to": "bff-build" },
+    { "tag": "Relationship", "from": "client-build", "to": "client-html", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "bff-build", "to": "bff-bundle", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "client-html", "to": "package-image", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "bff-bundle", "to": "package-image", "color": "black", "lineStyle": "dashed" },
+    { "tag": "Relationship", "from": "package-image", "to": "bff-image", "color": "black", "lineStyle": "dashed" }
   ]
 }

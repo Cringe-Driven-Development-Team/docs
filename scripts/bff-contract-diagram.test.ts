@@ -27,6 +27,8 @@ test("bff-contract: zones by owner, nodes inside them", () => {
     bff: "vps",
     "bff-router": "bff",
     "bff-go-client": "bff",
+    "bff-bootstrap": "bff",
+    "html-template": "bff",
     "go-api": "vps",
   };
   for (const [id, parent] of Object.entries(parents)) expect(byId.get(id)?.containerId, id).toBe(parent);
@@ -52,6 +54,10 @@ test("bff-contract: generation, commit, build and runtime links", () => {
       "client>bff-router",
       "bff-router>bff-go-client",
       "bff-go-client>go-api",
+      "client>bff-bootstrap",
+      "html-template>bff-bootstrap",
+      "bff-bootstrap>bff-go-client",
+      "bff-bootstrap>client",
     ].sort(),
   );
   const label = (from: string, to: string) => doc.connections.find((c) => c.from === from && c.to === to)?.label;
@@ -66,4 +72,13 @@ test("bff-contract: plain words, no Orval target names", () => {
   const text = JSON.stringify(doc);
   for (const needle of ["Orval", "@cdd/schemas", "Go API", "spec/openapi.json", "oapi-codegen"]) expect(text, needle).toContain(needle);
   expect(text).not.toMatch(/goZod|goApi/);
+});
+
+test("bff-contract: HTML bootstrap uses the local template and common Go client", () => {
+  const label = (from: string, to: string) => doc.connections.find((c) => c.from === from && c.to === to)?.label;
+  expect(label("client", "bff-bootstrap")).toContain("GET HTML");
+  expect(label("html-template", "bff-bootstrap")).toContain("из образа");
+  expect(label("bff-bootstrap", "bff-go-client")).toContain("GET /users/me");
+  expect(label("bff-bootstrap", "client")).toContain("HTML с { user }");
+  expect(JSON.stringify(doc)).not.toMatch(/S3|CDN/);
 });

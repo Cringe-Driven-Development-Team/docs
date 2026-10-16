@@ -30,7 +30,7 @@ test("frontend-monorepo: zones and workspaces", () => {
 
 test("frontend-monorepo: imports between workspaces", () => {
   const label = (from: string, to: string) => doc.connections.find((c) => c.from === from && c.to === to)?.label;
-  expect(label("ws-client", "ws-bff")).toContain("import type AppRouter");
+  expect(label("ws-client", "ws-bff")).toMatch(/import type.*AppRouter.*BootstrapData/);
   expect(label("ws-bff", "ws-schemas")).toBeDefined();
   expect(doc.connections.some((c) => c.from === "ws-client" && c.to === "npm")).toBe(true);
 });
@@ -47,4 +47,24 @@ test("frontend-monorepo: texts name the real packages", () => {
 
 test("frontend-monorepo: hidden from the Architecture index", () => {
   expect(indexNames(["ci", "modules/2/frontend-monorepo"])).toEqual(["ci"]);
+});
+
+test("frontend-monorepo: packaging consumes both builds outside the workspaces", () => {
+  const parents: Record<string, string> = {
+    "client-build": "turbo", "bff-build": "turbo", "client-html": "turbo",
+    "bff-bundle": "turbo", "package-image": "turbo", "bff-image": "turbo",
+  };
+  for (const [id, parent] of Object.entries(parents)) expect(byId.get(id)?.containerId, id).toBe(parent);
+  expect(byId.get("client-build")?.tag).toBe("Activity");
+  expect(byId.get("bff-build")?.tag).toBe("Activity");
+  expect(byId.get("package-image")?.tag).toBe("Activity");
+  expect(byId.get("client-build")?.texts?.[0]?.text).toContain("Vite");
+  expect(byId.get("bff-build")?.texts?.[0]?.text).toContain("bun build --target bun");
+  expect(byId.get("client-html")?.texts?.[0]?.text).toContain("index.html");
+  expect(byId.get("bff-image")?.texts?.[0]?.text).toMatch(/BFF.*index.html/);
+  const pairs = doc.connections.map((c) => `${c.from}>${c.to}`);
+  for (const pair of ["ws-client>client-build", "ws-bff>bff-build", "t-build>client-build", "t-build>bff-build", "client-build>client-html", "bff-build>bff-bundle", "client-html>package-image", "bff-bundle>package-image", "package-image>bff-image"]) expect(pairs).toContain(pair);
+  expect(pairs).not.toContain("ws-bff>ws-client");
+  expect(pairs).not.toContain("package-image>bff-build");
+  expect(doc.entities.filter((e) => e.containerId === "monorepo" && e.tag === "Group").map((e) => e.id).sort()).toEqual(["ws-bff", "ws-client", "ws-schemas"]);
 });
