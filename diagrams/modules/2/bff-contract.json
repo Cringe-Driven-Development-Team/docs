@@ -21,11 +21,11 @@
 
     { "tag": "Group", "id": "vps", "color": "blue", "x": 1200, "y": 0, "width": 620, "height": 840, "isContainer": true, "title": { "text": "Прод: VPS в Selectel", "icon": "server" } },
     { "tag": "Group", "id": "bff", "color": "blue", "styleMode": "plain", "x": 1220, "y": 40, "width": 580, "height": 620, "containerId": "vps", "isContainer": true, "title": { "text": "BFF" } },
-    { "tag": "Icon", "id": "bff-router", "x": 1280, "y": 80, "containerId": "bff", "icon": "server", "texts": [{ "text": "Роутер tRPC: проверяет вход zod-схемами" }] },
+    { "tag": "Icon", "id": "bff-router", "x": 1280, "y": 80, "containerId": "bff", "icon": "server", "texts": [{ "text": "Роутер: официальный @trpc/server 11.x, вход по zod-схемам" }] },
     { "tag": "Icon", "id": "bff-go-client", "x": 1280, "y": 300, "containerId": "bff", "icon": "typescript", "texts": [{ "text": "Клиент к Go" }] },
     { "tag": "Icon", "id": "go-api", "x": 1280, "y": 700, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
 
-    { "tag": "Icon", "id": "client", "x": 1980, "y": 300, "icon": "globe", "texts": [{ "text": "Браузер: HTML и tRPC-клиент" }] },
+    { "tag": "Icon", "id": "client", "x": 1980, "y": 300, "icon": "globe", "texts": [{ "text": "Браузер: HTML, официальный @trpc/client 11.x" }] },
     { "tag": "Icon", "id": "html-template", "x": 1600, "y": 80, "containerId": "bff", "icon": "file-code", "texts": [{ "text": "index.html: локальный шаблон" }] },
     { "tag": "Icon", "id": "bff-bootstrap", "x": 1600, "y": 300, "containerId": "bff", "icon": "server", "texts": [{ "text": "HTML bootstrap: только { user }" }] },
 

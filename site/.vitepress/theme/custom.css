@@ -9,6 +9,11 @@
   max-width: none;
 }
 
+/* Mermaid измеряет подписи с line-height родителя; VitePress p иначе увеличивает строку и обрезает её. */
+.vp-doc .mermaid p {
+  line-height: inherit;
+}
+
 /* Схема Eraser в рамке (Diagram.vue): холст белый в обеих темах, рамка — в цветах темы. */
 .diagram {
   margin: 16px 0 24px;

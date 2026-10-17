@@ -197,6 +197,7 @@ test("«Контракт» описывает tRPC", () => {
     "Команды",
     "Генерация Orval",
     "Роутер",
+    "Как добавить процедуру",
     "Процедуры экранов",
     "Ошибки",
     "Клиент",
@@ -292,7 +293,7 @@ test("не-JSON до createContext — 415, а не 403", () => {
 test("ошибка createContext на батч — один конверт", () => {
   const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
   expect(client).toContain("один конверт");
-  expect(client).toContain("toEqual");
+  expect(client).toContain("httpBatchLink");
 });
 
 test("конверт успеха — result.data", () => {
@@ -316,15 +317,58 @@ test("выход отзывает refresh и при истёкшем access", ()
   expect(auth).toContain("`auth.logout` никогда не отвечает `UNAUTHORIZED`");
 });
 
-test("клиент tRPC — пакет @cdd-team/trpc-client из frontend-packages", () => {
-  const repo = "https://github.com/Cringe-Driven-Development-Team/frontend-packages";
-  for (const file of [TRACK, CONTRACT]) {
+test("MVP uses official tRPC", () => {
+  const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
+  for (const needle of ["@trpc/client", "createTRPCClient<AppRouter>", "httpBatchLink", "maxURLLength: 2000", "TRPCClientError", "X-CSRF", "same-origin", "data.code", "data.appCode", "data.zodError"]) {
+    expect(client, needle).toContain(needle);
+  }
+  expect(client).toMatch(/["']X-CSRF["']:\s*["']1["']/);
+  for (const needle of ["@cdd-team/trpc-client", "createClient", "TrpcError", "test(", "подставном `fetch`", "сторонних runtime-библиотек на клиенте нет"]) {
+    expect(client, needle).not.toContain(needle);
+  }
+  for (const needle of ["query", "mutation", "ошибка полей", "UNAUTHORIZED", "refresh", "ручн"]) expect(client, needle).toContain(needle);
+  for (const file of [TRACK, "site/modules/2/tracks/trpc-client.md"]) {
     const md = readFileSync(file, "utf8");
-    expect(md, file).toContain("@cdd-team/trpc-client");
-    expect(md, file).toContain(repo);
-    expect(md, file).not.toContain("@cdd/trpc-client");
-    expect(md, file).not.toContain("tRPC (`packages/trpc-client`");
-    expect(md, file).not.toContain("пакет `packages/trpc-client`");
+    expect(md, file).toContain("@trpc/client");
+    expect(md, file).toContain("@trpc/server");
+    expect(md, file).toContain("/modules/3/tracks/trpc");
+    expect(md, file).not.toContain("@cdd-team/trpc-client");
+  }
+});
+
+test("подтрек tRPC-клиента сохраняет опубликованный якорь «Связи»", () => {
+  const md = readFileSync("site/modules/2/tracks/trpc-client.md", "utf8");
+  expect(md.split("\n").filter((line) => line === "## Связи")).toHaveLength(1);
+});
+
+test("procedure flow uses AppRouter without SDK generation", () => {
+  const md = readFileSync(CONTRACT, "utf8");
+  const flow = section(md, "Как добавить процедуру");
+  const at = (title: string) => md.indexOf(`\n## ${title}\n`);
+  expect(at("Роутер")).toBeLessThan(at("Как добавить процедуру"));
+  expect(at("Как добавить процедуру")).toBeLessThan(at("Процедуры экранов"));
+  expect(flow.match(/^\d\. /gm)).toHaveLength(6);
+  for (const needle of ["имя", "query/mutation", "вход", "результат", "ошибки", "авторизац", "Apidog", "bun run sync", "Orval", "Zod", "Hono", "адаптер", "AppRouter", "TypeScript", "Кодогенерации клиента", "typecheck"]) expect(flow, needle).toContain(needle);
+  for (const needle of ["get: authedProcedure", "ctx.go.getNotebook(input.id)", "api.notebooks.get.query({ id: 1 })", "inferRouterInputs", "inferRouterOutputs"]) expect(flow, needle).toContain(needle);
+  expect(section(md, "Процедуры экранов")).toContain("будущая ручка");
+});
+
+test("карта задач BFF сохраняет последовательность и границы", () => {
+  const md = readFileSync(TRACK, "utf8");
+  const refs = [44, 45, 2, 46, 5, 4].map((id) => md.indexOf(`[#${id} `));
+  expect(refs.every((at) => at >= 0)).toBe(true);
+  expect([...refs].sort((a, b) => a - b)).toEqual(refs);
+  for (const needle of ["CI/CD", "параллельно", "артефактов", "приёмка", "согласованного Go"]) expect(md, needle).toContain(needle);
+});
+
+test("новые ссылки контракта ведут на существующие заголовки", () => {
+  for (const [source, link, target, heading] of [
+    ["site/modules/2/tracks/trpc-client.md", "./bff/contract#клиент", CONTRACT, "## Клиент"],
+    ["site/modules/2/tracks/trpc-client.md", "./bff/contract#как-добавить-процедуру", CONTRACT, "## Как добавить процедуру"],
+    [CONTRACT, "./service#каркас", SERVICE, "## Каркас"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(link!);
+    expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
   }
 });
 
@@ -471,4 +515,54 @@ test("bootstrap: схема встроена в начале HTML-потока �
   expect(part).toContain("1. BFF");
   expect(part.indexOf("<Diagram")).toBeGreaterThan(part.indexOf("Поток:"));
   expect(part.indexOf("<Diagram")).toBeLessThan(part.indexOf("1. BFF"));
+});
+
+test("SameSite explains direct and external navigation", () => {
+  const cookie = section(readFileSync(AUTH, "utf8"), "Cookie сессии");
+  expect(cookie).toMatch(/\| Прямой ввод адреса или закладка \| cookie отправляется \| cookie отправляется \|/);
+  expect(cookie).toMatch(/\| Ссылка с другого сайта.*GitHub.*\| cookie не отправляется в первоначальном запросе \| cookie отправляется \|/);
+  for (const needle of ["HTTPS", "редирект", "инициатор", "cookie не удалена", "same-site", "стартового `users.me`"]) expect(cookie, needle).toContain(needle);
+  const html = section(readFileSync(BOOTSTRAP, "utf8"), "HTML-запрос");
+  for (const needle of ["Strict", "закладк", "GitHub", "гостев", "./auth#cookie-сессии"]) expect(html, needle).toContain(needle);
+  // Политика GET и три CSRF-подраздела уже покрыты отдельными тестами выше.
+});
+
+test("S2S is readable and mTLS is future", () => {
+  const vps = section(readFileSync(TRACK, "utf8"), "Две VPS");
+  for (const title of ["S2S-ключ", "mTLS — следующий этап", "Перенос Go и Postgres"]) expect(vps, title).toContain(`### ${title}`);
+  const key = subsection(vps, "S2S-ключ");
+  for (const needle of ["Назначение", "Проверка", "раньше Bearer", "ConstantTimeCompare", "403", "s2s_forbidden", "BAD_GATEWAY", "502", "503", "refresh не делает", "сессию не трогает", "Хранение", "Ротация", "старый", "новый"]) expect(key, needle).toContain(needle);
+  const mtls = subsection(vps, "mTLS — следующий этап");
+  for (const needle of ["сертификат", "обеих сторон", "шифрует", "не шифрует", "доверия", "ротации", "не входит в MVP", "принятый риск"]) expect(mtls, needle).toContain(needle);
+  const move = subsection(vps, "Перенос Go и Postgres");
+  for (const needle of ["ProxyJump", "inventory", "AllowTcpForwarding", "файрвол", "нужно оформить", "https://github.com/Cringe-Driven-Development-Team/infra"]) expect(move.toLowerCase(), needle).toContain(needle.toLowerCase());
+});
+
+test("MVP release differs from future canary", () => {
+  const track = readFileSync(TRACK, "utf8");
+  const release = section(track, "Переключение");
+  for (const needle of ["один экземпляр", "короткое окно", "playbook", "Откат", "SESSION_KEY", "прежним", "promote"]) expect(release, needle).toContain(needle);
+  expect(release.indexOf("Загрузить ассеты")).toBeLessThan(release.indexOf("образ BFF"));
+  const service = readFileSync(SERVICE, "utf8");
+  const health = section(service, "Health check");
+  for (const needle of ["liveness", "готовность", "конфигурации", "шаблона", "graceful shutdown", "конечный срок", "один экземпляр"]) expect(health.toLowerCase(), needle).toContain(needle.toLowerCase());
+  const bootstrap = section(readFileSync(BOOTSTRAP, "utf8"), "Выпуск и откат");
+  for (const needle of ["один экземпляр", "короткое окно", "SESSION_KEY", "frontend/issues/4", "неизменяемый", "предыдущего", "Откат"]) expect(bootstrap, needle).toContain(needle);
+  const canary = subsection(release, "Канарейка — следующий этап");
+  for (const needle of ["стабильный сегмент", "HTML", "RPC", "ошибок", "задержек", "возврат трафика", "cookie", "refresh", "открытыми вкладками", "Go/БД", "10 секунд", "между процессами"]) expect(canary.toLowerCase(), needle).toContain(needle.toLowerCase());
+  expect(section(readFileSync(CONTRACT, "utf8"), "Клиент")).toContain("UNAUTHORIZED");
+});
+
+test("migration arrow label is short", () => {
+  const before = section(readFileSync(TRACK, "utf8"), "Было и стало");
+  const label = before.match(/P -->\|"([^"]+)"\| A/ )?.[1];
+  expect(label).toBeDefined();
+  expect(label).not.toContain("http://");
+  expect(label!.length).toBeLessThan(55);
+  for (const needle of ["GO_API_URL", "http://api:8080/api/v1", "Authorization: Bearer"]) expect(before, needle).toContain(needle);
+});
+
+test("SameSite bootstrap link keeps target heading", () => {
+  expect(readFileSync(BOOTSTRAP, "utf8")).toContain("./auth#cookie-сессии");
+  expect(readFileSync(AUTH, "utf8")).toContain("## Cookie сессии");
 });

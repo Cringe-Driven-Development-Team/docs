@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 // Схема контракта BFF (план модуля №2). Спека: docs/superpowers/specs/2026-10-11-bff-contract-eraser-design.md §3.
-type Entity = { id: string; tag: string; color?: string; containerId?: string };
+type Entity = { id: string; tag: string; color?: string; containerId?: string; texts?: { text: string }[] };
 type Connection = { from: string; to: string; label?: string };
 
 const doc = JSON.parse(readFileSync("diagrams/modules/2/bff-contract.json", "utf8")) as { entities: Entity[]; connections: Connection[] };
@@ -81,4 +81,9 @@ test("bff-contract: HTML bootstrap uses the local template and common Go client"
   expect(label("bff-bootstrap", "bff-go-client")).toContain("GET /users/me");
   expect(label("bff-bootstrap", "client")).toContain("HTML с { user }");
   expect(JSON.stringify(doc)).not.toMatch(/S3|CDN/);
+});
+
+test("bff-contract: module 2 uses official tRPC runtimes", () => {
+  expect(byId.get("client")?.texts?.[0]?.text).toMatch(/Браузер.*официальный @trpc\/client 11\.x/);
+  expect(byId.get("bff-router")?.texts?.[0]?.text).toMatch(/официальный @trpc\/server 11\.x.*zod/);
 });

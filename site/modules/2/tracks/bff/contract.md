@@ -155,6 +155,51 @@ export type AppRouter = typeof appRouter;
 
 *Пример; имена схем и методов клиента Go — по выгрузке Orval.*
 
+## Как добавить процедуру
+
+1. Согласовать имя процедуры, query/mutation, вход, результат, ошибки и необходимость авторизации.
+2. Если нужной операции Go нет, сначала изменить контракт в Apidog и реализацию Go, затем выполнить
+   `bun run sync`: Orval обновит клиент и схемы. Если существующих операций достаточно, новый OpenAPI не нужен.
+3. Добавить процедуру в роутер tRPC. Для passthrough взять подходящие схемы Orval; собственный вход
+   агрегированной процедуры описать в BFF на Zod. Hono подключает общий HTTP-адаптер
+   (см. [«Каркас»](./service#каркас)); отдельная Hono-ручка для каждой процедуры не нужна.
+4. В обработчике вызвать общий клиент Go, при необходимости собрать несколько ответов для интерфейса.
+   Предметная логика остаётся в Go.
+5. Экспортировать `AppRouter`: TypeScript выводит методы, типы входов и ответов официального клиента
+   из роутера. Кодогенерации клиента BFF → браузер нет; независимой OpenAPI-спецификации BFF тоже нет.
+6. Вызвать `api.<процедура>.query(...)` или `.mutate(...)` на фронте; выполнить `typecheck` и ручную
+   проверку результата, ошибок и авторизации.
+
+Например, существующая операция получения блокнота связывает сервер и клиент так:
+
+```ts
+// apps/bff/src/router/notebooks.ts
+import { z } from 'zod';
+import { authedProcedure, router } from '../trpc';
+
+export const notebooks = router({
+  get: authedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .query(({ ctx, input }) => ctx.go.getNotebook(input.id)),
+});
+
+// apps/bff/src/router/index.ts
+export const appRouter = router({ auth, users, notebooks, cells });
+export type AppRouter = typeof appRouter;
+
+// apps/client: api — один раз настроенный официальный клиент из раздела «Клиент»
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '@cdd/bff';
+
+type NotebookInput = inferRouterInputs<AppRouter>['notebooks']['get'];
+type NotebookResult = inferRouterOutputs<AppRouter>['notebooks']['get'];
+const input: NotebookInput = { id: 1 };
+const notebook: NotebookResult = await api.notebooks.get.query({ id: 1 });
+```
+
+*Фрагменты разных файлов; имя метода Go — по выгрузке Orval. Тип результата берётся из Go-клиента
+через обработчик роутера, без ручного DTO и обязательной runtime-проверки всех ответов.*
+
 ## Процедуры экранов
 
 Процедура ресурса — одно действие или один ресурс. Если экрану нужно больше одного вызова Go, для него
@@ -221,81 +266,74 @@ Go отвечает на ошибку телом `Error { code, message }`. BFF 
 
 ## Клиент
 
-Сторонних runtime-библиотек на клиенте нет, поэтому клиент tRPC свой: пакет `@cdd-team/trpc-client` в
-монорепе фронтовых библиотек [`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages) (`packages/trpc-client`). Оттуда он
-публикуется в npm вместе с остальными библиотеками, фронт ставит его зависимостью — подтрек
-[«tRPC (client)»](../trpc-client). Типы он берёт из `@trpc/server` только через `import type` — `inferRouterInputs` и
-`inferRouterOutputs`, — и в бандл `@trpc/server` не попадает.
+В модуле №2 используются официальные `@trpc/client` и `@trpc/server` совместимых версий 11.x,
+а на BFF — официальный `zod`. Подтрек [«tRPC (client)»](../trpc-client) подключает клиент в приложении.
+Собственные React и Zustand команды продолжают использоваться.
+
+Клиент настраивается один раз в общем модуле транспорта:
 
 ```ts
-import { createClient } from '@cdd-team/trpc-client';
-import type { AppRouter } from '@cdd/bff';
+// apps/client/src/api/client.ts
+import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import type { AppRouter, BootstrapData } from '@cdd/bff';
 
-export const api = createClient<AppRouter>({ url: '/api/trpc' });
+export const api = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: '/api/trpc',
+      maxURLLength: 2000,
+      headers: { 'X-CSRF': '1' },
+      fetch(url, options) {
+        return fetch(url, { ...options, credentials: 'same-origin' });
+      },
+    }),
+  ],
+});
 
-const notebook = await api.notebooks.get.query({ id });
-await api.cells.create.mutate({ notebookId: id, kind: 'code' });
+const notebook = await api.notebooks.get.query({ id: 1 });
+await api.cells.create.mutate({ notebookId: 1, kind: 'code' });
+
+try {
+  await api.notebooks.get.query({ id: 1 });
+} catch (error) {
+  if (error instanceof TRPCClientError) {
+    const data = (error as TRPCClientError<AppRouter>).data;
+    // data.code — код tRPC, data.appCode — код приложения,
+    // data.zodError — ошибки полей от errorFormatter.
+    if (data?.code === 'UNAUTHORIZED') {
+      // Перевести стор сессии в «гость» и показать форму входа.
+    }
+  }
+  throw error;
+}
 ```
 
-Протокол — [HTTP RPC tRPC 11](https://trpc.io/docs/rpc):
+`AppRouter` и `BootstrapData` импортируются только как типы; вывод входов/ответов через
+`inferRouterInputs` / `inferRouterOutputs` тоже использует `import type`. Серверный runtime-код в
+клиентский бандл не попадает. Начальные данные пользователь получает из HTML без нового Zod в браузере.
 
-- query — `GET /api/trpc/<процедура>?input=<encodeURIComponent(JSON)>`;
-- mutation — `POST /api/trpc/<процедура>` с JSON в теле;
-- батч — процедуры через запятую в пути, `?batch=1`, `input` — объект по индексам вызовов; ответ — массив
-  конвертов в том же порядке, при разных статусах — `207`;
-- успех — `{ "result": { "data": … } }`, ошибка — `{ "error": { "message", "code", "data" } }`
-  (см. [«Ошибки»](#ошибки)).
-
-Что делает клиент:
-
-- на каждый запрос ставит `X-CSRF: 1` и `credentials: 'same-origin'`;
-- вызовы одного метода в одном тике собирает в один батч; URL длиннее 2000 символов делит на несколько
-  запросов;
-- если ошибка возникла в `createContext` (например, CSRF), на батч приходит один конверт `{ error }`, а не
-  массив: клиент отдаёт эту ошибку каждому вызову батча;
-- ошибку бросает как `TrpcError { code, httpStatus, appCode, message, zodError? }`; на `UNAUTHORIZED` стор
-  сессии переходит в «гость», и фронт показывает форму входа.
+Транспорт работает с `/api/trpc` на том же origin. [Официальный `httpBatchLink`](https://trpc.io/docs/client/links/httpBatchLink)
+отвечает за батчинг и деление батча по `maxURLLength`, заголовок `X-CSRF: 1` и cookie добавляет общая
+настройка. Реализацию HTTP RPC в модуле №2 писать не нужно. Query идут через GET, mutation — через POST;
+успешный конверт содержит `result.data`, ошибка — `error` (см. [«Ошибки»](#ошибки)). Если ошибка
+возникла в `createContext`, на батч может прийти один конверт `{ error }`: официальный клиент
+разбирает его для всех вызовов. Ошибки приходят как `TRPCClientError`, их поля читаются из `data`,
+а сообщения интерфейс выбирает по `data.appCode`, не по тексту `message`.
 
 Подписок пока нет. Потоковый вывод ячеек, когда понадобится, пойдёт через SSE на `fetch`: у `EventSource`
 нельзя поставить заголовок `X-CSRF`.
 
-Клиент проверяется тестами на подставном `fetch`:
-
-```ts
-test('батч двух query — один GET и два результата', async () => {
-  const calls: string[] = [];
-  const fetch = async (url: string) => {
-    calls.push(url);
-    return Response.json([{ result: { data: { id: 1 } } }, { result: { data: [] } }]);
-  };
-  const api = createClient<AppRouter>({ url: '/api/trpc', fetch });
-  const [notebook, list] = await Promise.all([api.notebooks.get.query({ id: 1 }), api.notebooks.list.query()]);
-  expect(calls).toEqual([`/api/trpc/notebooks.get,notebooks.list?batch=1&input=${encodeURIComponent('{"0":{"id":1}}')}`]);
-  expect([notebook, list]).toEqual([{ id: 1 }, []]);
-});
-
-test('ошибка createContext на батч — один конверт для всех вызовов', async () => {
-  const fetch = async () =>
-    Response.json(
-      { error: { message: 'csrf', code: -32003, data: { code: 'FORBIDDEN', httpStatus: 403, appCode: 'csrf_invalid' } } },
-      { status: 403 },
-    );
-  const api = createClient<AppRouter>({ url: '/api/trpc', fetch });
-  const results = await Promise.allSettled([api.users.me.query(), api.notebooks.list.query()]);
-  expect(results.map((r) => r.status === 'rejected' && (r.reason as TrpcError).appCode)).toEqual(['csrf_invalid', 'csrf_invalid']);
-});
-```
-
-*Пример; так же проверяются одиночный вызов и конверт ошибки процедуры.*
+**Ручная приёмка MVP.** Проверить успешные query/mutation; неверный вход — ошибка полей
+`data.zodError`; `UNAUTHORIZED` — гость и форма входа; клиент не выполняет refresh и не читает cookie.
+Новые автотесты клиента в MVP не требуются, существующие проверки репозитория сохраняются.
 
 **Формы.** Поля форм клиент проверяет своими правилами, как сейчас
 ([`src/utils/credentials.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/f499d4e/src/utils/credentials.ts#L28)):
-сторонних runtime-библиотек на клиенте нет, а своего zod пока нет. Если вход не прошёл схему на BFF, ошибка приходит
-с `zodError` (см. [«Ошибки»](#ошибки)), и форма раскладывает её по полям.
+своего Zod пока нет. Если вход не прошёл схему на BFF, форма раскладывает `data.zodError` по полям.
 
-В модуле №3 появляется свой zod: на нём работают и BFF, и формы клиента, а схемы из `@cdd/schemas` проверяют поля
-ещё до запроса вместо ручных правил — треки [Zod](/modules/3/tracks/zod) и
-[React Hook Form](/modules/3/tracks/react-hook-form).
+В модуле №3 появляются собственные [клиент и сервер tRPC](/modules/3/tracks/trpc) и свой
+[Zod](/modules/3/tracks/zod): общие схемы `@cdd/schemas` проверяют поля на BFF и в браузере вместо
+ручных правил, вместе со своим [React Hook Form](/modules/3/tracks/react-hook-form).
 
 ## Какие вызовы BFF принимает
 

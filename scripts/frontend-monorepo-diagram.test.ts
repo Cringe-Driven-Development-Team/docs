@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { indexNames } from "./build-index.ts";
 
-// Схема монорепы фронта (план модуля №2). Спека: docs/superpowers/specs/2026-10-11-frontend-monorepo-diagram-design.md §3.
+// Схема монорепы фронта (план модуля №2). Спеки: 2026-10-11-frontend-monorepo-diagram-design §3 и 2026-10-17-bff-docs-alignment-design §8.
 type Entity = { id: string; tag: string; color?: string; containerId?: string; title?: { text: string }; texts?: { text: string }[] };
 type Connection = { from: string; to: string; label?: string };
 
@@ -10,7 +10,7 @@ const doc = JSON.parse(readFileSync("diagrams/modules/2/frontend-monorepo.json",
 const byId = new Map(doc.entities.map((e) => [e.id, e]));
 
 test("frontend-monorepo: zones and workspaces", () => {
-  expect(["github", "npm", "turbo"].map((id) => byId.get(id)?.color)).toEqual(["purple", "green", "white"]);
+  expect(["github", "npm", "official-npm", "turbo"].map((id) => byId.get(id)?.color)).toEqual(["purple", "green", "green", "white"]);
   const parents: Record<string, string> = {
     monorepo: "github",
     "ws-client": "monorepo",
@@ -18,21 +18,26 @@ test("frontend-monorepo: zones and workspaces", () => {
     "ws-schemas": "monorepo",
     "pkg-react": "npm",
     "pkg-zustand": "npm",
-    "pkg-trpc-client": "npm",
+    "official-trpc-client": "official-npm",
+    "official-trpc-server": "official-npm",
+    "official-zod": "official-npm",
     "t-build": "turbo",
     "t-lint": "turbo",
     "t-typecheck": "turbo",
-    "t-test": "turbo",
   };
   for (const [id, parent] of Object.entries(parents)) expect(byId.get(id)?.containerId, id).toBe(parent);
-  expect(byId.get("client")).toBeUndefined();
+  for (const id of ["client", "pkg-trpc-client", "t-test"]) expect(byId.get(id), id).toBeUndefined();
+  expect(byId.get("npm")?.containerId).toBeUndefined();
+  expect(byId.get("official-npm")?.containerId).toBeUndefined();
 });
 
 test("frontend-monorepo: imports between workspaces", () => {
   const label = (from: string, to: string) => doc.connections.find((c) => c.from === from && c.to === to)?.label;
   expect(label("ws-client", "ws-bff")).toMatch(/import type.*AppRouter.*BootstrapData/);
   expect(label("ws-bff", "ws-schemas")).toBeDefined();
-  expect(doc.connections.some((c) => c.from === "ws-client" && c.to === "npm")).toBe(true);
+  const pairs = doc.connections.map((c) => `${c.from}>${c.to}`);
+  for (const pair of ["ws-client>npm", "ws-client>official-trpc-client", "ws-bff>official-trpc-server", "ws-schemas>official-zod"]) expect(pairs).toContain(pair);
+  expect(pairs.some((pair) => pair.startsWith("npm>") || pair.startsWith("official-npm>"))).toBe(false);
 });
 
 test("frontend-monorepo: texts name the real packages", () => {
@@ -41,8 +46,12 @@ test("frontend-monorepo: texts name the real packages", () => {
   expect(text).not.toMatch(/apps\/web|TanStack|GHCR|@maninthecoat|@iredtea/);
   // скоуп @cdd-team/ — в заголовке группы npm, имена пакетов — подписи иконок в ней
   const scope = byId.get("npm")?.title?.text.match(/@cdd-team\//)?.[0];
-  const packages = ["pkg-react", "pkg-zustand", "pkg-trpc-client"].map((id) => `${scope}${byId.get(id)?.texts?.[0]?.text}`);
-  expect(packages).toEqual(["@cdd-team/react", "@cdd-team/zustand", "@cdd-team/trpc-client"]);
+  const packages = ["pkg-react", "pkg-zustand"].map((id) => `${scope}${byId.get(id)?.texts?.[0]?.text}`);
+  expect(packages).toEqual(["@cdd-team/react", "@cdd-team/zustand"]);
+  expect(byId.get("official-npm")?.title?.text).toMatch(/официальные/i);
+  const official = ["official-trpc-client", "official-trpc-server", "official-zod"].map((id) => byId.get(id)?.texts?.[0]?.text);
+  expect(official).toEqual(["@trpc/client 11.x", "@trpc/server 11.x", "zod"]);
+  expect(text).not.toMatch(/@cdd-team\/trpc|генератор.*SDK/i);
 });
 
 test("frontend-monorepo: hidden from the Architecture index", () => {
@@ -60,7 +69,8 @@ test("frontend-monorepo: packaging consumes both builds outside the workspaces",
   expect(byId.get("package-image")?.tag).toBe("Activity");
   expect(byId.get("client-build")?.texts?.[0]?.text).toContain("Vite");
   expect(byId.get("bff-build")?.texts?.[0]?.text).toContain("bun build --target bun");
-  expect(byId.get("client-html")?.texts?.[0]?.text).toContain("index.html");
+  expect(byId.get("client-html")?.texts?.[0]?.text).toMatch(/index.html.*SHA.*CDN/);
+  expect(byId.get("turbo-order")?.tag).toBe("Textbox");
   expect(byId.get("bff-image")?.texts?.[0]?.text).toMatch(/BFF.*index.html/);
   const pairs = doc.connections.map((c) => `${c.from}>${c.to}`);
   for (const pair of ["ws-client>client-build", "ws-bff>bff-build", "t-build>client-build", "t-build>bff-build", "client-build>client-html", "bff-build>bff-bundle", "client-html>package-image", "bff-bundle>package-image", "package-image>bff-image"]) expect(pairs).toContain(pair);
