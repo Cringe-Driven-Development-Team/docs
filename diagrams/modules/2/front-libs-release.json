@@ -1,0 +1,236 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "github",
+      "title": {
+        "text": "GitHub — план CDD"
+      },
+      "x": 0,
+      "y": 0,
+      "width": 980,
+      "height": 720,
+      "color": "purple",
+      "isContainer": true
+    },
+    {
+      "tag": "Activity",
+      "id": "feature-ci",
+      "texts": [
+        {
+          "text": "PR + CI: связка React/Zustand; сборка, типы, runtime, tarball"
+        }
+      ],
+      "x": 40,
+      "y": 80,
+      "width": 240,
+      "height": 100,
+      "containerId": "github"
+    },
+    {
+      "tag": "Activity",
+      "id": "ci-stop",
+      "texts": [
+        {
+          "text": "CI упал: исправить PR; выпуска нет"
+        }
+      ],
+      "x": 40,
+      "y": 320,
+      "width": 240,
+      "height": 80,
+      "containerId": "github"
+    },
+    {
+      "tag": "Activity",
+      "id": "release-please",
+      "texts": [
+        {
+          "text": "Merge main → release-please"
+        }
+      ],
+      "x": 380,
+      "y": 80,
+      "width": 220,
+      "height": 100,
+      "containerId": "github"
+    },
+    {
+      "tag": "Activity",
+      "id": "release-pr",
+      "texts": [
+        {
+          "text": "Общий release PR + CI: React 1.2.1 / Zustand 1.0.1"
+        }
+      ],
+      "x": 700,
+      "y": 80,
+      "width": 240,
+      "height": 100,
+      "containerId": "github"
+    },
+    {
+      "tag": "Activity",
+      "id": "github-releases",
+      "texts": [
+        {
+          "text": "Merge → теги и GitHub Releases"
+        }
+      ],
+      "x": 700,
+      "y": 360,
+      "width": 240,
+      "height": 80,
+      "containerId": "github"
+    },
+    {
+      "tag": "Activity",
+      "id": "publish-job",
+      "texts": [
+        {
+          "text": "Publish job: сборка; только paths_released"
+        }
+      ],
+      "x": 380,
+      "y": 360,
+      "width": 220,
+      "height": 80,
+      "containerId": "github"
+    },
+    {
+      "tag": "Textbox",
+      "id": "independent-openapi",
+      "x": 380,
+      "y": 580,
+      "width": 540,
+      "height": 80,
+      "containerId": "github",
+      "text": "OpenAPI 0.2.0 не изменился: без GitHub Release и без npm publish. Версии пакетов независимы."
+    },
+    {
+      "tag": "Group",
+      "id": "npm",
+      "title": {
+        "text": "npm — последовательная публикация"
+      },
+      "x": 0,
+      "y": 840,
+      "width": 980,
+      "height": 240,
+      "color": "green",
+      "isContainer": true
+    },
+    {
+      "tag": "Activity",
+      "id": "react-published",
+      "texts": [
+        {
+          "text": "@cdd-team/react 1.2.1"
+        }
+      ],
+      "x": 380,
+      "y": 920,
+      "width": 220,
+      "height": 80,
+      "containerId": "npm"
+    },
+    {
+      "tag": "Activity",
+      "id": "zustand-published",
+      "texts": [
+        {
+          "text": "@cdd-team/zustand 1.0.1; peer ^1.2.1"
+        }
+      ],
+      "x": 700,
+      "y": 920,
+      "width": 240,
+      "height": 80,
+      "containerId": "npm"
+    },
+    {
+      "tag": "Activity",
+      "id": "consumer",
+      "texts": [
+        {
+          "text": "Проект-потребитель: установка + свои тесты"
+        }
+      ],
+      "x": 700,
+      "y": 1260,
+      "width": 240,
+      "height": 100
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1080,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "GitHub",
+          "color": "#c43dcf"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "feature-ci",
+      "to": "release-please",
+      "label": "CI зелёный"
+    },
+    {
+      "tag": "Relationship",
+      "from": "feature-ci",
+      "to": "ci-stop",
+      "label": "Ошибка"
+    },
+    {
+      "tag": "Relationship",
+      "from": "release-please",
+      "to": "release-pr",
+      "label": "Версии + CHANGELOG"
+    },
+    {
+      "tag": "Relationship",
+      "from": "release-pr",
+      "to": "github-releases",
+      "label": "Проверки зелёные"
+    },
+    {
+      "tag": "Relationship",
+      "from": "github-releases",
+      "to": "publish-job",
+      "label": "Ещё не npm publish"
+    },
+    {
+      "tag": "Relationship",
+      "from": "publish-job",
+      "to": "react-published",
+      "label": "npm CLI + OIDC"
+    },
+    {
+      "tag": "Relationship",
+      "from": "react-published",
+      "to": "zustand-published",
+      "label": "Успех → следующий"
+    },
+    {
+      "tag": "Relationship",
+      "from": "zustand-published",
+      "to": "consumer",
+      "label": "npm view → установка"
+    }
+  ]
+}

@@ -69,6 +69,7 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | [frontend-monorepo](https://docs.cellestial.ru/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, общие типы, командные и официальные npm-пакеты, Vite и Bun build, упаковка общего образа |
 | [front-libs-npm-token](https://docs.cellestial.ru/modules/2/front-libs-npm-token.html) | Публикация с npm-токеном: владелец, GitHub Secrets, env job и npm registry |
 | [front-libs-trusted-publishing](https://docs.cellestial.ru/modules/2/front-libs-trusted-publishing.html) | Trusted Publishing: GitHub OIDC identity, проверка repo/workflow и краткоживущие npm-права |
+| [front-libs-release](https://docs.cellestial.ru/modules/2/front-libs-release.html) | Каскадный релиз React → Zustand: CI, независимые версии, GitHub Releases и публикация в npm |
 
 Схемы MVP показаны на странице «Архитектура» (`/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
