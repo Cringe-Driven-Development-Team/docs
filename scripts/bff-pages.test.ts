@@ -197,6 +197,7 @@ test("«Контракт» описывает tRPC", () => {
     "Команды",
     "Генерация Orval",
     "Роутер",
+    "Как добавить процедуру",
     "Процедуры экранов",
     "Ошибки",
     "Клиент",
@@ -292,7 +293,7 @@ test("не-JSON до createContext — 415, а не 403", () => {
 test("ошибка createContext на батч — один конверт", () => {
   const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
   expect(client).toContain("один конверт");
-  expect(client).toContain("toEqual");
+  expect(client).toContain("httpBatchLink");
 });
 
 test("конверт успеха — result.data", () => {
@@ -316,15 +317,53 @@ test("выход отзывает refresh и при истёкшем access", ()
   expect(auth).toContain("`auth.logout` никогда не отвечает `UNAUTHORIZED`");
 });
 
-test("клиент tRPC — пакет @cdd-team/trpc-client из frontend-packages", () => {
-  const repo = "https://github.com/Cringe-Driven-Development-Team/frontend-packages";
-  for (const file of [TRACK, CONTRACT]) {
+test("MVP uses official tRPC", () => {
+  const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
+  for (const needle of ["@trpc/client", "createTRPCClient<AppRouter>", "httpBatchLink", "maxURLLength: 2000", "TRPCClientError", "X-CSRF", "same-origin", "data.code", "data.appCode", "data.zodError"]) {
+    expect(client, needle).toContain(needle);
+  }
+  expect(client).toMatch(/["']X-CSRF["']:\s*["']1["']/);
+  for (const needle of ["@cdd-team/trpc-client", "createClient", "TrpcError", "test(", "подставном `fetch`", "сторонних runtime-библиотек на клиенте нет"]) {
+    expect(client, needle).not.toContain(needle);
+  }
+  for (const needle of ["query", "mutation", "ошибка полей", "UNAUTHORIZED", "refresh", "ручн"]) expect(client, needle).toContain(needle);
+  for (const file of [TRACK, "site/modules/2/tracks/trpc-client.md"]) {
     const md = readFileSync(file, "utf8");
-    expect(md, file).toContain("@cdd-team/trpc-client");
-    expect(md, file).toContain(repo);
-    expect(md, file).not.toContain("@cdd/trpc-client");
-    expect(md, file).not.toContain("tRPC (`packages/trpc-client`");
-    expect(md, file).not.toContain("пакет `packages/trpc-client`");
+    expect(md, file).toContain("@trpc/client");
+    expect(md, file).toContain("@trpc/server");
+    expect(md, file).toContain("/modules/3/tracks/trpc");
+    expect(md, file).not.toContain("@cdd-team/trpc-client");
+  }
+});
+
+test("procedure flow uses AppRouter without SDK generation", () => {
+  const md = readFileSync(CONTRACT, "utf8");
+  const flow = section(md, "Как добавить процедуру");
+  const at = (title: string) => md.indexOf(`\n## ${title}\n`);
+  expect(at("Роутер")).toBeLessThan(at("Как добавить процедуру"));
+  expect(at("Как добавить процедуру")).toBeLessThan(at("Процедуры экранов"));
+  expect(flow.match(/^\d\. /gm)).toHaveLength(6);
+  for (const needle of ["имя", "query/mutation", "вход", "результат", "ошибки", "авторизац", "Apidog", "bun run sync", "Orval", "Zod", "Hono", "адаптер", "AppRouter", "TypeScript", "Кодогенерации клиента", "typecheck"]) expect(flow, needle).toContain(needle);
+  for (const needle of ["get: authedProcedure", "ctx.go.getNotebook(input.id)", "api.notebooks.get.query({ id: 1 })", "inferRouterInputs", "inferRouterOutputs"]) expect(flow, needle).toContain(needle);
+  expect(section(md, "Процедуры экранов")).toContain("будущая ручка");
+});
+
+test("карта задач BFF сохраняет последовательность и границы", () => {
+  const md = readFileSync(TRACK, "utf8");
+  const refs = [44, 45, 2, 46, 5, 4].map((id) => md.indexOf(`[#${id} `));
+  expect(refs.every((at) => at >= 0)).toBe(true);
+  expect([...refs].sort((a, b) => a - b)).toEqual(refs);
+  for (const needle of ["CI/CD", "параллельно", "артефактов", "приёмка", "согласованного Go"]) expect(md, needle).toContain(needle);
+});
+
+test("новые ссылки контракта ведут на существующие заголовки", () => {
+  for (const [source, link, target, heading] of [
+    ["site/modules/2/tracks/trpc-client.md", "./bff/contract#клиент", CONTRACT, "## Клиент"],
+    ["site/modules/2/tracks/trpc-client.md", "./bff/contract#как-добавить-процедуру", CONTRACT, "## Как добавить процедуру"],
+    [CONTRACT, "./service#каркас", SERVICE, "## Каркас"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(link!);
+    expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
   }
 });
 

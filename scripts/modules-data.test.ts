@@ -66,7 +66,7 @@ test("Orval stays in module 2, Zod and React Hook Form move to module 3", () => 
   expect(third?.title).toBe("Модуль №3");
   expect(third?.sprints).toEqual(["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"]);
   const tracks = new Map(third!.tracks.map((t) => [t.id, t]));
-  expect([...tracks.keys()].sort()).toEqual(["react-hook-form", "zod"]);
+  expect([...tracks.keys()].sort()).toEqual(["react-hook-form", "trpc", "zod"]);
   expect(tracks.get("zod")?.do.map((d) => d.login)).toEqual(["iRedTea"]);
   expect(tracks.get("react-hook-form")?.do.map((d) => d.login)).toEqual(["ManInTheCoat"]);
   for (const t of tracks.values()) expect(t.mentors, t.id).toEqual(["YarikMix"]);
@@ -104,4 +104,37 @@ test("README track example is a valid track", () => {
   const { data, content } = matter(source);
   const track = parseTrack("README.md", "2", "multibranch", data, content, { config, people, prefix: "modules" });
   expect(track.mentors).toEqual(["YarikMix", "blackHATred"]);
+});
+
+
+test("tRPC: official client stays in module 2, own client and server are in module 3", () => {
+  const second = october!.tracks.find((t) => t.id === "trpc-client");
+  expect(second?.title).toBe("tRPC (client): подключение официального клиента");
+  expect(second?.label).toBe("tRPC (client)");
+  expect(second?.partOf).toBe("bff");
+  expect(second?.do).toEqual([{ login: "iRedTea", side: "front" }]);
+  expect(second?.related).toEqual([]);
+  expect(readFileSync("site/modules/2/tracks/trpc-client.md", "utf8")).toContain("frontend/issues/46");
+
+  const third = modules.find((m) => m.id === "3")!;
+  expect(third.tracks).toHaveLength(3);
+  const trpc = third.tracks.find((t) => t.id === "trpc")!;
+  expect(trpc).toBeDefined();
+  expect(trpc.title).toBe("Свой tRPC: клиент и сервер");
+  expect(trpc.label).toBe("tRPC");
+  expect(trpc.area).toBe("front");
+  expect(trpc.do).toEqual([{ login: "iRedTea", side: "front" }]);
+  expect(trpc.mentors).toEqual(["YarikMix"]);
+  expect(trpc.partOf).toBeUndefined();
+  expect(trpc.related.map((r) => r.track)).toEqual(["zod"]);
+  expect(trpc.related[0]?.why).toMatch(/Standard Schema/);
+  expect(trpc.subtasks.flatMap((s) => s.issues)).not.toContain("frontend#46");
+  const load = Object.fromEntries(personLoad(third, people).map((l) => [l.login, [l.doing, l.mentoring]]));
+  expect(load).toEqual({ YarikMix: [0, 3], blackHATred: [0, 0], ManInTheCoat: [1, 0], iRedTea: [2, 0], GrayMouse9: [0, 0], MrDuckVC: [0, 0] });
+  const md = readFileSync("site/modules/3/tracks/trpc.md", "utf8");
+  for (const needle of ["## Клиент", "## Сервер", "## Интеграция", "query/mutation", "батчинг", "middleware", "Hono/Bun", "bootstrap", "CSRF", "сессии", "frontend-packages", "отдельного дизайна"]) expect(md, needle).toContain(needle);
+  expect(md).not.toContain("#46");
+  expect(md).not.toContain("@cdd-team/trpc");
+  const zod = readFileSync("site/modules/3/tracks/zod.md", "utf8");
+  for (const needle of ["Standard Schema", "своего tRPC", "./trpc"]) expect(zod, needle).toContain(needle);
 });
