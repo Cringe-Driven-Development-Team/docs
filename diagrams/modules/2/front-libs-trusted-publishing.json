@@ -2,101 +2,162 @@
   "entities": [
     {
       "tag": "Group",
-      "id": "github",
-      "color": "purple",
+      "id": "github-job",
       "x": 0,
       "y": 0,
-      "width": 260,
-      "height": 520,
+      "width": 280,
+      "height": 1120,
       "isContainer": true,
       "title": {
-        "text": "GitHub",
-        "icon": "github"
-      }
+        "text": "GitHub Actions job · npm CLI",
+        "icon": "github-actions"
+      },
+      "color": "purple"
     },
     {
-      "tag": "Icon",
-      "id": "publish-job",
-      "x": 80,
-      "y": 60,
-      "containerId": "github",
-      "icon": "github-actions",
+      "tag": "Activity",
+      "id": "request-id-token",
+      "containerId": "github-job",
+      "x": 40,
+      "y": 80,
+      "width": 200,
+      "height": 80,
       "texts": [
         {
-          "text": "Job: id-token: write"
+          "text": "Job запрашивает\nID-токен"
         }
       ]
     },
     {
-      "tag": "Icon",
-      "id": "github-oidc",
-      "x": 80,
-      "y": 360,
-      "containerId": "github",
-      "icon": "shield-check",
+      "tag": "Activity",
+      "id": "receive-id-token",
+      "containerId": "github-job",
+      "x": 40,
+      "y": 280,
+      "width": 200,
+      "height": 100,
       "texts": [
         {
-          "text": "GitHub OIDC: выдаёт identity"
+          "text": "ID-токен GitHub:\nрепозиторий, workflow\nи срок действия"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "exchange-id-token",
+      "containerId": "github-job",
+      "x": 40,
+      "y": 500,
+      "width": 200,
+      "height": 80,
+      "texts": [
+        {
+          "text": "npm CLI передаёт\nID-токен в npm"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "receive-npm-token",
+      "containerId": "github-job",
+      "x": 40,
+      "y": 740,
+      "width": 200,
+      "height": 80,
+      "texts": [
+        {
+          "text": "Временный npm-токен\nполучен в job"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "publish-package",
+      "containerId": "github-job",
+      "x": 40,
+      "y": 960,
+      "width": 200,
+      "height": 80,
+      "texts": [
+        {
+          "text": "npm CLI публикует\nархив пакета"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "github-provider",
+      "x": 620,
+      "y": 0,
+      "width": 280,
+      "height": 300,
+      "isContainer": true,
+      "title": {
+        "text": "GitHub OIDC",
+        "icon": "shield-check"
+      },
+      "color": "purple"
+    },
+    {
+      "tag": "Activity",
+      "id": "sign-id-token",
+      "containerId": "github-provider",
+      "x": 660,
+      "y": 80,
+      "width": 200,
+      "height": 100,
+      "texts": [
+        {
+          "text": "GitHub подписывает\nID-токен запуска"
         }
       ]
     },
     {
       "tag": "Group",
       "id": "npm",
-      "color": "green",
-      "x": 600,
-      "y": 280,
+      "x": 620,
+      "y": 400,
       "width": 280,
-      "height": 680,
+      "height": 720,
       "isContainer": true,
       "title": {
-        "text": "npm",
+        "text": "npm: проверка и registry",
         "icon": "npm"
-      }
+      },
+      "color": "green"
     },
     {
-      "tag": "Icon",
-      "id": "trusted-publisher",
-      "x": 680,
-      "y": 360,
+      "tag": "Activity",
+      "id": "verify-identity",
       "containerId": "npm",
-      "icon": "shield-check",
+      "x": 660,
+      "y": 500,
+      "width": 200,
+      "height": 140,
       "texts": [
         {
-          "text": "Trusted Publisher: repo/workflow"
+          "text": "npm проверяет:\nподпись, срок, адресата,\nrepo/workflow\nTrusted Publisher"
         }
       ]
     },
     {
-      "tag": "Icon",
-      "id": "npm-rights",
-      "x": 680,
-      "y": 600,
+      "tag": "Activity",
+      "id": "npm-registry",
       "containerId": "npm",
-      "icon": "key",
+      "x": 660,
+      "y": 960,
+      "width": 200,
+      "height": 80,
       "texts": [
         {
-          "text": "Краткоживущие npm-права"
-        }
-      ]
-    },
-    {
-      "tag": "Icon",
-      "id": "npm-publish",
-      "x": 680,
-      "y": 820,
-      "containerId": "npm",
-      "icon": "package",
-      "texts": [
-        {
-          "text": "Публикация архива"
+          "text": "npm registry\nпринимает пакет"
         }
       ]
     },
     {
       "tag": "Legend",
       "id": "legend",
-      "x": 980,
+      "x": 1000,
       "y": 0,
       "width": 340,
       "entries": [
@@ -118,27 +179,43 @@
   "connections": [
     {
       "tag": "Relationship",
-      "from": "publish-job",
-      "to": "github-oidc",
-      "label": "1. Запрос identity"
+      "from": "request-id-token",
+      "to": "sign-id-token",
+      "label": "1. Запрос ID-токена"
     },
     {
       "tag": "Relationship",
-      "from": "github-oidc",
-      "to": "trusted-publisher",
-      "label": "2. Identity GitHub → проверка npm"
+      "from": "sign-id-token",
+      "to": "receive-id-token",
+      "label": "2. Подписанный ID-токен"
     },
     {
       "tag": "Relationship",
-      "from": "trusted-publisher",
-      "to": "npm-rights",
-      "label": "3. npm выдаёт права"
+      "from": "receive-id-token",
+      "to": "exchange-id-token"
     },
     {
       "tag": "Relationship",
-      "from": "npm-rights",
-      "to": "npm-publish",
-      "label": "4. npm CLI: publish"
+      "from": "exchange-id-token",
+      "to": "verify-identity",
+      "label": "3. ID-токен для проверки"
+    },
+    {
+      "tag": "Relationship",
+      "from": "verify-identity",
+      "to": "receive-npm-token",
+      "label": "4. Временный npm-токен"
+    },
+    {
+      "tag": "Relationship",
+      "from": "receive-npm-token",
+      "to": "publish-package"
+    },
+    {
+      "tag": "Relationship",
+      "from": "publish-package",
+      "to": "npm-registry",
+      "label": "5. Архив + npm-токен"
     }
   ]
 }
