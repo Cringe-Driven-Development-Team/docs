@@ -61,12 +61,12 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 
 | Схема | Что показывает |
 | --- | --- |
-| [bff-contract](https://docs.cellestial.ru/modules/2/bff-contract.html) | Контракт BFF: генерация и сборка кода, HTML bootstrap из локального шаблона, RPC к Go |
+| [bff-contract](https://docs.cellestial.ru/modules/2/bff-contract.html) | Контракт BFF: официальный tRPC модуля №2, генерация Go-клиента и схем, HTML bootstrap из локального шаблона |
 | [bff-bootstrap](https://docs.cellestial.ru/modules/2/bff-bootstrap.html) | Первый HTML: общая с RPC сессия, пользователь или гость, безопасный JSON в локальном шаблоне и HTML 503 |
 | [bff-csrf-client](https://docs.cellestial.ru/modules/2/bff-csrf-client.html) | CSRF своего клиента: статический заголовок, cookie браузера, проверки до сессии и вызова Go |
 | [bff-csrf-foreign](https://docs.cellestial.ru/modules/2/bff-csrf-foreign.html) | Атака с чужого сайта: форма с 415/403, остановка fetch на preflight и случай same-site поддомена |
 | [bff-csrf-navigation](https://docs.cellestial.ru/modules/2/bff-csrf-navigation.html) | Внешний GET HTML: Lax-cookie, общая сессия и BootstrapData до первого рендера |
-| [frontend-monorepo](https://docs.cellestial.ru/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, общие типы, пакеты npm, Vite и Bun build, упаковка общего образа |
+| [frontend-monorepo](https://docs.cellestial.ru/modules/2/frontend-monorepo.html) | Монорепа фронта: workspace, общие типы, командные и официальные npm-пакеты, Vite и Bun build, упаковка общего образа |
 
 Схемы MVP показаны на странице «Архитектура» (`/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
