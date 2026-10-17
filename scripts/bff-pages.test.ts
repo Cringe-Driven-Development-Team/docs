@@ -336,6 +336,11 @@ test("MVP uses official tRPC", () => {
   }
 });
 
+test("подтрек tRPC-клиента сохраняет опубликованный якорь «Связи»", () => {
+  const md = readFileSync("site/modules/2/tracks/trpc-client.md", "utf8");
+  expect(md.split("\n").filter((line) => line === "## Связи")).toHaveLength(1);
+});
+
 test("procedure flow uses AppRouter without SDK generation", () => {
   const md = readFileSync(CONTRACT, "utf8");
   const flow = section(md, "Как добавить процедуру");
