@@ -1,0 +1,168 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "workstation",
+      "color": "white",
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 200,
+      "isContainer": true,
+      "title": {
+        "text": "Рабочее место",
+        "icon": "laptop"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 80,
+      "y": 60,
+      "containerId": "workstation",
+      "icon": "user",
+      "texts": [
+        {
+          "text": "Владелец пакета"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "github",
+      "color": "purple",
+      "x": 0,
+      "y": 280,
+      "width": 260,
+      "height": 460,
+      "isContainer": true,
+      "title": {
+        "text": "GitHub",
+        "icon": "github"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "secrets",
+      "x": 80,
+      "y": 340,
+      "containerId": "github",
+      "icon": "lock",
+      "texts": [
+        {
+          "text": "Secrets: NPM_TOKEN"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "publish-job",
+      "x": 80,
+      "y": 600,
+      "containerId": "github",
+      "icon": "github-actions",
+      "texts": [
+        {
+          "text": "Job: npm CLI"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "npm",
+      "color": "green",
+      "x": 560,
+      "y": 0,
+      "width": 260,
+      "height": 740,
+      "isContainer": true,
+      "title": {
+        "text": "npm",
+        "icon": "npm"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "npm-token",
+      "x": 640,
+      "y": 60,
+      "containerId": "npm",
+      "icon": "key",
+      "texts": [
+        {
+          "text": "Создание granular token"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "npm-registry",
+      "x": 640,
+      "y": 600,
+      "containerId": "npm",
+      "icon": "package",
+      "texts": [
+        {
+          "text": "npm registry"
+        }
+      ]
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 920,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "GitHub",
+          "color": "#c43dcf"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Рабочее место",
+          "color": "#242424"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "npm-token",
+      "label": "1. Создать токен",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "npm-token",
+      "to": "secrets",
+      "label": "2. Владелец сохраняет в Secrets"
+    },
+    {
+      "tag": "Relationship",
+      "from": "secrets",
+      "to": "publish-job",
+      "label": "3. env NODE_AUTH_TOKEN"
+    },
+    {
+      "tag": "Relationship",
+      "from": "publish-job",
+      "to": "npm-registry",
+      "label": "4. npm publish: архив + token"
+    }
+  ]
+}

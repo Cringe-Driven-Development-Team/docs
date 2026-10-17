@@ -1,0 +1,144 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "github",
+      "color": "purple",
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 520,
+      "isContainer": true,
+      "title": {
+        "text": "GitHub",
+        "icon": "github"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "publish-job",
+      "x": 80,
+      "y": 60,
+      "containerId": "github",
+      "icon": "github-actions",
+      "texts": [
+        {
+          "text": "Job: id-token: write"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "github-oidc",
+      "x": 80,
+      "y": 360,
+      "containerId": "github",
+      "icon": "shield-check",
+      "texts": [
+        {
+          "text": "GitHub OIDC: выдаёт identity"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "npm",
+      "color": "green",
+      "x": 600,
+      "y": 280,
+      "width": 280,
+      "height": 680,
+      "isContainer": true,
+      "title": {
+        "text": "npm",
+        "icon": "npm"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "trusted-publisher",
+      "x": 680,
+      "y": 360,
+      "containerId": "npm",
+      "icon": "shield-check",
+      "texts": [
+        {
+          "text": "Trusted Publisher: repo/workflow"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "npm-rights",
+      "x": 680,
+      "y": 600,
+      "containerId": "npm",
+      "icon": "key",
+      "texts": [
+        {
+          "text": "Краткоживущие npm-права"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "npm-publish",
+      "x": 680,
+      "y": 820,
+      "containerId": "npm",
+      "icon": "package",
+      "texts": [
+        {
+          "text": "Публикация архива"
+        }
+      ]
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 980,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "GitHub",
+          "color": "#c43dcf"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "publish-job",
+      "to": "github-oidc",
+      "label": "1. Запрос identity"
+    },
+    {
+      "tag": "Relationship",
+      "from": "github-oidc",
+      "to": "trusted-publisher",
+      "label": "2. Identity GitHub → проверка npm"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trusted-publisher",
+      "to": "npm-rights",
+      "label": "3. npm выдаёт права"
+    },
+    {
+      "tag": "Relationship",
+      "from": "npm-rights",
+      "to": "npm-publish",
+      "label": "4. npm CLI: publish"
+    }
+  ]
+}
