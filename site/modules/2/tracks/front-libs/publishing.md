@@ -61,9 +61,28 @@ jobs:
 
 ### Trusted Publishing через OIDC
 
-Для CDD выбираем OIDC: job запрашивает identity у GitHub; npm сверяет repo/workflow
-с Trusted Publisher пакета и выдаёт краткоживущие права для `npm publish`.
-`id-token: write` разрешает запрос identity, а не запись в npm.
+**OIDC (OpenID Connect)** — стандарт, позволяющий сервису проверить, кто к нему
+обращается, через доверенного поставщика идентификации. В нашем CI таким поставщиком
+выступает GitHub: он выдаёт подписанный ID-токен со сведениями о запуске workflow.
+npm проверяет этот токен и настройки доверия, затем предоставляет временные полномочия
+для публикации. Постоянный npm-токен в Secrets становится не нужен.
+[Как OIDC работает в GitHub Actions](https://docs.github.com/en/actions/concepts/security/openid-connect).
+
+ID-токен GitHub подтверждает идентичность запуска; npm-токен доступа разрешает
+публикацию пакета. `id-token: write` позволяет job запросить ID-токен у GitHub.
+
+<Diagram name="modules/2/front-libs-trusted-publishing" />
+
+1. Job с npm CLI запрашивает ID-токен у GitHub OIDC.
+2. GitHub возвращает подписанный ID-токен с репозиторием, workflow и сроком действия.
+3. npm CLI передаёт его npm: сервис проверяет подпись, срок, адресата токена и
+   соответствие настроенному Trusted Publisher.
+4. npm возвращает краткоживущий токен доступа в job.
+5. npm CLI использует полученный npm-токен, чтобы опубликовать архив пакета.
+
+Обмен токенами выполняет npm CLI внутри job; GitHub OIDC выдаёт подтверждение
+идентичности, а npm решает, разрешена ли публикация.
+[Механизм Trusted Publishing](https://docs.npmjs.com/trusted-publishers/).
 
 В npm для **каждого** из трёх целевых пакетов задаём:
 
@@ -110,8 +129,6 @@ npm-права. Не передаём постоянный npm-секрет в e
 GitHub-авторизация release-please остаётся отдельной: для создания PR и GitHub Releases
 нужны соответствующие GitHub-права (`pull-requests: write`, `contents: write`).
 Их не заменяет `id-token: write`; права в показанном publish job относятся только к его работе.
-
-<Diagram name="modules/2/front-libs-trusted-publishing" />
 
 ### Сравнение
 
