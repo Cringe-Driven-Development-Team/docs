@@ -511,3 +511,53 @@ test("bootstrap: схема встроена в начале HTML-потока �
   expect(part.indexOf("<Diagram")).toBeGreaterThan(part.indexOf("Поток:"));
   expect(part.indexOf("<Diagram")).toBeLessThan(part.indexOf("1. BFF"));
 });
+
+test("SameSite explains direct and external navigation", () => {
+  const cookie = section(readFileSync(AUTH, "utf8"), "Cookie сессии");
+  expect(cookie).toMatch(/\| Прямой ввод адреса или закладка \| cookie отправляется \| cookie отправляется \|/);
+  expect(cookie).toMatch(/\| Ссылка с другого сайта.*GitHub.*\| cookie не отправляется в первоначальном запросе \| cookie отправляется \|/);
+  for (const needle of ["HTTPS", "редирект", "инициатор", "cookie не удалена", "same-site", "стартового `users.me`"]) expect(cookie, needle).toContain(needle);
+  const html = section(readFileSync(BOOTSTRAP, "utf8"), "HTML-запрос");
+  for (const needle of ["Strict", "закладк", "GitHub", "гостев", "./auth#cookie-сессии"]) expect(html, needle).toContain(needle);
+  // Политика GET и три CSRF-подраздела уже покрыты отдельными тестами выше.
+});
+
+test("S2S is readable and mTLS is future", () => {
+  const vps = section(readFileSync(TRACK, "utf8"), "Две VPS");
+  for (const title of ["S2S-ключ", "mTLS — следующий этап", "Перенос Go и Postgres"]) expect(vps, title).toContain(`### ${title}`);
+  const key = subsection(vps, "S2S-ключ");
+  for (const needle of ["Назначение", "Проверка", "раньше Bearer", "ConstantTimeCompare", "403", "s2s_forbidden", "BAD_GATEWAY", "502", "503", "refresh не делает", "сессию не трогает", "Хранение", "Ротация", "старый", "новый"]) expect(key, needle).toContain(needle);
+  const mtls = subsection(vps, "mTLS — следующий этап");
+  for (const needle of ["сертификат", "обеих сторон", "шифрует", "не шифрует", "доверия", "ротации", "не входит в MVP", "принятый риск"]) expect(mtls, needle).toContain(needle);
+  const move = subsection(vps, "Перенос Go и Postgres");
+  for (const needle of ["ProxyJump", "inventory", "AllowTcpForwarding", "файрвол", "нужно оформить", "https://github.com/Cringe-Driven-Development-Team/infra"]) expect(move.toLowerCase(), needle).toContain(needle.toLowerCase());
+});
+
+test("MVP release differs from future canary", () => {
+  const track = readFileSync(TRACK, "utf8");
+  const release = section(track, "Переключение");
+  for (const needle of ["один экземпляр", "короткое окно", "playbook", "Откат", "SESSION_KEY", "прежним", "promote"]) expect(release, needle).toContain(needle);
+  expect(release.indexOf("Загрузить ассеты")).toBeLessThan(release.indexOf("образ BFF"));
+  const service = readFileSync(SERVICE, "utf8");
+  const health = section(service, "Health check");
+  for (const needle of ["liveness", "готовность", "конфигурации", "шаблона", "graceful shutdown", "конечный срок", "один экземпляр"]) expect(health.toLowerCase(), needle).toContain(needle.toLowerCase());
+  const bootstrap = section(readFileSync(BOOTSTRAP, "utf8"), "Выпуск и откат");
+  for (const needle of ["один экземпляр", "короткое окно", "SESSION_KEY", "frontend/issues/4", "неизменяемый", "предыдущего", "Откат"]) expect(bootstrap, needle).toContain(needle);
+  const canary = subsection(release, "Канарейка — следующий этап");
+  for (const needle of ["стабильный сегмент", "HTML", "RPC", "ошибок", "задержек", "возврат трафика", "cookie", "refresh", "открытыми вкладками", "Go/БД", "10 секунд", "между процессами"]) expect(canary.toLowerCase(), needle).toContain(needle.toLowerCase());
+  expect(section(readFileSync(CONTRACT, "utf8"), "Клиент")).toContain("UNAUTHORIZED");
+});
+
+test("migration arrow label is short", () => {
+  const before = section(readFileSync(TRACK, "utf8"), "Было и стало");
+  const label = before.match(/P -->\|"([^"]+)"\| A/ )?.[1];
+  expect(label).toBeDefined();
+  expect(label).not.toContain("http://");
+  expect(label!.length).toBeLessThan(55);
+  for (const needle of ["GO_API_URL", "http://api:8080/api/v1", "Authorization: Bearer"]) expect(before, needle).toContain(needle);
+});
+
+test("SameSite bootstrap link keeps target heading", () => {
+  expect(readFileSync(BOOTSTRAP, "utf8")).toContain("./auth#cookie-сессии");
+  expect(readFileSync(AUTH, "utf8")).toContain("## Cookie сессии");
+});
