@@ -535,7 +535,8 @@ test("S2S is readable and mTLS is future", () => {
   const mtls = subsection(vps, "mTLS — следующий этап");
   for (const needle of ["сертификат", "обеих сторон", "шифрует", "не шифрует", "доверия", "ротации", "не входит в MVP", "принятый риск"]) expect(mtls, needle).toContain(needle);
   const move = subsection(vps, "Перенос Go и Postgres");
-  for (const needle of ["ProxyJump", "inventory", "AllowTcpForwarding", "файрвол", "нужно оформить", "https://github.com/Cringe-Driven-Development-Team/infra"]) expect(move.toLowerCase(), needle).toContain(needle.toLowerCase());
+  for (const needle of ["ProxyJump", "inventory", "AllowTcpForwarding", "файрвол", "infra/issues/58", "infra/issues/59", "backend/issues/41"]) expect(move.toLowerCase(), needle).toContain(needle.toLowerCase());
+  expect(move).not.toContain("задачи ещё нужно оформить");
 });
 
 test("MVP release differs from future canary", () => {

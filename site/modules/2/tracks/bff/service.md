@@ -104,7 +104,7 @@ export const env = parsed.data;
 
 `GET /health` отвечает `200` с телом `ok`. Это liveness самого BFF: процесс жив и принимает запросы. Go он
 не вызывает: живость Go проверяет healthcheck сервиса `api` в compose, а BFF стартует после него
-(`depends_on … service_healthy`, см. [«На проде»](#на-проде)).
+(`depends_on … service_healthy` на первом этапе с одной VPS, см. [«На проде»](#на-проде)).
 
 Путь лежит вне `/api/trpc`: Caddy явно запрещает внешний `/health`, в SPA он не попадает.
 Проверяет его только compose изнутри контейнера.
@@ -208,8 +208,11 @@ JS/CSS остаются в CDN. Шаблон читается по фиксир�
 
 ## На проде
 
-BFF встаёт на ту же VPS рядом с Go API по образцу сервиса `api`. В `infra` меняются compose, выкатка в роли
-`app`, Caddy и секреты.
+Первый этап — [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58): BFF встаёт
+на действующую VPS рядом с Go API по образцу сервиса `api`. В `infra` меняются compose, выкатка в роли
+`app`, Caddy и секреты. Затем [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
+переносит Go/Postgres на приватную VPS2; изменение контракта и S2S-проверка в Go —
+[backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41).
 
 **Compose** —
 [`ansible/roles/app/templates/compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L18-L52).
@@ -242,7 +245,8 @@ BFF встаёт на ту же VPS рядом с Go API по образцу с�
       - app
 ```
 
-*Пример.*
+*Пример первого этапа на одной VPS.* После переноса Go на VPS2 у BFF и Go разные Compose-проекты:
+`depends_on: api` между хостами не работает, а `GO_API_URL` указывает на приватный адрес VPS2.
 
 - Порты не публикуются: BFF виден только из сети `app`, снаружи — через Caddy.
 - `PORT` не задаётся, BFF хватает значения по умолчанию `3000`. Ловушка — скопировать `${PORT:-8080}` у
@@ -298,8 +302,8 @@ HTML больше не читается из корня S3: Caddy передаё
 
 CI из [frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4) собирает
 `dist/bff.js` и клиент Vite из одного коммита, публикует ассеты, затем упаковывает HTML
-и серверный бандл в образ и публикует его в GHCR. Отдельного promote клиента после playbook нет. Compose, `.env` и Caddy правятся в `infra` отдельной задачей;
-она пока не заведена.
+и серверный бандл в образ и публикует его в GHCR. Отдельного promote клиента после playbook нет.
+Compose, `.env` и Caddy первого этапа правятся в [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58).
 
 Канарейка — отдельный следующий этап после MVP. Для небольшого стабильного сегмента нужно
 согласованно направлять HTML/RPC в одну версию, расширять долю по ошибкам и задержкам и возвращать
