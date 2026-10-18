@@ -39,7 +39,7 @@
 
 **Interfaces:**
 - Consumes: существующие `site/architecture/`, `site/modules/`, `site/security/`, `.github/CONTRIBUTING.md` и README командных репозиториев.
-- Produces: постоянный URL `https://docs.cellestial.ru/project-context` и исходник `https://github.com/Cringe-Driven-Development-Team/docs/blob/main/site/project-context.md`, который используют Tasks 2–5.
+- Produces: постоянный URL `https://docs.cellestial.ru/project-context` и исходник `https://docs.cellestial.ru/project-context`, который используют Tasks 2–5.
 
 - [ ] **Step 1: Сверить исходники.** Убедиться, что `docs` worktree основан на актуальном `origin/main`; открыть `README.md`, `AGENTS.md`, `site/.vitepress/config.mts` и существующие страницы архитектуры/модулей. Проверить, что будущая страница не пересказывает топологию и не называет планы работающим продом.
 - [ ] **Step 2: Добавить `site/project-context.md`.** Разделы: «Как пользоваться этой страницей», «Где искать сведения» (таблица владельцев из спеки), «Текущее и планируемое» (ссылки на `/architecture/` и `/modules/`), «Если источники расходятся» (проверить SHA, код/стенд, сообщить о расхождении). Ссылки на API-контракт через существующую страницу `contract`, на процесс через `.github/CONTRIBUTING.md`; ни одного нового утверждения о топологии.
