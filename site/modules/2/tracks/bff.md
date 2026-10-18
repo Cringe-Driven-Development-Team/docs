@@ -61,6 +61,11 @@ Go от Orval и официальный клиент tRPC), [Авторизац�
 и bootstrap. CI/CD можно готовить параллельно после определения артефактов, но интеграционная приёмка
 BFF требует согласованного Go.
 
+Изменения контракта и реализации Go — [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41).
+Первый production-этап — [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58): BFF и Caddy
+на действующей VPS. После проверки этого этапа [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
+переносит Go API и Postgres на приватную VPS2; backend#41 — её sub-issue.
+
 ## Монорепа фронта
 
 <Diagram name="modules/2/frontend-monorepo" />
@@ -163,12 +168,15 @@ refresh не доходят до браузера, а значит, XSS на с�
 хотя контракт уже говорит про `Authorization: Bearer`. После переезда он читает `Authorization: Bearer`,
 токены отдаются в JSON, а middleware CSRF и CORS, код cookie и переменные `CSRF_SECRET`,
 `COOKIE_SECURE`, `CORS_ALLOWED_ORIGINS` удаляются.
+Работа на стороне Go — [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41).
 
 ### Infra
 
 В compose появляется сервис `bff` с `SESSION_KEY` и `APP_ORIGIN`, а Caddy направляет `/api/trpc/*` на
 `bff:3000`, как и HTML. Корневой HTML из S3 заменяется шаблоном из образа BFF; ассеты
 остаются в CDN. API, public и внутренний `/health` обрабатываются до HTML fallback.
+Развёртывание BFF и переключение Caddy — [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58);
+перенос Go/Postgres на VPS2 — [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59).
 
 ## Переключение
 
@@ -264,9 +272,11 @@ HTTP внутри частной сети — принятый риск MVP: и�
 
 ### Перенос Go и Postgres
 
-Это отдельная инфраструктурная работа в [репозитории infra](https://github.com/Cringe-Driven-Development-Team/infra).
-Добавление BFF в Compose/Caddy текущей VPS даёт сервис на одной машине; перенос Go/Postgres на
-приватную VPS2 даёт другую топологию и доступ к ней. Для этих работ отдельные задачи ещё нужно оформить.
+[infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58) добавляет BFF в Compose/Caddy
+текущей VPS. После проверки этого этапа [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
+переносит Go/Postgres на приватную VPS2 и настраивает доступ к ней. Проверка S2S-ключа и серверный
+контракт Go — [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41),
+sub-issue infra#59. PR бэка вливается раньше PR переноса; перенос завершается последним.
 
 - **Ansible** ходит на VPS2 по SSH только через VPS1 как jump host (`ProxyJump`): публичного адреса у
   VPS2 нет. Динамический inventory группирует хосты по `metadata.role`
