@@ -24,11 +24,15 @@ export default withMermaid(
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {
       nav: [
+        { text: 'Контекст проекта', link: '/project-context' },
         { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
       sidebar: {
+        '/project-context': [
+          { text: 'Контекст проекта', items: [{ text: 'Источники и правила', link: '/project-context' }] },
+        ],
         '/modules/': moduleSidebar(modules),
         '/security/csrf/': [
           {

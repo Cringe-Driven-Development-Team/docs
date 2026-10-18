@@ -2,6 +2,7 @@
 
 Документация сервиса Cringe-Driven-Development-Team: архитектурные схемы как код
 (eraser-diagrams JSON → HTML и PNG → GitHub Pages). Обзор, команды и таблица схем — `README.md`.
+Где искать актуальный общепроектный контекст и владельцев сведений — [`site/project-context.md`](site/project-context.md).
 
 ## Проект
 
