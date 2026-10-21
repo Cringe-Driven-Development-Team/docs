@@ -41,6 +41,11 @@ test("Денис: devops and BFF subtasks are linked to their issues", () => {
   expect(issues("xss", "CSP и nosniff в Caddy")).toEqual(["infra#47"]);
 });
 
+test("Redis sessions: backend issue is linked to its subtask", () => {
+  const redis = october?.tracks.find((t) => t.id === "redis-sessions");
+  expect(redis?.subtasks.find((s) => s.title === "Refresh-сессии в Redis вместо refresh_sessions")?.issues).toEqual(["backend#17"]);
+});
+
 test("UI Kit: modals and snackbars are subtracks linked to React Portal API", () => {
   const byId = new Map(october!.tracks.map((t) => [t.id, t]));
   expect(byId.get("react")?.subtasks.map((s) => s.title)).toEqual(["refs", "Поддержка SVG"]);
