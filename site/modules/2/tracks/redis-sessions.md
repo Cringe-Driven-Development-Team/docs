@@ -9,7 +9,8 @@ mentors: [blackHATred]
 subtasks:
   - title: "Redis в compose через Ansible"
     issues: [infra#46]
-  - "Refresh-сессии в Redis вместо refresh_sessions"
+  - title: "Refresh-сессии в Redis вместо refresh_sessions"
+    issues: [backend#17]
   - "Отзыв refresh-токена"
   - "Смена пароля — отзыв всех сессий, кроме текущей"
 related:
