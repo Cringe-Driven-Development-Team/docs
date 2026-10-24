@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:578c4c9e46ea9807a3614c608915bfbfa9540ce5d312bcf5ec8a9a1b7e9bdde4",
+  "pageVersion": "sha256:44e58becb3ef97f9b57ea165d8075584bd2af5b1ff81a037c305e8dc5fe856c0",
   "claims": [
     {
       "id": "claim_fc6e7989e7c148a2a6c6d116bf558a19",
@@ -49,10 +49,24 @@
           "version": "repo-lines-v1:sha256:54f4c22ea576e8caf24f5afb19161501545a3dcd97e6ad4c4f6ad3dcca322300:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFkZjg3YTQ3MzE2YzcwOGM1NTAyMDk4ZTlhZjZjNDQ1MzRlYjgwYmVhZGNmNjA2MzAyOGVmY2E4NTkzN2FiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg5NTdjYmE4YzZhZmI0MzQ3NDY4NmFmNDkyYThhODViZmYzZjczODExMTBiYTI3MjFhMDFhZTQyYWI2M2IzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGEzZGQ1NDg1ZWNkMzdhYzU5NGU2NmZkODZiMjg3MDVmNjc5ZTE2YjJkZjQxYzhjNjIwNGFhYThlOWIzYTRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzI1MzUxM2ZmMzVmMTEzODFmOTFjM2I3N2Q2MGI3MmFjZjBiZTcxNmRjMmY1MjYzNTNmN2YwZjBlNzVjNzM5NSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_b0368f7cd7904a668210296be2ff8166",
+      "statement": "Второй модуль содержит отдельный трек с четырьмя подстраницами о планируемых выкатке, откате, GitHub Deployments и Ansible для Go API.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/backend-cicd.md#L1-L15",
+          "version": "repo-lines-v1:sha256:c24d6f0a497550feb20fb7398bdd4dd10e58ff68f8adc433ea374c9599d8852a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MDQyNzM2ZTE0MGNkNzVhOGJmMDljZDhlMDFkZDU3ZTU2YmE3NTQ0MzkwODMyNTdkYmY2ZjNlMmZiODI1MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4OWYzNTdkYzZiNjY0NzFmYjQ1NmVlZmEwYzkwM2NiMmIwN2Y5ZDRmOTg5NDBlOWE0MDU4MWU5Mjk2YmY4NmEifQ"
+        },
+        {
+          "resource": "repo://site/modules/2/tracks/backend-cicd.md#L40-L49",
+          "version": "repo-lines-v1:sha256:49dc1a93033ae8781a2c58b3e99974fc348ba87901e1859d6509692b75de3deb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjUxOTdlNmM4MDgyNDU0OGY3MDA5MDZiNzg3OGE0NzY0ZDhhOTcxZmI3NzYxNmM0YjliZjAyMjg4NDY2ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzllNTdiZTRhZmQzZTE3ZGI5N2U5ZTNlNjRlNzVjMDI4MzkwYWQxZjk1NTJjM2UyMGUxMmJlNTdmOTc5ZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYWVlNWY0YjY5NzM0ZmQ4YjI4YWM5OGI0Yzk1ZTBhMWZkZTc0NDE4MDBiNGQzMmQ0MTljN2UwZTM1ZThhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZjJjODhmMTc4YzA1ODM5MWNmYzM5YTM0ZDc3NTJmNjcxZjc3NmNlMDE2OTJjYjVkOTlhYzI5Mzg2MGUzMTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T15:47:09.601Z"
+    "at": "2026-10-24T17:01:28.502Z"
   }
 }
