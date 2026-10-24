@@ -22,6 +22,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.13
+      - name: Reject source paths in the wiki PR
+        run: bun scripts/openwiki-check-pr.ts "$TARGET_SHA" "$PR_HEAD_SHA"
       - name: Check wiki against the PR base
         run: |
           set -o pipefail
