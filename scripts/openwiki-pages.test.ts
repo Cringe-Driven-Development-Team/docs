@@ -8,7 +8,7 @@ const agents = readFileSync("AGENTS.md", "utf8");
 const claude = readFileSync("CLAUDE.md", "utf8");
 
 test("project-context links to the public visualizer", () => {
-  expect(context).toContain("](/openwiki/)");
+  expect(context).toContain('href="./openwiki/"');
 });
 
 test("README retains the source Markdown link", () => {
