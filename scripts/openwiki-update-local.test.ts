@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { runLocalUpdate, type Exec } from "./openwiki-update-local.ts";
+import { readLines, runLocalUpdate, type Exec } from "./openwiki-update-local.ts";
 
 const roots: string[] = [];
 afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
@@ -110,6 +110,167 @@ test("stale main generates once in isolation and publishes only wiki paths for i
   expect(JSON.parse(git(f.remote, "show", `${branch}:openwiki/.last-update.json`)).gitHead).toBe(f.target);
   expect(existsSync(f.worktree())).toBe(false);
   expect(git(f.root, "rev-parse", "HEAD")).toBe(f.target);
+});
+
+test("stale update reports completed OpenWiki pages without printing Codex chatter", async () => {
+  const f = fixture();
+  const lines: string[] = [];
+  const originalLog = console.log;
+  console.log = (...parts: unknown[]) => { lines.push(parts.map(String).join(" ")); };
+  const event = (tool: string, result: Record<string, unknown>) => JSON.stringify({
+    type: "item.completed",
+    item: {
+      id: `mcp-${tool}`, type: "mcp_tool_call", server: "openwiki", tool,
+      arguments: {}, status: "completed", error: null,
+      result: { content: [{ type: "text", text: JSON.stringify(result) }], structured_content: result },
+    },
+  });
+  const streamed: string[] = [];
+  const exec = async (binary: string, args: string[], cwd: string, onLine?: (line: string) => void) => {
+    if (binary === "codex") {
+      streamed.push(...args);
+      onLine?.(event("openwiki_submit_plan", { status: "accepted", totalPages: 2 }));
+      onLine?.(event("openwiki_next_page", { status: "pending", job: { path: "/openwiki/architecture/mvp.md" } }));
+      onLine?.("null");
+      onLine?.("42");
+      onLine?.(JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: "INTERNAL_SENTINEL" } }));
+      onLine?.(event("openwiki_submit_page", { status: "complete", page: "/openwiki/architecture/mvp.md", remaining: 1 }));
+      onLine?.(event("openwiki_next_page", { status: "pending", job: { path: "/openwiki/workflows/api-contract.md" } }));
+      onLine?.(event("openwiki_submit_page", { status: "complete", page: "/openwiki/workflows/api-contract.md", remaining: 0 }));
+      onLine?.(event("openwiki_finish", { status: "complete" }));
+    }
+    return f.exec(binary, args, cwd);
+  };
+  try {
+    expect(await runLocalUpdate(f.root, exec)).toBe("pr-created");
+  } finally {
+    console.log = originalLog;
+  }
+  const output = lines.join("\n");
+  expect(streamed).toContain("--json");
+  expect(output).toMatch(/План.*2/);
+  expect(output).toMatch(/1\/2.*architecture\/mvp\.md/);
+  expect(output).toMatch(/2\/2.*workflows\/api-contract\.md/);
+  expect(output).not.toContain("INTERNAL_SENTINEL");
+});
+
+test("quiet Codex run reports elapsed time and stops the heartbeat after completion", async () => {
+  const f = fixture();
+  const lines: string[] = [];
+  const originalLog = console.log;
+  const originalNow = Date.now;
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  let now = 1_000_000;
+  let tick: (() => void) | undefined;
+  let delayMs: number | undefined;
+  let cleared = false;
+  console.log = (...parts: unknown[]) => { lines.push(parts.map(String).join(" ")); };
+  Date.now = () => now;
+  globalThis.setTimeout = ((callback: () => void, delay?: number) => {
+    tick = callback;
+    delayMs = delay;
+    return 42 as unknown as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout;
+  globalThis.clearTimeout = ((_handle: ReturnType<typeof setTimeout>) => { cleared = true; }) as typeof clearTimeout;
+  const exec = async (binary: string, args: string[], cwd: string) => {
+    if (binary === "codex") { now += 31_000; tick?.(); }
+    return f.exec(binary, args, cwd);
+  };
+  try {
+    expect(await runLocalUpdate(f.root, exec)).toBe("pr-created");
+  } finally {
+    console.log = originalLog;
+    Date.now = originalNow;
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+  expect(delayMs).toBe(30_000);
+  expect(lines.join("\n")).toMatch(/OpenWiki: обновление продолжается.*0:31/);
+  expect(cleared).toBe(true);
+});
+
+test("page progress resets the 30-second quiet timer", async () => {
+  const f = fixture();
+  const lines: string[] = [];
+  const originalLog = console.log;
+  const originalNow = Date.now;
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  let now = 1_000_000;
+  let nextId = 0;
+  const timers = new Map<number, () => void>();
+  console.log = (...parts: unknown[]) => { lines.push(parts.map(String).join(" ")); };
+  Date.now = () => now;
+  globalThis.setTimeout = ((callback: () => void, delay?: number) => {
+    expect(delay).toBe(30_000);
+    const id = ++nextId;
+    timers.set(id, callback);
+    return id as unknown as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout;
+  globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+    timers.delete(handle as unknown as number);
+  }) as typeof clearTimeout;
+  const exec = async (binary: string, args: string[], cwd: string, onLine?: (line: string) => void) => {
+    if (binary === "codex") {
+      now += 1_000;
+      onLine?.(JSON.stringify({ type: "item.completed", item: {
+        type: "mcp_tool_call", server: "openwiki", tool: "openwiki_submit_plan", status: "completed",
+        result: { structured_content: { status: "accepted", totalPages: 1 } },
+      } }));
+      expect([...timers.keys()]).toEqual([2]);
+      now += 29_000;
+      expect(lines.join("\n")).not.toContain("обновление продолжается");
+      now += 1_000;
+      const active = timers.get(2);
+      timers.delete(2);
+      active?.();
+      expect(lines.join("\n")).toMatch(/обновление продолжается.*0:31/);
+    }
+    return f.exec(binary, args, cwd);
+  };
+  try {
+    expect(await runLocalUpdate(f.root, exec)).toBe("pr-created");
+    expect(timers.size).toBe(0);
+  } finally {
+    console.log = originalLog;
+    Date.now = originalNow;
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+
+test("JSONL reader handles split UTF-8 and discards consumed output", async () => {
+  const source = '{"text":"страница"}\n{"status":"done"}';
+  const bytes = new TextEncoder().encode(source);
+  const split = bytes.indexOf(0xd1) + 1;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(bytes.slice(0, split));
+      controller.enqueue(bytes.slice(split, split + 3));
+      controller.enqueue(bytes.slice(split + 3));
+      controller.close();
+    },
+  });
+  const lines: string[] = [];
+  expect(await readLines(stream, (line) => { lines.push(line); })).toBeUndefined();
+  expect(lines).toEqual(['{"text":"страница"}', '{"status":"done"}']);
+});
+
+test("stale update reports Codex, validation and PR stages even without page events", async () => {
+  const f = fixture();
+  const lines: string[] = [];
+  const originalLog = console.log;
+  console.log = (...parts: unknown[]) => { lines.push(parts.map(String).join(" ")); };
+  try {
+    expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
+  } finally {
+    console.log = originalLog;
+  }
+  const stages = ["Запускаю Codex", "Проверяю результат", "Создаю PR"];
+  const positions = stages.map((stage) => lines.findIndex((line) => line.includes(stage)));
+  expect(positions.every((position) => position >= 0)).toBe(true);
+  expect(positions).toEqual([...positions].sort((a, b) => a - b));
 });
 
 test("an open update PR is returned without model, duplicate push or duplicate PR", async () => {
