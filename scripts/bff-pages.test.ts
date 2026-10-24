@@ -114,7 +114,7 @@ test("в «Авторизация и CSRF» семь сценариев сесс
   expect(existsSync(AUTH)).toBe(true);
   const list = scenarios(readFileSync(AUTH, "utf8"));
   expect(list.map((s) => s.title)).toEqual([
-    "Вход", "Запрос данных", "Access истёк", "Две вкладки", "Выход",
+    "Вход", "Запрос данных", "Access истёк", "Параллельные RPC", "Выход",
     "Сессия кончилась", "Первый вход после переезда",
   ]);
   for (const { title, body } of list) {
@@ -159,12 +159,18 @@ test("CSRF: три подраздела со своими схемами и пр
   }
 });
 
-test("сценарий двух вкладок — один refresh в Go", () => {
+test("параллельные RPC — один refresh в Go, прежний якорь сохранён", () => {
   expect(existsSync(AUTH)).toBe(true);
-  const tabs = scenarios(readFileSync(AUTH, "utf8")).find((s) => s.title === "Две вкладки");
-  expect(tabs).toBeDefined();
-  const toGo = tabs!.body.split("\n").filter((line) => /^\s*\w+-+>>[+-]?A:/.test(line));
+  const auth = readFileSync(AUTH, "utf8");
+  const parallel = scenarios(auth).find((s) => s.title === "Параллельные RPC");
+  expect(parallel).toBeDefined();
+  expect(parallel!.body).toContain("users.me");
+  expect(parallel!.body).toContain("notebooks.list");
+  const toGo = parallel!.body.split("\n").filter((line) => /^\s*\w+-+>>[+-]?A:/.test(line));
   expect(toGo.filter((line) => line.includes("/auth/refresh")).length).toBe(1);
+  expect(auth).toContain('<a id="две-вкладки"></a>');
+  expect(readFileSync(TRACK, "utf8")).toContain("](./bff/auth#параллельные-rpc)");
+  expect(auth).toContain("### Параллельные RPC");
 });
 
 export const PROCEDURES = [

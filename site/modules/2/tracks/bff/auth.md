@@ -74,8 +74,11 @@ same-site запрос может отправить cookie, если прило
 
 > It suffices to revoke the user's access token and/or refresh token to prevent ongoing access to protected resources, without the need to explicitly invalidate the cookie-based session.
 
-Почему не Redis и не память процесса: BFF остаётся без состояния. Деплой на каждый коммит `main`
-никого не разлогинивает, новых сервисов не появляется. Цена: смена `SESSION_KEY` разлогинивает всех.
+Для сессий BFF не нужны Redis и память процесса: токены и сроки находятся в зашифрованной cookie,
+а отзыв refresh-токена выполняет Go. В памяти BFF есть только краткий кэш одновременных refresh,
+описанный ниже; он не хранит действующие сессии и исчезает при перезапуске. Деплой с тем же
+`SESSION_KEY` не разлогинивает пользователей, новых сервисов не появляется. Смена `SESSION_KEY`
+разлогинивает всех.
 
 ## Как BFF обрабатывает вызов
 
@@ -109,9 +112,24 @@ same-site запрос может отправить cookie, если прило
 подсунуть свой `X-BFF-Key`.
 Ответ Go в браузер не уходит, только результат процедуры: cookie выставляет только BFF.
 
-Одновременные refresh объединяются. Ключ — SHA-256 refresh-токена, результат держится в памяти
-10 с: вторая вкладка со старой cookie получает те же новые токены. Если Go отвергает refresh
-(`401`), BFF стирает cookie (`Max-Age=0`) и отвечает `UNAUTHORIZED` на RPC.
+Go [расходует старый refresh-токен при обновлении](https://github.com/Cringe-Driven-Development-Team/backend/blob/38d4bda92a25ae228cbbe1cd09185057fc171a09/internal/user/usecase/user.go#L73-L88).
+Если два HTTP-запроса tRPC из одной вкладки отправлены с одной старой cookie, отдельный refresh для
+каждого дал бы второму `401`. BFF [объединяет их через `inflight`](https://github.com/Cringe-Driven-Development-Team/frontend/blob/c198724f58da18f8bd1861eb942b4f58264299b0/apps/bff/src/session/refresh.ts#L49-L67):
+ключ — SHA-256 refresh-токена, вызов Go один, оба запроса продолжаются с одной новой парой токенов.
+Успешный результат хранится ещё 10 секунд для запросов, которые уже были отправлены со старой cookie,
+но дошли позже; ошибочный результат удаляется сразу. Если Go отвергает refresh (`401`), BFF стирает
+cookie (`Max-Age=0`) и отвечает `UNAUTHORIZED` на RPC. Этот кэш работает в одном экземпляре BFF и не
+служит для отзыва сессий.
+
+Обычные защищённые RPC клиент отправляет параллельно. Перед выходом нужен другой порядок: если
+`auth.logout` удалит cookie, а задержанный RPC после refresh завершится с `Set-Cookie`, браузер снова
+получит cookie сессии. Дедупликация одинаковых query не поможет, когда одновременно идут, например,
+`users.me` и `notebooks.list`. В [задаче клиента #5](https://github.com/Cringe-Driven-Development-Team/frontend/issues/5)
+предусмотрено: остановить новые защищённые запросы, дождаться завершения либо подтверждённой отмены
+всех уже отправленных HTTP-запросов (включая разные RPC и батчи), затем отправить `auth.logout` и
+не возвращать прежние персональные данные в интерфейс. BFF [вызывает logout в Go и стирает cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/c198724f58da18f8bd1861eb942b4f58264299b0/apps/bff/src/router/auth.ts#L20-L25),
+но не ведёт отдельный реестр `revoked`. Такой порядок охватывает одну вкладку нашего клиента;
+синхронизация вкладок и самостоятельных HTTP-клиентов не входит в MVP.
 
 Чтение сессии, клиент Go и политика refresh — общий слой для RPC и HTML. В `createContext`
 CSRF остаётся первым; HTML-хендлер вызывает слой после маршрутизации, без внутреннего HTTP-вызова
@@ -291,33 +309,41 @@ sequenceDiagram
 
 *Проект: проверить после внедрения.*
 
-### Две вкладки
+<a id="две-вкладки"></a>
 
-Две вкладки одновременно приходят со старой cookie, у которой access почти истёк. Refresh
-объединяется: Go получает один вызов, обе вкладки получают одни и те же новые токены.
+### Параллельные RPC
+
+`users.me` и `notebooks.list` отправлены из одной вкладки разными HTTP-запросами со старой cookie,
+у которой access почти истёк. Go получает один вызов refresh, а оба RPC используют новую пару.
 
 ```mermaid
 sequenceDiagram
+  participant F as Фронт
   participant B as Браузер
   participant P as BFF
   participant A as Go API
-  B->>P: запрос вкладки 1, старая cookie
-  B->>P: запрос вкладки 2, старая cookie
+  F->>B: GET users.me и notebooks.list
+  B->>P: GET /api/trpc/users.me, старая cookie
+  B->>P: GET /api/trpc/notebooks.list, старая cookie
   P->>A: POST /api/v1/auth/refresh, refresh_token
-  Note over P: вторая вкладка ждёт тот же результат по SHA-256 refresh-токена
+  Note over P: оба RPC ждут одну Promise в inflight
   A-->>P: 200 TokenPair
-  P->>A: запрос вкладки 1, Bearer новый access
+  P->>A: GET /api/v1/users/me, Bearer новый access
   A-->>P: 200
-  P->>A: запрос вкладки 2, Bearer новый access
+  P->>A: GET /api/v1/notebooks, Bearer новый access
   A-->>P: 200
-  P-->>B: ответ вкладки 1, Set-Cookie новая
-  P-->>B: ответ вкладки 2, Set-Cookie с теми же токенами
-  Note over P: результат хранится 10 с, работает пока один экземпляр BFF
+  P-->>B: users.me, Set-Cookie новая
+  P-->>B: notebooks.list, Set-Cookie с той же парой
+  Note over P: успешный результат хранится ещё 10 с
 ```
 
 *Проект: проверить после внедрения.*
 
 ### Выход
+
+Клиент сначала дожидается остальных защищённых HTTP-запросов или подтверждает их отмену, а новые
+не отправляет. Иначе ответ старого RPC может прийти после успешного выхода и восстановить cookie.
+Это правило действует для разных RPC, даже если они не попали в один батч.
 
 После проверки CSRF процедура `auth.logout` (при истёкшем access — после refresh) вызывает Go с Bearer и `refresh_token` в теле, стирает cookie
 и отвечает успехом. Даже если Go вернул `401` (токен уже недействителен), клиент получает успех: сессии
@@ -330,6 +356,14 @@ sequenceDiagram
   participant B as Браузер
   participant P as BFF
   participant A as Go API
+  F->>B: GET /api/trpc/notebooks.list
+  B->>P: GET /api/trpc/notebooks.list
+  F->>B: пользователь нажал «Выход»
+  Note over F,B: новые защищённые RPC не отправляются
+  P->>A: GET /api/v1/notebooks
+  A-->>P: 200
+  P-->>B: ответ старого RPC, возможный Set-Cookie
+  B-->>F: прежний запрос завершился
   F->>B: POST /api/trpc/auth.logout, X-CSRF: 1
   B->>P: POST /api/trpc/auth.logout, Cookie __Host-Http-session
   P->>A: POST /api/v1/auth/logout, Authorization: Bearer, { refresh_token }
