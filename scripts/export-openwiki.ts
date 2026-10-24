@@ -28,7 +28,7 @@ export function decorateVisualizer(html: string, css: string, info: WikiProvenan
   const date = `${dateFields.hour}:${dateFields.minute} ${dateFields.day} ${dateFields.month} ${dateFields.year} г. МСК`;
   const metadata = `<aside class="wiki-provenance" aria-label="Wiki provenance">Updated <time datetime="${info.updatedAt}">${date}</time><span>Commit <a href="https://github.com/Cringe-Driven-Development-Team/docs/commit/${info.gitHead}">${info.gitHead}</a></span></aside>\n`;
   return {
-    html: html.replace(anchor, metadata + anchor),
+    html: html.replace('</head>', '<link rel="icon" type="image/svg+xml" href="../favicon.svg" />\n</head>').replace(anchor, metadata + anchor),
     css: css + `\n/* Static wiki checkpoint provenance */\n.wiki-provenance { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; padding: .6rem 1rem; font-size: .8rem; flex-shrink: 0; border-bottom: 1px solid var(--edge); }\n.wiki-provenance a { color: inherit; overflow-wrap: anywhere; }\n.wiki-provenance span { min-width: 0; }\n@media (max-width: 600px) { .wiki-provenance { flex-direction: column; } }\n`,
   };
 }
