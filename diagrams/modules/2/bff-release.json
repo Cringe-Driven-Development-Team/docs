@@ -1,0 +1,154 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "github",
+      "title": { "text": "GitHub: выпуск и история production" },
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 760,
+      "color": "purple",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "ci",
+      "icon": "github",
+      "texts": [{ "text": "CI: один полный Git SHA" }],
+      "x": 100,
+      "y": 100,
+      "containerId": "github"
+    },
+    {
+      "tag": "Icon",
+      "id": "cd",
+      "icon": "rocket",
+      "texts": [{ "text": "CD: проверка и выкатка" }],
+      "x": 100,
+      "y": 460,
+      "containerId": "github"
+    },
+    {
+      "tag": "Icon",
+      "id": "deployments",
+      "icon": "history",
+      "texts": [{ "text": "Deployments: целевой SHA и digest" }],
+      "x": 380,
+      "y": 460,
+      "containerId": "github"
+    },
+    {
+      "tag": "Group",
+      "id": "registry",
+      "title": { "text": "GHCR" },
+      "x": 700,
+      "y": 0,
+      "width": 380,
+      "height": 300,
+      "color": "green",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "bff-image",
+      "icon": "docker",
+      "texts": [{ "text": "Образ BFF + HTML по digest" }],
+      "x": 840,
+      "y": 120,
+      "containerId": "registry"
+    },
+    {
+      "tag": "Group",
+      "id": "cdn",
+      "title": { "text": "S3/CDN: выпуск того же SHA" },
+      "x": 700,
+      "y": 420,
+      "width": 380,
+      "height": 340,
+      "color": "green",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "assets",
+      "icon": "cloud",
+      "texts": [{ "text": "JS/CSS + release.json" }],
+      "x": 840,
+      "y": 560,
+      "containerId": "cdn"
+    },
+    {
+      "tag": "Group",
+      "id": "vps",
+      "title": { "text": "VPS: точный образ работает" },
+      "x": 1220,
+      "y": 0,
+      "width": 520,
+      "height": 760,
+      "color": "blue",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "ansible",
+      "icon": "code",
+      "texts": [{ "text": "Ansible / Compose" }],
+      "x": 1300,
+      "y": 460,
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "bff",
+      "icon": "server",
+      "texts": [{ "text": "BFF: HTML и RPC" }],
+      "x": 1560,
+      "y": 460,
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "caddy",
+      "icon": "shield",
+      "texts": [{ "text": "Caddy" }],
+      "x": 1560,
+      "y": 120,
+      "containerId": "vps"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "icon": "globe",
+      "texts": [{ "text": "Браузер" }],
+      "x": 1920,
+      "y": 120
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 2120,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        { "text": "Наша инфраструктура", "color": "#2866c4" },
+        { "text": "GitHub", "color": "#c43dcf" },
+        { "text": "Внешние сервисы", "color": "#30a050" },
+        { "text": "Пользовательский трафик", "color": "#c38424" },
+        { "text": "Прочие связи", "color": "#1c1c1c" }
+      ]
+    }
+  ],
+  "connections": [
+    { "tag": "Relationship", "from": "ci", "to": "bff-image", "label": "образ @sha256" },
+    { "tag": "Relationship", "from": "ci", "to": "assets", "label": "ассеты, затем release.json" },
+    { "tag": "Relationship", "from": "bff-image", "to": "cd", "label": "проверка digest и SHA" },
+    { "tag": "Relationship", "from": "assets", "to": "cd", "label": "готовый выпуск" },
+    { "tag": "Relationship", "from": "cd", "to": "deployments", "label": "запись / статус" },
+    { "tag": "Relationship", "from": "cd", "to": "ansible", "label": "bff_image_ref + SHA" },
+    { "tag": "Relationship", "from": "ansible", "to": "bff", "label": "pull и запуск" },
+    { "tag": "Relationship", "from": "client", "to": "caddy", "label": "GET HTML / RPC", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "caddy", "to": "bff", "label": "запрос к BFF" },
+    { "tag": "Relationship", "from": "client", "to": "assets", "label": "JS/CSS выпуска", "color": "orange", "lineStyle": "solid" }
+  ]
+}

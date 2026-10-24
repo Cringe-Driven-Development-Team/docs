@@ -128,6 +128,7 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | --- | --- |
 | [bff-contract](https://docs.cellestial.ru/modules/2/bff-contract.html) | Контракт BFF: официальный tRPC модуля №2, генерация Go-клиента и схем, HTML bootstrap из локального шаблона |
 | [bff-bootstrap](https://docs.cellestial.ru/modules/2/bff-bootstrap.html) | Первый HTML: общая с RPC сессия, пользователь или гость, безопасный JSON в локальном шаблоне и HTML 503 |
+| [bff-release](https://docs.cellestial.ru/modules/2/bff-release.html) | Выпуск BFF: SHA, образ GHCR по digest, ассеты CDN, GitHub Deployments и Ansible на VPS |
 | [bff-csrf-client](https://docs.cellestial.ru/modules/2/bff-csrf-client.html) | CSRF своего клиента: статический заголовок, cookie браузера, проверки до сессии и вызова Go |
 | [bff-csrf-foreign](https://docs.cellestial.ru/modules/2/bff-csrf-foreign.html) | Атака с чужого сайта: форма с 415/403, остановка fetch на preflight и случай same-site поддомена |
 | [bff-csrf-navigation](https://docs.cellestial.ru/modules/2/bff-csrf-navigation.html) | Внешний GET HTML: Lax-cookie, общая сессия и BootstrapData до первого рендера |

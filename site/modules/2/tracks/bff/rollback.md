@@ -25,6 +25,25 @@ GitHub сами по себе этого не доказывают. Затем �
 
 ## Проверка и переключение
 
+```mermaid
+flowchart TD
+    START["Оператор запускает ручной workflow"] --> ACTUAL["Узнать digest BFF на VPS"]
+    ACTUAL --> MATCH{"Образ найден в истории Deployments?"}
+    MATCH -- "Нет" --> STOP["Остановиться; сообщить фактическое состояние"]
+    MATCH -- "Да" --> PREV["Выбрать предыдущий success с другим digest"]
+    PREV --> TARGET{"Цель однозначна?"}
+    TARGET -- "Нет" --> STOP
+    TARGET -- "Да" --> CHECK["Проверить GHCR digest, SHA и CDN-ассеты"]
+    CHECK --> READY{"Выпуск доступен?"}
+    READY -- "Нет" --> STOP
+    READY -- "Да" --> DEP["Создать Deployment для старого SHA"]
+    DEP --> ANS["Тот же deploy-bff.yml: digest и SHA"]
+    ANS --> VERIFY["Проверить образ, healthy, HTML, RPC и CDN"]
+    VERIFY --> OK{"Проверки прошли?"}
+    OK -- "Да" --> SUCCESS["Deployment success; подтвердить переход"]
+    OK -- "Нет" --> FAILURE["Deployment failure; сообщить известное состояние"]
+```
+
 1. В общей с CD и retention группе `production` проверить, что прежний digest доступен в GHCR,
    его `org.opencontainers.image.revision` совпадает с полным SHA, а JS/CSS в каталоге этого SHA
    остаются доступными в CDN. Старый тег или S3-указатель не заменяют эти проверки.
