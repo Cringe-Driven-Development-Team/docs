@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a7feb7295b28c155e5894fada7788a7d44bcb0c9184041383e969698c52b8436",
+  "pageVersion": "sha256:054fa0f5b13971f82c59752118b4916d2c627fd7c598977828dcf2c0d44625ab",
   "claims": [
     {
       "id": "claim_3017af682c4643729e3caa27ee74eaa9",
@@ -17,7 +17,7 @@
       "statement": "Локальные команды README для site:dev и build относятся к документации и схемам этого репозитория.",
       "evidence": [
         {
-          "resource": "repo://README.md#L131-L155",
+          "resource": "repo://README.md#L141-L165",
           "version": "repo-lines-v1:sha256:3e183b86aefa4508dc8880f459242f859c63701ed911fa1e7b114d020c653a80:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxY2FlM2M2N2RjYWI2ZjNlMzdmY2RmNWQxMTE1NTM1YjBkYTFjY2QxNjcyNDI2ZjRkZmVhYTg4ZTQ0MDcxYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyNjMyOWIxZWRhODQ2MGQ2MzdmOGUzMDY1MjYyYzA1ZjMwZDE2NmYyYTg1MTExODA1MzQyMGFlY2RhNGMyMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiOGRjNzEyYWJkMTI1NDZiYjBiNjE3NTBjYTM4NDhkZmVjOGIyOTE2ODMxYjYwOWQ3ZDdmOWE2NWFjNWJjODEifQ"
         }
       ]
@@ -57,6 +57,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T14:00:30.220Z"
+    "at": "2026-10-24T15:47:09.601Z"
   }
 }

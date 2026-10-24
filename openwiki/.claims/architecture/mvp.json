@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5b98222359add7229702a3014de3d7ad6b261540d40420c067ae204cdb21f756",
+  "pageVersion": "sha256:026aff7964a81aadbf39c44e586bf6e5756a3ccb7a8825456358145f8aa2407c",
   "claims": [
     {
       "id": "claim_1beefd61edd34826aa7a887d6293a41b",
       "statement": "Текущая документированная архитектура MVP размещает Caddy, Go API и Postgres на одной VPS в Docker Compose; браузер обращается к Go API через Caddy.",
       "evidence": [
         {
-          "resource": "repo://README.md#L78-L82",
+          "resource": "repo://README.md#L88-L92",
           "version": "repo-lines-v1:sha256:ae1fa5c5a538500f6a8622c55692bfdc9ca573c40e870f2a77f4d756b6c5fbe5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDc0MDNiMzJjODYzZTEzN2ZiZThhNzUxY2YyOWFkZjBiMTQ1ZmVjM2QxODJmY2YxMTAzZTI1M2M5OWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZjU4YjQwY2E4MTkwZmI2OWNlN2QyYWJhNTRjYjFjZDI1YjI5NzkwODNhYTQ0NjljMDI0YjYyMTAzZTg4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkZGJlNzlhZDY4NWYzODYwMzFiYjk3YzlmMzc0Zjc3YjNhZjQ3OTgwNjU0OTE1MmU1MzUzZjlmNzM4M2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkN2EyNTc4NjU2MjBkZDQzMjQ0YWNiODBhNDJmZWJkMjU1ODBkNWRhYWRhNzMzNzNmODg5MzdlNmMzMjJjZSJ9"
         },
         {
@@ -49,7 +49,7 @@
       "statement": "Вариант k3s заморожен и отделён от рабочего MVP.",
       "evidence": [
         {
-          "resource": "repo://README.md#L78-L82",
+          "resource": "repo://README.md#L88-L92",
           "version": "repo-lines-v1:sha256:ae1fa5c5a538500f6a8622c55692bfdc9ca573c40e870f2a77f4d756b6c5fbe5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDc0MDNiMzJjODYzZTEzN2ZiZThhNzUxY2YyOWFkZjBiMTQ1ZmVjM2QxODJmY2YxMTAzZTI1M2M5OWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZjU4YjQwY2E4MTkwZmI2OWNlN2QyYWJhNTRjYjFjZDI1YjI5NzkwODNhYTQ0NjljMDI0YjYyMTAzZTg4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkZGJlNzlhZDY4NWYzODYwMzFiYjk3YzlmMzc0Zjc3YjNhZjQ3OTgwNjU0OTE1MmU1MzUzZjlmNzM4M2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkN2EyNTc4NjU2MjBkZDQzMjQ0YWNiODBhNDJmZWJkMjU1ODBkNWRhYWRhNzMzNzNmODg5MzdlNmMzMjJjZSJ9"
         }
       ]
@@ -57,6 +57,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T14:00:30.220Z"
+    "at": "2026-10-24T15:47:09.601Z"
   }
 }

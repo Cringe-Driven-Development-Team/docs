@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b8fe84af901e1ea1bac260dae7fbce9aacfdd3d29da68ad9a9a377bf3165a740",
+  "pageVersion": "sha256:66a7e97f0610c9a2c6b6740a4a6f113701f684542b482c2423e0c5243e85fe73",
   "claims": [
     {
       "id": "claim_9254ab0d2e824e0f99cdf4e66fb7fabf",
@@ -31,12 +31,12 @@
       "statement": "Локальная команда wiki:update-local получает origin/main, генерирует во временном worktree при несвежем checkpoint и проверяет, что изменилось только openwiki.",
       "evidence": [
         {
-          "resource": "repo://scripts/openwiki-update-local.ts#L28-L46",
-          "version": "repo-lines-v1:sha256:ad35ff7c2bc0779cad37952372cb14e5774582c775627d6e6224cfc8bf4627f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MGM5MjFkZjJmZjEzMDM1YWYwZGZhNWEwYzJhOTQwNGI5YjY4N2E0ODlhYWRhOGRkMTE2MGUwYjdjNzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxY2QwN2YyNDRmMGI2ZTZiMmQ5YWEzMGEyMThmYzZmZjlkYjVkN2UwNDM1NmVkYTk2NDQxNWQxNjA3NWZkNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMmQ4NDBiZGY3MTAxMDM1NTlhNzk5NGJhMWIwYzkxMWY3ZjJmMjRhN2M5MzQ2ODIwMzZmZTVjN2IxNTQ0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZjU3NzdmN2RlODZiMzFhMjIyNjZhYTE4OTg1MWNiMjhkZDRlN2YyZWE0NjU2ZWQxZTEzMzMzYjM0YzBiYmIifQ"
+          "resource": "repo://scripts/openwiki-update-local.ts#L28-L52",
+          "version": "repo-lines-v1:sha256:98e1589491b49f58db6010ca2fc4b9d22679cba5edd072847f159e23c24a7ab1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MGM5MjFkZjJmZjEzMDM1YWYwZGZhNWEwYzJhOTQwNGI5YjY4N2E0ODlhYWRhOGRkMTE2MGUwYjdjNzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxY2QwN2YyNDRmMGI2ZTZiMmQ5YWEzMGEyMThmYzZmZjlkYjVkN2UwNDM1NmVkYTk2NDQxNWQxNjA3NWZkNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMmQ4NDBiZGY3MTAxMDM1NTlhNzk5NGJhMWIwYzkxMWY3ZjJmMjRhN2M5MzQ2ODIwMzZmZTVjN2IxNTQ0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZjU3NzdmN2RlODZiMzFhMjIyNjZhYTE4OTg1MWNiMjhkZDRlN2YyZWE0NjU2ZWQxZTEzMzMzYjM0YzBiYmIifQ"
         },
         {
-          "resource": "repo://scripts/openwiki-update-local.ts#L64-L74",
-          "version": "repo-lines-v1:sha256:4bd554ff19fdb38d1ed72983b24c2a44f3ffa072c1452d76130837f25c268d13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyN2RhNmUwYjFmM2U0ZTM1ZjVhM2NkNGJlYTRkYjQ0Y2Q1YTk5M2QzYjRkZDMyOGM1YTI4YTgxYjdiZjViMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MzI5MGYwZmEwZmNiZjZmYTkyZTBlYzI1MjVlYzVmOTJmMTE4MTFlYzQ2ODdiYjI2MzllZmZiNzg3NWU0NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjY2I2Zjg2YjRkZTk0NjczNWUwNmRlNzQ4ZjAwMzMzNTk0ODdlOTE1ZTkxMTZmODQ3ZjhkYjcwZjg2ZjUyODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNGExYmM1NDY3NjJlMGYzNTBhODljZmNkNmIwNTI3Y2VkNjc3MDJkYWEwNGIyNzljYmE0ZjJlZjc0NmIyMGYifQ"
+          "resource": "repo://scripts/openwiki-update-local.ts#L70-L86",
+          "version": "repo-lines-v1:sha256:d67f22e32286db658efbe3e941a4e46f32ba048fe2a2bd4790325268955d709f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZTE5ODFjNjAwNDM5OGRiOTA2NzhkNGM1NGFlODEyMjYwMjYxMzYzMzBhYjMyNGYwYTEzZTdkZjBmY2FkMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MzI5MGYwZmEwZmNiZjZmYTkyZTBlYzI1MjVlYzVmOTJmMTE4MTFlYzQ2ODdiYjI2MzllZmZiNzg3NWU0NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjY2I2Zjg2YjRkZTk0NjczNWUwNmRlNzQ4ZjAwMzMzNTk0ODdlOTE1ZTkxMTZmODQ3ZjhkYjcwZjg2ZjUyODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNGExYmM1NDY3NjJlMGYzNTBhODljZmNkNmIwNTI3Y2VkNjc3MDJkYWEwNGIyNzljYmE0ZjJlZjc0NmIyMGYifQ"
         }
       ]
     },
@@ -45,14 +45,48 @@
       "statement": "Workflow OpenWiki freshness запускается на PR с изменениями openwiki и сравнивает checkpoint с SHA базы PR.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/openwiki-freshness.yml#L1-L28",
-          "version": "repo-lines-v1:sha256:f49109ed20771611f08b2387a4be3b2f4deb59754bd085da8cdebc484a01b7db:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0N2ViOWUwNjRjZjk5ODQ4MzRlZmM3ZmJmNzYwZjRhNTNlZDNlYmNjMGE4MTVlMWFjNGVhNGVkMzMzMjIwOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODc4YWQ5MTI5M2FlNDg0ZWU5YzJiZDZmYTYxYTc0NTFmMTdlYWNlMTJhMzcxYjEwYTUxZWE4ZTQ1Y2ExYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJjMzhiZGVjN2M3YTAyMTc4ZDA3ODJkMTA3MWM2MTE3ZmNiYmZlZjhlZTJlNWMxNzRlNmZlMmYyOWIyYWEifQ"
+          "resource": "repo://.github/workflows/openwiki-freshness.yml#L1-L30",
+          "version": "repo-lines-v1:sha256:468acb21db8b9a49a56ea32623b11006508509ba328725b169c6fe61cebba236:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0N2ViOWUwNjRjZjk5ODQ4MzRlZmM3ZmJmNzYwZjRhNTNlZDNlYmNjMGE4MTVlMWFjNGVhNGVkMzMzMjIwOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODc4YWQ5MTI5M2FlNDg0ZWU5YzJiZDZmYTYxYTc0NTFmMTdlYWNlMTJhMzcxYjEwYTUxZWE4ZTQ1Y2ExYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJjMzhiZGVjN2M3YTAyMTc4ZDA3ODJkMTA3MWM2MTE3ZmNiYmZlZjhlZTJlNWMxNzRlNmZlMmYyOWIyYWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3179ebd7dec04dbf89855c013b06a233",
+      "statement": "Локальная команда wiki:update-local требует существующий openwiki/quickstart.md на origin/main и прекращает работу до запуска Codex и публикации, если wiki ещё не инициализирована.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/openwiki-update-local.ts#L28-L42",
+          "version": "repo-lines-v1:sha256:2d8402d8f4db213219fa1e48075979d85737f8d9ec86c50f007492cf88c18f35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MGM5MjFkZjJmZjEzMDM1YWYwZGZhNWEwYzJhOTQwNGI5YjY4N2E0ODlhYWRhOGRkMTE2MGUwYjdjNzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4OTU3Y2JhOGM2YWZiNDM0NzQ2ODZhZjQ5MmE4YTg1YmZmM2Y3MzgxMTEwYmEyNzIxYTAxYWU0MmFiNjNiMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMmQ4NDBiZGY3MTAxMDM1NTlhNzk5NGJhMWIwYzkxMWY3ZjJmMjRhN2M5MzQ2ODIwMzZmZTVjN2IxNTQ0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyNTM1MTNmZjM1ZjExMzgxZjkxYzNiNzdkNjBiNzJhY2YwYmU3MTZkYzJmNTI2MzUzZjdmMGYwZTc1YzczOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e198300e35e493eb6994cd7a22d38f0",
+      "statement": "Workflow OpenWiki freshness отдельно отвергает PR с путями вне openwiki/ в сравнении базы и head, прежде чем проверять свежесть checkpoint.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-freshness.yml#L15-L30",
+          "version": "repo-lines-v1:sha256:0d038669ffeabdaa0c60a5989016fd33d01ec21441f9d3be3a039e92454360a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNmY5ZTZjNWQ4ZTVmZmE3MmNmMGIwNGM5MWYxYjE0Nzc1OWM0ZWI0NDY0MzM2MzFhNDkwNzFjMmUzZWI5OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODc4YWQ5MTI5M2FlNDg0ZWU5YzJiZDZmYTYxYTc0NTFmMTdlYWNlMTJhMzcxYjEwYTUxZWE4ZTQ1Y2ExYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MjhiZmUwMTBlNzhiOWYwMTA2NmRiZTU4OGIzNjViM2YzMDQyNjU5M2FmOTQzNjAxODRiYTQzMzFkZjkzYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJjMzhiZGVjN2M3YTAyMTc4ZDA3ODJkMTA3MWM2MTE3ZmNiYmZlZjhlZTJlNWMxNzRlNmZlMmYyOWIyYWEifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-check-pr.ts#L8-L18",
+          "version": "repo-lines-v1:sha256:a9e34b7966a0058cd22925850efc18001723e79381bc8547175d7b55d5f0eb72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjOTljOTU5NjEzNWEyYTI2NzAzYWU1NWI3YmVjNTBiM2M5Y2U2YzEzMjcwYWVlYjgwNjBjNmJlOGMyMjQzZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5OWVkZWYzYzQxNTZmYWZhNThhODRjZTNjNWVjZWIxZTk0ZDJmNWNiZTIxYjhkM2FmNzIzZTc1YTUwZDZkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNDljMTJjNzQwOGRjZWIyM2JiN2E3ZjIwZDAwNmYxM2NiNzhjNmRlMDA0M2Y5NGRiYjJkZTllN2UxY2M5NGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd5d966e94f04e22a7126bcd2920ccf1",
+      "statement": "README задаёт одноразовый ручной bootstrap существующей wiki с удалением созданного workflow с расписанием и отдельным wiki-only PR.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L45-L53",
+          "version": "repo-lines-v1:sha256:83d5a71065a80f4f587e47260cfda7041d3dcff98972ad9ec289fb99278f5681:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjYwNDczYjc3NjhmMDkwZjA3NTdhZWYyYTdkNGUyMzM2ODFhMDViMDJlOTBhYmQxMGZiMzExYWZlZjg0NzQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdmNTk4ZTc2ZTFhZDVlYzRkNDY4YTdhMGQ3ZTFjNWI3MGRjZDcyNzA5MGQ0MDJkZDU4ODdmOTY2Y2I4Mzg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJlMGY3MzRjNGY5Nzg2YzI2NTIzOTMzMTE1MDYyMmY0Y2RlN2M1YmMzZTIxN2ZkZjE5ZjQ0NGY3Y2E1ZmU5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NmZlNmM5YmY3MDAyNmUzNDMyMTdmYmM2NDliN2JjYmYwYTQzOGNlNjJjYzU2NzRkZGUwNjY0Zjk5Y2ZhNyJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T14:05:58.584Z"
+    "at": "2026-10-24T15:47:09.601Z"
   }
 }
