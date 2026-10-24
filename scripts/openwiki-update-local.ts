@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkOpenWiki } from "./openwiki-check.ts";
@@ -35,11 +35,17 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
     await git(["worktree", "add", "--detach", worktree, target]);
     worktreeAdded = true;
     console.log(`Target SHA: ${target}`);
+    try {
+      if (!(await stat(join(worktree, "openwiki/quickstart.md"))).isFile()) throw new Error("Wiki entrypoint must be a file.");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      throw new Error("Missing openwiki/quickstart.md on origin/main. One-time bootstrap required: initialize OpenWiki manually in an isolated worktree, remove the generated .github/workflows/openwiki-update.yml, and review AGENTS.md/CLAUDE.md as separate source changes before publishing a wiki-only PR. See README.md (Обновление OpenWiki).");
+    }
     let fresh = false;
     try {
       fresh = (await checkOpenWiki(worktree, target)).fresh;
     } catch {
-      // The first generation has no checkpoint; interrupted metadata also needs regeneration.
+      // Interrupted or unusable checkpoint metadata needs regeneration.
     }
     if (fresh) {
       console.log("Wiki is fresh; generation skipped.");
@@ -55,7 +61,7 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
       throw new Error(`Remote branch ${branch} already exists without an open PR; inspect it with gh before retrying.`);
     }
     const instruction = `Обнови OpenWiki в текущем worktree для исходного SHA ${target}.
-Используй установленную интеграцию OpenWiki и её MCP lifecycle: init для отсутствующей wiki или update для существующей; заверши успешным openwiki_finish.
+Используй установленную интеграцию OpenWiki и её MCP lifecycle update для существующей wiki; заверши успешным openwiki_finish.
 Прочитай openwiki/INSTRUCTIONS.md и правила AGENTS.md. Канонические тексты остаются в docs; модули и старые планы описывай как планы, факты подтверждай исходниками.
 Пиши страницы по-русски и указывай пути к источникам. Не включай секреты, реальные IP/CIDR и внутренние адреса.
 Меняй только openwiki/**, включая полный checkpoint openwiki/.last-update.json со status=complete и gitHead=${target}, индексы, Claims и manifest.

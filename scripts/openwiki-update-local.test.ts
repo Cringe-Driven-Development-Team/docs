@@ -121,6 +121,7 @@ for (const [name, change, reason] of [
   ["tracked source edit", (cwd: string) => write(cwd, "site/source.md", "model changed canonical source"), /outside openwiki/],
   ["untracked source edit", (cwd: string) => write(cwd, "AGENTS.md", "model instructions"), /outside openwiki/],
   ["ignored source edit", (cwd: string) => write(cwd, "ignored.txt", "unexpected"), /outside openwiki/],
+  ["generated workflow", (cwd: string) => write(cwd, ".github/workflows/openwiki-update.yml", "name: unexpected generated workflow\n"), /outside openwiki/],
   ["model commit", (cwd: string) => { generate(cwd, git(cwd, "rev-parse", "HEAD")); commit(cwd); }, /HEAD/],
 ] as const) {
   test(`${name} is rejected without publication and with worktree cleanup`, async () => {
@@ -162,12 +163,25 @@ test("an exclusive repository lock prevents concurrent invocations", async () =>
   expect(existsSync(join(f.root, ".git/openwiki-update.lock"))).toBe(true);
 });
 
-test("missing initial wiki is generated and temporary run metadata is never published", async () => {
+test("missing initial wiki fails before model or publication and explains one-time bootstrap", async () => {
   const f = fixture();
   git(f.root, "rm", "-qr", "openwiki"); commit(f.root); git(f.root, "push", "-q", "origin", "main");
   const target = git(f.root, "rev-parse", "HEAD");
-  f.setModel((cwd) => { generate(cwd, target); write(cwd, "openwiki/.run.json", '{"temporary":true}'); });
+  f.setModel((cwd) => {
+    generate(cwd, target);
+    // OpenWiki 0.7.2 init's repo setup also creates a workflow outside the wiki.
+    write(cwd, ".github/workflows/openwiki-update.yml", "name: generated workflow\n");
+  });
+  await expect(runLocalUpdate(f.root, f.exec)).rejects.toThrow(/one-time.*bootstrap/i);
+  expect(f.calls.filter((c) => c.binary === "codex" || c.binary === "gh")).toHaveLength(0);
+  expectUnpublished(f);
+});
+
+test("temporary run metadata from a normal update is never published", async () => {
+  const f = fixture();
+  f.setModel((cwd) => { generate(cwd, f.target); write(cwd, "openwiki/.run.json", '{"temporary":true}'); });
   expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
+  const target = f.target;
   const branch = `docs/openwiki-update-${target.slice(0, 12)}`;
   expect(git(f.remote, "ls-tree", "--name-only", "-r", branch, "openwiki")).toBe("openwiki/.last-update.json\nopenwiki/quickstart.md");
 });
