@@ -24,7 +24,7 @@ test('reads only a complete checkpoint with ISO date and full SHA', () => {
 
 test('inserts checkpoint provenance before the native main content', () => {
   const result = decorateVisualizer(`<header>Wiki</header>${anchor}</div>`, 'body {}', checkpoint);
-  expect(result.html).toContain(`<time datetime="${checkpoint.updatedAt}">2026-10-24 17:03 UTC</time>`);
+  expect(result.html).toContain(`<time datetime="${checkpoint.updatedAt}">20:03 24 октября 2026 г. МСК</time>`);
   expect(result.html).toContain(`href="https://github.com/Cringe-Driven-Development-Team/docs/commit/${checkpoint.gitHead}"`);
   expect(result.html.indexOf(checkpoint.gitHead)).toBeLessThan(result.html.indexOf(anchor));
   expect(result.css).toContain('body {}');

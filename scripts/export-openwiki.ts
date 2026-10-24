@@ -20,7 +20,12 @@ export function readWikiProvenance(raw: unknown): WikiProvenance {
 export function decorateVisualizer(html: string, css: string, info: WikiProvenance): { html: string; css: string } {
   const anchor = '<div class="main" id="main">';
   if (html.split(anchor).length !== 2) throw new Error('Expected exactly one native visualizer main insertion point');
-  const date = info.updatedAt.slice(0, 16).replace('T', ' ') + ' UTC';
+  const dateParts = new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit',
+    day: 'numeric', month: 'long', year: 'numeric', hourCycle: 'h23',
+  }).formatToParts(new Date(info.updatedAt));
+  const dateFields = Object.fromEntries(dateParts.map(({ type, value }) => [type, value]));
+  const date = `${dateFields.hour}:${dateFields.minute} ${dateFields.day} ${dateFields.month} ${dateFields.year} г. МСК`;
   const metadata = `<aside class="wiki-provenance" aria-label="Wiki provenance">Updated <time datetime="${info.updatedAt}">${date}</time><span>Commit <a href="https://github.com/Cringe-Driven-Development-Team/docs/commit/${info.gitHead}">${info.gitHead}</a></span></aside>\n`;
   return {
     html: html.replace(anchor, metadata + anchor),
