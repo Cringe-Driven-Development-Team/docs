@@ -1,0 +1,4 @@
+.agents/skills/**
+.claude/skills/**
+dist/**
+node_modules/**
