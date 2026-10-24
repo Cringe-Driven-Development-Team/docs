@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:dd8230506f02330525644e3258528d754e913127e4da265e2d8fb9c3c8c4b104",
+  "pageVersion": "sha256:ca7b1f3f5936c4a9dd67d840e9a0a8cf02ae1f4ed8b563eb698f3ee9f1eed861",
   "claims": [
     {
       "id": "claim_83e60d0763d44874ad35962d794afa33",
@@ -67,10 +67,24 @@
           "version": "repo-lines-v1:sha256:e3e3b6d6434eb77503a1927e8453c71dc0d4d3563a040e1c40eb3d749a88841d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NDcxMGY1OTQ1NzUyZTBlMjBhNjg1OTdjZDY3Y2Y3YzM3MmM3MzQxNDFmZTQxMGM0YWEyYzc4MDFlZTFmYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNmZmNDAzNWNjMWEwZWYxMTc5YmI0MDI1YThkYTI5NTBjMGU2MmMxMGY2OWU2NDNkZDU1OGFmYTdiMGNkZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzYjNjZmM1N2EyMjg4ZTVlZWYyNjNlNDNhYzZlOWVmZGFiNjU0YWI1MmFjMjcwMTk1NDI5OTlhMTBjZThiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzNWViNTJhNjI3YzZlMTNhODcxMjgyNWE1YWUzYWU1ZDAzMmNhZjlmNTQ2ZThmM2JiYzA2YmIzMzc0OGRjMjAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9151d016df214614b32dd2c87cc30033",
+      "statement": "Трек второго модуля о CI/CD бэка задаёт четыре подстраницы release, rollback, deployments и ansible и явно помечает описанный выпуск как ещё не полностью внедрённый план.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/backend-cicd.md#L1-L15",
+          "version": "repo-lines-v1:sha256:c24d6f0a497550feb20fb7398bdd4dd10e58ff68f8adc433ea374c9599d8852a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MDQyNzM2ZTE0MGNkNzVhOGJmMDljZDhlMDFkZDU3ZTU2YmE3NTQ0MzkwODMyNTdkYmY2ZjNlMmZiODI1MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4OWYzNTdkYzZiNjY0NzFmYjQ1NmVlZmEwYzkwM2NiMmIwN2Y5ZDRmOTg5NDBlOWE0MDU4MWU5Mjk2YmY4NmEifQ"
+        },
+        {
+          "resource": "repo://site/modules/2/tracks/backend-cicd.md#L40-L49",
+          "version": "repo-lines-v1:sha256:49dc1a93033ae8781a2c58b3e99974fc348ba87901e1859d6509692b75de3deb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjUxOTdlNmM4MDgyNDU0OGY3MDA5MDZiNzg3OGE0NzY0ZDhhOTcxZmI3NzYxNmM0YjliZjAyMjg4NDY2ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzllNTdiZTRhZmQzZTE3ZGI5N2U5ZTNlNjRlNzVjMDI4MzkwYWQxZjk1NTJjM2UyMGUxMmJlNTdmOTc5ZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYWVlNWY0YjY5NzM0ZmQ4YjI4YWM5OGI0Yzk1ZTBhMWZkZTc0NDE4MDBiNGQzMmQ0MTljN2UwZTM1ZThhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZjJjODhmMTc4YzA1ODM5MWNmYzM5YTM0ZDc3NTJmNjcxZjc3NmNlMDE2OTJjYjVkOTlhYzI5Mzg2MGUzMTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T15:47:09.601Z"
+    "at": "2026-10-24T17:01:28.502Z"
   }
 }
