@@ -3,11 +3,49 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkOpenWiki } from "./openwiki-check.ts";
 
-export type Exec = (binary: string, args: string[], cwd: string) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
+export type Exec = (binary: string, args: string[], cwd: string, onStdoutLine?: (line: string) => void) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
+
+function elapsed(startedAt: number): string {
+  const seconds = Math.floor((Date.now() - startedAt) / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function codexProgress(write: (message: string) => void, startedAt: number) {
+  let totalPages: number | undefined;
+  let completedPages = 0;
+  const emit = (message: string) => write(`OpenWiki: ${message} (${elapsed(startedAt)})`);
+  return (line: string) => {
+    let parsed: unknown;
+    try { parsed = JSON.parse(line); } catch { return; }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+    const event = parsed as {
+      type?: string;
+      item?: { type?: string; server?: string; tool?: string; status?: string; result?: { structured_content?: Record<string, unknown> } };
+    };
+    const item = event.item;
+    if (event.type !== "item.completed" || item?.type !== "mcp_tool_call" || item.server !== "openwiki" || item.status !== "completed") return;
+    const result = item.result?.structured_content;
+    if (!result) return;
+    if (item.tool === "openwiki_submit_plan" && result.status === "accepted" && typeof result.totalPages === "number") {
+      totalPages = result.totalPages;
+      emit(`План: ${totalPages} стр.`);
+    } else if (item.tool === "openwiki_next_page" && result.status === "pending") {
+      const job = result.job as { path?: unknown } | undefined;
+      if (typeof job?.path === "string") emit(`Страница: ${JSON.stringify(job.path.replace(/^\/?openwiki\//, ""))}`);
+    } else if (item.tool === "openwiki_submit_page" && result.status === "complete" && typeof result.page === "string") {
+      completedPages = totalPages !== undefined && typeof result.remaining === "number"
+        ? Math.max(0, totalPages - result.remaining)
+        : completedPages + 1;
+      emit(`Готово ${completedPages}${totalPages === undefined ? "" : `/${totalPages}`}: ${JSON.stringify(result.page.replace(/^\/?openwiki\//, ""))}`);
+    } else if (item.tool === "openwiki_finish" && result.status === "complete") {
+      emit("Генерация завершена");
+    }
+  };
+}
 
 export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" | "pr-created" | "pr-exists"> {
-  const run = async (binary: string, args: string[], cwd = root) => {
-    const result = await exec(binary, args, cwd);
+  const run = async (binary: string, args: string[], cwd = root, onStdoutLine?: (line: string) => void) => {
+    const result = await exec(binary, args, cwd, onStdoutLine);
     if (result.exitCode !== 0) throw new Error(`${binary} ${args[0] ?? ""} failed (${result.exitCode}): ${result.stderr.trim()}`);
     return result.stdout;
   };
@@ -68,12 +106,32 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
 Не меняй AGENTS.md, CLAUDE.md или другие исходники. Не запускай git add/commit/push, gh, таймеры или workflow генерации.
 Если интеграция недоступна или openwiki_finish не завершён, остановись с ошибкой; не имитируй завершение.`;
     // Noninteractive exec cannot prompt for MCP consent; scope approval to this required server/run.
-    await run("codex", [
-      "exec", "-s", "workspace-write",
-      "-c", 'mcp_servers.openwiki.default_tools_approval_mode="approve"',
-      "-c", "mcp_servers.openwiki.required=true",
-      instruction,
-    ], worktree);
+    const startedAt = Date.now();
+    let heartbeat: ReturnType<typeof setTimeout> | undefined;
+    const scheduleHeartbeat = () => {
+      if (heartbeat !== undefined) clearTimeout(heartbeat);
+      heartbeat = setTimeout(() => {
+        console.log(`OpenWiki: обновление продолжается (${elapsed(startedAt)})`);
+        scheduleHeartbeat();
+      }, 30_000);
+    };
+    const onProgress = codexProgress((message) => {
+      console.log(message);
+      scheduleHeartbeat();
+    }, startedAt);
+    console.log("OpenWiki: Запускаю Codex и планирую обновление.");
+    scheduleHeartbeat();
+    try {
+      await run("codex", [
+        "exec", "-s", "workspace-write", "--json",
+        "-c", 'mcp_servers.openwiki.default_tools_approval_mode="approve"',
+        "-c", "mcp_servers.openwiki.required=true",
+        instruction,
+      ], worktree, onProgress);
+    } finally {
+      if (heartbeat !== undefined) clearTimeout(heartbeat);
+    }
+    console.log("OpenWiki: Проверяю результат и checkpoint.");
     if ((await git(["rev-parse", "HEAD"], worktree)).trim() !== target) throw new Error("Codex changed HEAD; refusing to publish.");
     const changed = [
       ...((await git(["diff", "--name-only", "-z", "--no-renames", target, "--"], worktree)).split("\0")),
@@ -94,6 +152,7 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
     await git(["push", `--force-with-lease=refs/heads/${branch}:`, "origin", `HEAD:refs/heads/${branch}`], worktree);
     const body = join(temporary, "pr-body.md");
     await writeFile(body, `## Что\n\nПроизводная wiki по исходному SHA \`${target}\`. Канонические документы остаются в docs.\n\n## Решения\n\nЯвная локальная команда владельца; изменения только в openwiki/**.\n\n## Проверка\n\n- openwiki_finish завершён; status=complete, gitHead=${target}.\n- bun run wiki:check --against ${target}: fresh, изменённых исходных путей нет.\n- Пути коммита: ${staged.map((path) => JSON.stringify(path)).join(", ")}.\n- Перед слиянием повторно сравнить checkpoint с актуальным docs/main.\n`);
+    console.log("OpenWiki: Создаю PR.");
     const url = await run("gh", ["pr", "create", "--base", "main", "--head", branch, "--title", `docs(openwiki): обновление по ${target.slice(0, 12)}`, "--body-file", body]);
     console.log(`Wiki PR: ${url.trim()}`);
     return "pr-created";
@@ -107,10 +166,31 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
   }
 }
 
+export async function readLines(stream: ReadableStream<Uint8Array>, onLine: (line: string) => void): Promise<void> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let pending = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    pending += chunk;
+    let newline: number;
+    while ((newline = pending.indexOf("\n")) !== -1) {
+      onLine(pending.slice(0, newline));
+      pending = pending.slice(newline + 1);
+    }
+  }
+  const last = decoder.decode();
+  pending += last;
+  if (pending) onLine(pending);
+}
+
 if (import.meta.main) {
-  const exec: Exec = async (binary, args, cwd) => {
+  const exec: Exec = async (binary, args, cwd, onStdoutLine) => {
     const process = Bun.spawn([binary, ...args], { cwd, stdout: "pipe", stderr: "pipe" });
-    const [stdout, stderr, exitCode] = await Promise.all([new Response(process.stdout).text(), new Response(process.stderr).text(), process.exited]);
+    const stdoutResult = onStdoutLine ? readLines(process.stdout, onStdoutLine).then(() => "") : new Response(process.stdout).text();
+    const [stdout, stderr, exitCode] = await Promise.all([stdoutResult, new Response(process.stderr).text(), process.exited]);
     return { exitCode, stdout, stderr };
   };
   try {
