@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12",
+    "node": ">=22.22.0",
     "bun": ">=1.3"
   },
   "scripts": {
@@ -24,11 +24,12 @@
     "site:check": "bun scripts/check-site.ts",
     "warm": "bun scripts/warm-icons.ts",
     "build": "bun scripts/docker.ts build",
-    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run index && bun run mermaid && bun run site:vitepress && bun run site:check",
+    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run index && bun run mermaid && bun run site:vitepress && bun run wiki:export && bun run site:check",
     "site": "bun scripts/docker.ts site",
     "site:native": "bun scripts/build-site.ts",
     "icons": "bun scripts/fetch-icons.ts",
-    "skills:sync": "bun scripts/skills-sync.ts"
+    "skills:sync": "bun scripts/skills-sync.ts",
+    "wiki:export": "bun scripts/export-openwiki.ts"
   },
   "devDependencies": {
     "@eraserlabs/diagrams-cli": "0.1.0",
@@ -39,6 +40,7 @@
     "gray-matter": "4.0.3",
     "lefthook": "2.1.14",
     "mermaid": "^11",
+    "openwiki": "0.7.2",
     "typescript": "7.0.2",
     "vitepress": "1.6.4",
     "vitepress-plugin-mermaid": "2.0.17"

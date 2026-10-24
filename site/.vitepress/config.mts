@@ -24,6 +24,7 @@ export default withMermaid(
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {
       nav: [
+        { text: 'OpenWiki', link: '/openwiki/', target: '_self', activeMatch: '^/openwiki/' },
         { text: 'Контекст проекта', link: '/project-context' },
         { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },

@@ -7,9 +7,16 @@ const readme = readFileSync("README.md", "utf8");
 const agents = readFileSync("AGENTS.md", "utf8");
 const claude = readFileSync("CLAUDE.md", "utf8");
 
-test("project-context and README link to the derived wiki and identify docs as canonical", () => {
+test("project-context links to the public visualizer", () => {
+  expect(context).toContain('href="./openwiki/"');
+});
+
+test("README retains the source Markdown link", () => {
+  expect(readme).toContain(`](${quickstart})`);
+});
+
+test("project-context and README identify docs as canonical", () => {
   for (const text of [context, readme]) {
-    expect(text).toContain(`](${quickstart})`);
     expect(text).toMatch(/Wiki — производн/);
     expect(text).toMatch(/Канонический текст остаётся в `docs`/);
   }
