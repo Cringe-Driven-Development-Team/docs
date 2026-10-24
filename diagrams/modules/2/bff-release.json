@@ -52,9 +52,9 @@
       "id": "registry",
       "title": { "text": "GHCR" },
       "x": 700,
-      "y": 0,
+      "y": 420,
       "width": 380,
-      "height": 300,
+      "height": 340,
       "color": "green",
       "isContainer": true
     },
@@ -64,7 +64,7 @@
       "icon": "docker",
       "texts": [{ "text": "Образ BFF + HTML по digest" }],
       "x": 840,
-      "y": 120,
+      "y": 560,
       "containerId": "registry"
     },
     {
@@ -72,9 +72,9 @@
       "id": "cdn",
       "title": { "text": "S3/CDN: выпуск того же SHA" },
       "x": 700,
-      "y": 420,
+      "y": 0,
       "width": 380,
-      "height": 340,
+      "height": 300,
       "color": "green",
       "isContainer": true
     },
@@ -84,7 +84,7 @@
       "icon": "cloud",
       "texts": [{ "text": "JS/CSS выпуска" }],
       "x": 840,
-      "y": 560,
+      "y": 120,
       "containerId": "cdn"
     },
     {
@@ -104,7 +104,7 @@
       "icon": "code",
       "texts": [{ "text": "Ansible / Compose" }],
       "x": 1300,
-      "y": 360,
+      "y": 620,
       "containerId": "vps"
     },
     {
@@ -113,7 +113,7 @@
       "icon": "server",
       "texts": [{ "text": "BFF: HTML и RPC" }],
       "x": 1560,
-      "y": 360,
+      "y": 620,
       "containerId": "vps"
     },
     {
