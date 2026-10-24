@@ -18,7 +18,7 @@ title: Откат
 Сначала workflow узнаёт **фактически запущенный** на VPS BFF: сообщение Telegram и последняя запись
 GitHub сами по себе этого не доказывают. Затем он находит предыдущий успешный production Deployment
 с другим digest. У записи `ref` — полный SHA выбранного BFF, в `payload` — точный `image_ref` и каталог
-ассетов. Запись готового выпуска связывает тот же SHA с исходным CI run и CDN-путём.
+ассетов. Успешный `release-artifacts` Deployment связывает тот же SHA с исходным CI run и CDN-путём.
 
 Если работающий образ не сопоставляется с историей, цель неоднозначна или нет предыдущего успешного
 выпуска, workflow останавливается до изменения VPS и сообщает подтверждённое состояние.
@@ -33,7 +33,7 @@ flowchart TD
     MATCH -- "Да" --> PREV["Выбрать предыдущий success с другим digest"]
     PREV --> TARGET{"Цель однозначна?"}
     TARGET -- "Нет" --> STOP
-    TARGET -- "Да" --> CHECK["Проверить GHCR digest, SHA и CDN-ассеты"]
+    TARGET -- "Да" --> CHECK["Сверить release-artifacts, GHCR digest, SHA и CDN"]
     CHECK --> READY{"Выпуск доступен?"}
     READY -- "Нет" --> STOP
     READY -- "Да" --> DEP["Создать Deployment для старого SHA"]
@@ -44,9 +44,10 @@ flowchart TD
     OK -- "Нет" --> FAILURE["Deployment failure; сообщить известное состояние"]
 ```
 
-1. В общей с CD и retention группе `production` проверить, что прежний digest доступен в GHCR,
-   его `org.opencontainers.image.revision` совпадает с полным SHA, а JS/CSS в каталоге этого SHA
-   остаются доступными в CDN. Старый тег или S3-указатель не заменяют эти проверки.
+1. В общей с CD и retention группе `production` сверить целевой SHA и digest с успешным
+   `release-artifacts` Deployment, проверить доступность digest в GHCR, совпадение
+   `org.opencontainers.image.revision` с SHA и сохранность JS/CSS в CDN. Старый тег или S3-указатель
+   не заменяют эти проверки.
 2. Создать новый GitHub Deployment для **целевого старого SHA**, с действием `rollback`, точным
    `image_ref`, каталогом ассетов и ссылкой на run отката. SHA запуска workflow на `main` не является
    версией BFF. Автоматическую запись от environment job отключить; для старого SHA задать

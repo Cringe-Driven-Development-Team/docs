@@ -3,7 +3,7 @@
     {
       "tag": "Group",
       "id": "github",
-      "title": { "text": "GitHub: выпуск и история production" },
+      "title": { "text": "GitHub: готовые выпуски и production" },
       "x": 0,
       "y": 0,
       "width": 560,
@@ -22,6 +22,15 @@
     },
     {
       "tag": "Icon",
+      "id": "ready-deployment",
+      "icon": "package",
+      "texts": [{ "text": "release-artifacts: SHA и digest" }],
+      "x": 380,
+      "y": 240,
+      "containerId": "github"
+    },
+    {
+      "tag": "Icon",
       "id": "cd",
       "icon": "rocket",
       "texts": [{ "text": "CD: проверка и выкатка" }],
@@ -31,9 +40,9 @@
     },
     {
       "tag": "Icon",
-      "id": "deployments",
+      "id": "production-deployment",
       "icon": "history",
-      "texts": [{ "text": "Deployments: целевой SHA и digest" }],
+      "texts": [{ "text": "production: цель и статус" }],
       "x": 380,
       "y": 460,
       "containerId": "github"
@@ -73,7 +82,7 @@
       "tag": "Icon",
       "id": "assets",
       "icon": "cloud",
-      "texts": [{ "text": "JS/CSS + release.json" }],
+      "texts": [{ "text": "JS/CSS выпуска" }],
       "x": 840,
       "y": 560,
       "containerId": "cdn"
@@ -95,7 +104,7 @@
       "icon": "code",
       "texts": [{ "text": "Ansible / Compose" }],
       "x": 1300,
-      "y": 460,
+      "y": 360,
       "containerId": "vps"
     },
     {
@@ -104,7 +113,7 @@
       "icon": "server",
       "texts": [{ "text": "BFF: HTML и RPC" }],
       "x": 1560,
-      "y": 460,
+      "y": 360,
       "containerId": "vps"
     },
     {
@@ -141,10 +150,10 @@
   ],
   "connections": [
     { "tag": "Relationship", "from": "ci", "to": "bff-image", "label": "образ @sha256" },
-    { "tag": "Relationship", "from": "ci", "to": "assets", "label": "ассеты, затем release.json" },
-    { "tag": "Relationship", "from": "bff-image", "to": "cd", "label": "проверка digest и SHA" },
-    { "tag": "Relationship", "from": "assets", "to": "cd", "label": "готовый выпуск" },
-    { "tag": "Relationship", "from": "cd", "to": "deployments", "label": "запись / статус" },
+    { "tag": "Relationship", "from": "ci", "to": "assets", "label": "ассеты releases/SHA/" },
+    { "tag": "Relationship", "from": "ci", "to": "ready-deployment", "label": "успех после проверки" },
+    { "tag": "Relationship", "from": "ready-deployment", "to": "cd", "label": "digest и CDN-путь" },
+    { "tag": "Relationship", "from": "cd", "to": "production-deployment", "label": "запись / статус" },
     { "tag": "Relationship", "from": "cd", "to": "ansible", "label": "bff_image_ref + SHA" },
     { "tag": "Relationship", "from": "ansible", "to": "bff", "label": "pull и запуск" },
     { "tag": "Relationship", "from": "client", "to": "caddy", "label": "GET HTML / RPC", "color": "orange", "lineStyle": "solid" },
