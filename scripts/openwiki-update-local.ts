@@ -67,7 +67,13 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
 Меняй только openwiki/**, включая полный checkpoint openwiki/.last-update.json со status=complete и gitHead=${target}, индексы, Claims и manifest.
 Не меняй AGENTS.md, CLAUDE.md или другие исходники. Не запускай git add/commit/push, gh, таймеры или workflow генерации.
 Если интеграция недоступна или openwiki_finish не завершён, остановись с ошибкой; не имитируй завершение.`;
-    await run("codex", ["exec", "-s", "workspace-write", instruction], worktree);
+    // Noninteractive exec cannot prompt for MCP consent; scope approval to this required server/run.
+    await run("codex", [
+      "exec", "-s", "workspace-write",
+      "-c", 'mcp_servers.openwiki.default_tools_approval_mode="approve"',
+      "-c", "mcp_servers.openwiki.required=true",
+      instruction,
+    ], worktree);
     if ((await git(["rev-parse", "HEAD"], worktree)).trim() !== target) throw new Error("Codex changed HEAD; refusing to publish.");
     const changed = [
       ...((await git(["diff", "--name-only", "-z", "--no-renames", target, "--"], worktree)).split("\0")),
