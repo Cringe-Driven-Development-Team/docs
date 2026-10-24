@@ -14,6 +14,7 @@ title: Контекст проекта
 
 | Что нужно узнать | Где смотреть |
 | --- | --- |
+| Быстро найти общепроектные сведения по теме | [OpenWiki — производный тематический указатель](https://github.com/Cringe-Driven-Development-Team/docs/blob/main/openwiki/quickstart.md) |
 | Как устроен работающий продукт и где проходят границы компонентов | [Архитектура](/architecture/) и другие текущие разделы этого сайта |
 | Что команда планирует сделать | [Модули](/modules/) и утверждённые проектные документы; это план, а не описание работающего продукта |
 | Где хранить SDD-спеку и план реализации конкретной задачи | В репозитории, где выполняется работа, обычно в `docs/superpowers/specs/` и `docs/superpowers/plans/`; общие для нескольких компонентов решения отражай здесь |
@@ -23,6 +24,8 @@ title: Контекст проекта
 | Как работать в конкретном репозитории | Корневой `AGENTS.md`, README и локальные инструкции этого репозитория |
 
 Основные репозитории: [frontend](https://github.com/Cringe-Driven-Development-Team/frontend), [backend](https://github.com/Cringe-Driven-Development-Team/backend), [infra](https://github.com/Cringe-Driven-Development-Team/infra), [docs](https://github.com/Cringe-Driven-Development-Team/docs) и [общие процессы](https://github.com/Cringe-Driven-Development-Team/.github). Остальные библиотеки и вспомогательные репозитории перечислены в [организации](https://github.com/Cringe-Driven-Development-Team).
+
+Wiki — производное представление документации. Канонический текст остаётся в `docs`: исправления начинают с исходного документа. Перед использованием wiki проверь свежесть клона и checkpoint командой `bun run wiki:check --against <SHA>` в `docs`, передав актуальный SHA. Если wiki устарела, используй её как указатель путей, а каждое нужное утверждение сверь с исходником на этом SHA. Если wiki недоступна, ищи напрямую в `docs`. Факты о реализации сверяй с кодом компонента на актуальном SHA. Обновление wiki запускает владелец явной локальной командой.
 
 ## Текущее и планируемое
 
