@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d5774909443166f5d55b00a28aed0d48e01522446f5fb98ad8001bda39b786e2",
+  "pageVersion": "sha256:578c4c9e46ea9807a3614c608915bfbfa9540ce5d312bcf5ec8a9a1b7e9bdde4",
   "claims": [
     {
       "id": "claim_fc6e7989e7c148a2a6c6d116bf558a19",
@@ -17,7 +17,7 @@
       "statement": "Канонический текст остаётся в docs, а wiki используют как производный указатель и проверяют через wiki:check против актуального SHA.",
       "evidence": [
         {
-          "resource": "repo://README.md#L44-L49",
+          "resource": "repo://README.md#L54-L59",
           "version": "repo-lines-v1:sha256:2b3a6349312a6e1a508bef34eb9ded1b77c330e548d2998811e4d701fd5fa50c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2YxYTc4MjYyNmU2MGU2MjljODMyMzFhYzkxNjFiOTRiYmQ1MDdmMTZmMGM3M2M2MDMzMDMzNzkyMDQzMjIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZmNWNjNTMzMjBmY2QwOWNlMzVlYTQwOGI4YzYyYWNhYjRjMWQ5YTI2M2VmYWEyNmEwNjQ1ZmVkZGJjZjM0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk3YWMwODU5MmUyMTkzN2M1Y2U0NTM4MDcyMWFlM2NjNjBjYmM3ZjIyZWI2N2MxYTY3ZDYwYWZhYzFhMGRiNyJ9"
         },
         {
@@ -35,10 +35,24 @@
           "version": "repo-lines-v1:sha256:b27a5cf4fe44ee2247d69d705790f8c0f157c9e9b90f18d0927f16f9b8c4972a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA2M2RkMzgzM2ZiNTljYWE1N2Q1NWNkYmJjMTY5NzgzZjQzNGY3Njk4YWQ4ZDY2ZjA1ODcxYTgzZDBhM2Y5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQwMDI0MjI1ZmUyZTYyN2I0YTk5YzQ5MDVhN2U5ODZkZTE4OGRiYWQ1NGIyNGNiNWNlODgwNjA3NzQ3NGNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc1M2Y1YTYxNDA3NGNmMzUwZDAyZGI4YjM3YzkzMjE2OWZmOTVhY2I1YWI1Y2JkNjhjZDFlOGM4YjcyNzNkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGE0YjM4MzI2MzlkMzc4ZDA4YmRiZTYwMDBjNmI0YTgzMzExMWEzOGQ1YjEyZGE1MmY5MDU1ZDQ2YTY4MWQzMiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_6824c156a85740449462bc1e059c7299",
+      "statement": "Локальная команда wiki:update-local обновляет существующую wiki; отсутствие openwiki/quickstart.md на origin/main требует отдельного ручного bootstrap.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L45-L53",
+          "version": "repo-lines-v1:sha256:83d5a71065a80f4f587e47260cfda7041d3dcff98972ad9ec289fb99278f5681:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjYwNDczYjc3NjhmMDkwZjA3NTdhZWYyYTdkNGUyMzM2ODFhMDViMDJlOTBhYmQxMGZiMzExYWZlZjg0NzQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdmNTk4ZTc2ZTFhZDVlYzRkNDY4YTdhMGQ3ZTFjNWI3MGRjZDcyNzA5MGQ0MDJkZDU4ODdmOTY2Y2I4Mzg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJlMGY3MzRjNGY5Nzg2YzI2NTIzOTMzMTE1MDYyMmY0Y2RlN2M1YmMzZTIxN2ZkZjE5ZjQ0NGY3Y2E1ZmU5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NmZlNmM5YmY3MDAyNmUzNDMyMTdmYmM2NDliN2JjYmYwYTQzOGNlNjJjYzU2NzRkZGUwNjY0Zjk5Y2ZhNyJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-update-local.ts#L38-L42",
+          "version": "repo-lines-v1:sha256:54f4c22ea576e8caf24f5afb19161501545a3dcd97e6ad4c4f6ad3dcca322300:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFkZjg3YTQ3MzE2YzcwOGM1NTAyMDk4ZTlhZjZjNDQ1MzRlYjgwYmVhZGNmNjA2MzAyOGVmY2E4NTkzN2FiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg5NTdjYmE4YzZhZmI0MzQ3NDY4NmFmNDkyYThhODViZmYzZjczODExMTBiYTI3MjFhMDFhZTQyYWI2M2IzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGEzZGQ1NDg1ZWNkMzdhYzU5NGU2NmZkODZiMjg3MDVmNjc5ZTE2YjJkZjQxYzhjNjIwNGFhYThlOWIzYTRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzI1MzUxM2ZmMzVmMTEzODFmOTFjM2I3N2Q2MGI3MmFjZjBiZTcxNmRjMmY1MjYzNTNmN2YwZjBlNzVjNzM5NSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T14:00:30.220Z"
+    "at": "2026-10-24T15:47:09.601Z"
   }
 }
