@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d5774909443166f5d55b00a28aed0d48e01522446f5fb98ad8001bda39b786e2",
+  "claims": [
+    {
+      "id": "claim_fc6e7989e7c148a2a6c6d116bf558a19",
+      "statement": "Контекст проекта велит начинать с AGENTS.md и README рабочего репозитория, проверять реализацию кодом на актуальном SHA, а продакшен также стендом.",
+      "evidence": [
+        {
+          "resource": "repo://site/project-context.md#L9-L11",
+          "version": "repo-lines-v1:sha256:bc7ffccc678e373199013ac9e2fbf9c55c18c974cec781841e1715713bdac946:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NhMjE1MWZjOTNkMTk0OGQ3YjE1ZjdiOGRkNGU0MzIxYTVlMGEzNWJlMDRiMGM0MGE4NTY5MTlhY2VmNzQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ZTRlMjBjMjkzNGZkZTUxMzMyMDVhZTc0NmQ4YjRiNDg3MjBhYTJiYzYwMzI1MWU4NDEzZGE1M2E5M2QxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkNjM5ODhjNzlkODU5NjdmMjgzNjAyMjk1YmE4ODYwZWU0MWQ0ZGI1NTJiNjk0YTA1NzRkMmIxNWVlZWRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjNWU0N2NhNTJmYWEzZGQ4ZmM0NmM2NzVhYjU4YTVhN2JiOTA3MjMxZTFhOGQ2MDA3MTcwNTc3YzRkYTQ0ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dcc5645183004e5da4f1dd16a94cb553",
+      "statement": "Канонический текст остаётся в docs, а wiki используют как производный указатель и проверяют через wiki:check против актуального SHA.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L44-L49",
+          "version": "repo-lines-v1:sha256:2b3a6349312a6e1a508bef34eb9ded1b77c330e548d2998811e4d701fd5fa50c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2YxYTc4MjYyNmU2MGU2MjljODMyMzFhYzkxNjFiOTRiYmQ1MDdmMTZmMGM3M2M2MDMzMDMzNzkyMDQzMjIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZmNWNjNTMzMjBmY2QwOWNlMzVlYTQwOGI4YzYyYWNhYjRjMWQ5YTI2M2VmYWEyNmEwNjQ1ZmVkZGJjZjM0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk3YWMwODU5MmUyMTkzN2M1Y2U0NTM4MDcyMWFlM2NjNjBjYmM3ZjIyZWI2N2MxYTY3ZDYwYWZhYzFhMGRiNyJ9"
+        },
+        {
+          "resource": "repo://site/project-context.md#L26-L28",
+          "version": "repo-lines-v1:sha256:55309289ef5817259d632711735847053c53d09ff6db951c2004270a073df376:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q4NzMwY2JhNzMwY2EzMjNiYzVlYzQ3NGY5MDdkOTg4OTRkZmEyN2U5NzEyZDUyYzcwNGU2NzAyZjg2MGY3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMxODQzMGVjZmUxN2Y2Njc3NGVkZTAzYmNlOGI1YWM1N2Q5YTFiN2E0NmViNmNiNGY0OGEwZWY4MzZiOWM4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA0NDRmMDQwZTM3NDYyMGIxMTY0NzA0MDdjMGRlMzc3MjAzYTEyYzE5OTQ0ZDMzN2Y3OTU5NjdmMTEzMTMxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6d3592ae5594eeea4a9ccc5ab76b29c",
+      "statement": "Страницы модулей являются планом, а разделы сайта вне модулей описывают документированный текущий продукт.",
+      "evidence": [
+        {
+          "resource": "repo://site/project-context.md#L30-L34",
+          "version": "repo-lines-v1:sha256:b27a5cf4fe44ee2247d69d705790f8c0f157c9e9b90f18d0927f16f9b8c4972a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA2M2RkMzgzM2ZiNTljYWE1N2Q1NWNkYmJjMTY5NzgzZjQzNGY3Njk4YWQ4ZDY2ZjA1ODcxYTgzZDBhM2Y5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQwMDI0MjI1ZmUyZTYyN2I0YTk5YzQ5MDVhN2U5ODZkZTE4OGRiYWQ1NGIyNGNiNWNlODgwNjA3NzQ3NGNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc1M2Y1YTYxNDA3NGNmMzUwZDAyZGI4YjM3YzkzMjE2OWZmOTVhY2I1YWI1Y2JkNjhjZDFlOGM4YjcyNzNkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGE0YjM4MzI2MzlkMzc4ZDA4YmRiZTYwMDBjNmI0YTgzMzExMWEzOGQ1YjEyZGE1MmY5MDU1ZDQ2YTY4MWQzMiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-24T14:00:30.220Z"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:38c8ece7f5970713ea77d4f8dcb433b683b1b834cf860a3bff8b616e7cc9b356",
+  "claims": [
+    {
+      "id": "claim_3fd2f6c79d5047a29c964481cdb160ce",
+      "statement": "Трек front-libs является планом переноса трёх учебных библиотек в общий workspace frontend-packages с независимыми версиями.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs.md#L14-L38",
+          "version": "repo-lines-v1:sha256:3a03dbfab1b25815735c4a62b151b7c1845c2aabd4382f0b117dec94bbc15562:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MWJjZDBiYmU1ZWVhYTBkNGVmODdiMDk1NTg3ZDMzY2M0ZDAyZjdhNWRhZmI2ZWVlZTcxMmM0ZDliYTJlMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMTQxOGYyMzQxMTgyMjc4YmNjNzllOTIwMTNmYTQ4MWJjMzVlNTAwZmRlMDRmZjQyODBmMjRiNDk1ZDY1NWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZDYzMjVmOTI1NTRlNTk2ZmIwYjRmMGIwMWYwNjgzZjEwZjM2NzU4ODUwMjAwZWFmODQ1MGFmOTM0MzZhNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmMTA1NGIzZjc2NGY2NmE0MjMwYjM0ZmZhODNjNDQ2OGU2Y2I5ZTQ1ZDIxNDcyZTc4MDk2MzEzM2ZmNjc1YjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_94dacf333cb347d38c8c9146b7ba5e07",
+      "statement": "План релиза разделяет release-please и npm publish; GitHub Release не доказывает npm-публикацию, а пакеты публикуются по paths_released в порядке React перед Zustand.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs/releases.md#L9-L25",
+          "version": "repo-lines-v1:sha256:96a71295f76e1bc0303e043a5746635bf1bb88cf639c18ae0d2c3c16f89a2f40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5OWYxMzZjOTQ3NDA0MjIzZDNjMzFlMDVjYjUwYTkyNTM0MzliOTAwNjk0NmU0NTcxNzNjNTAxNzE3ZDA1NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0Mzc0YmQ1MjlkYjQyMDY2MmQxNTQwMTZhMjk2ZjVkODUyMWUxM2FhYWNhOTkxOTA5N2NiNGI3MTM1OWU0MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNzM5MzhhZjkyMTBlYzFmNGYwZWI0YjJiYTJlYmI4YzdhNjI0ODViOTU3NjI5ZjY1OTJjOTg5YTk2Yjc3OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZTIyMjdhNmY4MGZmY2IwOTg1ZTVjNTg4YTQ5YTJhNzRjNDBhMGIyNzE1ZjU0NmIxYTQ4NDFhNzZlN2QxNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cae29df795c9455f920caeb8702cc864",
+      "statement": "План Trusted Publishing использует GitHub OIDC и отдельное доверие npm для каждого пакета; publish job требует id-token: write, а release-please отдельно требует права на PR и contents.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs/publishing.md#L62-L85",
+          "version": "repo-lines-v1:sha256:2ac9cfdbb17ab1335647911ba4ae53d3f0f97cc9369e6342e594d2034264886a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNjU0MjM2M2VmYzhmNjMyZjkyOTkxMmFkYWZjMmY5MWNhNmZjNDEzMTU3ZjBmODFjYTFiZmM3YmI2YWY4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYjgxMzIwZjkxZGM1MTc3ZTJjNDM1NWQ0OWExY2M0MzBlYWM2NmE3ZWY2ODY3YjQ3MzRkNDJkNzhiYmZjMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyNmQ2ZTZjYzIyZTcyODA5NmU4YjQ1NTRjOGIxMGI2OGVjZDZjOWY5ZGY2N2M0NmI2OTQ1ZjBmZDZiODI4YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNjA5MDYzYTc3N2I4NjE1MmY2MDMwNmM4ODE2OTQwNjgxOGI5MzZhYWZkMGI1MzFhNWJlMmUxODA1OWY3NmQifQ"
+        },
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs/publishing.md#L87-L131",
+          "version": "repo-lines-v1:sha256:5c89ba8aa302adf6762dd7b858f7076b95b827067a2f3a13fc76056e1398193a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MjUxNzkxZDk0MTU5ZjBjNGY2YjM0ZDliZDU1NzgwNTI0YWY1MjE0NGRkNWY3YmI1ZDQ2ZTdiOWI5ZmIzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZmU2NDA3NmMwMzY3MjdiMTQwM2JjNjAzNjc4Njg1NzQwZGNmMjc0NjA2OWZmZjUyNmEzODIyMzE0NzVlZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0YzJiNDM1MzlkYmEyM2QxMjNkMGRkMjVjNDJjNjZhYjVmZGUxZWQ4OGQ4ZmI0YWVlYzNkZjU5YjljZjdhNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1YmVlNDBiZDJhYjlkNTliMzY1Y2IwYjAzZTM1YjhiNTFlMzYxMGNjYWZiYzQ4Mzc4OTAwZDhhYzUyYzk5YTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1867408ed917459cb26de2f55ae7ef51",
+      "statement": "План восстановления частичного релиза требует проверить registry и опубликовать только отсутствующую версию после исправления причины; уже опубликованную name/version не перезаписывают.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs/recovery.md#L37-L55",
+          "version": "repo-lines-v1:sha256:e7a851078a71d215525d316d7f913a01a46b893979a3a3e0b07833acf199a4a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNGRiNjQxMzRjMzFlOTkxYjFkOTgxMjRiMjJlNzkwZjRhODY5M2UwMTBlNmNlMGE5ODZiNjhlNGIwZmZmYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OGJjNzE3OWFhMzEyYzc4YzI3MWI2MDIxN2I2ZDU4YTE1YWJiMWVlOTUwN2E5ZWE5Yzg2NjlkM2ZkNzYwNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMWY4ZDFhYzM2ZjFhOGFhNGI0ZTE5M2FmMWIxMjBkODM5MmM0ZWUwZTNjMzM4NWI4ZmI4ZTIyZTM1YTYxYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_698e3b14b7a04fab9d363260da271478",
+      "statement": "Первичная регистрация npm-имён и bootstrap отделены в плане от последующего автоматического OIDC-релиза и не объявлены завершёнными.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs/setup.md#L36-L49",
+          "version": "repo-lines-v1:sha256:2ff1fe9d6b9afbb25ab45a3917f88bc87bc2577ea1edc7deff52d2b7e7b98975:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2N2Y2YjI3Y2E2NTg2ZGExMzZkOWFkM2RjZTI4ZTkyNTdkMWE4NjdiZjUzZDg2OTBjMmUxMGIyNzZlOTRjYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzMDUxZDVmMTAyOGRiYTQzODM0YzQ4ZWZlOWJhYzA5ZTlkYzVhNjI2ZDE2NDlkOWQ2ODkyZTMzMWNkYjdjNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwMzczNDhkYjNjMWU4MmI4ZDY4MzhmYTUzYmRkYjU3ODUyMjI0MzIzN2IxYTk3OWM4OTJlYzdlYjdjZDdiMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://site/modules/2/tracks/front-libs/setup.md#L7-L22",
+          "version": "repo-lines-v1:sha256:a1b50c6330ce2dd45c4fe67ec8988edb6880a17c7e7ed8b954df7baf07ec96d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YjM5OThhNzVhMzE1NzlhYjUxNDVhZDk5NmQ3ZWI2NWNlM2NjMDZkYTM3YmQ3YzQ2OTRkYzY4ODU3NTI4ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZGQwODI1MGFiZmEzMjZiMGQzZmI1Njk0OThkOTJhNzFkNTc1ODNhZThkMTNjNWRmZjgzM2Q3YWE2YmQzYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3YjZjY2NjMzNmNTc3OGU0ZmM2NTU1ZmFmNzQ2MzMwODc4OGNmZjUxNzJkNDJmNmE2MTQxZDQ4OGMyZTExNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmYTYwZGFiNGMwMThkZTI2ODUxNTIxMzA0YjM3MTk5OWMzZjI0MWExNTM0YTY2M2UyZGJiMjcyOWI5NWNkZGYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-24T14:00:30.220Z"
+  }
+}

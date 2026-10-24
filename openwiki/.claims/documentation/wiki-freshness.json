@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b8fe84af901e1ea1bac260dae7fbce9aacfdd3d29da68ad9a9a377bf3165a740",
+  "claims": [
+    {
+      "id": "claim_9254ab0d2e824e0f99cdf4e66fb7fabf",
+      "statement": "OpenWiki является производным указателем; канонический текст остаётся в docs, а устаревшую wiki используют только для поиска путей и сверяют утверждения с актуальными источниками.",
+      "evidence": [
+        {
+          "resource": "repo://site/project-context.md#L26-L28",
+          "version": "repo-lines-v1:sha256:55309289ef5817259d632711735847053c53d09ff6db951c2004270a073df376:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q4NzMwY2JhNzMwY2EzMjNiYzVlYzQ3NGY5MDdkOTg4OTRkZmEyN2U5NzEyZDUyYzcwNGU2NzAyZjg2MGY3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMxODQzMGVjZmUxN2Y2Njc3NGVkZTAzYmNlOGI1YWM1N2Q5YTFiN2E0NmViNmNiNGY0OGEwZWY4MzZiOWM4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA0NDRmMDQwZTM3NDYyMGIxMTY0NzA0MDdjMGRlMzc3MjAzYTEyYzE5OTQ0ZDMzN2Y3OTU5NjdmMTEzMTMxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b42b0e002e5844508af5ded69763e9da",
+      "statement": "wiki:check требует полный SHA и complete checkpoint, проверяет предковость и сравнивает изменённые пути кроме openwiki; updatedAt не определяет свежесть.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/openwiki-check.ts#L37-L66",
+          "version": "repo-lines-v1:sha256:180e91b0bf6bf01ac5cfa6fefdb0af9bb779bcfe152f6954abfadf083a58779c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwY2VhOTdiYTM1ZjcyYTNhZTFhNDM0OWUwYWU1ZjYzNjY0NjlhYmI5ZWJlN2E5N2IzYjUyYWQwNzIwNWE3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjI2NmJiMTQ2NjIzN2Y3ZTcwMTlhMzYyZGNmODYzMjEyNTAyYTVjODNjYTYyY2U3YjI1OTZlZmIyZWY4ZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3YmQ0MjNjNDQzNDU1ZmZmZWU5ZjdhNTllOWQxNWI4ODZlZTM5ZDEwZjFmZTFiZWY0NWY0NzkzYzkyNDIzMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0YzhiNzlmYTgwMzQxOTY3ZTQzMzRkNmZjMjA1NmRiMGI2NTc2NThjMTFmMjFhOGUwNzgyMTU2NjkzY2QxOTEifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-check.ts#L4-L23",
+          "version": "repo-lines-v1:sha256:2bb0a8f7fbc3c73d58fd4c6e097334e480622c25eca71eebe988ab9bcb4b2b55:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNGJhNjA0MDNhMWMzZWQ3YzAxNjdhZTViOTdlZmEyOGFlOTJiOTA2MmI2YjRjNmYzN2ZiZThiNTk1NGY0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzYzJhZjk1M2I2NzRlNDIwNzg5MDEyZGQ3MzA2NGNhYmQ2NjU3ZjE2Yjk0ZDRiNWMyYWY1MDRkMTFiODc1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyODE4ZTMyNzY3ZjI3ZGRjM2U2YzczNWQ2NTNhYzVjNGIxZmI0YTdiMDY0MTcxNmNkMTYwMTA0OTAwODY4NDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd4fa6256b2b4453a2483a05e13889e8",
+      "statement": "Локальная команда wiki:update-local получает origin/main, генерирует во временном worktree при несвежем checkpoint и проверяет, что изменилось только openwiki.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/openwiki-update-local.ts#L28-L46",
+          "version": "repo-lines-v1:sha256:ad35ff7c2bc0779cad37952372cb14e5774582c775627d6e6224cfc8bf4627f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MGM5MjFkZjJmZjEzMDM1YWYwZGZhNWEwYzJhOTQwNGI5YjY4N2E0ODlhYWRhOGRkMTE2MGUwYjdjNzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxY2QwN2YyNDRmMGI2ZTZiMmQ5YWEzMGEyMThmYzZmZjlkYjVkN2UwNDM1NmVkYTk2NDQxNWQxNjA3NWZkNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMmQ4NDBiZGY3MTAxMDM1NTlhNzk5NGJhMWIwYzkxMWY3ZjJmMjRhN2M5MzQ2ODIwMzZmZTVjN2IxNTQ0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZjU3NzdmN2RlODZiMzFhMjIyNjZhYTE4OTg1MWNiMjhkZDRlN2YyZWE0NjU2ZWQxZTEzMzMzYjM0YzBiYmIifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-update-local.ts#L64-L74",
+          "version": "repo-lines-v1:sha256:4bd554ff19fdb38d1ed72983b24c2a44f3ffa072c1452d76130837f25c268d13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyN2RhNmUwYjFmM2U0ZTM1ZjVhM2NkNGJlYTRkYjQ0Y2Q1YTk5M2QzYjRkZDMyOGM1YTI4YTgxYjdiZjViMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MzI5MGYwZmEwZmNiZjZmYTkyZTBlYzI1MjVlYzVmOTJmMTE4MTFlYzQ2ODdiYjI2MzllZmZiNzg3NWU0NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjY2I2Zjg2YjRkZTk0NjczNWUwNmRlNzQ4ZjAwMzMzNTk0ODdlOTE1ZTkxMTZmODQ3ZjhkYjcwZjg2ZjUyODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNGExYmM1NDY3NjJlMGYzNTBhODljZmNkNmIwNTI3Y2VkNjc3MDJkYWEwNGIyNzljYmE0ZjJlZjc0NmIyMGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2bd6aaa658a84939829fe29f055b49a2",
+      "statement": "Workflow OpenWiki freshness запускается на PR с изменениями openwiki и сравнивает checkpoint с SHA базы PR.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-freshness.yml#L1-L28",
+          "version": "repo-lines-v1:sha256:f49109ed20771611f08b2387a4be3b2f4deb59754bd085da8cdebc484a01b7db:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0N2ViOWUwNjRjZjk5ODQ4MzRlZmM3ZmJmNzYwZjRhNTNlZDNlYmNjMGE4MTVlMWFjNGVhNGVkMzMzMjIwOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODc4YWQ5MTI5M2FlNDg0ZWU5YzJiZDZmYTYxYTc0NTFmMTdlYWNlMTJhMzcxYjEwYTUxZWE4ZTQ1Y2ExYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJjMzhiZGVjN2M3YTAyMTc4ZDA3ODJkMTA3MWM2MTE3ZmNiYmZlZjhlZTJlNWMxNzRlNmZlMmYyOWIyYWEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-24T14:05:58.584Z"
+  }
+}

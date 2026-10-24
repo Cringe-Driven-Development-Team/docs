@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b794942e6e19446061101d913e71d38bf269a6957ee3d1ca4ad13f7fc4a3aa8f",
+  "claims": [
+    {
+      "id": "claim_2a48fe601fad4c6993652e68056bae5e",
+      "statement": "Контрактная схема MVP ведёт Go API в Apidog, генерирует backend через cmd/apidog и oapi-codegen и frontend через экспорт схемы, с проверками contract drift.",
+      "evidence": [
+        {
+          "resource": "repo://diagrams/contract.json#L3-L29",
+          "version": "repo-lines-v1:sha256:0b6b22c6983f59d3643237e1f9d4ff469f083d81fcb8e277e5b48e8eee085dc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhODQ1MDE5Y2U3NWFjMzE2MmIwMGFlY2MyOGFmMDRlNGMwNTQ5YzU3OGFiNGM3Y2YxMjgzYTlkNWQ2ZjgwYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZDFkN2UyNGYxMTE0YWVkZTBmZDUxOWYxNDY3YWMzZWVkMWQzYzY4YmVkNmU0Yjc4MzI4NDY1MzFhNmJlNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwZTFlYTdjMDI4YzY0ZjMwYWQyZWYyYTkxYjY3NTRmZWM3OWRiNTRhYjQ5OTQwYzEzNTRhMDVjZTQ0MjgyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0YjVjNDgxYmVjNzcwZjFhZWJhMDUzNzM4NDNkNjNlYmUyNWNiNmJiYWNhNTNhMmJlNjE1NjZlOWU2ODU3YWQifQ"
+        },
+        {
+          "resource": "repo://diagrams/contract.json#L40-L54",
+          "version": "repo-lines-v1:sha256:8236614f629e9be18d1bfc9d746f93c6d51caf7d0909a4fa1f1d8ac486592192:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MTA4NzhiNmRjNWYzYjhkMDNmY2I3ZWViNzU1Y2VhNTg4NjA1NmQxNTI4Nzc0NzQ3MjFhNzdlMWJhMjg5ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZjhkZTZhZmFlNWJmZWVjN2MzN2QzZjQwZjFkYWQ3ZjdlMDE1NmQxZjI1ZGFkYTQzOGZkMWRhMDI2Y2ZiY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMzYwZDI2MzgyMGZmZmM0ZDg4NzQ3ZDVjM2ZhOGY2Y2VkNTU2NGJjMGM5MDY4YzQyZjgzZTAxY2Y2NjAxZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMTM1NDVlMTAzYzgyYzhhMTFiZWZhOGUzODM0NGQ3YjFlZWIyZDlmZTliZDhlNGU1NDhjMWU3Y2EyNWNmZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_243b59e298144fc3bb961f1439a6ad21",
+      "statement": "Правила контрактной схемы требуют генерировать код из main Apidog перед слиянием и не править сгенерированные api.gen.go и schema.ts вручную.",
+      "evidence": [
+        {
+          "resource": "repo://diagrams/contract.json#L37-L38",
+          "version": "repo-lines-v1:sha256:00e4dd7b9723ef1c813ee9952f34313e0e1eb8a809fb0e1e22efdce8406caae3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA3MDVkODA2M2U3NGVkY2MyMzk2MmE4MjkxOGZiZWUwZWNkNDcwNGVhOGFjODNhOGQxZTM2MTgxZGNiZjk2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWVhOWRmYWU2OWFhNzY4ZjcyM2M0NGRiYTZkZGVhNDdiNDEzYjZmMDFhNTRiZTE2NWY5NDEyYWY2OGY1MDhmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzdiMDBmNmQ3YzYzZGY4OTc5MjI0MTBhZGI1ZjcwNjkyNTRiNTk3ZjQzYWFlM2I2ZDBiZTY4MjExZTFhNGNjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI4N2I5MDkxNzgxYzJjNjcyMGY4MTI5YmJlMDc1OWVhYzgyZDI1MDNmZDhiMTEwMGI0OTc4NzUwZmI1YTdiNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_737aa85fd2a54b82a39f0449bfb06e32",
+      "statement": "Спека рефакторинга backend задаёт разделение domain, usecase, delivery/http и adapters с DTO генератора на HTTP-границе; её проверенные факты привязаны к отдельному backend SHA.",
+      "evidence": [
+        {
+          "resource": "repo://docs/superpowers/specs/2026-10-18-backend-refactor-design.md#L29-L48",
+          "version": "repo-lines-v1:sha256:037a96c2021da6e37cd985c3c0b12a474a13f9a19857d09dee55017e1f6c9f08:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNTdiNmUwYWI2MzdmNGYyZGJmOTBmZWI4ZWU5MGVkNzU5YzExYWQ0NTI1YjliYWEwOThmZWViY2Q0ZmVmZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MWI5YzQxZDUzY2E3NmEzNTE2YjU1OGU3NGU4Zjc4ODAxZGU2ZmI4NDliY2U4NDIzODM2ZjQwOTIyZTBlNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwZWQ4ZDhjNWFiMWRiN2U2YTc5NDdiMDE2NzMzMDg2MWE4MDcyODlkNDc2NDc5ZmEwZDk1YzA3N2VhYTU1MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YWEzYTcyZjcwNDA5OTJkMWMyZTJhMWY3MDZjMjc0YjBhNjM1MzZkYzllY2MwNzIzZjc5YjY2ZTY3ZDZmMWQifQ"
+        },
+        {
+          "resource": "repo://docs/superpowers/specs/2026-10-18-backend-refactor-design.md#L54-L73",
+          "version": "repo-lines-v1:sha256:18854a341b34ac44fbf49ea8504b1ff0462cc56c128c3dbf15463f1fb17cdb06:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNzFmZDI5OGQ2ZjliN2FhZjM0ZDU1NjUwMTBmODhhNTlmMDQ0MTg2YjVjZTIxNjZlODYxNzU0YWI1NjAzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYjU5ODM5NDNjYTNkODMxMTExOTNlODRmZDE2MDc5OGQ4ZWUwOTU3YmYzMTI1OWJkYmVkMTkzYTVmNTJkOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYWZhN2I0ZDIzNWUxMGUxYjgwY2VmMTkxMGEyNzE0Yjc5N2IwODFhMGRkNjNiZTM4OTJhMmIwMmQ3YjRjOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiN2E3OGM0MzhiZTcyODZhNzQxYjNiMmNmYzVmY2NiZDZmMjkyMDc5NzgyMDM3MzYzNzI1NTM2YmJhMjgyYmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3696bca9527d4a65850a495853fafde2",
+      "statement": "План BFF оставляет Go-контракт в Apidog, использует Orval для Go-клиента и Zod-схем, а тип AppRouter для браузерского tRPC-контракта.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/bff/contract.md#L5-L31",
+          "version": "repo-lines-v1:sha256:087acaa3b7b1a5501400a54344ff490f54e5189bb69784df2cbee08c9e0577eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4NGY1NTg4NjM0Zjc5M2VmMDM2MmMzZjk3MTYyMWY3NTEwOTgyNzg5ZjY5OTMzZWM0YzY4ZTg5YTVkNTMyYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMmJiNmYyMzdlZDlkZTc0MWE0NDg3MDcxZGRiY2Q0ODkwMzU5YmE2M2RlZWVhODY2YzlhMmM2NzYxZjY5MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNWRlZTNiODFmOGI2YTI0YjMxZTAwMWI1NDJkMDQ3N2YzNjRlODUxODI4M2UzOWNlMzYyZTExOWVlNzRkZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxNTZjZGJjYWEwNjlhOWQyODlmNzQ2NTY4NjM3MjEyMmU0ZGRiY2I4NzBkZWNkOTI0M2Q3MTk0YjQyNjBhZTkifQ"
+        },
+        {
+          "resource": "repo://site/modules/2/tracks/bff/contract.md#L66-L74",
+          "version": "repo-lines-v1:sha256:bff4d471d372d89a829ed82561eb411b81ec1f4954d4bc593ea071f487d506d6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmFmYmFhNmQwM2QzODhmNzNlYzliYTM1ZjM5ZGE1NzFlNjVlNjE4MWYwZmVkZTJmOWFmMTMyZTY4ZTJmNDhhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI5M2M0OWY2NDJkZDZlNjdmNzE3YzhhYzVkNGVjMWEzM2E3NmVhNzhlYTNkNDkxMmRlN2MwMTI4YjkyMjRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDc0NmE4ZDFhMzNmNGQzYjhmNTAzMjY3NTQwNTYyYmQwMWZiMGJlMDhjZDg1MjkwMmZjOTMyMGQyYzI2YWVjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGFlYTE0Y2IyMWJiMjcyMTMxYjczMzA2OGExMDQ1MDYyMGU1ZmJiZDc3YmJlYTVjMTM1ZjgyNWNhYmE3OTNhOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_957836a4d42a4c65aef6013e756f09ec",
+      "statement": "План добавления процедуры BFF требует обновить Apidog и Go при отсутствии нужной операции, затем выполнить sync и добавить процедуру tRPC.",
+      "evidence": [
+        {
+          "resource": "repo://site/modules/2/tracks/bff/contract.md#L158-L171",
+          "version": "repo-lines-v1:sha256:5a5c992fedc992a12177613ef921e4b9b6ea2516778af1b720e9e4192e7d6d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxZWFhZDQ2ZjUzNWRhY2Q4ODYxYTkwMjA1M2VhODlmNjNmNzJhYjdlYmE5NDNhZGU3NTdhOTY0NjViMmRjZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MWFiZGFlMThhZTJmMGI0Zjc1MGI1NTgxODA3OWJiYzEwZDBlODUyMmUwNzE3ODQ2OTgxMDFlMGZmMTYwMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkOGJlY2Y4MGFiYTExYzZhZGY1OGVhM2IyZjRhMzU4NTg5YTIzNTNkYzBmNjc1NGJlOWM2NDJlMzczZDc4OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5MmUwNjA3ZGRhOTVjNjhkNTEyOTVjMWEyMzFmNmFiOWMzOWMyYzdjOGYyYjQ5MWNhODhlN2VhZTc4MjljYTgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-24T14:00:30.220Z"
+  }
+}

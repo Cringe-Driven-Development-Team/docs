@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:5b98222359add7229702a3014de3d7ad6b261540d40420c067ae204cdb21f756",
+  "claims": [
+    {
+      "id": "claim_1beefd61edd34826aa7a887d6293a41b",
+      "statement": "Текущая документированная архитектура MVP размещает Caddy, Go API и Postgres на одной VPS в Docker Compose; браузер обращается к Go API через Caddy.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L78-L82",
+          "version": "repo-lines-v1:sha256:ae1fa5c5a538500f6a8622c55692bfdc9ca573c40e870f2a77f4d756b6c5fbe5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDc0MDNiMzJjODYzZTEzN2ZiZThhNzUxY2YyOWFkZjBiMTQ1ZmVjM2QxODJmY2YxMTAzZTI1M2M5OWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZjU4YjQwY2E4MTkwZmI2OWNlN2QyYWJhNTRjYjFjZDI1YjI5NzkwODNhYTQ0NjljMDI0YjYyMTAzZTg4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkZGJlNzlhZDY4NWYzODYwMzFiYjk3YzlmMzc0Zjc3YjNhZjQ3OTgwNjU0OTE1MmU1MzUzZjlmNzM4M2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkN2EyNTc4NjU2MjBkZDQzMjQ0YWNiODBhNDJmZWJkMjU1ODBkNWRhYWRhNzMzNzNmODg5MzdlNmMzMjJjZSJ9"
+        },
+        {
+          "resource": "repo://diagrams/deployment.json#L23-L31",
+          "version": "repo-lines-v1:sha256:869bd181dc4eb46c62af371a29c754a4da20b31b762199dfbf375fd28e089d26:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzgxMDg3OGI2ZGM1ZjNiOGQwM2ZjYjdlZWI3NTVjZWE1ODg2MDU2ZDE1Mjg3NzQ3NDcyMWE3N2UxYmEyODllMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJjYzVjODJjYTkxOTVhM2VkMjgxZDU4YzNjZjI5NjdmYzcwNDRiN2ZlNWY4NTg0ODRiZGY3MTVmNGU3MWQ4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ0MTI1ZGQ3NzYzZDI4NjE5Mjc0MDk5M2UzMmUyODBmNGZjYTJlZWMyNDNiMWQ4MzcxMzM2MGE1ZjJjYWM0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRhMjc0ZjhjZDQxMjcwYWJiMTAzYmVmYjFjM2Y5MzAyY2ZmMjhhNTgzMDZhNWY1MWY4YThhNWJiZDJlOGEzYyJ9"
+        },
+        {
+          "resource": "repo://diagrams/deployment.json#L7-L10",
+          "version": "repo-lines-v1:sha256:89582f0346a862f2ca55aa596ce44f9ea82e92b4776f506d29a9d2c09caed21a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExMmNkMmVkNzA1ZjVmNzgzNzAxOTE2ZWQyODc2MjNiYzJmNGYzYTkyYmU1NWYxZjMwODRlZDY3NmNiZjU3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOThkYjM1YWM3MTc2MzhiMDYwYzEzOGE0ZWZlZWM4ZTZiY2ZlZjFhZWJjZThiZDc0NjlmZmE0MzM5NjNlODYxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTM2NDA3ZDExOTY0MjMxMmQzZDczODcwNGRmNjhiNjliMjQ0MzIxOGQ0OGI2Y2UyYTNhZjkyYTg2OTk1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM0MGM5YWM4ZTAyZjBjMzlhMWM0N2JmMDk3MWZkOWZhNjZiYmUzODJiZWQ5OTk4ZWE2YWFkYzA1ODhmZjg2MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_857523053da04f39ad18d940048caaf5",
+      "statement": "Схема deployment разделяет приватное S3 для ноутбуков, хранилища фронта и статики за CDN и публичное хранилище аватаров.",
+      "evidence": [
+        {
+          "resource": "repo://diagrams/deployment.json#L14-L19",
+          "version": "repo-lines-v1:sha256:cb5ddaf49734ac3e178534aa887013dda272fc979036ec3897734fcffbaf5d35:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU4NTk2N2Q5NjBmOGJlMmM0ZDFiNjU1NmE0MTQ2MWI5YzgxZjk2ODRkMjA2NTk2ZDNmMDI4NjdjMTRmMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAxMzZmYmMxYTkzMWM5Zjc0ZTk4ZGZiNzhkYTgwYjMzNzc1N2NmOTEyYWUxNmE4NTMxMjQ5MDIxNmNlNzliYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGM0MGM5YWM4ZTAyZjBjMzlhMWM0N2JmMDk3MWZkOWZhNjZiYmUzODJiZWQ5OTk4ZWE2YWFkYzA1ODhmZjg2MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ0MTI1ZGQ3NzYzZDI4NjE5Mjc0MDk5M2UzMmUyODBmNGZjYTJlZWMyNDNiMWQ4MzcxMzM2MGE1ZjJjYWM0OSJ9"
+        },
+        {
+          "resource": "repo://diagrams/deployment.json#L23-L34",
+          "version": "repo-lines-v1:sha256:2ed0ebd7186b34fc29bde27c2d007b514dc890fed75cb55d28aceab92486d58c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MTA4NzhiNmRjNWYzYjhkMDNmY2I3ZWViNzU1Y2VhNTg4NjA1NmQxNTI4Nzc0NzQ3MjFhNzdlMWJhMjg5ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNWU0NWJkODMyYjc2YTE2MTkwYWU0ODBjOWIxZjM2YmY2MzM3YTc3N2IwYTA1OTU3YjEyZmE1NjU1NTcwMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkNDEyNWRkNzc2M2QyODYxOTI3NDA5OTNlMzJlMjgwZjRmY2EyZWVjMjQzYjFkODM3MTMzNjBhNWYyY2FjNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjY5OTZlM2IxNWRmYjQzODYzMDAxYzcyZDNhNTM5ZGU3MGUzOGUyYTllZDIwZGU1OTExMDRhODI4NjRmNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8af9d35fbb7f480887b4fb0eb0197cbe",
+      "statement": "Документированная схема infra разделяет bootstrap-стек Pulumi и основной стек, после чего Ansible работает с VPS через inventory.",
+      "evidence": [
+        {
+          "resource": "repo://diagrams/infra.json#L27-L38",
+          "version": "repo-lines-v1:sha256:94dbcd1dae9c97df21cbac92405e45d0f2746fcfb99c2acd2ee8b1b3402e2322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MTA4NzhiNmRjNWYzYjhkMDNmY2I3ZWViNzU1Y2VhNTg4NjA1NmQxNTI4Nzc0NzQ3MjFhNzdlMWJhMjg5ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNWQ0NmI0YmQ1ODIyODA0Y2IzNmMzNGQ5MWYzZWU3ZmQzZjU0MGI2MmE5N2NjYzk1NTM1ZWFiNDNhMzg0NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MTE3ODI1MTc5OTY3NTE3MDQyNmFiYjI3NDJlMWI5OTljZmU5ZGJjZjM3NWYyNDViNWU4OWQyNTYyZTE5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjY5OTZlM2IxNWRmYjQzODYzMDAxYzcyZDNhNTM5ZGU3MGUzOGUyYTllZDIwZGU1OTExMDRhODI4NjRmNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ad6fb78eb6c4b188700b3379d244a9e",
+      "statement": "Вариант k3s заморожен и отделён от рабочего MVP.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L78-L82",
+          "version": "repo-lines-v1:sha256:ae1fa5c5a538500f6a8622c55692bfdc9ca573c40e870f2a77f4d756b6c5fbe5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDc0MDNiMzJjODYzZTEzN2ZiZThhNzUxY2YyOWFkZjBiMTQ1ZmVjM2QxODJmY2YxMTAzZTI1M2M5OWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZjU4YjQwY2E4MTkwZmI2OWNlN2QyYWJhNTRjYjFjZDI1YjI5NzkwODNhYTQ0NjljMDI0YjYyMTAzZTg4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkZGJlNzlhZDY4NWYzODYwMzFiYjk3YzlmMzc0Zjc3YjNhZjQ3OTgwNjU0OTE1MmU1MzUzZjlmNzM4M2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkN2EyNTc4NjU2MjBkZDQzMjQ0YWNiODBhNDJmZWJkMjU1ODBkNWRhYWRhNzMzNzNmODg5MzdlNmMzMjJjZSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-24T14:00:30.220Z"
+  }
+}
