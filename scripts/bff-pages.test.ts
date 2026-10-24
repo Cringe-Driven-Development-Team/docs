@@ -1,14 +1,16 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Документы трека «BFF» модуля октября: страница трека и четыре подстраницы.
+// Документы трека «BFF» модуля октября: страница трека и шесть подстраниц.
 export const TRACK = "site/modules/2/tracks/bff.md";
 export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
 export const SERVICE = "site/modules/2/tracks/bff/service.md";
 // SERVICE сюда не входит: проверка «нет IPv4» ниже ловит 127.0.0.1 из healthcheck; свои проверки — в тестах «Сервис BFF».
 export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
-export const BFF_PAGES = [TRACK, CONTRACT, AUTH, BOOTSTRAP];
+export const RELEASE = "site/modules/2/tracks/bff/release.md";
+export const ROLLBACK = "site/modules/2/tracks/bff/rollback.md";
+export const BFF_PAGES = [TRACK, CONTRACT, AUTH, BOOTSTRAP, RELEASE, ROLLBACK];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
@@ -39,7 +41,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [contract, auth, service, bootstrap]");
+  expect(md).toContain("pages: [contract, auth, service, bootstrap, release, rollback]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -457,9 +459,9 @@ test("подстраница «Сервис BFF»: шаблоны Ansible в с�
   const inline = prose.match(/`[^`\n]+`/g) ?? [];
   expect(inline.filter((code) => code.includes("{{"))).toEqual([]);
   expect(prose).toContain("APP_ORIGIN=https://{{ app_domain }}");
-  // выкатка: роль app тянет образ bff вместе с api и проверяет его тег и ключ
+  // Существующий playbook принимает тег; целевой поток передаёт digest.
   const prod = section(readFileSync(SERVICE, "utf8"), "На проде");
-  for (const needle of ["pull-api.yml", "pull: never", "bff_image_tag", "BFF_IMAGE_TAG={{ bff_image_tag }}", "validate.yml", "session_key"]) expect(prod, needle).toContain(needle);
+  for (const needle of ["deploy-bff.yml", "pull-image.yml", "bff_image_tag", "BFF_IMAGE_TAG={{ bff_image_tag }}", "validate.yml", "session_key", "bff_image_ref", "infra#74"]) expect(prod, needle).toContain(needle);
   expect(prod).not.toContain("три места");
   // в HTML-теге markdown-it-emoji превращает «:$» в 😒 — двоеточие пишется сущностью
   expect(prose.match(/<code v-pre>[^<]*<\/code>/g)?.filter((code) => code.includes(":$")) ?? []).toEqual([]);
