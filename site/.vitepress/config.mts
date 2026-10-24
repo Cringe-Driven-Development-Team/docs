@@ -15,6 +15,8 @@ export default withMermaid(
     description: 'Документация команды: архитектура и безопасность сервиса cellestial.ru',
     base: SITE_BASE,
     cleanUrls: true,
+    // Wiki экспортируется после VitePress; итоговый файл проверяет site:check после экспорта.
+    ignoreDeadLinks: ['/openwiki/index'],
     // Логотип cellestial.ru (src/assets/logo-mark.svg фронта). VitePress не добавляет base к ссылкам в head.
     head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }]],
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
@@ -24,6 +26,7 @@ export default withMermaid(
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {
       nav: [
+        { text: 'OpenWiki', link: '/openwiki/', activeMatch: '^/openwiki/' },
         { text: 'Контекст проекта', link: '/project-context' },
         { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
         { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
