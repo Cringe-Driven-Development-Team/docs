@@ -98,6 +98,11 @@ test("stale main generates once in isolation and publishes only wiki paths for i
   expect(models).toHaveLength(1);
   expect(models[0]!.cwd).not.toBe(f.root);
   expect(models[0]!.args.slice(0, 3)).toEqual(["exec", "-s", "workspace-write"]);
+  const overrides = models[0]!.args.filter((_, index, args) => args[index - 1] === "-c");
+  expect(overrides).toEqual([
+    'mcp_servers.openwiki.default_tools_approval_mode="approve"',
+    "mcp_servers.openwiki.required=true",
+  ]);
   expect(models[0]!.args.at(-1)).toContain("openwiki_finish");
   expect(models[0]!.args.at(-1)).toContain(f.target);
   expect(f.calls.filter((c) => c.binary === "gh" && c.args[1] === "create")).toHaveLength(1);
