@@ -14,6 +14,7 @@
     "prepare": "bun scripts/install-hooks.ts",
     "modules:check": "module-graph check",
     "wiki:check": "bun scripts/openwiki-check.ts",
+    "wiki:update-local": "bun scripts/openwiki-update-local.ts",
     "render": "bun scripts/docker.ts render",
     "render:native": "bun scripts/eraser.ts render -f html && bun scripts/eraser.ts render -f png",
     "index": "bun scripts/build-index.ts",
