@@ -35,6 +35,13 @@ CI получает digest при публикации образа и запи�
 
 ## Путь до production
 
+<Diagram name="modules/2/bff-release" />
+
+На схеме GitHub хранит проверки и историю Deployments, GHCR — точный образ, а CDN — ассеты.
+Запись готового выпуска показана на примере `release.json` в S3; её формат ещё определит реализация
+frontend#4. Работающий BFF отдаёт HTML через Caddy, браузер загружает JS/CSS с CDN.
+Ниже тот же выпуск показан как последовательность шагов.
+
 ```mermaid
 flowchart LR
     CI["CI: клиент и BFF одного SHA"] --> CDN["S3/CDN: ассеты releases/SHA/"]
