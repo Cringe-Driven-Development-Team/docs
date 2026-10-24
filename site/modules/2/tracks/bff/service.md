@@ -208,20 +208,20 @@ JS/CSS остаются в CDN. Шаблон читается по фиксир�
 
 ## На проде
 
-Первый этап — [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58): BFF встаёт
-на действующую VPS рядом с Go API по образцу сервиса `api`. В `infra` меняются compose, выкатка в роли
-`app`, Caddy и секреты. Затем [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
+Первый этап из [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58)
+реализован в [infra PR #71](https://github.com/Cringe-Driven-Development-Team/infra/pull/71): BFF ставится
+на действующую VPS рядом с Go API. Затем [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
 переносит Go/Postgres на приватную VPS2; изменение контракта и S2S-проверка в Go —
 [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41).
 
 **Compose** —
-[`ansible/roles/app/templates/compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L18-L52).
+[`ansible/roles/app/templates/compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/app/templates/compose.yml.j2#L18-L84).
 Сервис `api` там берёт образ <code v-pre>{{ app_backend_image }}&#58;${BACKEND_IMAGE_TAG:?…}</code>
-([`:19`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L19)),
+([`:19`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/app/templates/compose.yml.j2#L19)),
 ждёт `postgres` через `depends_on`
-([`:42`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L42))
+([`:47-51`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/app/templates/compose.yml.j2#L47-L51))
 и проверяется `wget`
-([`:45-46`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L45-L46)).
+([`:52-57`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/app/templates/compose.yml.j2#L52-L57)).
 Сервис `bff` устроен так же:
 
 ```yaml
@@ -232,6 +232,7 @@ JS/CSS остаются в CDN. Шаблон читается по фиксир�
       SESSION_KEY: ${SESSION_KEY:?session key is required}
       APP_ORIGIN: ${APP_ORIGIN:?app origin is required}
       GO_API_URL: http://api:8080/api/v1
+      BFF_KEY: ${BFF_API_KEY:?bff api key is required}
     depends_on:
       api:
         condition: service_healthy
@@ -252,37 +253,30 @@ JS/CSS остаются в CDN. Шаблон читается по фиксир�
 - `PORT` не задаётся, BFF хватает значения по умолчанию `3000`. Ловушка — скопировать `${PORT:-8080}` у
   `api` как `${PORT:-3000}`: подстановка compose возьмёт `PORT=8080` из общего `.env`.
 - `app_bff_image` — в `roles/app/defaults/main.yml` рядом с `app_backend_image`, имя образа — то, что
-  публикует CI. `BFF_IMAGE_TAG`, `SESSION_KEY` и `APP_ORIGIN` попадают в `.env` через `env.j2`, как
+  публикует CI. `BFF_IMAGE_TAG`, `SESSION_KEY`, `BFF_API_KEY` и `APP_ORIGIN` попадают в `.env` через `env.j2`, как
   `BACKEND_IMAGE_TAG` и секреты Go; `APP_ORIGIN` там — <code v-pre>APP_ORIGIN=https://{{ app_domain }}</code>
-  (`app_domain` уже есть в `group_vars/all/vars.yml`). Без любой из трёх compose не поднимет сервис.
+  (`app_domain` уже есть в `group_vars/all/vars.yml`). Без них Compose не поднимет сервис.
 
-**Выкатка** — задачи роли `app`. Сейчас из GHCR тянется только `api`
-([`pull-api.yml:17-22`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/pull-api.yml#L17-L22)), `caddy` и `postgres` — если их ещё нет
-([`main.yml:25-31`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/main.yml#L25-L31)), а compose стартует с `pull: never`
-([`main.yml:33-39`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/main.yml#L33-L39)). Без правки образа `bff` на VPS нет, и сервис не стартует.
-
-- `pull-api.yml`: `services: [api, bff]` — образ BFF тянется под тем же временным входом в GHCR.
-- Тег — extra var `bff_image_tag` рядом с `backend_image_tag`; в `env.j2` —
-  <code v-pre>BFF_IMAGE_TAG={{ bff_image_tag }}</code>.
-- `validate.yml`: `bff_image_tag` проверяется как `backend_image_tag`, по `^sha-[0-9a-f]{7,40}$`
-  ([`:2-8`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/validate.yml#L2-L8)); `session_key` — рядом с `jwt_secret` в проверке секретов
-  ([`:27-37`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/tasks/validate.yml#L27-L37)).
+**Выкатка.** Сейчас отдельный
+[`deploy-bff.yml`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/deploy-bff.yml#L1-L33)
+принимает `bff_image_tag`; задача
+[`pull-image.yml`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/app/tasks/pull-image.yml#L1-L33)
+тянет выбранный образ BFF из GHCR. В `env.j2` тег попадает в
+<code v-pre>BFF_IMAGE_TAG={{ bff_image_tag }}</code>, а
+[`validate.yml`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/app/tasks/validate.yml#L1-L54)
+проверяет тег и `session_key`. Целевой выпуск и откат из
+[frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4) и
+[infra#74](https://github.com/Cringe-Driven-Development-Team/infra/issues/74) передают в этот playbook
+`bff_image_ref` по digest и полный SHA. Порядок шагов описан в [«Выкатке»](./release) и
+[«Откате»](./rollback).
 
 **Caddy** —
-[`ansible/roles/caddy/templates/Caddyfile.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L5-L15).
-Сейчас там `handle /api/v1/*` → `reverse_proxy api:8080`
-([`:5-7`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L5-L7))
-и `handle` для SPA
-([`:15`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L15)).
-HTML больше не читается из корня S3: Caddy передаёт его в BFF. Маршруты до HTML fallback:
+[`ansible/roles/caddy/templates/Caddyfile.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/175e37ae77ae3b495ab7dd29c5d41a23e25aec50/ansible/roles/caddy/templates/Caddyfile.j2#L18-L45).
+Он возвращает 404 на внешнем `/health`, а остальные запросы передаёт BFF; до первой выкатки BFF
+отвечает заглушкой 503. HTML BFF отдаёт сам, а JS/CSS остаются в CDN:
 
 ```txt
-  @trpc path /api/trpc /api/trpc/*
-  handle @trpc {
-    reverse_proxy bff:3000
-  }
-  @blocked path /api /api/* /health /health/*
-  handle @blocked {
+  handle /health {
     respond 404
   }
   handle {
@@ -290,9 +284,9 @@ HTML больше не читается из корня S3: Caddy передаё
   }
 ```
 
-*Проект маршрутизации. В последнем обработчике BFF сначала раздаёт public по явному списку,
-затем принимает только GET/HEAD HTML с `Accept: text/html`; прочее — ошибка. Ассеты по CDN-адресам
-остаются в CDN. `/health` Caddy наружу не публикует, API-ошибки не поглощаются SPA fallback.*
+*Упрощённый фрагмент текущего шаблона. BFF сам обрабатывает `/api/trpc`, ограничивает выдачу
+публичных файлов и HTML; неизвестные API-пути возвращают ошибку, а не SPA. Полный шаблон содержит
+также политику CSP и заглушку до первого запуска BFF.*
 
 Снаружи `/api/v1` при переключении пропадает: браузер ходит в BFF — см.
 [«Переключение»](../bff#переключение).
@@ -303,7 +297,7 @@ HTML больше не читается из корня S3: Caddy передаё
 CI из [frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4) собирает
 `dist/bff.js` и клиент Vite из одного коммита, публикует ассеты, затем упаковывает HTML
 и серверный бандл в образ и публикует его в GHCR. Отдельного promote клиента после playbook нет.
-Compose, `.env` и Caddy первого этапа правятся в [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58).
+Compose, `.env` и Caddy первого этапа добавлены в [infra PR #71](https://github.com/Cringe-Driven-Development-Team/infra/pull/71).
 
 Канарейка — отдельный следующий этап после MVP. Для небольшого стабильного сегмента нужно
 согласованно направлять HTML/RPC в одну версию, расширять долю по ошибкам и задержкам и возвращать

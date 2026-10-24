@@ -9,7 +9,7 @@ subtasks:
   - "tRPC (server)"
   - title: "Turborepo + bun workspaces"
     issues: [frontend#44]
-pages: [contract, auth, service, bootstrap]
+pages: [contract, auth, service, bootstrap, release, rollback]
 ---
 
 Подзадачи трека, включая «tRPC (server)» — роутер tRPC в BFF, делает Денис; Валентин — изменения на стороне Go (см. [«Go API»](#go-api)).
@@ -22,8 +22,10 @@ BFF ходит в Go API общим клиентом с единой обраб�
 Токены остаются на сервере и в браузер не попадают: у пользователя только зашифрованная cookie сессии.
 Страница описывает целевое состояние трека; остальные — [Контракт](./bff/contract) (роутер tRPC, клиент к
 Go от Orval и официальный клиент tRPC), [Авторизация и CSRF](./bff/auth) (сессия, refresh и защита от CSRF по
-сценариям), [Сервис BFF](./bff/service) (каркас, переменные, health check, образ и запуск) и
-[Серверный bootstrap](./bff/bootstrap) (пользователь в HTML, старт клиента, выпуск и откат).
+сценариям), [Сервис BFF](./bff/service) (каркас, переменные, health check, образ и запуск),
+[Серверный bootstrap](./bff/bootstrap) (пользователь в HTML и старт клиента),
+[Выкатка](./bff/release) (образ и ассеты одного выпуска, GitHub Deployments, Ansible) и
+[Откат](./bff/rollback) (выбор прежнего образа и проверка результата).
 
 ## Как устроен контракт
 
@@ -78,7 +80,9 @@ BFF требует согласованного Go.
 только типы (`import type AppRouter` и `BootstrapData`), а Turborepo сначала собирает зависимости (`^build`) и повторный запуск
 без изменений берёт из кеша. Vite собирает клиент и HTML, Bun build — BFF. Упаковка общего образа
 с HTML выполняется после обеих сборок вне `bff#build`, чтобы не создать цикл с клиентом.
-[Выпуск и откат](./bff/bootstrap#выпуск-и-откат) связывают HTML и BFF одним SHA; ассеты идут в CDN. Генерация клиента к Go и схем — в [«Как устроен контракт»](#как-устроен-контракт).
+[Выпуск и откат](./bff/bootstrap#выпуск-и-откат) связывают HTML и BFF одним SHA; ассеты идут в CDN.
+Подробный поток — на страницах [выкатки](./bff/release) и [отката](./bff/rollback).
+Генерация клиента к Go и схем — в [«Как устроен контракт»](#как-устроен-контракт).
 
 ## Было и стало
 
@@ -103,8 +107,8 @@ flowchart LR
 ```
 
 Клиент вызывает процедуры tRPC на `/api/trpc`, данные те же; BFF ходит в Go по `GO_API_URL`
-(на одной VPS — `http://api:8080/api/v1`) с `Authorization: Bearer`. Текущая
-маршрутизация — в
+(на одной VPS — `http://api:8080/api/v1`) с `Authorization: Bearer`. До infra PR #71
+маршрутизация была такой:
 [`Caddyfile.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L7)
 (`reverse_proxy api:8080`); на одной VPS `api` не публикует порты и виден только из сети `app` — см.
 [`compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L18).
@@ -172,10 +176,12 @@ refresh не доходят до браузера, а значит, XSS на с�
 
 ### Infra
 
-В compose появляется сервис `bff` с `SESSION_KEY` и `APP_ORIGIN`, а Caddy направляет `/api/trpc/*` на
+В compose добавлен сервис `bff` с `SESSION_KEY` и `APP_ORIGIN`, а Caddy направляет `/api/trpc/*` на
 `bff:3000`, как и HTML. Корневой HTML из S3 заменяется шаблоном из образа BFF; ассеты
 остаются в CDN. API, public и внутренний `/health` обрабатываются до HTML fallback.
-Развёртывание BFF и переключение Caddy — [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58);
+Развёртывание BFF и переключение Caddy подготовлены в
+[infra PR #71](https://github.com/Cringe-Driven-Development-Team/infra/pull/71) по
+[infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58);
 перенос Go/Postgres на VPS2 — [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59).
 
 ## Переключение
@@ -186,12 +192,15 @@ MVP использует один экземпляр BFF; короткое ок�
 1. Загрузить ассеты клиента в неизменяемый CDN-каталог своего SHA.
 2. Подготовить образ BFF с HTML того же SHA после обеих сборок. Упаковка выполняется вне
    `bff#build`; отдельного promote клиента после playbook нет.
-3. Одним прогоном playbook согласованно переключить Go, BFF и Caddy.
-4. Проверить внутренний `/health`, гостевой HTML, вход и защищённый RPC, доступность ассетов
-   своего SHA. Готовность BFF предполагает проверенные конфигурацию и шаблон; завершение запросов
-   ограничено конечным сроком — подробнее на странице сервиса.
-5. При сбое выполнить ручной откат. Откат возвращает предыдущий образ вместе с HTML и сохранёнными
-   CDN-ассетами; совместимость Go и миграций БД проверяется отдельно.
+3. После проверки образа и ассетов создать GitHub Deployment для выбранного SHA и вызвать
+   `deploy-bff.yml` с digest BFF. Go выкатывается своим playbook; BFF и Caddy переключаются через
+   entrypoint BFF. Подробности — на странице [выкатки](./bff/release).
+4. Проверить фактически запущенный образ, внутренний `/health`, гостевой HTML, вход и защищённый RPC,
+   доступность ассетов своего SHA. Лишь после этого поставить Deployment `success`. Готовность BFF
+   предполагает проверенные конфигурацию и шаблон; завершение запросов ограничено конечным сроком —
+   подробнее на странице сервиса.
+5. [Откат](./bff/rollback) при сбое запускается вручную: он возвращает предыдущий успешный образ
+   вместе с HTML и сохранёнными CDN-ассетами. Совместимость Go и миграций БД проверяется отдельно.
 
 Ответы BFF на `auth.login`, `auth.register` и `auth.logout` стирают три старые cookie с их
 `Path`: `access_token` (`/api/v1`), `refresh_token` (`/api/v1/auth`) и `__Host-csrf` (`/`). Каждый
