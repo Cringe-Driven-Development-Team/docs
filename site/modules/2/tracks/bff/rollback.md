@@ -15,19 +15,36 @@ title: Откат
 
 ## Как выбрать прежний выпуск
 
-Сначала workflow узнаёт **фактически запущенный** на VPS BFF: сообщение Telegram и последняя запись
-GitHub сами по себе этого не доказывают. Затем он находит предыдущий успешный production Deployment
-с другим digest. У записи `ref` — полный SHA выбранного BFF, в `payload` — точный `image_ref` и каталог
-ассетов. Успешный `release-artifacts` Deployment связывает тот же SHA с исходным CI run и CDN-путём.
+В начале ручного отката workflow через Ansible делает **чтение состояния VPS без изменений**. В проекте
+Compose `/opt/cellestial` он получает ID запущенного контейнера сервиса `bff` командой
+`docker compose ps --status=running -q bff` и требует ровно один ID. Затем `docker inspect` этого
+контейнера возвращает `Config.Image` — ссылку, с которой контейнер создали, — и `Image` — локальный
+ID используемого образа, а также `State.Health.Status`. Ссылка должна иметь вид
+`ghcr.io/cringe-driven-development-team/bff@sha256:…`.
+Команда `docker image inspect` по **этой ссылке** должна вернуть тот же локальный image ID. Так
+workflow связывает digest из ссылки с образом работающего контейнера. Локальный image ID и digest
+GHCR — разные идентификаторы; сравнивать их строки напрямую нельзя.
 
-Если работающий образ не сопоставляется с историей, цель неоднозначна или нет предыдущего успешного
-выпуска, workflow останавливается до изменения VPS и сообщает подтверждённое состояние.
+Полученный digest workflow сопоставляет с `image_ref` в истории успешных production Deployments и
+находит предыдущий успешный Deployment с **другим** digest. У записи `ref` — полный SHA выбранного
+BFF, в `payload` — точный `image_ref` и каталог ассетов. Успешный `release-artifacts` Deployment
+связывает тот же SHA с исходным CI run и CDN-путём. Сообщение Telegram, запись Deployment и
+текущая строка в `.env` показывают намерение или прошлый результат, но не заменяют чтение контейнера.
+
+Если запущенного BFF нет, контейнеров несколько, ссылка не закреплена digest, локальные image ID
+расходятся, работающий образ не сопоставляется с историей, нет прежнего успешного выпуска или цель
+неоднозначна, workflow останавливается до изменения VPS и сообщает подтверждённое состояние. Здоровье
+контейнера показывается отдельно: нездоровый BFF всё ещё можно опознать и откатить.
+
+Шаги чтения опираются на команды [Compose ps](https://docs.docker.com/reference/cli/docker/compose/ps/)
+и [Docker inspect](https://docs.docker.com/reference/cli/docker/inspect).
 
 ## Проверка и переключение
 
 ```mermaid
 flowchart TD
-    START["Оператор запускает ручной workflow"] --> ACTUAL["Узнать digest BFF на VPS"]
+    START["Оператор запускает ручной workflow"] --> CONTAINER["VPS: Compose ps находит один работающий bff"]
+    CONTAINER --> ACTUAL["Docker inspect: Config.Image и Image; сверить локальный image ID"]
     ACTUAL --> MATCH{"Образ найден в истории Deployments?"}
     MATCH -- "Нет" --> STOP["Остановиться; сообщить фактическое состояние"]
     MATCH -- "Да" --> PREV["Выбрать предыдущий success с другим digest"]
