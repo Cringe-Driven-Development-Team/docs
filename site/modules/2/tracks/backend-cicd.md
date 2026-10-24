@@ -5,7 +5,7 @@ do:
   MrDuckVC: devops
 subtasks:
   - "Откаты"
-pages: [release]
+pages: [release, rollback]
 ---
 
 ::: info План второго модуля
@@ -42,6 +42,7 @@ Git SHA называет исходный коммит, тег `sha-<полны�
 | Подраздел | Что объясняет |
 | --- | --- |
 | [Выкатка](./backend-cicd/release) | Путь от push в `main` до проверенного production |
+| [Откат](./backend-cicd/rollback) | Выбор прежнего образа и результат ручного workflow |
 
 Откат образа не откатывает схему и данные PostgreSQL. Автоматический откат в
 этот план не входит.

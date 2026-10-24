@@ -5,8 +5,9 @@ const track = loadModuleDir("site/modules")
   .modules.find((module) => module.id === "2")
   ?.tracks.find((item) => item.id === "backend-cicd");
 
-test("во втором модуле есть страница о выкатке бэка", () => {
+test("во втором модуле есть страницы выкатки и отката бэка", () => {
   expect(track?.pages.map(({ title, url }) => ({ title, url }))).toEqual([
     { title: "Выкатка", url: "/modules/2/tracks/backend-cicd/release" },
+    { title: "Откат", url: "/modules/2/tracks/backend-cicd/rollback" },
   ]);
 });
