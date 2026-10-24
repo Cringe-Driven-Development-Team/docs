@@ -315,6 +315,8 @@ sequenceDiagram
 
 `users.me` и `notebooks.list` отправлены из одной вкладки разными HTTP-запросами со старой cookie,
 у которой access почти истёк. Go получает один вызов refresh, а оба RPC используют новую пару.
+После refresh вызовы данных в Go независимы: они могут выполняться параллельно и завершаться
+в любом порядке.
 
 ```mermaid
 sequenceDiagram
@@ -328,10 +330,13 @@ sequenceDiagram
   P->>A: POST /api/v1/auth/refresh, refresh_token
   Note over P: оба RPC ждут одну Promise в inflight
   A-->>P: 200 TokenPair
-  P->>A: GET /api/v1/users/me, Bearer новый access
-  A-->>P: 200
-  P->>A: GET /api/v1/notebooks, Bearer новый access
-  A-->>P: 200
+  par users.me
+    P->>A: GET /api/v1/users/me, Bearer новый access
+    A-->>P: 200
+  and notebooks.list
+    P->>A: GET /api/v1/notebooks, Bearer новый access
+    A-->>P: 200
+  end
   P-->>B: users.me, Set-Cookie новая
   P-->>B: notebooks.list, Set-Cookie с той же парой
   Note over P: успешный результат хранится ещё 10 с
