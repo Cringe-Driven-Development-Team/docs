@@ -66,7 +66,7 @@ BFF требует согласованного Go.
 Изменения контракта и реализации Go — [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41).
 Первый production-этап — [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58): BFF и Caddy
 на действующей VPS. После проверки этого этапа [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
-переносит Go API и Postgres на приватную VPS2; backend#41 — её sub-issue.
+развёртывает Go API и новый PostgreSQL на приватной VPS2; backend#41 — её sub-issue.
 
 ## Монорепа фронта
 
@@ -182,7 +182,7 @@ refresh не доходят до браузера, а значит, XSS на с�
 Развёртывание BFF и переключение Caddy подготовлены в
 [infra PR #71](https://github.com/Cringe-Driven-Development-Team/infra/pull/71) по
 [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58);
-перенос Go/Postgres на VPS2 — [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59).
+Go и новая БД на VPS2 — [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59).
 
 ## Переключение
 
@@ -283,9 +283,12 @@ HTTP внутри частной сети — принятый риск MVP: и�
 
 [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58) добавляет BFF в Compose/Caddy
 текущей VPS. После проверки этого этапа [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
-переносит Go/Postgres на приватную VPS2 и настраивает доступ к ней. Проверка S2S-ключа и серверный
-контракт Go — [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41),
-sub-issue infra#59. PR бэка вливается раньше PR переноса; перенос завершается последним.
+развёртывает Go и новый PostgreSQL на приватной VPS2 и настраивает доступ к ней. Данные и состояние
+миграций со старой VPS не копируются: Go создаёт схему в пустой БД при первом старте. Старые тома
+на VPS1 сохраняются. При откате к ним записи, созданные на VPS2 после переключения, автоматически
+не попадут. Проверка S2S-ключа и серверный контракт Go —
+[backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41),
+sub-issue infra#59. PR бэка вливается раньше PR infra#59; переключение на VPS2 выполняется после подготовки обеих сторон.
 
 - **Ansible** ходит на VPS2 по SSH только через VPS1 как jump host (`ProxyJump`): публичного адреса у
   VPS2 нет. Динамический inventory группирует хосты по `metadata.role`
