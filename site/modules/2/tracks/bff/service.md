@@ -211,7 +211,8 @@ JS/CSS остаются в CDN. Шаблон читается по фиксир�
 Первый этап из [infra#58](https://github.com/Cringe-Driven-Development-Team/infra/issues/58)
 реализован в [infra PR #71](https://github.com/Cringe-Driven-Development-Team/infra/pull/71): BFF ставится
 на действующую VPS рядом с Go API. Затем [infra#59](https://github.com/Cringe-Driven-Development-Team/infra/issues/59)
-переносит Go/Postgres на приватную VPS2; изменение контракта и S2S-проверка в Go —
+развёртывает Go и новый PostgreSQL на приватной VPS2 без копирования старой БД; изменение контракта
+и S2S-проверка в Go —
 [backend#41](https://github.com/Cringe-Driven-Development-Team/backend/issues/41).
 
 **Compose** —
