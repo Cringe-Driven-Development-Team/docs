@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { checkOpenWiki } from "./openwiki-check.ts";
+import { pathToFileURL } from "node:url";
 
 export type Exec = (binary: string, args: string[], cwd: string, onStdoutLine?: (line: string) => void) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
 
@@ -44,12 +44,18 @@ function codexProgress(write: (message: string) => void, startedAt: number) {
 }
 
 export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" | "pr-created" | "pr-exists"> {
+  root = resolve(root);
   const run = async (binary: string, args: string[], cwd = root, onStdoutLine?: (line: string) => void) => {
     const result = await exec(binary, args, cwd, onStdoutLine);
     if (result.exitCode !== 0) throw new Error(`${binary} ${args[0] ?? ""} failed (${result.exitCode}): ${result.stderr.trim()}`);
     return result.stdout;
   };
   const git = async (args: string[], cwd = root) => run("git", args, cwd);
+  const origin = (await git(["remote", "get-url", "origin"])).trim();
+  const repository = /^(?:https:\/\/github\.com\/|git@github\.com:)Cringe-Driven-Development-Team\/(docs|frontend|backend|infra)\.git$/.exec(origin)?.[1];
+  if (!repository) throw new Error("Unsupported origin: expected a Cringe-Driven-Development-Team docs, frontend, backend or infra repository.");
+  const pushOrigins = (await git(["remote", "get-url", "--push", "--all", "origin"])).trim().split("\n");
+  if (pushOrigins.length !== 1 || pushOrigins[0] !== origin) throw new Error("origin push URL must match its allowed fetch URL.");
   // Linked worktrees share this lock, including invocations from different branches.
   const common = (await git(["rev-parse", "--git-common-dir"])).trim();
   const lock = resolve(root, common, "openwiki-update.lock");
@@ -65,7 +71,9 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
   try {
     const fetchMain = async () => {
       await git(["fetch", "origin", "+refs/heads/main:refs/remotes/origin/main"]);
-      return (await git(["rev-parse", "--verify", "refs/remotes/origin/main^{commit}"])).trim();
+      const sha = (await git(["rev-parse", "--verify", "refs/remotes/origin/main^{commit}"])).trim();
+      if (!/^[a-f0-9]{40}$/i.test(sha)) throw new Error("origin/main must resolve to a full 40-character SHA.");
+      return sha;
     };
     const target = await fetchMain();
     temporary = await mkdtemp(join(tmpdir(), "docs-openwiki-"));
@@ -79,6 +87,8 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       throw new Error("Missing openwiki/quickstart.md on origin/main. One-time bootstrap required: initialize OpenWiki manually in an isolated worktree, remove the generated .github/workflows/openwiki-update.yml, and review AGENTS.md/CLAUDE.md as separate source changes before publishing a wiki-only PR. See README.md (Обновление OpenWiki).");
     }
+    const { checkOpenWiki }: typeof import("./openwiki-check.ts") = await import(pathToFileURL(join(worktree, "scripts/openwiki-check.ts")).href);
+    if (typeof checkOpenWiki !== "function") throw new Error("Repository scripts/openwiki-check.ts must export checkOpenWiki.");
     let fresh = false;
     try {
       fresh = (await checkOpenWiki(worktree, target)).fresh;
@@ -100,7 +110,7 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
     }
     const instruction = `Обнови OpenWiki в текущем worktree для исходного SHA ${target}.
 Используй установленную интеграцию OpenWiki и её MCP lifecycle update для существующей wiki; заверши успешным openwiki_finish.
-Прочитай openwiki/INSTRUCTIONS.md и правила AGENTS.md. Корпус задан openwiki/INSTRUCTIONS.md и .openwikiignore: только проверенное текущее состояние и карта владельцев; планы и историю не пересказывай.
+Прочитай openwiki/INSTRUCTIONS.md и правила AGENTS.md. Корпус задан openwiki/INSTRUCTIONS.md и .openwikiignore: ${repository === "docs" ? "только проверенное текущее состояние и карта владельцев" : "код и конфигурация на указанном SHA; код не доказывает выкладку, работу прода или состояние облака"}; планы и историю не пересказывай.
 Пиши страницы по-русски и указывай пути к источникам. Не включай секреты, реальные IP/CIDR и внутренние адреса.
 Меняй только сгенерированные файлы openwiki/**, кроме openwiki/INSTRUCTIONS.md, включая полный checkpoint openwiki/.last-update.json со status=complete и gitHead=${target}, индексы, Claims и manifest.
 Не меняй openwiki/INSTRUCTIONS.md, AGENTS.md, CLAUDE.md или другие исходники. Не запускай git add/commit/push, gh, таймеры или workflow генерации.
@@ -141,7 +151,7 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
     if (outside.length > 0) throw new Error(`Changes outside openwiki/ generated files: ${outside.map((path) => JSON.stringify(path)).join(", ")}`);
     const result = await checkOpenWiki(worktree, target);
     if (!result.fresh || result.sourceSha !== target) throw new Error(`Generated checkpoint must be fresh at ${target}.`);
-    await run("bun", ["run", "wiki:check", "--against", target], worktree);
+    await run("bun", ["scripts/openwiki-check.ts", "--against", target], worktree);
     await rm(join(worktree, "openwiki/.run.json"), { force: true });
     await git(["add", "--all", "--", "openwiki"], worktree);
     const staged = (await git(["diff", "--cached", "--name-only", "-z"], worktree)).split("\0").filter(Boolean);
@@ -151,7 +161,7 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
     // An empty lease prevents overwriting a branch created by another clone during generation.
     await git(["push", `--force-with-lease=refs/heads/${branch}:`, "origin", `HEAD:refs/heads/${branch}`], worktree);
     const body = join(temporary, "pr-body.md");
-    await writeFile(body, `## Что\n\nПроизводная wiki по исходному SHA \`${target}\`. Канонические документы остаются в docs.\n\n## Решения\n\nЯвная локальная команда владельца; изменения только в openwiki/**.\n\n## Проверка\n\n- openwiki_finish завершён; status=complete, gitHead=${target}.\n- bun run wiki:check --against ${target}: fresh, изменённых исходных путей нет.\n- Пути коммита: ${staged.map((path) => JSON.stringify(path)).join(", ")}.\n- Перед слиянием повторно сравнить checkpoint с актуальным docs/main.\n`);
+    await writeFile(body, `## Что\n\nПроизводная wiki по исходному SHA \`${target}\`. Источники и проверка свежести принадлежат репозиторию ${repository}.\n\n## Решения\n\nЯвная локальная команда владельца; изменения только в openwiki/**.\n\n## Проверка\n\n- openwiki_finish завершён; status=complete, gitHead=${target}.\n- bun scripts/openwiki-check.ts --against ${target}: fresh, изменённых исходных путей нет.\n- Пути коммита: ${staged.map((path) => JSON.stringify(path)).join(", ")}.\n- Перед слиянием повторно сравнить checkpoint с актуальным ${repository}/main.\n`);
     console.log("OpenWiki: Создаю PR.");
     const url = await run("gh", ["pr", "create", "--base", "main", "--head", branch, "--title", `docs(openwiki): обновление по ${target.slice(0, 12)}`, "--body-file", body]);
     console.log(`Wiki PR: ${url.trim()}`);
@@ -194,7 +204,11 @@ if (import.meta.main) {
     return { exitCode, stdout, stderr };
   };
   try {
-    await runLocalUpdate(process.cwd(), exec);
+    const args = process.argv.slice(2);
+    if (args.length !== 0 && (args.length !== 2 || args[0] !== "--repo" || !args[1])) {
+      throw new Error("Usage: bun run wiki:update-local [--repo <path>]");
+    }
+    await runLocalUpdate(resolve(process.cwd(), args[1] ?? "."), exec);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
