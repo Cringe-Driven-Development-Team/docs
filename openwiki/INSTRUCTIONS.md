@@ -10,7 +10,8 @@
 
 Закрытый корпус: `site/index.md`, `site/documentation/**`,
 `site/project-context.md`, `site/architecture/**`, `site/security/**`, действующие
-корневые `diagrams/*.json`, `AGENTS.md`, `.openwikiignore` и эти инструкции.
+корневые `diagrams/*.json`, `AGENTS.md`, `.openwikiignore`,
+`scripts/openwiki-source-path.ts` и эти инструкции.
 Отбор исходных путей для свежести задаёт `scripts/openwiki-source-path.ts`;
 `.openwikiignore` ограничивает чтение тем же корпусом. Доступ к `openwiki/**`
 нужен lifecycle для обновления результата; сгенерированные страницы и Claims
@@ -18,7 +19,7 @@
 
 Не читай и не пересказывай README со сборкой, `site/modules/**`,
 `docs/superpowers/**`, `diagrams/modules/**`, `diagrams/frozen-k3s/**`,
-скрипты и конфигурацию сборки. Планы и история не становятся текущими фактами.
+прочие скрипты и конфигурацию сборки. Планы и история не становятся текущими фактами.
 Даже разрешённый источник может упоминать будущее: не создавай по нему
 тематических страниц о будущих фичах.
 

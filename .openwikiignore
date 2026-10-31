@@ -1,9 +1,12 @@
 # Closed source corpus; keep aligned with scripts/openwiki-source-path.ts.
 # Excludes README.md, site/modules/**, docs/superpowers/**,
-# diagrams/modules/**, diagrams/frozen-k3s/**, scripts, CI and build assets.
+# diagrams/modules/**, diagrams/frozen-k3s/**, other scripts, CI and build assets.
 **
 !/AGENTS.md
 !/.openwikiignore
+!/scripts
+/scripts/**
+!scripts/openwiki-source-path.ts
 !/site
 /site/**
 !site/index.md

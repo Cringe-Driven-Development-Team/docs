@@ -63,7 +63,7 @@ test("checkpoint at the target commit is fresh regardless of its age", async () 
   expect((await checkOpenWiki(root, sourceSha)).fresh).toBe(true);
 });
 
-for (const path of ["site/documentation/a.md", "site/documentation/index.md", "site/index.md", "site/project-context.md", "site/architecture/current.md", "site/security/current.md", "diagrams/mvp.json", ".openwikiignore", "openwiki/INSTRUCTIONS.md", "AGENTS.md"]) {
+for (const path of ["site/documentation/a.md", "site/documentation/index.md", "site/index.md", "site/project-context.md", "site/architecture/current.md", "site/security/current.md", "diagrams/mvp.json", "scripts/openwiki-source-path.ts", ".openwikiignore", "openwiki/INSTRUCTIONS.md", "AGENTS.md"]) {
   test(`tracked source change in ${path} makes the wiki stale`, async () => {
     const { root, sourceSha } = fixture();
     write(root, path, "changed\n");
@@ -180,7 +180,7 @@ test("OpenWiki read boundary excludes plans and build files but retains current 
   for (const path of ["README.md", "site/modules/2/tracks/bff.md", "docs/superpowers/specs/plan.md", "diagrams/modules/bff.json", "diagrams/frozen-k3s/ci.json", "site/.vitepress/config.mts", "diagrams/notes.md", "scripts/build.ts"]) {
     expect(rules.ignores(path)).toBe(true);
   }
-  for (const path of ["AGENTS.md", ".openwikiignore", "site/index.md", "site/project-context.md", "site/documentation/index.md", "site/architecture/index.md", "site/security/csrf/index.md", "diagrams/deployment.json", "openwiki/INSTRUCTIONS.md", "openwiki/.last-update.json", "openwiki/quickstart.md"]) {
+  for (const path of ["AGENTS.md", ".openwikiignore", "scripts/openwiki-source-path.ts", "site/index.md", "site/project-context.md", "site/documentation/index.md", "site/architecture/index.md", "site/security/csrf/index.md", "diagrams/deployment.json", "openwiki/INSTRUCTIONS.md", "openwiki/.last-update.json", "openwiki/quickstart.md"]) {
     expect(rules.ignores(path)).toBe(false);
   }
 });
