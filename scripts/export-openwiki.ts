@@ -1,21 +1,10 @@
 import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-export type WikiProvenance = { updatedAt: string; gitHead: string };
-
-export function readWikiProvenance(raw: unknown): WikiProvenance {
-  const value = raw as Record<string, unknown> | null;
-  if (!value || value.status !== 'complete') throw new Error('Invalid checkpoint status: expected complete');
-  const updatedAt = value.updatedAt;
-  if (typeof updatedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(updatedAt)
-      || !Number.isFinite(Date.parse(updatedAt)) || new Date(updatedAt).toISOString() !== updatedAt) {
-    throw new Error('Invalid checkpoint updatedAt: expected an ISO UTC date');
-  }
-  if (typeof value.gitHead !== 'string' || !/^[a-fA-F0-9]{40}$/.test(value.gitHead)) {
-    throw new Error('Invalid checkpoint gitHead: expected a full 40-character hex SHA');
-  }
-  return { updatedAt, gitHead: value.gitHead };
-}
+import { readWikiProvenance } from './openwiki-workspace.ts';
+import type { WikiProvenance } from './openwiki-workspace.ts';
+export { readWikiProvenance } from './openwiki-workspace.ts';
+export type { WikiProvenance } from './openwiki-workspace.ts';
 
 export function decorateVisualizer(html: string, css: string, info: WikiProvenance): { html: string; css: string } {
   const anchor = '<div class="main" id="main">';
