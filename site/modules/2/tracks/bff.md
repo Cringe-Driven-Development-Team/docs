@@ -12,6 +12,13 @@ subtasks:
 pages: [contract, auth, service, bootstrap, release, rollback]
 ---
 
+::: info
+Часть проверена на проде 31.10.2026: гостевая HTML-страница и отказы tRPC без CSRF-заголовка/сессии.
+[Как работает сейчас](/documentation/bff). Вход, refresh и операции с данными здесь остаются планом
+до проверки; ход реализации — в GitHub-задачах трека.
+:::
+
+
 Подзадачи трека, включая «tRPC (server)» — роутер tRPC в BFF, делает Денис; Валентин — изменения на стороне Go (см. [«Go API»](#go-api)).
 Клиент к Go и zod-схемы из контракта Go — подтрек [«Orval»](./bff-orval). Подключение официального
 `@trpc/client` — подтрек [«tRPC (client)»](./trpc-client); сервер использует официальный `@trpc/server`

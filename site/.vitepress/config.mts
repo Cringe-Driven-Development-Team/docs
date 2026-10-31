@@ -31,6 +31,9 @@ export default withMermaid(
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
       sidebar: {
+        '/documentation/': [
+          { text: 'Текущая документация', items: [{ text: 'BFF: проверенная часть', link: '/documentation/bff' }] },
+        ],
         '/project-context': [
           { text: 'Контекст проекта', items: [{ text: 'Источники и правила', link: '/project-context' }] },
         ],

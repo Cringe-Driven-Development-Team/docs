@@ -1,24 +1,25 @@
 {
   "entities": [
-    { "tag": "Icon", "id": "client", "x": 0, "y": 320, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
+    { "tag": "Textbox", "id": "historical-status", "x": 0, "y": 0, "width": 900, "height": 100, "text": "**Историческая схема MVP до BFF**\nНе описывает текущий прод. Проверенная часть на 31.10.2026: https://docs.cellestial.ru/documentation/bff" },
+    { "tag": "Icon", "id": "client", "x": 0, "y": 460, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
 
-    { "tag": "Group", "id": "selectel", "color": "blue", "x": 360, "y": 0, "width": 840, "height": 700, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
+    { "tag": "Group", "id": "selectel", "color": "blue", "x": 360, "y": 140, "width": 840, "height": 700, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
 
-    { "tag": "Group", "id": "vps", "color": "blue", "styleMode": "plain", "x": 380, "y": 40, "width": 560, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS · Docker Compose", "icon": "docker" } },
-    { "tag": "Icon", "id": "vps-caddy", "x": 400, "y": 80, "containerId": "vps", "icon": "server", "texts": [{ "text": "Caddy" }] },
-    { "tag": "Icon", "id": "vps-go", "x": 640, "y": 80, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
-    { "tag": "Icon", "id": "vps-postgres", "x": 800, "y": 80, "containerId": "vps", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
+    { "tag": "Group", "id": "vps", "color": "blue", "styleMode": "plain", "x": 380, "y": 180, "width": 560, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS · Docker Compose", "icon": "docker" } },
+    { "tag": "Icon", "id": "vps-caddy", "x": 400, "y": 220, "containerId": "vps", "icon": "server", "texts": [{ "text": "Caddy" }] },
+    { "tag": "Icon", "id": "vps-go", "x": 640, "y": 220, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
+    { "tag": "Icon", "id": "vps-postgres", "x": 800, "y": 220, "containerId": "vps", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
 
-    { "tag": "Icon", "id": "domain", "x": 1060, "y": 80, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru" }] },
+    { "tag": "Icon", "id": "domain", "x": 1060, "y": 220, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru" }] },
 
-    { "tag": "Icon", "id": "cdn", "x": 400, "y": 320, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
-    { "tag": "Icon", "id": "s3-front", "x": 640, "y": 320, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · фронт: releases/{sha}/, index.html, current.json" }] },
-    { "tag": "Icon", "id": "s3-notebooks", "x": 880, "y": 320, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · ноутбуки (приватный)" }] },
-    { "tag": "Icon", "id": "cdn-static", "x": 400, "y": 540, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.cellestial.ru" }] },
-    { "tag": "Icon", "id": "s3-static", "x": 640, "y": 540, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · статика (публичный)" }] },
-    { "tag": "Icon", "id": "s3-avatars", "x": 880, "y": 540, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · аватарки (публичный)" }] },
+    { "tag": "Icon", "id": "cdn", "x": 400, "y": 460, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
+    { "tag": "Icon", "id": "s3-front", "x": 640, "y": 460, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · фронт: releases/{sha}/, index.html, current.json" }] },
+    { "tag": "Icon", "id": "s3-notebooks", "x": 880, "y": 460, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · ноутбуки (приватный)" }] },
+    { "tag": "Icon", "id": "cdn-static", "x": 400, "y": 680, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.cellestial.ru" }] },
+    { "tag": "Icon", "id": "s3-static", "x": 640, "y": 680, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · статика (публичный)" }] },
+    { "tag": "Icon", "id": "s3-avatars", "x": 880, "y": 680, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · аватарки (публичный)" }] },
 
-    { "tag": "Legend", "id": "legend", "x": 1260, "y": 0, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+    { "tag": "Legend", "id": "legend", "x": 1260, "y": 140, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
   ],
   "connections": [
     { "tag": "Relationship", "from": "client", "to": "vps-caddy", "label": "https://cellestial.ru: HTML, /api/v1", "color": "orange", "lineStyle": "solid" },
