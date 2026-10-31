@@ -18,8 +18,12 @@ export default withMermaid(
     // Логотип cellestial.ru (src/assets/logo-mark.svg фронта). VitePress не добавляет base к ссылкам в head.
     head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }]],
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
-    vite: { ssr: { noExternal: ['@tp-prepare/vitepress-module-graph'] } },
-    markdown: { codeCopyButtonTitle: 'Копировать код' },
+    vite: {
+      ssr: { noExternal: ['@tp-prepare/vitepress-module-graph'] },
+      // Mermaid подключается плагином после сканирования Vite: его CommonJS-хелперы нужны до гидратации.
+      optimizeDeps: { include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'] },
+    },
+    markdown: { codeCopyButton: { tooltipText: 'Копировать код' } },
     // Сообщения не сжимаются под ширину колонки, длинные переносятся; широкая схема прокручивается.
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {

@@ -42,7 +42,7 @@
     "mermaid": "^11",
     "openwiki": "0.7.2",
     "typescript": "7.0.2",
-    "vitepress": "1.6.4",
+    "vitepress": "2.0.0-alpha.21",
     "vitepress-plugin-mermaid": "2.0.17"
   }
 }
