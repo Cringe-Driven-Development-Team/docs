@@ -12,9 +12,9 @@ try {
     new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited,
   ]);
   if (exitCode !== 0) throw new Error(`PR path comparison failed (${exitCode}): ${stderr.trim()}`);
-  const outside = stdout.split("\0").filter((path) => path.length > 0 && !path.startsWith("openwiki/"));
+  const outside = stdout.split("\0").filter((path) => path.length > 0 && (!path.startsWith("openwiki/") || path === "openwiki/INSTRUCTIONS.md"));
   if (outside.length > 0) {
-    throw new Error(`Wiki PR changes outside openwiki/: ${outside.map((path) => JSON.stringify(path)).join(", ")}`);
+    throw new Error(`Wiki PR changes source paths (outside generated openwiki/): ${outside.map((path) => JSON.stringify(path)).join(", ")}`);
   }
   console.log("PR paths: wiki-only");
 } catch (error) {

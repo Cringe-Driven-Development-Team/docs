@@ -1,13 +1,13 @@
 # CSRF: как устроено
 
-::: tip
-Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2/tracks/bff/auth).
+::: warning
+История проверки 07.10.2026, до BFF. Это не описание текущей защиты. Проверенный гостевой маршрут — [BFF сейчас](/documentation/bff); целевые сценарии — [план трека](/modules/2/tracks/bff/auth).
 :::
 
-Как сервис [cellestial.ru](https://cellestial.ru) защищается от CSRF: какие cookie выдаёт бэк,
+Как сервис [cellestial.ru](https://cellestial.ru) защищался от CSRF на 07.10.2026: какие cookie выдаёт бэк,
 что и где проверяется, что делает фронт. Код — на коммитах бэка
-[`4094350`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/tree/4094350) и фронта
-[`344ad0b`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/tree/344ad0b).
+[`4094350`](https://github.com/Cringe-Driven-Development-Team/backend/tree/409435082509e139417613487c47a91a9ad56f80) и фронта
+[`344ad0b`](https://github.com/Cringe-Driven-Development-Team/frontend/tree/344ad0b1d9c304ebae9ca3f3758bd38b1782d201).
 Как это выглядит в каждом случае — [«Сценарии»](./scenarios), что проверено и чего не хватает —
 [«Проверка и ограничения»](./checks).
 
@@ -25,26 +25,26 @@
 | `__Host-csrf` | `/` | 30 дней (`REFRESH_TOKEN_TTL`) | **нет** | всегда | `Lax` | login, register, refresh, logout и middleware |
 
 - Access и refresh фронт не видит: `HttpOnly`. Код —
-  [`tokenCookie`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/user/delivery/user.go#L135),
-  пути — [`app.go`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/app/app.go#L97).
+  [`tokenCookie`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/user/delivery/user.go#L135),
+  пути — [`app.go`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/app/app.go#L97).
 - `__Host-csrf` фронт читает из `document.cookie`, поэтому без `HttpOnly`. Префикс `__Host-`
   требует `Secure`, `Path=/` и запрещает `Domain`: поддомен не подложит свою cookie с этим
-  именем. Код — [`CSRF.Cookie`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/auth/csrf.go#L55).
+  именем. Код — [`CSRF.Cookie`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/auth/csrf.go#L55).
 - Login, register и refresh ставят все три cookie и подписанный CSRF-токен
-  ([`sessionCookies`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/user/delivery/user.go#L127)).
+  ([`sessionCookies`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/user/delivery/user.go#L127)).
   Logout стирает access и refresh и ставит новый анонимный CSRF-токен
-  ([`LogoutUser`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/user/delivery/user.go#L86)).
+  ([`LogoutUser`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/user/delivery/user.go#L86)).
 
 ## Когда приходит `__Host-csrf`
 
 Отдельной ручки за токеном нет. Middleware
-[`CSRF`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L22)
+[`CSRF`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L22)
 добавляет cookie к ответу любой ручки `/api/v1` (кроме `OPTIONS`), если в запросе её нет, а для
 известного пользователя — и если она анонимная
-([строки 48 и 75](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L48)):
+([строки 48 и 75](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L48)):
 
 - пользователь известен — по живому `access_token` или, если его нет, по записи `refresh_token`
-  ([строки 52–72](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L52)) —
+  ([строки 52–72](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L52)) —
   в ответе **подписанный** токен; так восстанавливается токен у вошедшего пользователя без cookie;
 - пользователя нет, cookie не было — **анонимный** токен; пользователя нет, а анонимная cookie
   уже есть — новой не выдаётся;
@@ -52,7 +52,7 @@
   токен чужого пользователя;
 - cookie ставится и на ответах с ошибкой (`401`, `403`, `404`), если обработчик не поставил
   свою; у всех ответов, где middleware готов выдать cookie, — `Cache-Control: no-store`
-  ([`csrfBootstrapWriter`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L114));
+  ([`csrfBootstrapWriter`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L114));
 - подписанную cookie, даже испорченную, middleware сам не заменяет.
 
 Поэтому к форме входа фронт уже держит токен: стартовая проверка сессии приносит его даже ответом
@@ -65,7 +65,7 @@ flowchart LR
   ID[RequestID] --> Log[Logging] --> Rec[Recover] --> CORS --> CSRF[CSRF: выдача и Double Submit] --> Auth[Authenticate и подпись] --> Val[Validator] --> H[Обработчик]
 ```
 
-[`router.go`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/app/router.go#L66):
+[`router.go`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/app/router.go#L66):
 CSRF стоит раньше обработчика, поэтому отклонённый запрос ничего не меняет. CORS — раньше CSRF:
 ответ `403` тоже несёт CORS-заголовки, и фронт может прочитать его тело.
 
@@ -81,13 +81,13 @@ CSRF стоит раньше обработчика, поэтому отклон
 
 - «Cookie равна заголовку»: ровно одна cookie `__Host-csrf`, ровно один заголовок
   `X-CSRF-Token`, оба не пустые и совпадают, сравнение за постоянное время
-  ([строки 93–98](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L93)).
+  ([строки 93–98](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L93)).
 - `Origin` — из `APP_ORIGIN` и `CORS_ALLOWED_ORIGINS`
-  ([строки 87–92](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L87)).
+  ([строки 87–92](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L87)).
 - Подпись — после `Authenticate` для всех изменяющих, кроме login, register, refresh
-  ([строки 31–36](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/middleware/csrf.go#L31));
+  ([строки 31–36](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/middleware/csrf.go#L31));
   refresh и logout дополнительно проверяют её для владельца refresh-сессии
-  ([`checkRefreshCSRF`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/user/delivery/user.go#L148)):
+  ([`checkRefreshCSRF`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/user/delivery/user.go#L148)):
   у refresh access может быть уже истёкшим.
 - Любой отказ — `403` с кодом `csrf_invalid`, не `401`: на `401` фронт делает refresh и повторяет
   запрос, а refresh CSRF-токен не чинит.
@@ -95,7 +95,7 @@ CSRF стоит раньше обработчика, поэтому отклон
 
 ## Формат токена
 
-[`internal/auth/csrf.go`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/internal/auth/csrf.go#L27):
+[`internal/auth/csrf.go`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/auth/csrf.go#L27):
 
 - анонимный — 32 случайных байта (`crypto/rand`) в base64url;
 - подписанный — `base64url(nonce) + "." + base64url(HMAC-SHA256(CSRF_SECRET, "<userID>." + nonce))`,
@@ -120,13 +120,13 @@ CSRF стоит раньше обработчика, поэтому отклон
 
 - Перед каждым `POST`, `PUT`, `PATCH`, `DELETE` читает `__Host-csrf` из `document.cookie` и
   ставит `X-CSRF-Token`; токен нигде не хранит — ни в памяти, ни в `localStorage`
-  ([`setCsrfHeader`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/csrf.ts#L13)).
+  ([`setCsrfHeader`](https://github.com/Cringe-Driven-Development-Team/frontend/blob/344ad0b1d9c304ebae9ca3f3758bd38b1782d201/src/api/csrf.ts#L13)).
 - Вход и регистрацию после `403 csrf_invalid` повторяет один раз: этот ответ уже принёс новую
-  cookie ([`csrfMiddleware`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/csrf.ts#L46)).
+  cookie ([`csrfMiddleware`](https://github.com/Cringe-Driven-Development-Team/frontend/blob/344ad0b1d9c304ebae9ca3f3758bd38b1782d201/src/api/csrf.ts#L46)).
   Остальные запросы после `403` показывают ошибку — см. [ограничения](./checks#известные-ограничения).
 - На `401` (кроме `/auth/*`) делает один общий `POST /auth/refresh` с `X-CSRF-Token` и повторяет
   запрос со свежим заголовком
-  ([`authMiddleware`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/auth.ts#L12)).
+  ([`authMiddleware`](https://github.com/Cringe-Driven-Development-Team/frontend/blob/344ad0b1d9c304ebae9ca3f3758bd38b1782d201/src/api/auth.ts#L12)).
 - При старте проверяет сессию: `POST /auth/refresh`, затем `GET /users/me`
-  ([`session.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/stores/session.ts#L34)).
+  ([`session.ts`](https://github.com/Cringe-Driven-Development-Team/frontend/blob/344ad0b1d9c304ebae9ca3f3758bd38b1782d201/src/stores/session.ts#L34)).
   У гостя refresh получает `403` или `401` — ответ приносит `__Host-csrf`, фронт показывает вход.

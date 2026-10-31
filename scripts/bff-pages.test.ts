@@ -15,7 +15,7 @@ export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/sc
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
 export const TIP =
-  "Это текущая реализация; при переезде на BFF её заменяет [Авторизация и CSRF в BFF](/modules/2/tracks/bff/auth).";
+  "История проверки 07.10.2026, до BFF. Это не описание текущей защиты. Проверенный гостевой маршрут — [BFF сейчас](/documentation/bff); целевые сценарии — [план трека](/modules/2/tracks/bff/auth).";
 
 /** Первый блок `:::` страницы: после frontmatter и строки `# `, если она есть. */
 export function firstBlock(md: string): string {
@@ -88,10 +88,10 @@ test("ссылок на /bff/ не осталось", () => {
   }
 });
 
-test("страницы CSRF ссылаются на трек", () => {
+test("страницы CSRF явно отделяют историю от текущего BFF", () => {
   for (const file of CSRF_PAGES) {
     const block = firstBlock(readFileSync(file, "utf8"));
-    expect(block.startsWith("::: tip"), file).toBe(true);
+    expect(block.startsWith("::: warning"), file).toBe(true);
     expect(block, file).toContain(TIP);
   }
 });
@@ -574,4 +574,20 @@ test("migration arrow label is short", () => {
 test("SameSite bootstrap link keeps target heading", () => {
   expect(readFileSync(BOOTSTRAP, "utf8")).toContain("./auth#cookie-сессии");
   expect(readFileSync(AUTH, "utf8")).toContain("## Cookie сессии");
+});
+
+test("текущий BFF отделяет наблюдение прода от кода и непроверенных сценариев", () => {
+  const md = readFileSync("site/documentation/bff.md", "utf8");
+  for (const title of ["Что наблюдается на проде", "Релизы и граница доказательства", "Где искать реализацию", "Что ещё нужно проверить"]) {
+    expect(md).toContain(`## ${title}`);
+  }
+  expect(md).toContain("31.10.2026");
+  expect(md).toContain("403");
+  expect(md).toContain("401");
+  expect(md).toContain("не проверен авторизованным сценарием на проде");
+  expect(md).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
+  for (const link of md.matchAll(/https:\/\/github\.com\/[^)\s]+\/blob\/([^/]+)\//g)) {
+    expect(link[1]).toMatch(/^[a-f0-9]{40}$/);
+  }
+  expect(readFileSync(TRACK, "utf8")).toContain("[Как работает сейчас](/documentation/bff)");
 });

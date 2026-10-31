@@ -1,6 +1,8 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 
+import { isWikiSourcePath } from "./openwiki-source-path.ts";
+
 type Checkpoint = { gitHead: string; status: "complete"; updatedAt?: string };
 type Freshness = { sourceSha: string; targetSha: string; changedPaths: string[]; fresh: boolean };
 const fullSha = /^[a-f0-9]{40}$/i;
@@ -42,7 +44,7 @@ export async function checkOpenWiki(root: string, targetSha: string): Promise<Fr
   await git(root, ["rev-parse", "--verify", `${targetSha}^{commit}`]);
   await git(root, ["merge-base", "--is-ancestor", sourceSha, targetSha]);
   const paths = await git(root, ["diff", "--name-only", "-z", "--no-renames", sourceSha, targetSha, "--"]);
-  const changedPaths = paths.split("\0").filter((path) => path.length > 0 && !path.startsWith("openwiki/"));
+  const changedPaths = paths.split("\0").filter(isWikiSourcePath);
   return { sourceSha, targetSha, changedPaths, fresh: changedPaths.length === 0 };
 }
 

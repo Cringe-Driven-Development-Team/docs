@@ -24,6 +24,22 @@ Wiki — производное представление документац�
 Pages экспортирует уже обновлённую wiki после ручного обновления и слияния PR;
 сборка не запускает модель и не обновляет содержимое wiki.
 
+Планы в `/modules/` описывают будущее. Код на актуальном SHA подтверждает реализацию;
+работающее поведение требует отдельного свидетельства: SHA выкаченного релиза, дата
+и результат сценария на проде. Код и CI сами по себе не подтверждают выкладку.
+Карту владельцев пакетов подтверждают зависимости и CI на конкретном SHA;
+маршруты — в [контексте проекта](https://docs.cellestial.ru/project-context).
+
+Для общего поиска держи рядом клоны `docs`, `frontend`, `backend`, `infra` и проверь
+`git remote get-url origin`: нужны репозитории организации Cringe-Driven-Development-Team.
+Когда все четыре wiki готовы, один раз запусти `openwiki link` из общего родителя
+и выбери их в локальный workspace CDD; реестр не коммитится. При нескольких
+пространствах выбери нужное через `openwiki workspace use <имя>`.
+Агент использует `openwiki_search` в этом workspace и `openwiki_read` с ID wiki
+из результата только по запросу или при архитектурной неопределённости.
+Пока wiki или workspace не готовы либо MCP недоступен, читай имеющиеся
+`openwiki/quickstart.md`, канонический Markdown и исходники напрямую.
+
 ### Обновление OpenWiki
 
 Из корня клона `docs` или его worktree владелец запускает:
@@ -93,21 +109,23 @@ Actions только проверяет PR с изменениями `openwiki/*
 (коммит `e8fd4bb`). Спеки и планы в `docs/superpowers/` написаны до переноса,
 адреса в них старые.
 
-Архитектур две. **MVP: одна VPS** это рабочая, с ней идёт вся текущая
-работа: одна VPS с Caddy, Go API и Postgres, фронт ходит в Go API напрямую;
+**MVP: одна VPS** — прежняя модель до BFF, в которой фронт ходил в Go API напрямую;
 дизайн в `docs/superpowers/specs/2026-09-29-mvp-single-vps-design.md`.
 **Frozen: k3s** заморожена в `diagrams/frozen-k3s/`, её схемы не правятся;
 дизайн в `docs/superpowers/specs/2026-09-15-frontend-monorepo-design.md`.
 
-MVP (`diagrams/`):
+Схемы MVP (`diagrams/`): `deployment`, `cd`, `frontend`, `contract` сохранены как история
+до BFF; `ci` и `infra` целиком не перепроверены на проде. Подтверждённая часть на 31.10.2026 —
+[гостевой маршрут BFF](https://docs.cellestial.ru/documentation/bff), там же SHA выкладок,
+свидетельства и границы проверки.
 
 | Схема | Что показывает |
 | --- | --- |
-| [deployment](https://docs.cellestial.ru/deployment.html) | Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
+| [deployment](https://docs.cellestial.ru/deployment.html) | История до BFF: Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
 | [ci](https://docs.cellestial.ru/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, S3 |
-| [cd](https://docs.cellestial.ru/cd.html) | CD фронта через S3, откат, выкладка статики в бакет статики за CDN, CD бэка через ansible-playbook |
-| [frontend](https://docs.cellestial.ru/frontend.html) | Репа клиента, контракт из Apidog, модель релизов |
-| [contract](https://docs.cellestial.ru/contract.html) | Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
+| [cd](https://docs.cellestial.ru/cd.html) | История до BFF: CD фронта через S3, откат, выкладка статики в бакет статики за CDN, CD бэка через ansible-playbook |
+| [frontend](https://docs.cellestial.ru/frontend.html) | История до BFF: Репа клиента, контракт из Apidog, модель релизов |
+| [contract](https://docs.cellestial.ru/contract.html) | История до BFF: Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
 | [infra](https://docs.cellestial.ru/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
 
 Frozen: k3s (`diagrams/frozen-k3s/`):
@@ -291,7 +309,8 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 называет файл и поле.
 
 Модули — план: что ещё не сделано и будет реализовано, вместе с проектными документами треков.
-Остальные разделы сайта и схемы корня описывают, как работает прод. Сделанный трек остаётся в архиве
+Текущие страницы отделяют проверенный прод от исторических описаний; у старых схем корня
+указаны ограничения актуальности. Сделанный трек остаётся в архиве
 модуля как история, а прод описывается в разделе вне модулей.
 
 - **`site/modules/people.yaml`** — люди: GitHub-логин, имя, роль, направление

@@ -25,12 +25,22 @@ export default withMermaid(
     themeConfig: {
       nav: [
         { text: 'OpenWiki', link: '/openwiki/', target: '_self', activeMatch: '^/openwiki/' },
-        { text: 'Контекст проекта', link: '/project-context' },
-        { text: 'Архитектура', link: '/architecture/', activeMatch: '^/architecture/' },
-        { text: 'Безопасность', link: '/security/csrf/', activeMatch: '^/security/' },
+        { text: 'Документация', link: '/documentation/', activeMatch: '^/(documentation/|architecture/|project-context|security/)' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
       sidebar: {
+        '/documentation/': [
+          {
+            text: 'Документация',
+            items: [
+              { text: 'Что работает сейчас', link: '/documentation/' },
+              { text: 'BFF: проверенная часть', link: '/documentation/bff' },
+              { text: 'Архитектура и исторические схемы', link: '/architecture/' },
+              { text: 'CSRF: историческая проверка', link: '/security/csrf/' },
+              { text: 'Владельцы сведений', link: '/project-context' },
+            ],
+          },
+        ],
         '/project-context': [
           { text: 'Контекст проекта', items: [{ text: 'Источники и правила', link: '/project-context' }] },
         ],

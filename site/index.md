@@ -4,22 +4,29 @@ layout: home
 hero:
   name: Cringe Driven Development
   text: Документация команды
-  tagline: Как устроен сервис cellestial.ru — архитектура и безопасность
+  tagline: Проверенный прод, источники сведений и планы развития cellestial.ru
   actions:
     - theme: brand
-      text: "Безопасность: CSRF"
-      link: /security/csrf/
+      text: Документация
+      link: /documentation/
     - theme: alt
-      text: Схемы архитектуры
-      link: /architecture/
+      text: OpenWiki
+      link: /openwiki/
+    - theme: alt
+      text: Модули
+      link: /modules/
 
 features:
-  - title: Архитектура
-    details: Схемы MVP — деплой, CI, CD, клиент, контракт, инфраструктура.
-    link: /architecture/
-    linkText: Открыть схемы
-  - title: 'Безопасность: CSRF'
-    details: Три cookie, Double Submit с подписью, проверки на ручках и все сценарии со схемами.
-    link: /security/csrf/
-    linkText: Читать
+  - title: OpenWiki
+    details: Производный тематический указатель. Факты и свежесть сверяй с исходными документами.
+    link: /openwiki/
+    linkText: Найти сведения
+  - title: Документация
+    details: Наблюдаемое поведение прода с датой и свидетельствами, границы проверки и владельцы сведений.
+    link: /documentation/
+    linkText: Что работает сейчас
+  - title: Модули
+    details: Учебные треки и планы работы. Содержание модуля само по себе не подтверждает готовность на проде.
+    link: /modules/
+    linkText: Открыть планы
 ---

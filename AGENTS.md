@@ -104,14 +104,29 @@ Wiki — производное представление документац�
 Устаревшую wiki используй только как указатель путей: каждое нужное утверждение сверь
 с каноническим документом на актуальном SHA, а факты о реализации — с кодом компонента.
 Если wiki недоступна или путь исчез, ищи напрямую в `docs`. Модули и старые планы
-остаются планами, пока реализация не проверена по коду.
+остаются планами. Код на актуальном SHA подтверждает реализацию, но не выкладку.
+Для описания работающего поведения нужны SHA выкаченного релиза, дата и результат
+сценария на проде; код, CI и наличие страницы сами по себе этого не доказывают.
+Карту владельцев пакетов подтверждают зависимости и CI на конкретном SHA.
 
 Обновление wiki запускается только по явной локальной команде владельца.
 CI только проверяет wiki PR; таймеров и автоматической генерации нет.
-Предложение о scheduled workflow в управляемом блоке ниже здесь не применяется.
-Блок сохранён в формате OpenWiki 0.7.2, чтобы генератор не менял исходные инструкции.
 Изменение `AGENTS.md` или `CLAUDE.md` при генерации считается ошибкой запуска:
 эти файлы меняют отдельно как исходники, затем обновляют wiki.
+
+Для поиска между репозиториями сначала найди соседние клоны `docs`, `frontend`,
+`backend`, `infra` от общего родительского каталога и проверь их `git remote get-url origin`:
+нужны репозитории `Cringe-Driven-Development-Team`, а не учебные копии.
+Если все четыре wiki готовы, студент один раз связывает их через `openwiki link`
+из общего родителя в локальный workspace CDD; реестр не коммитится.
+При нескольких пространствах выбери нужное через `openwiki workspace use <имя>`.
+Не считай workspace или платформенные wiki уже существующими: до их подготовки
+читай доступные `openwiki/quickstart.md`, канонический Markdown и исходники напрямую.
+При доступном MCP используй `openwiki_search` по соответствующему workspace,
+затем `openwiki_read` с ID wiki из результата. При отсутствии MCP действует тот же
+Markdown fallback. Не загружай все wiki при старте: поиск нужен по запросу или
+при конкретной архитектурной неопределённости. Планы ищи в модулях, прод — в `docs`
+и свидетельстве проверки, реализацию — у владельца и в коде на актуальном SHA.
 
 <!-- OPENWIKI:START -->
 
@@ -123,9 +138,9 @@ This repository has a generated `openwiki/` evidence index. It is optional just-
 - When those conditions apply and OpenWiki retrieval tools are available, use `openwiki_search` for just-in-time context and `openwiki_read` for the relevant complete sections. If search returns `workspace_required`, ask which listed workspace to use and retry with its ID.
 - Use `openwiki_list_workspaces` or `openwiki_list_wikis` when workspace membership itself needs to be discovered.
 - If the retrieval tools are unavailable, read `openwiki/quickstart.md` and follow its links to the relevant pages.
-- Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
+- Treat source code and tests as authoritative for implementation; production claims also require deployment SHA, date and scenario results. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+The owner refreshes OpenWiki only by an explicit local command. CI validates wiki PRs; there is no scheduled generation. Do not hand-edit generated OpenWiki pages unless explicitly asked; update canonical source code/docs first.
 
 <!-- OPENWIKI:END -->

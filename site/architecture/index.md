@@ -2,7 +2,18 @@
 aside: false
 ---
 
-# Архитектура: MVP
+# Архитектура: проверенный маршрут и схемы MVP {#архитектура-mvp}
+
+На 31.10.2026 проверен [гостевой маршрут BFF](/documentation/bff): браузер получает форму
+входа, `/api/trpc/users.me` без CSRF-заголовка возвращает `403`, с заголовком без сессии — `401`.
+Авторизованный участок BFF → Go этой проверкой не подтверждён. SHA выкладок и результаты
+браузерной проверки приведены на странице BFF.
+
+::: warning
+Ниже сохранены схемы MVP по прежним адресам и якорям. `deployment`, `cd`, `frontend` и
+`contract` — историческая модель до BFF, не схема текущего продового маршрута. `ci` и `infra`
+в этой проверке целиком не сверялись с действующей инфраструктурой.
+:::
 
 Схемы MVP сервиса — как код в [`diagrams/`](https://github.com/Cringe-Driven-Development-Team/docs/tree/main/diagrams),
 рендер [eraser-diagrams](https://github.com/eraserlabs/eraser-diagrams). Масштаб — кнопками или
@@ -17,7 +28,7 @@ Ctrl/⌘ + колесо, щипок на телефоне; схему можно
 
 ## deployment
 
-Одна VPS в Selectel: Caddy, Go API и Postgres в Docker Compose; S3 и CDN для статики; клиент.
+Историческая схема до BFF. Одна VPS в Selectel: Caddy, Go API и Postgres в Docker Compose; S3 и CDN для статики; клиент.
 
 <Diagram name="deployment" />
 
@@ -29,19 +40,19 @@ GitHub-репозитории, CI-пайплайны, проверка Contract 
 
 ## cd
 
-CD фронта через S3 и откат, выкладка статики в бакет за CDN, CD бэка через `ansible-playbook`.
+Историческая схема до BFF: CD фронта через S3 и откат, выкладка статики в бакет за CDN, CD бэка через `ansible-playbook`.
 
 <Diagram name="cd" />
 
 ## frontend
 
-Репозиторий клиента, контракт из Apidog, модель релизов.
+Историческая модель до BFF: репозиторий клиента, контракт из Apidog, модель релизов.
 
 <Diagram name="frontend" />
 
 ## contract
 
-Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift.
+Историческая модель генерации до BFF. Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift.
 
 <Diagram name="contract" />
 

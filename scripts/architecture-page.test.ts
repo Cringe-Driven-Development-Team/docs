@@ -15,17 +15,28 @@ test("every root diagram is on /architecture/ with a heading and a Diagram", () 
   expect(headings).toEqual(ORDER);
 });
 
-test("config: Architecture goes to /architecture/ without target, no branch previews in the nav", () => {
+test("config: three entrances keep architecture in documentation, no branch previews in the nav", () => {
   const config = readFileSync("site/.vitepress/config.mts", "utf8");
   expect(config).toContain("link: '/architecture/'");
-  expect(config).toContain("activeMatch: '^/architecture/'");
+  const nav = config.split("nav: [")[1]?.split("],")[0] ?? "";
+  expect([...nav.matchAll(/text: '([^']+)'/g)].map(match => match[1])).toEqual([
+    "OpenWiki", "Документация", "Модули",
+  ]);
+  expect(nav).toContain("link: '/documentation/'");
   expect(config).not.toContain("link: '/diagrams/'");
   // Список превью веток — по ссылке из README, в меню сайта его нет
   expect(config).not.toContain("link: '/branches/'");
   expect(config).not.toContain("Превью веток");
   const home = readFileSync("site/index.md", "utf8");
   expect(home).not.toContain("/diagrams/");
-  expect(home).toContain("/architecture/");
+  expect(home).toContain("/documentation/");
+  const documentation = readFileSync("site/documentation/index.md", "utf8");
+  for (const link of ["/documentation/bff", "/architecture/", "/security/csrf/", "/project-context", "/modules/"]) {
+    expect(documentation).toContain(`](${link})`);
+  }
+  expect(documentation).toContain('href="../openwiki/" target="_self"');
+  expect(documentation).toContain("31.10.2026");
+  expect(documentation).toContain("не подтверждены");
 });
 
 test("docs tell where module plan diagrams live", () => {
