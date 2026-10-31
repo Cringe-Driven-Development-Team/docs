@@ -25,7 +25,7 @@ function generate(root: string, sha: string) {
   write(root, "openwiki/quickstart.md", "# Указатель\n");
   write(root, "openwiki/.last-update.json", JSON.stringify({ status: "complete", gitHead: sha }));
 }
-function fixture(stale = true) {
+function fixture(stale = true, origin = "https://github.com/Cringe-Driven-Development-Team/docs.git", platform = false) {
   const directory = mkdtempSync(join(tmpdir(), "wiki update "));
   roots.push(directory);
   const remote = join(directory, "remote.git");
@@ -37,15 +37,17 @@ function fixture(stale = true) {
   git(root, "config", "user.email", "wiki@example.invalid");
   write(root, "site/documentation/source.md", "canonical\n");
   write(root, ".gitignore", "ignored.txt\nopenwiki/.run.json\n");
-  write(root, "package.json", JSON.stringify({ scripts: { "wiki:check": "bun scripts/openwiki-check.ts" } }));
+  if (!platform) write(root, "package.json", JSON.stringify({ scripts: { "wiki:check": "bun scripts/openwiki-check.ts" } }));
   mkdirSync(join(root, "scripts"));
   copyFileSync(join(import.meta.dir, "openwiki-check.ts"), join(root, "scripts/openwiki-check.ts"));
   if (existsSync(join(import.meta.dir, "openwiki-source-path.ts"))) copyFileSync(join(import.meta.dir, "openwiki-source-path.ts"), join(root, "scripts/openwiki-source-path.ts"));
+  if (platform) write(root, "scripts/openwiki-source-path.ts", 'export const isWikiSourcePath = (path: string) => path.startsWith("src/");\n');
+  write(root, "src/app.ts", "initial\n");
   write(root, "openwiki/INSTRUCTIONS.md", "current source corpus\n");
   const source = commit(root);
   generate(root, source);
   commit(root);
-  if (stale) { write(root, "site/documentation/source.md", "changed source\n"); commit(root); }
+  if (stale) { write(root, platform ? "src/app.ts" : "site/documentation/source.md", "changed source\n"); commit(root); }
   const target = git(root, "rev-parse", "HEAD");
   git(root, "push", "-q", "origin", "main");
   const calls: { binary: string; args: string[]; cwd: string }[] = [];
@@ -54,6 +56,9 @@ function fixture(stale = true) {
   let existing = false;
   const exec: Exec = async (binary, args, cwd) => {
     calls.push({ binary, args, cwd });
+    if (binary === "git" && args[0] === "remote" && args[1] === "get-url") {
+      return { exitCode: 0, stdout: origin, stderr: "" };
+    }
     if (binary === "codex") {
       worktree = cwd;
       model(cwd);
@@ -391,5 +396,76 @@ test("a module-only main change skips generation", async () => {
   git(f.root, "push", "-q", "origin", "main");
   expect(await runLocalUpdate(f.root, f.exec)).toBe("fresh");
   expect(f.calls.filter((call) => call.binary === "codex")).toHaveLength(0);
+  expectUnpublished(f);
+});
+
+for (const origin of [
+  "https://github.com/TP-Prepare/frontend.git",
+  "https://github.com/Cringe-Driven-Development-Team/frontend-packages.git",
+  "https://example.invalid/Cringe-Driven-Development-Team/docs.git",
+]) {
+  test(`foreign origin ${origin} is rejected before fetch or model`, async () => {
+    const f = fixture(true, origin);
+    await expect(runLocalUpdate(f.root, f.exec)).rejects.toThrow(/origin/);
+    expect(f.calls.some((c) => c.binary === "codex" || c.binary === "gh" || c.args[0] === "fetch")).toBe(false);
+    expectUnpublished(f);
+  });
+}
+
+for (const repo of ["frontend", "backend", "infra"]) {
+  test(`${repo} uses its own source filter and checker CLI without package scripts`, async () => {
+    const f = fixture(true, `git@github.com:Cringe-Driven-Development-Team/${repo}.git`, true);
+    expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
+    expect(f.calls.filter((c) => c.binary === "bun").map((c) => c.args)).toEqual([
+      ["scripts/openwiki-check.ts", "--against", f.target],
+    ]);
+    const prompt = f.calls.find((c) => c.binary === "codex")!.args.at(-1)!;
+    expect(prompt).toContain("не доказывает");
+  });
+}
+
+test("CLI --repo selects a path containing spaces instead of caller cwd", () => {
+  const f = fixture(false);
+  // A local origin must be rejected; selection must reach that repository first.
+  for (const path of ["./caller", f.root]) {
+    const result = Bun.spawnSync(["bun", join(import.meta.dir, "openwiki-update-local.ts"), "--repo", path], { cwd: f.directory });
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr.toString()).toContain("origin");
+    expect(result.stderr.toString()).not.toContain("not a git repository");
+  }
+});
+
+test("CLI without --repo still selects its cwd and rejects unknown arguments", () => {
+  const f = fixture(false);
+  const script = join(import.meta.dir, "openwiki-update-local.ts");
+  const result = Bun.spawnSync(["bun", script], { cwd: f.root });
+  expect(result.exitCode).toBe(1);
+  expect(result.stderr.toString()).toContain("origin");
+  for (const args of [["--repo"], ["--unknown"], ["--repo", f.root, "extra"]]) {
+    const invalid = Bun.spawnSync(["bun", script, ...args], { cwd: f.root });
+    expect(invalid.exitCode).toBe(1);
+    expect(invalid.stderr.toString()).toContain("Usage");
+  }
+});
+
+test("non-full main SHA is rejected before worktree or model", async () => {
+  const f = fixture();
+  const exec: Exec = (binary, args, cwd) => {
+    if (binary === "git" && args.includes("refs/remotes/origin/main^{commit}")) return Promise.resolve({ exitCode: 0, stdout: f.target.slice(0, 12), stderr: "" });
+    return f.exec(binary, args, cwd);
+  };
+  await expect(runLocalUpdate(f.root, exec)).rejects.toThrow(/full.*SHA/);
+  expect(f.calls.some((c) => c.binary === "codex")).toBe(false);
+  expectUnpublished(f);
+});
+
+test("an allowed fetch origin with a different push destination is rejected", async () => {
+  const f = fixture();
+  const exec: Exec = (binary, args, cwd) => {
+    if (binary === "git" && args[0] === "remote" && args.includes("--push")) return Promise.resolve({ exitCode: 0, stdout: "git@github.com:someone/docs.git", stderr: "" });
+    return f.exec(binary, args, cwd);
+  };
+  await expect(runLocalUpdate(f.root, exec)).rejects.toThrow(/origin push URL/);
+  expect(f.calls.some((c) => c.binary === "codex" || c.binary === "gh" || c.args[0] === "fetch")).toBe(false);
   expectUnpublished(f);
 });
