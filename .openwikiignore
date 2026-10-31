@@ -1,4 +1,22 @@
-.agents/skills/**
-.claude/skills/**
-dist/**
-node_modules/**
+# Closed source corpus; keep aligned with scripts/openwiki-source-path.ts.
+# Excludes README.md, site/modules/**, docs/superpowers/**,
+# diagrams/modules/**, diagrams/frozen-k3s/**, scripts, CI and build assets.
+**
+!/AGENTS.md
+!/.openwikiignore
+!/site
+/site/**
+!site/index.md
+!site/project-context.md
+!site/documentation
+!site/documentation/**
+!site/architecture
+!site/architecture/**
+!site/security
+!site/security/**
+!/diagrams
+/diagrams/**
+!diagrams/*.json
+# Lifecycle must read/write its output; only INSTRUCTIONS.md is source evidence.
+!/openwiki
+!openwiki/**

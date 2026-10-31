@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { checkOpenWiki } from "./openwiki-check.ts";
@@ -34,7 +34,7 @@ function fixture() {
   git(root, "init", "-q");
   git(root, "config", "user.name", "Wiki Test");
   git(root, "config", "user.email", "wiki@example.invalid");
-  write(root, "site/a.md", "source\n");
+  write(root, "site/documentation/a.md", "source\n");
   write(root, "AGENTS.md", "instructions\n");
   write(root, ".github/workflows/openwiki-check.yml", "workflow\n");
   const sourceSha = commit(root);
@@ -63,7 +63,7 @@ test("checkpoint at the target commit is fresh regardless of its age", async () 
   expect((await checkOpenWiki(root, sourceSha)).fresh).toBe(true);
 });
 
-for (const path of ["site/a.md", "AGENTS.md", "CLAUDE.md", ".github/workflows/openwiki-check.yml", ".agents/skills/example/SKILL.md", ".claude/skills/example/SKILL.md", "dist/tracked.txt", "node_modules/tracked.txt"]) {
+for (const path of ["site/documentation/a.md", "site/documentation/index.md", "site/index.md", "site/project-context.md", "site/architecture/current.md", "site/security/current.md", "diagrams/mvp.json", ".openwikiignore", "openwiki/INSTRUCTIONS.md", "AGENTS.md"]) {
   test(`tracked source change in ${path} makes the wiki stale`, async () => {
     const { root, sourceSha } = fixture();
     write(root, path, "changed\n");
@@ -74,15 +74,15 @@ for (const path of ["site/a.md", "AGENTS.md", "CLAUDE.md", ".github/workflows/op
 
 test("NUL-delimited paths preserve spaces, newlines, deleted sources and source-to-wiki moves", async () => {
   const { root } = fixture();
-  write(root, "site/space and\nnewline.md", "new\n");
-  git(root, "mv", "site/a.md", "openwiki/moved.md");
+  write(root, "site/documentation/space and\nnewline.md", "new\n");
+  git(root, "mv", "site/documentation/a.md", "openwiki/moved.md");
   const targetSha = commit(root);
-  expect((await checkOpenWiki(root, targetSha)).changedPaths).toEqual(["site/a.md", "site/space and\nnewline.md"]);
+  expect((await checkOpenWiki(root, targetSha)).changedPaths).toEqual(["site/documentation/a.md", "site/documentation/space and\nnewline.md"]);
 });
 
 test("the explicit target is used even when the checkout has newer source changes", async () => {
   const { root, targetSha } = fixture();
-  write(root, "site/a.md", "new source\n");
+  write(root, "site/documentation/a.md", "new source\n");
   commit(root);
   expect((await checkOpenWiki(root, targetSha)).fresh).toBe(true);
 });
@@ -113,7 +113,7 @@ test("rejects a checkpoint outside the target ancestry", async () => {
 
 test("rejects a SHA pointing to a blob instead of a commit", async () => {
   const { root, targetSha } = fixture();
-  checkpoint(root, { status: "complete", gitHead: git(root, "rev-parse", "HEAD:site/a.md") });
+  checkpoint(root, { status: "complete", gitHead: git(root, "rev-parse", "HEAD:site/documentation/a.md") });
   await expect(checkOpenWiki(root, targetSha)).rejects.toThrow();
 });
 
@@ -145,11 +145,11 @@ test("CLI prints source, explicit target and observation timestamp, exits 0 only
   expect(fresh.stdout.toString()).toContain(sourceSha);
   expect(fresh.stdout.toString()).toContain(targetSha);
   expect(fresh.stdout.toString()).toContain("2026-10-24T00:00:00.000Z");
-  write(root, "site/a.md", "changed\n");
+  write(root, "site/documentation/a.md", "changed\n");
   const newerSha = commit(root);
   const stale = cli(root, "--against", newerSha);
   expect(stale.exitCode).toBe(1);
-  expect(stale.stdout.toString()).toContain("site/a.md");
+  expect(stale.stdout.toString()).toContain("site/documentation/a.md");
   expect(stale.stdout.toString()).toContain(newerSha);
 });
 
@@ -163,5 +163,24 @@ test("CLI reports checkpoint failures and rejects a missing or extra argument", 
     const result = cli(root, ...args);
     expect(result.exitCode).toBe(1);
     expect(result.stderr.toString()).toContain("--against");
+  }
+});
+
+for (const path of ["site/modules/2/tracks/bff.md", "docs/superpowers/specs/plan.md", "diagrams/modules/plan.json", "diagrams/frozen-k3s/old.json", "diagrams/readme.md", "README.md", "CLAUDE.md", ".github/workflows/openwiki-check.yml", ".agents/skills/example/SKILL.md", "dist/tracked.txt", "node_modules/tracked.txt"]) {
+  test(`excluded change in ${path} keeps the wiki fresh`, async () => {
+    const { root } = fixture();
+    write(root, path, "changed\n");
+    expect((await checkOpenWiki(root, commit(root))).changedPaths).toEqual([]);
+  });
+}
+
+test("OpenWiki read boundary excludes plans and build files but retains current sources and lifecycle output", async () => {
+  const { OpenWikiIgnore } = await import("../node_modules/openwiki/dist/agent/openwiki-ignore.js");
+  const rules = OpenWikiIgnore.parse(readFileSync(resolve(import.meta.dir, "../.openwikiignore"), "utf8"));
+  for (const path of ["README.md", "site/modules/2/tracks/bff.md", "docs/superpowers/specs/plan.md", "diagrams/modules/bff.json", "diagrams/frozen-k3s/ci.json", "site/.vitepress/config.mts", "diagrams/notes.md", "scripts/build.ts"]) {
+    expect(rules.ignores(path)).toBe(true);
+  }
+  for (const path of ["AGENTS.md", ".openwikiignore", "site/index.md", "site/project-context.md", "site/documentation/index.md", "site/architecture/index.md", "site/security/csrf/index.md", "diagrams/deployment.json", "openwiki/INSTRUCTIONS.md", "openwiki/.last-update.json", "openwiki/quickstart.md"]) {
+    expect(rules.ignores(path)).toBe(false);
   }
 });

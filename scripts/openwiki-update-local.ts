@@ -100,10 +100,10 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
     }
     const instruction = `Обнови OpenWiki в текущем worktree для исходного SHA ${target}.
 Используй установленную интеграцию OpenWiki и её MCP lifecycle update для существующей wiki; заверши успешным openwiki_finish.
-Прочитай openwiki/INSTRUCTIONS.md и правила AGENTS.md. Канонические тексты остаются в docs; модули и старые планы описывай как планы, факты подтверждай исходниками.
+Прочитай openwiki/INSTRUCTIONS.md и правила AGENTS.md. Корпус задан openwiki/INSTRUCTIONS.md и .openwikiignore: только проверенное текущее состояние и карта владельцев; планы и историю не пересказывай.
 Пиши страницы по-русски и указывай пути к источникам. Не включай секреты, реальные IP/CIDR и внутренние адреса.
-Меняй только openwiki/**, включая полный checkpoint openwiki/.last-update.json со status=complete и gitHead=${target}, индексы, Claims и manifest.
-Не меняй AGENTS.md, CLAUDE.md или другие исходники. Не запускай git add/commit/push, gh, таймеры или workflow генерации.
+Меняй только сгенерированные файлы openwiki/**, кроме openwiki/INSTRUCTIONS.md, включая полный checkpoint openwiki/.last-update.json со status=complete и gitHead=${target}, индексы, Claims и manifest.
+Не меняй openwiki/INSTRUCTIONS.md, AGENTS.md, CLAUDE.md или другие исходники. Не запускай git add/commit/push, gh, таймеры или workflow генерации.
 Если интеграция недоступна или openwiki_finish не завершён, остановись с ошибкой; не имитируй завершение.`;
     // Noninteractive exec cannot prompt for MCP consent; scope approval to this required server/run.
     const startedAt = Date.now();
@@ -137,15 +137,15 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
       ...((await git(["diff", "--name-only", "-z", "--no-renames", target, "--"], worktree)).split("\0")),
       ...((await git(["ls-files", "--others", "-z"], worktree)).split("\0")),
     ].filter(Boolean);
-    const outside = changed.filter((path) => !path.startsWith("openwiki/"));
-    if (outside.length > 0) throw new Error(`Changes outside openwiki/: ${outside.map((path) => JSON.stringify(path)).join(", ")}`);
+    const outside = changed.filter((path) => (!path.startsWith("openwiki/") || path === "openwiki/INSTRUCTIONS.md"));
+    if (outside.length > 0) throw new Error(`Changes outside openwiki/ generated files: ${outside.map((path) => JSON.stringify(path)).join(", ")}`);
     const result = await checkOpenWiki(worktree, target);
     if (!result.fresh || result.sourceSha !== target) throw new Error(`Generated checkpoint must be fresh at ${target}.`);
     await run("bun", ["run", "wiki:check", "--against", target], worktree);
     await rm(join(worktree, "openwiki/.run.json"), { force: true });
     await git(["add", "--all", "--", "openwiki"], worktree);
     const staged = (await git(["diff", "--cached", "--name-only", "-z"], worktree)).split("\0").filter(Boolean);
-    if (staged.length === 0 || staged.some((path) => !path.startsWith("openwiki/"))) throw new Error("Expected a nonempty wiki-only commit.");
+    if (staged.length === 0 || staged.some((path) => (!path.startsWith("openwiki/") || path === "openwiki/INSTRUCTIONS.md"))) throw new Error("Expected a nonempty wiki-only commit.");
     await git(["commit", "-m", `docs(openwiki): обновить указатель по ${target.slice(0, 12)}`], worktree);
     if (await fetchMain() !== target) throw new Error("origin/main advanced during generation; rerun wiki:update-local when you choose.");
     // An empty lease prevents overwriting a branch created by another clone during generation.

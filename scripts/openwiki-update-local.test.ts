@@ -35,15 +35,17 @@ function fixture(stale = true) {
   git(root, "checkout", "-qb", "main");
   git(root, "config", "user.name", "Wiki Test");
   git(root, "config", "user.email", "wiki@example.invalid");
-  write(root, "site/source.md", "canonical\n");
+  write(root, "site/documentation/source.md", "canonical\n");
   write(root, ".gitignore", "ignored.txt\nopenwiki/.run.json\n");
   write(root, "package.json", JSON.stringify({ scripts: { "wiki:check": "bun scripts/openwiki-check.ts" } }));
   mkdirSync(join(root, "scripts"));
   copyFileSync(join(import.meta.dir, "openwiki-check.ts"), join(root, "scripts/openwiki-check.ts"));
+  if (existsSync(join(import.meta.dir, "openwiki-source-path.ts"))) copyFileSync(join(import.meta.dir, "openwiki-source-path.ts"), join(root, "scripts/openwiki-source-path.ts"));
+  write(root, "openwiki/INSTRUCTIONS.md", "current source corpus\n");
   const source = commit(root);
   generate(root, source);
   commit(root);
-  if (stale) { write(root, "site/source.md", "changed source\n"); commit(root); }
+  if (stale) { write(root, "site/documentation/source.md", "changed source\n"); commit(root); }
   const target = git(root, "rev-parse", "HEAD");
   git(root, "push", "-q", "origin", "main");
   const calls: { binary: string; args: string[]; cwd: string }[] = [];
@@ -83,10 +85,10 @@ function expectUnpublished(f: ReturnType<typeof fixture>) {
 test("fresh fetched main skips the model and publication even from an older dirty checkout", async () => {
   const f = fixture(false);
   git(f.root, "checkout", "--detach", "HEAD~1");
-  write(f.root, "site/source.md", "local uncommitted work\n");
+  write(f.root, "site/documentation/source.md", "local uncommitted work\n");
   expect(await runLocalUpdate(f.root, f.exec)).toBe("fresh");
   expect(f.calls.filter((c) => c.binary === "codex")).toHaveLength(0);
-  expect(readFileSync(join(f.root, "site/source.md"), "utf8")).toBe("local uncommitted work\n");
+  expect(readFileSync(join(f.root, "site/documentation/source.md"), "utf8")).toBe("local uncommitted work\n");
   expectUnpublished(f);
 });
 
@@ -284,7 +286,8 @@ for (const [name, change, reason] of [
   ["missing checkpoint", (cwd: string) => rmSync(join(cwd, "openwiki/.last-update.json")), /last-update/],
   ["invalid checkpoint", (cwd: string) => write(cwd, "openwiki/.last-update.json", '{"status":"interrupted"}'), /complete/],
   ["unchanged stale checkpoint", (_cwd: string) => {}, /fresh|checkpoint/],
-  ["tracked source edit", (cwd: string) => write(cwd, "site/source.md", "model changed canonical source"), /outside openwiki/],
+  ["wiki instructions edit", (cwd: string) => write(cwd, "openwiki/INSTRUCTIONS.md", "model changed source rules"), /INSTRUCTIONS/],
+  ["tracked source edit", (cwd: string) => write(cwd, "site/documentation/source.md", "model changed canonical source"), /outside openwiki/],
   ["untracked source edit", (cwd: string) => write(cwd, "AGENTS.md", "model instructions"), /outside openwiki/],
   ["ignored source edit", (cwd: string) => write(cwd, "ignored.txt", "unexpected"), /outside openwiki/],
   ["generated workflow", (cwd: string) => write(cwd, ".github/workflows/openwiki-update.yml", "name: unexpected generated workflow\n"), /outside openwiki/],
@@ -314,7 +317,7 @@ test("main advancing during generation stops before push and asks for an explici
   const f = fixture();
   f.setModel((cwd) => {
     generate(cwd, f.target);
-    write(f.root, "site/source.md", "main advanced\n"); commit(f.root);
+    write(f.root, "site/documentation/source.md", "main advanced\n"); commit(f.root);
     git(f.root, "push", "-q", "origin", "main");
   });
   await expect(runLocalUpdate(f.root, f.exec)).rejects.toThrow(/main.*rerun/i);
@@ -349,7 +352,7 @@ test("temporary run metadata from a normal update is never published", async () 
   expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
   const target = f.target;
   const branch = `docs/openwiki-update-${target.slice(0, 12)}`;
-  expect(git(f.remote, "ls-tree", "--name-only", "-r", branch, "openwiki")).toBe("openwiki/.last-update.json\nopenwiki/quickstart.md");
+  expect(git(f.remote, "ls-tree", "--name-only", "-r", branch, "openwiki")).toBe("openwiki/.last-update.json\nopenwiki/INSTRUCTIONS.md\nopenwiki/quickstart.md");
 });
 
 test("an existing remote branch without a PR is preserved without invoking Codex", async () => {
@@ -378,5 +381,15 @@ test("failure to create the worktree preserves the original reason and releases 
     return f.exec(binary, args, cwd);
   };
   await expect(runLocalUpdate(f.root, failed)).rejects.toThrow("cannot allocate worktree");
+  expectUnpublished(f);
+});
+
+test("a module-only main change skips generation", async () => {
+  const f = fixture(false);
+  write(f.root, "site/modules/2/tracks/bff.md", "future plan\n");
+  commit(f.root);
+  git(f.root, "push", "-q", "origin", "main");
+  expect(await runLocalUpdate(f.root, f.exec)).toBe("fresh");
+  expect(f.calls.filter((call) => call.binary === "codex")).toHaveLength(0);
   expectUnpublished(f);
 });
