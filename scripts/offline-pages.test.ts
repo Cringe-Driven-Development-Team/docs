@@ -91,8 +91,7 @@ test("offline: переходы между документами и обрат�
 test("offline: учебные страницы не содержат кода приложения и чувствительных значений", () => {
   for (const file of [TRACK, THEORY, ARCHITECTURE]) {
     const md = read(file);
-    expect([...md.matchAll(/^```([^\n]*)/gm)].map((match) => match[1]).filter(Boolean), file)
-      .toEqual(Array(diagrams(md).length).fill("mermaid"));
+    expect(md.replace(/^```mermaid[^\n]*\n[\s\S]*?^```[ \t]*$/gm, ""), file).not.toContain("```");
     expect(md, file).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
     expect(md, file).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY|(?:token|secret|password)\s*[:=]\s*["'][^"']+/i);
     expect(md.replace(/^```[\s\S]*?^```/gm, ""), file).not.toContain("{{");
