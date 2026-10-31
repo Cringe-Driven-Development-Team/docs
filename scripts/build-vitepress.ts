@@ -1,5 +1,5 @@
 // Собирает VitePress из site/ и переносит его в dist/ к схемам, не затирая ни одного их файла.
-// Использование: bun scripts/build-vitepress.ts (после render и index)
+// Использование: bun scripts/build-vitepress.ts (после render, перед index)
 // Спека: docs/superpowers/specs/2026-10-07-vitepress-csrf-docs-design.md §5.
 import { cpSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";

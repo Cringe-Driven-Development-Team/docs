@@ -24,7 +24,7 @@
     "site:check": "bun scripts/check-site.ts",
     "warm": "bun scripts/warm-icons.ts",
     "build": "bun scripts/docker.ts build",
-    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run index && bun run mermaid && bun run site:vitepress && bun run wiki:export && bun run site:check",
+    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run mermaid && bun run site:vitepress && bun run index && bun run wiki:export && bun run site:check",
     "site": "bun scripts/docker.ts site",
     "site:native": "bun scripts/build-site.ts",
     "icons": "bun scripts/fetch-icons.ts",
