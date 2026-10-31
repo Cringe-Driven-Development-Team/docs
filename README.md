@@ -145,6 +145,12 @@ OpenWiki 0.7.2 переписывает управляемый блок `AGENTS.
 Runtime удаляется вместе с временным worktree. При обновлении зависимости OpenWiki
 этот локальный обход нужно пересмотреть; проверка свежей wiki runtime не копирует.
 
+После проверок путей, полного checkpoint и staged-файлов updater создаёт generated-only
+коммит с разовым `git -c core.hooksPath=/dev/null commit`: временный worktree не
+содержит зависимостей владельца для formatter/check hooks. Это не меняет общую
+настройку Git и не устанавливает зависимости frontend/backend/infra. Результат
+проходит обязательный PR CI; исходные пути по-прежнему запрещены до коммита.
+
 В PR проверь исходный SHA, русские страницы, ссылки на канонические документы и результат
 `OpenWiki freshness`. SHA генерации хранится в `openwiki/.last-update.json` как `gitHead`;
 его можно сравнить с выбранным актуальным SHA из корня владельца через `bun scripts/openwiki-check.ts --against <SHA>`.

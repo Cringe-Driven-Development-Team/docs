@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -159,6 +159,20 @@ test("stale update begins the real MCP lifecycle without changing AGENTS before 
   const branch = `docs/openwiki-update-${target.slice(0, 12)}`;
   expect(git(f.remote, "diff", "--name-only", target, branch).split("\n").every((path) => path.startsWith("openwiki/"))).toBe(true);
 }, 30_000);
+
+test("verified generated-only commit skips repository hooks without changing shared hook configuration", async () => {
+  const f = fixture();
+  const hook = join(f.root, ".git/hooks/pre-commit");
+  const hookBytes = "#!/bin/sh\necho 'missing local oxfmt in disposable worktree' >&2\nexit 83\n";
+  writeFileSync(hook, hookBytes);
+  chmodSync(hook, 0o755);
+  expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
+  const branch = `docs/openwiki-update-${f.target.slice(0, 12)}`;
+  expect(git(f.remote, "diff", "--name-only", f.target, branch)).toBe("openwiki/.last-update.json");
+  expect(git(f.remote, "show", `${branch}:openwiki/quickstart.md`)).toBe("# Указатель");
+  expect(readFileSync(hook, "utf8")).toBe(hookBytes);
+  expect(Bun.spawnSync(["git", "config", "--local", "--get", "core.hooksPath"], { cwd: f.root }).exitCode).toBe(1);
+});
 
 test("stale update reports completed OpenWiki pages without printing Codex chatter", async () => {
   const f = fixture();
