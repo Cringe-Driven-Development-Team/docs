@@ -1,62 +1,50 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:026aff7964a81aadbf39c44e586bf6e5756a3ccb7a8825456358145f8aa2407c",
+  "pageVersion": "sha256:8ec2ace64f51803a66025ec237c94e61187981579d538ab69ae92c8f006efc30",
   "claims": [
     {
-      "id": "claim_1beefd61edd34826aa7a887d6293a41b",
-      "statement": "Текущая документированная архитектура MVP размещает Caddy, Go API и Postgres на одной VPS в Docker Compose; браузер обращается к Go API через Caddy.",
+      "id": "claim_a60c9e95d5cd4932be3ffbe810e713d6",
+      "statement": "Свидетельство 31.10.2026 13:11 UTC в чистом Chrome подтверждает гостевой HTML/tRPC-маршрут браузер → BFF: / перенаправляет на /login с формой, bootstrap содержит user: null без cookie, users.me без X-CSRF даёт 403 csrf_invalid, с X-CSRF: 1 без сессии — 401, а /api/v1/users/me — 404.",
       "evidence": [
         {
-          "resource": "repo://README.md#L88-L92",
-          "version": "repo-lines-v1:sha256:ae1fa5c5a538500f6a8622c55692bfdc9ca573c40e870f2a77f4d756b6c5fbe5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDc0MDNiMzJjODYzZTEzN2ZiZThhNzUxY2YyOWFkZjBiMTQ1ZmVjM2QxODJmY2YxMTAzZTI1M2M5OWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZjU4YjQwY2E4MTkwZmI2OWNlN2QyYWJhNTRjYjFjZDI1YjI5NzkwODNhYTQ0NjljMDI0YjYyMTAzZTg4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkZGJlNzlhZDY4NWYzODYwMzFiYjk3YzlmMzc0Zjc3YjNhZjQ3OTgwNjU0OTE1MmU1MzUzZjlmNzM4M2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkN2EyNTc4NjU2MjBkZDQzMjQ0YWNiODBhNDJmZWJkMjU1ODBkNWRhYWRhNzMzNzNmODg5MzdlNmMzMjJjZSJ9"
-        },
-        {
-          "resource": "repo://diagrams/deployment.json#L23-L31",
-          "version": "repo-lines-v1:sha256:869bd181dc4eb46c62af371a29c754a4da20b31b762199dfbf375fd28e089d26:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzgxMDg3OGI2ZGM1ZjNiOGQwM2ZjYjdlZWI3NTVjZWE1ODg2MDU2ZDE1Mjg3NzQ3NDcyMWE3N2UxYmEyODllMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJjYzVjODJjYTkxOTVhM2VkMjgxZDU4YzNjZjI5NjdmYzcwNDRiN2ZlNWY4NTg0ODRiZGY3MTVmNGU3MWQ4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ0MTI1ZGQ3NzYzZDI4NjE5Mjc0MDk5M2UzMmUyODBmNGZjYTJlZWMyNDNiMWQ4MzcxMzM2MGE1ZjJjYWM0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRhMjc0ZjhjZDQxMjcwYWJiMTAzYmVmYjFjM2Y5MzAyY2ZmMjhhNTgzMDZhNWY1MWY4YThhNWJiZDJlOGEzYyJ9"
-        },
-        {
-          "resource": "repo://diagrams/deployment.json#L7-L10",
-          "version": "repo-lines-v1:sha256:89582f0346a862f2ca55aa596ce44f9ea82e92b4776f506d29a9d2c09caed21a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExMmNkMmVkNzA1ZjVmNzgzNzAxOTE2ZWQyODc2MjNiYzJmNGYzYTkyYmU1NWYxZjMwODRlZDY3NmNiZjU3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOThkYjM1YWM3MTc2MzhiMDYwYzEzOGE0ZWZlZWM4ZTZiY2ZlZjFhZWJjZThiZDc0NjlmZmE0MzM5NjNlODYxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTM2NDA3ZDExOTY0MjMxMmQzZDczODcwNGRmNjhiNjliMjQ0MzIxOGQ0OGI2Y2UyYTNhZjkyYTg2OTk1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM0MGM5YWM4ZTAyZjBjMzlhMWM0N2JmMDk3MWZkOWZhNjZiYmUzODJiZWQ5OTk4ZWE2YWFkYzA1ODhmZjg2MiJ9"
+          "resource": "repo://site/documentation/bff.md#L3-L19",
+          "version": "repo-lines-v1:sha256:a5194cb8057f0779db70fa06073932870093860734507d3951b54efba8dec818:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2E2M2FmMzg1NjFkZTg0OGYwMmYwZGExNzkwOTVkMTU3OWY1ZmYzZjE0YmUwOWQ5OTY2MThmMWM2MzA1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ODlhOGE5NWRhYTYzOTgwZDNjYzU1YTcwZDQ3YThlMzk2NGEzYTU2MTlmMGNjNTYwZjI2YjFiNWM0YmJhMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNGFmMzBmZDllZDcxZmUwNmFiZjRmMDBjZjQ2MGIzOTMwNjI1YTVkN2Y1YjUzNWUwZmUxYTAzZmM4NzgyNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZTg0YmJkMDE1YmZhODM0NzFlMzYxYzhkZDNkMmM5YjQwZmVjZTZmY2RlMmYzZDY1OWQ1YmIyMmJjMGJlNDkifQ"
         }
       ]
     },
     {
-      "id": "claim_857523053da04f39ad18d940048caaf5",
-      "statement": "Схема deployment разделяет приватное S3 для ноутбуков, хранилища фронта и статики за CDN и публичное хранилище аватаров.",
+      "id": "claim_ac707a783d0943d5acb5d41db975e565",
+      "statement": "В момент проверки GitHub Deployments сообщает success для frontend dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64, backend 23d3dd9e955424a7634fb0dc49a38af6eb08792c и infra 14653763279dab055e3cea47a84a0c531bccf03f; эти SHA взяты из источника выкладки и не измеряют версию процесса.",
       "evidence": [
         {
-          "resource": "repo://diagrams/deployment.json#L14-L19",
-          "version": "repo-lines-v1:sha256:cb5ddaf49734ac3e178534aa887013dda272fc979036ec3897734fcffbaf5d35:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU4NTk2N2Q5NjBmOGJlMmM0ZDFiNjU1NmE0MTQ2MWI5YzgxZjk2ODRkMjA2NTk2ZDNmMDI4NjdjMTRmMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAxMzZmYmMxYTkzMWM5Zjc0ZTk4ZGZiNzhkYTgwYjMzNzc1N2NmOTEyYWUxNmE4NTMxMjQ5MDIxNmNlNzliYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGM0MGM5YWM4ZTAyZjBjMzlhMWM0N2JmMDk3MWZkOWZhNjZiYmUzODJiZWQ5OTk4ZWE2YWFkYzA1ODhmZjg2MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ0MTI1ZGQ3NzYzZDI4NjE5Mjc0MDk5M2UzMmUyODBmNGZjYTJlZWMyNDNiMWQ4MzcxMzM2MGE1ZjJjYWM0OSJ9"
-        },
-        {
-          "resource": "repo://diagrams/deployment.json#L23-L34",
-          "version": "repo-lines-v1:sha256:2ed0ebd7186b34fc29bde27c2d007b514dc890fed75cb55d28aceab92486d58c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MTA4NzhiNmRjNWYzYjhkMDNmY2I3ZWViNzU1Y2VhNTg4NjA1NmQxNTI4Nzc0NzQ3MjFhNzdlMWJhMjg5ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNWU0NWJkODMyYjc2YTE2MTkwYWU0ODBjOWIxZjM2YmY2MzM3YTc3N2IwYTA1OTU3YjEyZmE1NjU1NTcwMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkNDEyNWRkNzc2M2QyODYxOTI3NDA5OTNlMzJlMjgwZjRmY2EyZWVjMjQzYjFkODM3MTMzNjBhNWYyY2FjNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjY5OTZlM2IxNWRmYjQzODYzMDAxYzcyZDNhNTM5ZGU3MGUzOGUyYTllZDIwZGU1OTExMDRhODI4NjRmNjYifQ"
+          "resource": "repo://site/documentation/bff.md#L25-L36",
+          "version": "repo-lines-v1:sha256:8ded0d55c8e561102b8775dd6dccbcfe3639c02bb972215bdac11a9345160b7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzZhY2FiYWQ5ZTdiYmYzMmU2MmY4MWNhZDI3NDA0ZjIyZDgwZjUyMTM0MzA3YWE3ZjM0NzllY2FkOTRmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YTQxMzRjYzhlN2VkODczNDU3ODIyYjBkOTA0YWRkZTFiNThhNDJmYWIzODdjZTdhOWNkZWVkOGExMDNhYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NmI1YmIzNzZjMzgxZjExMGZjYjgxZjdlNjYyZjVlNWFhMzZhZWRjNjBkODlmMjExMzliYTUxN2VlNmU4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMWQxNzAyZGNlMzczMTZiN2I4MDU3MjUzNTNmODA2Y2VlNGNhZDc5N2JmOTI1OGU2Mjg5NzRmNDYxYzhmYTcifQ"
         }
       ]
     },
     {
-      "id": "claim_8af9d35fbb7f480887b4fb0eb0197cbe",
-      "statement": "Документированная схема infra разделяет bootstrap-стек Pulumi и основной стек, после чего Ansible работает с VPS через inventory.",
+      "id": "claim_e63b8d8c82e446f294ec03b7b26aa6ed",
+      "statement": "Каноническая страница связывает участок BFF → Go с кодом frontend на SHA выкладки, но не подтверждает его авторизованным сценарием на проде; свидетельства входа, refresh, выхода, блокнотов и POST-защиты в этой проверке отсутствуют.",
       "evidence": [
         {
-          "resource": "repo://diagrams/infra.json#L27-L38",
-          "version": "repo-lines-v1:sha256:94dbcd1dae9c97df21cbac92405e45d0f2746fcfb99c2acd2ee8b1b3402e2322:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MTA4NzhiNmRjNWYzYjhkMDNmY2I3ZWViNzU1Y2VhNTg4NjA1NmQxNTI4Nzc0NzQ3MjFhNzdlMWJhMjg5ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNWQ0NmI0YmQ1ODIyODA0Y2IzNmMzNGQ5MWYzZWU3ZmQzZjU0MGI2MmE5N2NjYzk1NTM1ZWFiNDNhMzg0NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MTE3ODI1MTc5OTY3NTE3MDQyNmFiYjI3NDJlMWI5OTljZmU5ZGJjZjM3NWYyNDViNWU4OWQyNTYyZTE5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjY5OTZlM2IxNWRmYjQzODYzMDAxYzcyZDNhNTM5ZGU3MGUzOGUyYTllZDIwZGU1OTExMDRhODI4NjRmNjYifQ"
+          "resource": "repo://site/documentation/bff.md#L38-L57",
+          "version": "repo-lines-v1:sha256:84bf8f45f2c58b2eeb93956fb20707de07af942eaedbf1cff5fbd3f84f0bb853:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWIwNWU5OTY2OWE5ODM3YTY3NmI4Mzc1NWQ4NzQ5N2MyOWRiOTMyYzU0YmIwMjRiOGQzYWFkZDgzMzZhMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MWY2MTQ3Zjg5MGVmODQ5YjNlZmEwNzcwNGY2MWM0NDdlMjhmZGNlMDNkNjExN2NiNTgxNzg4ZjkzODA0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMzQwMTE4OTRlMzZkNmNhNGFkYTEyNzE1M2I5YWNkMTljMGI1ZTVhMmEwY2RlNDZlZWUyODUwZDlhYWEzZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
-      "id": "claim_2ad6fb78eb6c4b188700b3379d244a9e",
-      "statement": "Вариант k3s заморожен и отделён от рабочего MVP.",
+      "id": "claim_59e097e2e8c14c168b4b52b3558b4067",
+      "statement": "Страница архитектуры исключает deployment, cd, frontend и contract из текущей модели продового маршрута, а ci и infra целиком не сверены в проверке 31.10.2026.",
       "evidence": [
         {
-          "resource": "repo://README.md#L88-L92",
-          "version": "repo-lines-v1:sha256:ae1fa5c5a538500f6a8622c55692bfdc9ca573c40e870f2a77f4d756b6c5fbe5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDc0MDNiMzJjODYzZTEzN2ZiZThhNzUxY2YyOWFkZjBiMTQ1ZmVjM2QxODJmY2YxMTAzZTI1M2M5OWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZjU4YjQwY2E4MTkwZmI2OWNlN2QyYWJhNTRjYjFjZDI1YjI5NzkwODNhYTQ0NjljMDI0YjYyMTAzZTg4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkZGJlNzlhZDY4NWYzODYwMzFiYjk3YzlmMzc0Zjc3YjNhZjQ3OTgwNjU0OTE1MmU1MzUzZjlmNzM4M2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkN2EyNTc4NjU2MjBkZDQzMjQ0YWNiODBhNDJmZWJkMjU1ODBkNWRhYWRhNzMzNzNmODg5MzdlNmMzMjJjZSJ9"
+          "resource": "repo://site/architecture/index.md#L7-L16",
+          "version": "repo-lines-v1:sha256:81c15c50a0fc97303ac64c0d590a112214017baba4eeb5c395ca458564a0767f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMjI0MzA3M2Q4ZmZkZDFkMTk1ZTNiN2JjYmU4NDhkZGU5YzNjMTczOTlmYzJlM2NiZmNjZjkwYjJhZGEyOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MDQyNzM2ZTE0MGNkNzVhOGJmMDljZDhlMDFkZDU3ZTU2YmE3NTQ0MzkwODMyNTdkYmY2ZjNlMmZiODI1MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NWU3YTg1MDQ5ZGRiM2ExYzNkYmUxMzUzYTYzZWYzYzFmNDU5YzExZWIwNWFkM2Y1MTViYzk3MjIzM2NkYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyYTY0YWQwZWNjOTc1MGEzMjlmMjM2M2NmZWRiMzViNjFlMTE2NzAzNDM4MWUxNDQxODA5NzU0Y2FkZmZiOWIifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T15:47:09.601Z"
+    "at": "2026-10-31T13:49:52.870Z"
   }
 }

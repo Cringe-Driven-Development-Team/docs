@@ -1,37 +1,40 @@
 ---
 type: security
-title: CSRF сейчас и целевая схема BFF
-description: Текущая документированная защита Go API и отдельный план cookie-сессии, tRPC и CSRF-проверок BFF.
-tags: [csrf, authentication, bff]
-sources:
-  - id: openwiki-source-2b398f2cf16ee972af9b568c
-    resource: repo://site/modules/2/tracks/bff/auth.md
-  - id: openwiki-source-a3176359e81bfeb5ba324a0d
-    resource: repo://site/security/csrf/checks.md
-  - id: openwiki-source-942a55896b8fb01a7eabe4d9
-    resource: repo://site/security/csrf/index.md
-generated: { by: "codex", at: "2026-10-24T15:47:09.601Z" }
+title: Проверка CSRF и сессии в гостевом BFF
+description: Наблюдаемые отказы 403 и 401 в гостевом tRPC-маршруте, bootstrap без cookie и ограничения свидетельства защиты BFF.
+tags: [security, csrf, bff, session]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T15:47:09.601Z
+    at: 2026-10-31T13:49:52.870Z
+sources:
+  - id: openwiki-source-4f5bdd77990b98e5f7081f26
+    resource: repo://site/documentation/bff.md
+  - id: openwiki-source-942a55896b8fb01a7eabe4d9
+    resource: repo://site/security/csrf/index.md
+generated: { by: "codex", at: "2026-10-31T13:49:52.870Z" }
 ---
 
-# CSRF: текущий путь и план BFF
+# CSRF и сессия в гостевом BFF
 
-Раздел [«CSRF: как устроено»](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/security/csrf/index.md#L1) описывает текущий путь браузер → Go API по снимкам кода backend `4094350` и frontend `344ad0b`. Это ссылки на конкретные версии соседних репозиториев, а не проверка их нынешнего `main`. [BFF](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/modules/2/tracks/bff/auth.md#L5) находится в разделе модуля и задаёт целевой маршрут; состояние развёртывания нужно проверять отдельно.
+Свидетельство в `site/documentation/bff.md` относится к **31.10.2026, 13:11 UTC**, чистому Chrome и [cellestial.ru](https://cellestial.ru). Оно связывает проверку с production-выкладками frontend `dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64`, backend `23d3dd9e955424a7634fb0dc49a38af6eb08792c` и infra `14653763279dab055e3cea47a84a0c531bccf03f`. SHA получены из GitHub Deployments, а не измерены у работающего процесса. [Дата и сценарий](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L3-L15), [источники выкладки](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L25-L36). Полная таблица релизов и маршрут HTML — на странице [архитектуры](mvp.md).
 
-## Нынешняя защита Go API
+## Как читать два отказа
 
-Документированная схема — подписанный Double Submit Cookie. Сервер выдаёт читаемую JavaScript cookie `__Host-csrf`, а фронт перед изменяющим запросом читает её и повторяет значение в `X-CSRF-Token`. Сессионные `access_token` и `refresh_token` имеют `HttpOnly`; CSRF-cookie его не имеет, чтобы браузерный код мог поставить заголовок. [Описание и атрибуты cookie](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/security/csrf/index.md#L14).
+| Запрос из страницы входа | Наблюдение | Что подтверждает проверка |
+| --- | --- | --- |
+| `GET /api/trpc/users.me` без `X-CSRF` | `403`, `appCode: csrf_invalid` | Запрос отклонён проверкой CSRF |
+| Тот же GET с `X-CSRF: 1` | `401`, «Нет сессии» | После прохождения CSRF-проверки требуется сессия |
 
-Middleware выдаёт анонимный или подписанный токен при обращении к API и проверяет равенство cookie и заголовка; для изменяющих авторизованных запросов нужна и подпись, привязанная к пользователю. Login/register и refresh имеют свои правила `Origin` и подписи. Ошибка CSRF даёт `403 csrf_invalid`, а не `401`. [Порядок и матрица проверок](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/security/csrf/index.md#L38); [поведение фронта](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/security/csrf/index.md#L119).
+Это два независимых ограничения доступа: добавление заголовка не делает гостя авторизованным. HTML `/login` содержит `user: null`, cookie гостю не установлены. Эти результаты зафиксированы в [site/documentation/bff.md, строки 9–15](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L9-L15) и [сводке проверки](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/index.md#L11-L19).
 
-[Матрица ручной проверки](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/security/csrf/checks.md#L41) относится к стенду на 07.10.2026 и backend `4094350`. В ней отмечены ограничения: потерянная CSRF-cookie у существующей сессии и гонка двух одновременных refresh. Эти наблюдения не подтверждают состояние стенда сегодня.
+## Куда ведёт ссылка на реализацию
 
-## Целевой путь BFF
+Канонический документ указывает [frontend/apps/bff/src/context.ts, строки 25–31](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/bff/src/context.ts#L25-L31) на фиксированном SHA frontend: CSRF проверяется перед чтением сессии, требуется `X-CSRF: 1`, а POST дополнительно проверяет `Origin` и `Sec-Fetch-Site`. Это описание кода по документу; **на проде испытаны только два GET из таблицы**. При генерации wiki текущий main frontend не читался. [Источник: site/documentation/bff.md, строки 40–48](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L40-L48).
 
-План BFF хранит токены Go в зашифрованной `HttpOnly`, `Secure`, `SameSite=Lax` cookie `__Host-Http-session`; JavaScript их не читает. BFF расшифровывает сессию, при необходимости обновляет Go-токены и обращается к Go от сервера. [Атрибуты и поток вызова](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/modules/2/tracks/bff/auth.md#L11). В том же документе есть ссылки на конкретные SHA кода frontend и backend; для вывода о текущем `main` их надо повторно сверить.
+## Пределы вывода о безопасности
 
-В плане каждый RPC к `/api/trpc` требует статический `X-CSRF: 1`. Для POST дополнительно проверяются точный `Origin` и `Sec-Fetch-Site: same-origin` при наличии заголовка. Проверка идёт перед чтением сессии и вызовом Go. Межсайтовому `fetch` с этим заголовком нужен CORS preflight, который BFF не разрешает; обычная форма не выставляет заголовок. `SameSite=Lax` допускает cookie на внешней GET-навигации к HTML, поэтому GET не должен менять предметные данные. [Правила CSRF и сценарии](https://github.com/Cringe-Driven-Development-Team/docs/blob/a889950c899592193a595747280a92171188a42f/site/modules/2/tracks/bff/auth.md#L147).
+Проверка не даёт свидетельств входа, регистрации, refresh и параллельных запросов, выхода, истечения сессии, работы с блокнотами и POST-защиты от чужого Origin. Из ответов двух гостевых GET нельзя вывести результаты этих сценариев или свойства авторизованной сессии. Участок BFF → Go имеет ссылки на исходники, но не подтверждён авторизованным продовым сценарием. [Граница проверки: site/documentation/bff.md, строки 46–57](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L46-L57).
 
-Контракт браузера в плане меняется на типы роутера tRPC, а Go остаётся за Apidog и генерацией клиента Orval; см. [маршрут API](../workflows/api-contract.md). За границей между планом и фактом следите по [владельцам сведений](../concepts/sources.md).
+Прежний раздел `site/security/csrf/` явно помечен как история и не описывает текущую защиту; его механизм не используется здесь для объяснения гостевого BFF. [Статус раздела](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/security/csrf/index.md#L1-L5).
+
+Для изменения защиты сначала найди [владельца реализации](../concepts/sources.md) и сверь его исходники; [карта документации](../quickstart.md) помогает выбрать нужную тему.

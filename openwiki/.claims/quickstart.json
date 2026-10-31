@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:44e58becb3ef97f9b57ea165d8075584bd2af5b1ff81a037c305e8dc5fe856c0",
+  "pageVersion": "sha256:4253dd40eaf88b5b404d9bbc5a5ca4b13bb205b71495e48c9b9d7c1cff104d95",
   "claims": [
     {
       "id": "claim_fc6e7989e7c148a2a6c6d116bf558a19",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://site/project-context.md#L9-L11",
-          "version": "repo-lines-v1:sha256:bc7ffccc678e373199013ac9e2fbf9c55c18c974cec781841e1715713bdac946:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NhMjE1MWZjOTNkMTk0OGQ3YjE1ZjdiOGRkNGU0MzIxYTVlMGEzNWJlMDRiMGM0MGE4NTY5MTlhY2VmNzQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ZTRlMjBjMjkzNGZkZTUxMzMyMDVhZTc0NmQ4YjRiNDg3MjBhYTJiYzYwMzI1MWU4NDEzZGE1M2E5M2QxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkNjM5ODhjNzlkODU5NjdmMjgzNjAyMjk1YmE4ODYwZWU0MWQ0ZGI1NTJiNjk0YTA1NzRkMmIxNWVlZWRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjNWU0N2NhNTJmYWEzZGQ4ZmM0NmM2NzVhYjU4YTVhN2JiOTA3MjMxZTFhOGQ2MDA3MTcwNTc3YzRkYTQ0ZCJ9"
+          "version": "repo-lines-v1:sha256:0fdd70eb7d451a3681517c407a146faa222d77dc9ed8234a38a274ff71450a2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NhMjE1MWZjOTNkMTk0OGQ3YjE1ZjdiOGRkNGU0MzIxYTVlMGEzNWJlMDRiMGM0MGE4NTY5MTlhY2VmNzQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYzNjcyOWU3MGZiODY0NDc5YzM1NjM2YzA0ZTY1ZTdlNTVhOTM0NDQ2MjVlMmJjN2ZkOTZhZWFmNjNlMTk2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkNjM5ODhjNzlkODU5NjdmMjgzNjAyMjk1YmE4ODYwZWU0MWQ0ZGI1NTJiNjk0YTA1NzRkMmIxNWVlZWRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjNWU0N2NhNTJmYWEzZGQ4ZmM0NmM2NzVhYjU4YTVhN2JiOTA3MjMxZTFhOGQ2MDA3MTcwNTc3YzRkYTQ0ZCJ9"
         }
       ]
     },
@@ -17,56 +17,62 @@
       "statement": "Канонический текст остаётся в docs, а wiki используют как производный указатель и проверяют через wiki:check против актуального SHA.",
       "evidence": [
         {
-          "resource": "repo://README.md#L54-L59",
-          "version": "repo-lines-v1:sha256:2b3a6349312a6e1a508bef34eb9ded1b77c330e548d2998811e4d701fd5fa50c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2YxYTc4MjYyNmU2MGU2MjljODMyMzFhYzkxNjFiOTRiYmQ1MDdmMTZmMGM3M2M2MDMzMDMzNzkyMDQzMjIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZmNWNjNTMzMjBmY2QwOWNlMzVlYTQwOGI4YzYyYWNhYjRjMWQ5YTI2M2VmYWEyNmEwNjQ1ZmVkZGJjZjM0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk3YWMwODU5MmUyMTkzN2M1Y2U0NTM4MDcyMWFlM2NjNjBjYmM3ZjIyZWI2N2MxYTY3ZDYwYWZhYzFhMGRiNyJ9"
-        },
-        {
-          "resource": "repo://site/project-context.md#L26-L28",
-          "version": "repo-lines-v1:sha256:55309289ef5817259d632711735847053c53d09ff6db951c2004270a073df376:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q4NzMwY2JhNzMwY2EzMjNiYzVlYzQ3NGY5MDdkOTg4OTRkZmEyN2U5NzEyZDUyYzcwNGU2NzAyZjg2MGY3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMxODQzMGVjZmUxN2Y2Njc3NGVkZTAzYmNlOGI1YWM1N2Q5YTFiN2E0NmViNmNiNGY0OGEwZWY4MzZiOWM4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA0NDRmMDQwZTM3NDYyMGIxMTY0NzA0MDdjMGRlMzc3MjAzYTEyYzE5OTQ0ZDMzN2Y3OTU5NjdmMTEzMTMxNSJ9"
+          "resource": "repo://site/project-context.md#L28-L28",
+          "version": "repo-lines-v1:sha256:de1c39b005baf834f3b495d461514d204f70b5779a0c97a3086f4e93d162b422:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmUyYjMxM2M1Y2ZkNDhiNWRhOGIyZThjZTUxNDkzZDg4MjA4NTVlODE1YjYxOWM0MjNlYjMxNDQ1OTcyZGNmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzk0ODZjNmQ3N2YyOTUyNjk4NjgxOTM3MmYyNGRmNjUzN2JjMDkwMWIzY2NlMmQzNWVjOGQyYzZhYzkxNzAxYiJ9"
         }
       ]
     },
     {
       "id": "claim_a6d3592ae5594eeea4a9ccc5ab76b29c",
-      "statement": "Страницы модулей являются планом, а разделы сайта вне модулей описывают документированный текущий продукт.",
+      "statement": "Страницы модулей сохраняют планы; в разделах вне модулей нужно учитывать статус и свидетельство на самой странице, чтобы отличить проверенный прод от исторического описания.",
       "evidence": [
         {
-          "resource": "repo://site/project-context.md#L30-L34",
-          "version": "repo-lines-v1:sha256:b27a5cf4fe44ee2247d69d705790f8c0f157c9e9b90f18d0927f16f9b8c4972a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA2M2RkMzgzM2ZiNTljYWE1N2Q1NWNkYmJjMTY5NzgzZjQzNGY3Njk4YWQ4ZDY2ZjA1ODcxYTgzZDBhM2Y5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQwMDI0MjI1ZmUyZTYyN2I0YTk5YzQ5MDVhN2U5ODZkZTE4OGRiYWQ1NGIyNGNiNWNlODgwNjA3NzQ3NGNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc1M2Y1YTYxNDA3NGNmMzUwZDAyZGI4YjM3YzkzMjE2OWZmOTVhY2I1YWI1Y2JkNjhjZDFlOGM4YjcyNzNkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGE0YjM4MzI2MzlkMzc4ZDA4YmRiZTYwMDBjNmI0YTgzMzExMWEzOGQ1YjEyZGE1MmY5MDU1ZDQ2YTY4MWQzMiJ9"
+          "resource": "repo://site/project-context.md#L45-L47",
+          "version": "repo-lines-v1:sha256:be0291be761b7d9e7399876a37006630cfe19430d3b44038d270154876b7a427:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA2M2RkMzgzM2ZiNTljYWE1N2Q1NWNkYmJjMTY5NzgzZjQzNGY3Njk4YWQ4ZDY2ZjA1ODcxYTgzZDBhM2Y5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGU5ODU1MWY4MmY3ZGFkNTRhOTZhNTM1YjVlY2RjODQ3YTczMGZjMWQxYjE0NGI2NDE0OThlZTM0NWFmNjQwNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk1MTk2ZTA2NzhjZWRlNmI1M2JjNDI1Y2RkMTU2Y2M1NzRkNTNmOWVmNjhhYTg3OTg1ZjFmOTBiYWVhYjJhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMzYmRiNDNmMzQ5YTBhNjYzZDdhMGE2ZWNmYWFiZGY2MGI1YTk2ZTM2YzUxOWM4NjQzNjRiNDUwMTdlYmJkNSJ9"
         }
       ]
     },
     {
-      "id": "claim_6824c156a85740449462bc1e059c7299",
-      "statement": "Локальная команда wiki:update-local обновляет существующую wiki; отсутствие openwiki/quickstart.md на origin/main требует отдельного ручного bootstrap.",
+      "id": "claim_12e27ee3f8424e4b85d7464c8cc5ad89",
+      "statement": "Корпус текущей документации подтверждает только гостевой маршрут проверки 31.10.2026 13:11 UTC: форму входа, гостевой bootstrap, GET-отказы CSRF/сессии и 404 прежнего маршрута; SHA из источников выкладки не измеряют версии процессов и не подтверждают авторизованный BFF → Go.",
       "evidence": [
         {
-          "resource": "repo://README.md#L45-L53",
-          "version": "repo-lines-v1:sha256:83d5a71065a80f4f587e47260cfda7041d3dcff98972ad9ec289fb99278f5681:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjYwNDczYjc3NjhmMDkwZjA3NTdhZWYyYTdkNGUyMzM2ODFhMDViMDJlOTBhYmQxMGZiMzExYWZlZjg0NzQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdmNTk4ZTc2ZTFhZDVlYzRkNDY4YTdhMGQ3ZTFjNWI3MGRjZDcyNzA5MGQ0MDJkZDU4ODdmOTY2Y2I4Mzg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJlMGY3MzRjNGY5Nzg2YzI2NTIzOTMzMTE1MDYyMmY0Y2RlN2M1YmMzZTIxN2ZkZjE5ZjQ0NGY3Y2E1ZmU5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NmZlNmM5YmY3MDAyNmUzNDMyMTdmYmM2NDliN2JjYmYwYTQzOGNlNjJjYzU2NzRkZGUwNjY0Zjk5Y2ZhNyJ9"
+          "resource": "repo://site/documentation/bff.md#L25-L36",
+          "version": "repo-lines-v1:sha256:8ded0d55c8e561102b8775dd6dccbcfe3639c02bb972215bdac11a9345160b7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzZhY2FiYWQ5ZTdiYmYzMmU2MmY4MWNhZDI3NDA0ZjIyZDgwZjUyMTM0MzA3YWE3ZjM0NzllY2FkOTRmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YTQxMzRjYzhlN2VkODczNDU3ODIyYjBkOTA0YWRkZTFiNThhNDJmYWIzODdjZTdhOWNkZWVkOGExMDNhYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NmI1YmIzNzZjMzgxZjExMGZjYjgxZjdlNjYyZjVlNWFhMzZhZWRjNjBkODlmMjExMzliYTUxN2VlNmU4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMWQxNzAyZGNlMzczMTZiN2I4MDU3MjUzNTNmODA2Y2VlNGNhZDc5N2JmOTI1OGU2Mjg5NzRmNDYxYzhmYTcifQ"
         },
         {
-          "resource": "repo://scripts/openwiki-update-local.ts#L38-L42",
-          "version": "repo-lines-v1:sha256:54f4c22ea576e8caf24f5afb19161501545a3dcd97e6ad4c4f6ad3dcca322300:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFkZjg3YTQ3MzE2YzcwOGM1NTAyMDk4ZTlhZjZjNDQ1MzRlYjgwYmVhZGNmNjA2MzAyOGVmY2E4NTkzN2FiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg5NTdjYmE4YzZhZmI0MzQ3NDY4NmFmNDkyYThhODViZmYzZjczODExMTBiYTI3MjFhMDFhZTQyYWI2M2IzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGEzZGQ1NDg1ZWNkMzdhYzU5NGU2NmZkODZiMjg3MDVmNjc5ZTE2YjJkZjQxYzhjNjIwNGFhYThlOWIzYTRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzI1MzUxM2ZmMzVmMTEzODFmOTFjM2I3N2Q2MGI3MmFjZjBiZTcxNmRjMmY1MjYzNTNmN2YwZjBlNzVjNzM5NSJ9"
+          "resource": "repo://site/documentation/bff.md#L3-L19",
+          "version": "repo-lines-v1:sha256:a5194cb8057f0779db70fa06073932870093860734507d3951b54efba8dec818:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2E2M2FmMzg1NjFkZTg0OGYwMmYwZGExNzkwOTVkMTU3OWY1ZmYzZjE0YmUwOWQ5OTY2MThmMWM2MzA1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ODlhOGE5NWRhYTYzOTgwZDNjYzU1YTcwZDQ3YThlMzk2NGEzYTU2MTlmMGNjNTYwZjI2YjFiNWM0YmJhMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNGFmMzBmZDllZDcxZmUwNmFiZjRmMDBjZjQ2MGIzOTMwNjI1YTVkN2Y1YjUzNWUwZmUxYTAzZmM4NzgyNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZTg0YmJkMDE1YmZhODM0NzFlMzYxYzhkZDNkMmM5YjQwZmVjZTZmY2RlMmYzZDY1OWQ1YmIyMmJjMGJlNDkifQ"
+        },
+        {
+          "resource": "repo://site/documentation/bff.md#L46-L57",
+          "version": "repo-lines-v1:sha256:232c53393ae5b5ee989ba68cf6736756c34812df7d63ac896141818afc62c566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MTgzZTQ1NjRlMmVmZDkyNzAzMDkyZDJmNTcwMDQwMzIwNjJlYTU4NDFhM2VmMTE4ZGJiMGYwZjRiMzNjMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MWY2MTQ3Zjg5MGVmODQ5YjNlZmEwNzcwNGY2MWM0NDdlMjhmZGNlMDNkNjExN2NiNTgxNzg4ZjkzODA0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0ZjBiMmUwN2Q0Y2IxZDRjOTQzODI0YTBjM2JiNWRlMmJiNzc1MTkyZThkODNhOTZiNTEwNDVmMzhmZGNiMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
-      "id": "claim_b0368f7cd7904a668210296be2ff8166",
-      "statement": "Второй модуль содержит отдельный трек с четырьмя подстраницами о планируемых выкатке, откате, GitHub Deployments и Ansible для Go API.",
+      "id": "claim_a791ac2a4f364a41a44419117207aded",
+      "statement": "Карта владельцев командных пакетов закрепляет ссылки на зависимости frontend и исходники/CI frontend-packages на конкретных SHA; она подтверждает место правки, но не версии API или состояние прода.",
       "evidence": [
         {
-          "resource": "repo://site/modules/2/tracks/backend-cicd.md#L1-L15",
-          "version": "repo-lines-v1:sha256:c24d6f0a497550feb20fb7398bdd4dd10e58ff68f8adc433ea374c9599d8852a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MDQyNzM2ZTE0MGNkNzVhOGJmMDljZDhlMDFkZDU3ZTU2YmE3NTQ0MzkwODMyNTdkYmY2ZjNlMmZiODI1MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4OWYzNTdkYzZiNjY0NzFmYjQ1NmVlZmEwYzkwM2NiMmIwN2Y5ZDRmOTg5NDBlOWE0MDU4MWU5Mjk2YmY4NmEifQ"
-        },
+          "resource": "repo://site/project-context.md#L30-L43",
+          "version": "repo-lines-v1:sha256:ed86c0c41f465f199e7bd42ac2d4f896e9d7ac0cb8bd557187624e176645ea40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMGU3YTFlNjU0NDU5NGJmYmIzNzM2OWNkYWE5OGZjZGMxNzM0NDM3NDBlOGM0ZjRmYjQ5ZmUzMGFiNWVhYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2NjOTU4ZWY1ZDM3MDFjMWEwNzYzOTRkMTZmMjI2NTU2OGY4OTJhZjJkNTI5NTdlYzM3NWQ3NzEwMTI1ODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3NTNmNWE2MTQwNzRjZjM1MGQwMmRiOGIzN2M5MzIxNjlmZjk1YWNiNWFiNWNiZDY4Y2QxZThjOGI3MjczZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNDQ0ZjA0MGUzNzQ2MjBiMTE2NDcwNDA3YzBkZTM3NzIwM2ExMmMxOTk0NGQzMzdmNzk1OTY3ZjExMzEzMTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_50d4ed3e0b964b49b721a39bc06bf0df",
+      "statement": "Владелец запускает обновление wiki явной локальной командой; CI только проверяет wiki PR, таймеров и автоматической генерации нет.",
+      "evidence": [
         {
-          "resource": "repo://site/modules/2/tracks/backend-cicd.md#L40-L49",
-          "version": "repo-lines-v1:sha256:49dc1a93033ae8781a2c58b3e99974fc348ba87901e1859d6509692b75de3deb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjUxOTdlNmM4MDgyNDU0OGY3MDA5MDZiNzg3OGE0NzY0ZDhhOTcxZmI3NzYxNmM0YjliZjAyMjg4NDY2ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMzllNTdiZTRhZmQzZTE3ZGI5N2U5ZTNlNjRlNzVjMDI4MzkwYWQxZjk1NTJjM2UyMGUxMmJlNTdmOTc5ZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYWVlNWY0YjY5NzM0ZmQ4YjI4YWM5OGI0Yzk1ZTBhMWZkZTc0NDE4MDBiNGQzMmQ0MTljN2UwZTM1ZThhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZjJjODhmMTc4YzA1ODM5MWNmYzM5YTM0ZDc3NTJmNjcxZjc3NmNlMDE2OTJjYjVkOTlhYzI5Mzg2MGUzMTMifQ"
+          "resource": "repo://AGENTS.md#L112-L115",
+          "version": "repo-lines-v1:sha256:608179b828e0fb1fe858d35d52c65cc3b30be9b974deacebe240dbf93b15b2e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDZiZjAyOWJmNjhhODQxODE5NmE4ZjZlZTI3NzI3M2Y2NjBjYmNkYzkzN2I2OTg4M2I0N2NmYmZjYzkxNjE1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBmMjZjMjBjNzc0M2YxNzM5MzdkMjE5NzQwYjFiNDM1MTgwNWNlOGE1M2E3NWVlODE2ZmE4ZWUwYzA5YjhmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc4YjA2YTQ5ODcyOWZlMGVhZTg1MDhmNjc1NzE0Y2EyOWY4N2ExNWFmMTZmNjk1ZDIwYmRlYTE2OTBkYWZlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2YzYWJiM2Y4ZjA2YzI1NWY4MTI0MjM0YWJjNWFjYTA2NzlmNmFkZmVlOWZiYTY2ZDU2YjZiNmMzZTg0Mzc0OCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T17:01:28.502Z"
+    "at": "2026-10-31T13:49:52.870Z"
   }
 }
