@@ -2,6 +2,8 @@ import { afterAll, expect, test } from "bun:test";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { readLines, runLocalUpdate, type Exec } from "./openwiki-update-local.ts";
 
 const roots: string[] = [];
@@ -106,10 +108,12 @@ test("stale main generates once in isolation and publishes only wiki paths for i
   expect(models[0]!.cwd).not.toBe(f.root);
   expect(models[0]!.args.slice(0, 3)).toEqual(["exec", "-s", "workspace-write"]);
   const overrides = models[0]!.args.filter((_, index, args) => args[index - 1] === "-c");
-  expect(overrides).toEqual([
+  expect(overrides.slice(0, 3)).toEqual([
     'mcp_servers.openwiki.default_tools_approval_mode="approve"',
     "mcp_servers.openwiki.required=true",
+    'mcp_servers.openwiki.command="node"',
   ]);
+  expect(JSON.parse(overrides[3]!.slice("mcp_servers.openwiki.args=".length)).slice(1)).toEqual(["mcp", "--host", "codex"]);
   expect(models[0]!.args.at(-1)).toContain("openwiki_finish");
   expect(models[0]!.args.at(-1)).toContain(f.target);
   expect(f.calls.filter((c) => c.binary === "gh" && c.args[1] === "create")).toHaveLength(1);
@@ -118,6 +122,43 @@ test("stale main generates once in isolation and publishes only wiki paths for i
   expect(existsSync(f.worktree())).toBe(false);
   expect(git(f.root, "rev-parse", "HEAD")).toBe(f.target);
 });
+
+test("stale update begins the real MCP lifecycle without changing AGENTS before its source scan", async () => {
+  const f = fixture();
+  write(f.root, "AGENTS.md", "# Repository rules\nKeep these exact source bytes.\n");
+  commit(f.root);
+  git(f.root, "push", "-q", "origin", "main");
+  const target = git(f.root, "rev-parse", "HEAD");
+  let runtime = "";
+  const exec: Exec = async (binary, args, cwd, onLine) => {
+    if (binary !== "codex") return f.exec(binary, args, cwd, onLine);
+    const overrides = args.filter((_, index) => args[index - 1] === "-c");
+    const configured = overrides.find((value) => value.startsWith("mcp_servers.openwiki.args="));
+    const mcpArgs: string[] = configured ? JSON.parse(configured.split("=").slice(1).join("=")) : [
+      join(dirname(require.resolve("openwiki/package.json")), "dist/cli/cli.js"), "mcp", "--host", "codex",
+    ];
+    runtime = dirname(dirname(dirname(mcpArgs[0]!)));
+    const before = readFileSync(join(cwd, "AGENTS.md"), "utf8");
+    const client = new Client({ name: "updater-regression", version: "1.0" });
+    const transport = new StdioClientTransport({ command: "node", args: mcpArgs, stderr: "pipe" });
+    try {
+      await client.connect(transport);
+      const begun = await client.callTool({ name: "openwiki_begin", arguments: { root: cwd, mode: "update", force: true, language: "ru" } });
+      expect(begun.isError).not.toBe(true);
+      expect((begun.structuredContent as { phase?: string } | undefined)?.phase).toBe("planning");
+      expect(readFileSync(join(cwd, "AGENTS.md"), "utf8")).toBe(before);
+      expect(git(cwd, "diff", "--name-only", "--", "AGENTS.md")).toBe("");
+    } finally {
+      await client.close();
+    }
+    generate(cwd, target);
+    return { exitCode: 0, stdout: "", stderr: "" };
+  };
+  expect(await runLocalUpdate(f.root, exec)).toBe("pr-created");
+  expect(existsSync(runtime)).toBe(false);
+  const branch = `docs/openwiki-update-${target.slice(0, 12)}`;
+  expect(git(f.remote, "diff", "--name-only", target, branch).split("\n").every((path) => path.startsWith("openwiki/"))).toBe(true);
+}, 30_000);
 
 test("stale update reports completed OpenWiki pages without printing Codex chatter", async () => {
   const f = fixture();
