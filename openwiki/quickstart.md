@@ -1,45 +1,45 @@
 ---
 type: guide
-title: Карта документации CDD
-description: Быстрый маршрут от практического вопроса к каноническому документу, коду компонента и проверке свежести wiki.
-tags: [quickstart, documentation, navigation]
-sources:
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-  - id: openwiki-source-0f2cc1cdbc03f7ab19013095
-    resource: repo://scripts/openwiki-update-local.ts
-  - id: openwiki-source-97eec6de22a65e701a2efd60
-    resource: repo://site/modules/2/tracks/backend-cicd.md
-  - id: openwiki-source-544ecea885fca4da03008227
-    resource: repo://site/project-context.md
-generated: { by: "codex", at: "2026-10-24T17:01:28.502Z" }
+title: Карта проверенной документации CDD
+description: Куда перейти за гостевым маршрутом BFF, границами проверки безопасности и владельцами репозиториев и пакетов.
+tags: [quickstart, navigation, ownership, evidence]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T17:01:28.502Z
+    at: 2026-10-31T13:49:52.870Z
+sources:
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
+  - id: openwiki-source-4f5bdd77990b98e5f7081f26
+    resource: repo://site/documentation/bff.md
+  - id: openwiki-source-544ecea885fca4da03008227
+    resource: repo://site/project-context.md
+generated: { by: "codex", at: "2026-10-31T13:49:52.870Z" }
 ---
 
 # С чего начать
 
-Эта wiki — тематический указатель к документации команды, а не владелец фактов. Начните с `AGENTS.md` и README рабочего репозитория; для общепроектного вопроса откройте [«Контекст проекта»](https://github.com/Cringe-Driven-Development-Team/docs/blob/d20a0f0d6d80462569c761d2e2d9cdc1defbcee6/site/project-context.md#L9). Код компонента на актуальном SHA определяет фактическую реализацию, а состояние продакшена требует проверки стенда. [Правила источников](concepts/sources.md).
+OpenWiki — производный тематический указатель. Канонический текст остаётся в docs; исправления начинают с исходного документа. Перед работой прочитай `AGENTS.md` и README своего репозитория. Реализацию проверяй по актуальному коду владельца, а продовое поведение — по SHA выкаченного релиза, дате и результату сценария. [Правила: site/project-context.md, строки 9–24](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/project-context.md#L9-L24), [статус wiki, строка 28](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/project-context.md#L28).
 
-| Если нужно… | Начните здесь |
+| Практический вопрос | Куда перейти |
 | --- | --- |
-| Найти владельца сведений и различить факт от плана | [Владельцы сведений](concepts/sources.md) |
-| Понять документированный MVP, Compose, Caddy, Go, Postgres и S3/CDN | [Архитектура MVP](architecture/mvp.md) |
-| Разобраться с нынешним CSRF и целевой авторизацией BFF | [CSRF и BFF](architecture/security-bff.md) |
-| Провести изменение Go HTTP API и клиентского контракта | [Путь изменения API](workflows/api-contract.md) |
-| Понять план npm Trusted Publishing и частичный релиз | [Публикация библиотек](workflows/library-release.md) |
-| Найти маршрут к dev-среде, infra и статус webhook-алертов | [Разработка и алерты](operations/development-alerts.md) |
-| Разобраться с **планом** выкладки и ручного отката Go API во втором модуле | [План релиза бэка](operations/backend-release-plan.md) |
-| Изменить страницу, схему или данные модуля | [Сайт, схемы и модули](documentation/site-and-modules.md) |
-| Проверить свежесть wiki или разобраться с её обновлением | [Свежесть OpenWiki](documentation/wiki-freshness.md) |
+| Что наблюдали на проде, как гость получает форму и где заканчивается проверка? | [Проверенный маршрут BFF](architecture/mvp.md) — сценарии, SHA выкладок и границы архитектуры |
+| Почему tRPC возвращает `403` без заголовка и `401` с ним? Что известно о POST-защите? | [CSRF и сессия в гостевом BFF](architecture/security-bff.md) |
+| Где менять BFF, Go API или инфраструктуру? | [Владельцы репозиториев](concepts/sources.md#репозитории-и-границы-компонентов) |
+| Кому принадлежат `@cdd-team/*`, где править пакет и искать выпуск? | [Карта командных пакетов](concepts/sources.md#командные-пакеты) |
+| Как разрешить расхождение документов и кода? | [Правила проверки источников](concepts/sources.md#как-разрешать-расхождения) |
 
-Локальная команда `bun run wiki:update-local` обновляет существующую wiki. Если `openwiki/quickstart.md` ещё нет в `origin/main`, нужен отдельный ручной bootstrap; порядок и проверки wiki PR описаны в [README](https://github.com/Cringe-Driven-Development-Team/docs/blob/d20a0f0d6d80462569c761d2e2d9cdc1defbcee6/README.md#L45) и на [странице свежести](documentation/wiki-freshness.md).
+## Что означает «проверено»
 
-## Как проверять ссылку
+Текущее продовое свидетельство в корпусе — **31.10.2026, 13:11 UTC**, чистый Chrome на [cellestial.ru](https://cellestial.ru): форма входа, гостевой bootstrap, два отказа GET `/api/trpc/users.me` и `404` прежнего маршрута. Оно связано с SHA выкладок frontend `dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64`, backend `23d3dd9e955424a7634fb0dc49a38af6eb08792c` и infra `14653763279dab055e3cea47a84a0c531bccf03f`. Это SHA из GitHub Deployments, а не измерение версии процесса. Авторизованный участок BFF → Go и остальные пользовательские сценарии этим свидетельством не подтверждены. [Результаты](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L3-L19), [выкладки](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L25-L36), [границы](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/documentation/bff.md#L46-L57).
 
-В каждой тематической странице ссылки на `docs` закреплены за исходным Git HEAD `d20a0f0d6d80462569c761d2e2d9cdc1defbcee6` и строкой. Ресурс `repo://путь#L…` в Claims означает путь внутри репозитория `docs` на `gitHead` из `openwiki/.last-update.json`; это указатель на свидетельство, а не самостоятельное доказательство. [README о checkpoint](https://github.com/Cringe-Driven-Development-Team/docs/blob/d20a0f0d6d80462569c761d2e2d9cdc1defbcee6/README.md#L55); [код проверки](https://github.com/Cringe-Driven-Development-Team/docs/blob/d20a0f0d6d80462569c761d2e2d9cdc1defbcee6/scripts/openwiki-check.ts#L8).
+Карта владельцев — другой вид факта: она указывает репозиторий и место правки по зафиксированным зависимостям и CI. Её ссылки на соседний код сохраняют собственные SHA; это не проверка их нынешнего main и не доказательство состояния прода. [Карта: site/project-context.md, строки 30–43](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/project-context.md#L30-L43).
 
-Перед использованием сравните `gitHead` wiki с актуальным `docs/main`: в свежем клоне выполните `bun run wiki:check --against <SHA>` с полным SHA `main`. Если wiki устарела, используйте её только для поиска путей и сверьте утверждение с исходным документом на актуальном SHA. Если путь исчез, ищите напрямую в `docs`. Ссылки на код соседних репозиториев сохраняют их собственный конкретный SHA и не подтверждают нынешний `main` без нового чтения кода. [Процедура свежести](documentation/wiki-freshness.md).
+## Как пользоваться ссылками и свежестью
 
-Модули и старые спеки/планы описывают работу или историю решений; текущие разделы сайта и схемы корня описывают документированную архитектуру. Даже для них факт реализации требует кода, а прод — стенда. [Граница текущего и планируемого](https://github.com/Cringe-Driven-Development-Team/docs/blob/d20a0f0d6d80462569c761d2e2d9cdc1defbcee6/site/project-context.md#L30).
+Ссылки на docs в этих страницах закреплены за исходным SHA `06110c81c5fa0972ad1171d2213dfc7866a5b020`. Ресурс `repo://путь#L…` в Claims означает путь внутри docs на `gitHead` из `openwiki/.last-update.json`; сам по себе он не доказывает утверждение — нужно прочитать указанный исходник. Этот SHA фиксирует версию описания и карты, а не свежесть соседнего кода или прода. [Правило интерпретации ссылок: openwiki/INSTRUCTIONS.md, строки 26–41](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/openwiki/INSTRUCTIONS.md#L26-L41).
+
+Перед использованием проверь свежесть клона и выполни `bun run wiki:check --against <SHA>` с актуальным SHA docs. Устаревшая wiki служит указателем: сверь утверждение с текущим исходником владельца, а для продового утверждения — со свидетельством проверки. Если wiki недоступна или путь исчез, ищи напрямую в docs. [Источник: site/project-context.md, строка 28](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/project-context.md#L28), [проверка версий, строки 51–53](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/project-context.md#L51-L53).
+
+Обновление запускает владелец локально после слияния исходников; CI только валидирует отдельный wiki PR. Инструкции обслуживания остаются в README. `openwiki/INSTRUCTIONS.md` меняют отдельно как исходник, а не при генерации. [Правило локального обновления: AGENTS.md, строки 112–115](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/AGENTS.md#L112-L115), [граница генерации: openwiki/INSTRUCTIONS.md, строки 56–64](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/openwiki/INSTRUCTIONS.md#L56-L64).
+
+[Модули](https://docs.cellestial.ru/modules/) содержат планы. Для любой страницы вне модулей учитывай её статус и свидетельство; одно расположение документа не доказывает текущее поведение. Wiki не пересказывает планы и историю. [Статус документов: site/project-context.md, строки 45–47](https://github.com/Cringe-Driven-Development-Team/docs/blob/06110c81c5fa0972ad1171d2213dfc7866a5b020/site/project-context.md#L45-L47).

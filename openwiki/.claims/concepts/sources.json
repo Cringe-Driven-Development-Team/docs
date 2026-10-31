@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7ab77e3f55b62f6964329fc679eaf9f8c9333ae02557956062b3fb859968b8b9",
+  "pageVersion": "sha256:017f9b878707f03287213b2ecf98eb74b9acf0f23cd7cc6ccf9be911a6162ad3",
   "claims": [
     {
       "id": "claim_4e8d198081094f70be9b0455ca3a7522",
@@ -8,35 +8,7 @@
       "evidence": [
         {
           "resource": "repo://site/project-context.md#L9-L11",
-          "version": "repo-lines-v1:sha256:bc7ffccc678e373199013ac9e2fbf9c55c18c974cec781841e1715713bdac946:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NhMjE1MWZjOTNkMTk0OGQ3YjE1ZjdiOGRkNGU0MzIxYTVlMGEzNWJlMDRiMGM0MGE4NTY5MTlhY2VmNzQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ZTRlMjBjMjkzNGZkZTUxMzMyMDVhZTc0NmQ4YjRiNDg3MjBhYTJiYzYwMzI1MWU4NDEzZGE1M2E5M2QxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkNjM5ODhjNzlkODU5NjdmMjgzNjAyMjk1YmE4ODYwZWU0MWQ0ZGI1NTJiNjk0YTA1NzRkMmIxNWVlZWRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjNWU0N2NhNTJmYWEzZGQ4ZmM0NmM2NzVhYjU4YTVhN2JiOTA3MjMxZTFhOGQ2MDA3MTcwNTc3YzRkYTQ0ZCJ9"
-        }
-      ]
-    },
-    {
-      "id": "claim_602c36bb19384427b3b56b2ac10e38f5",
-      "statement": "Контракт HTTP API принадлежит Apidog, а SDD-спека и план конкретной работы принадлежат репозиторию выполнения; общие решения отражаются в docs.",
-      "evidence": [
-        {
-          "resource": "repo://site/project-context.md#L15-L26",
-          "version": "repo-lines-v1:sha256:cc8aa57f0548f655c63ff42028aaa19dd897414222f8bea106191df17a171d74:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhZWQzYjkwMzVjYmZiMzk0ZTYxOTM3Nzk3ZTRmNzNlYWQ0YzU5NThkYmVlMjhlMmU4YmNjMDNmZDMyMTYwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkODczMGNiYTczMGNhMzIzYmM1ZWM0NzRmOTA3ZDk4ODk0ZGZhMjdlOTcxMmQ1MmM3MDRlNjcwMmY4NjBmN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YzVlNDdjYTUyZmFhM2RkOGZjNDZjNjc1YWI1OGE1YTdiYjkwNzIzMWUxYThkNjAwNzE3MDU3N2M0ZGE0NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3NTNmNWE2MTQwNzRjZjM1MGQwMmRiOGIzN2M5MzIxNjlmZjk1YWNiNWFiNWNiZDY4Y2QxZThjOGI3MjczZGIifQ"
-        },
-        {
-          "resource": "repo://site/project-context.md#L30-L34",
-          "version": "repo-lines-v1:sha256:b27a5cf4fe44ee2247d69d705790f8c0f157c9e9b90f18d0927f16f9b8c4972a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA2M2RkMzgzM2ZiNTljYWE1N2Q1NWNkYmJjMTY5NzgzZjQzNGY3Njk4YWQ4ZDY2ZjA1ODcxYTgzZDBhM2Y5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQwMDI0MjI1ZmUyZTYyN2I0YTk5YzQ5MDVhN2U5ODZkZTE4OGRiYWQ1NGIyNGNiNWNlODgwNjA3NzQ3NGNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc1M2Y1YTYxNDA3NGNmMzUwZDAyZGI4YjM3YzkzMjE2OWZmOTVhY2I1YWI1Y2JkNjhjZDFlOGM4YjcyNzNkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGE0YjM4MzI2MzlkMzc4ZDA4YmRiZTYwMDBjNmI0YTgzMzExMWEzOGQ1YjEyZGE1MmY5MDU1ZDQ2YTY4MWQzMiJ9"
-        }
-      ]
-    },
-    {
-      "id": "claim_199999ab9d2547aeacc5adbedc66e726",
-      "statement": "Страницы модулей описывают запланированную работу, а завершённый трек остаётся историей с текущим описанием вне модулей.",
-      "evidence": [
-        {
-          "resource": "repo://AGENTS.md#L21-L28",
-          "version": "repo-lines-v1:sha256:2f3cccdc0f36d3e55ea39ceea41b7c825ea7a8da9c52ce8ebb6b81ed04bd0c85:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUxZjYzNDJiMDdjZDkzYmY4MWE5NzBhNjczMWNmYjkxOGZlYzNhNDE1OWY4NjdlODUwYTIyYzQ5MjA0MjhhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RlNjRmYjc0NzI0OTFhNmJjMzFlZTZjNTY3MjI0YWZhYmQ4ZWQwZGU1NzRlYzAyNTk1NjIzNDlmNDE5YjlmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjE3YjhhN2M4NTEyOGQ3OWY1ZTQwNzcwZTZkNjZhZTYwMzVmM2Y5ZmVhNDA4ZTVmODUwMTM5ZTNkNzVkYjhjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI0Mzg4YzM2M2ZmODcyZDBmNjM2ZjZmN2IwMTc4YjdmMzBjMGY2Y2RiNTgyNmYxNmQyYmRkOGViMTcwMzJjNCJ9"
-        },
-        {
-          "resource": "repo://README.md#L277-L286",
-          "version": "repo-lines-v1:sha256:14f1eda9bb992ae77ab895ca454c85ffc8d3de404b100b151ed1dc0f1a7f567f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlYjAzYjE5MTFlNmI5ZWQxMDQ2ZDUwZGQzZGQwMzY2MDAyYjYwMWU1OGQzMDQ0YTBmNmYyYzhjZDQ5ZTE0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4Y2YwNjhlNTk2MGNlYjQ3NmQwMTQ4ZWIzZTEwNDM3ODZmOThiNzk3Zjg4MWM0ZDRlNTA3ZjIwYzBjNTdiM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwOTBhYzY1NGJmZjYzYzk5ZjRkYmE4NWJkMmFiNjgxMDlmYmQ3N2Y4ZmIxOTBkN2Q0MjJkZTNlNmI4ZmZlOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwYjdjYzdjOTI2N2EwN2UxZjE1Y2RlNzQ3MGY0ZjJhM2UxZDcyYjE0Njc2MjgxYzIxZmE2ZjRiMjk5ODMzNWMifQ"
+          "version": "repo-lines-v1:sha256:0fdd70eb7d451a3681517c407a146faa222d77dc9ed8234a38a274ff71450a2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NhMjE1MWZjOTNkMTk0OGQ3YjE1ZjdiOGRkNGU0MzIxYTVlMGEzNWJlMDRiMGM0MGE4NTY5MTlhY2VmNzQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYzNjcyOWU3MGZiODY0NDc5YzM1NjM2YzA0ZTY1ZTdlNTVhOTM0NDQ2MjVlMmJjN2ZkOTZhZWFmNjNlMTk2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkNjM5ODhjNzlkODU5NjdmMjgzNjAyMjk1YmE4ODYwZWU0MWQ0ZGI1NTJiNjk0YTA1NzRkMmIxNWVlZWRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjNWU0N2NhNTJmYWEzZGQ4ZmM0NmM2NzVhYjU4YTVhN2JiOTA3MjMxZTFhOGQ2MDA3MTcwNTc3YzRkYTQ0ZCJ9"
         }
       ]
     },
@@ -45,14 +17,76 @@
       "statement": "При расхождении источников нужно сравнить версии по SHA, проверить код для реализации и стенд для продакшена и исправить документ-владелец.",
       "evidence": [
         {
-          "resource": "repo://site/project-context.md#L36-L38",
+          "resource": "repo://site/project-context.md#L51-L53",
           "version": "repo-lines-v1:sha256:05a4ad2ceec4d0785bd00a8872ec7efe0be0193720db63a46b7744327202395a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY3MDY2ZDZjMDQ5MmI3NmI5MGMyZDI2NjQ2ZGI0MTZjYTRlMDBkMTdkZjc2MjVjNDZkODA4ZTk0YmQzOTA0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODdjMTAwM2E1Zjc4ZjVhMjE2NDgyMWVkZTAwM2E2NjVjMzIzZjViM2I3ZDZhMDQxY2RlYTIwMmIyODczOTlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzMzYmRiNDNmMzQ5YTBhNjYzZDdhMGE2ZWNmYWFiZGY2MGI1YTk2ZTM2YzUxOWM4NjQzNjRiNDUwMTdlYmJkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ec53fdb44ce479a95bdb2e9c33df31d",
+      "statement": "Реализация BFF принадлежит frontend, Go API — backend, инфраструктура — infra; HTTP-контракт ищут в Apidog, общепроектные документы в docs, правила задач и PR — в .github.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/index.md#L27-L32",
+          "version": "repo-lines-v1:sha256:cc8d9d0f41e9bb244ad4e011cd383221ee67bd5bc49c833140a2abccd658af0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY1Nzk0MWViMDI3ODAwNzY4YzgwNTQ3MzJmMjFkZGFmMTU2MWRiODQ2YjczZGE2MmYxM2UxNmI3MmIzM2NhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQ2ZWQzMWQyYTczMzNhNzM3NjRlMDk5NjUxNDYyYmJjZDJkYWE2YWI1ZGZiYWYxMmFmZmZjMWM3NTU0ZGM2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWIxODJmZGMyNzA1NWNiOTczZGYyYTc0NDQ0MDk1YjJlMDUzZjM5YjU4ZDA5ZDBlYThhMTFmNjc1YWZjZGE5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQyNjU2MzdkMzViZTIzNmM5NGQwYTk0YjEyYzc4NWY4MmUyZGQ0YjgzY2FiZTAzNzFhODMwNWJjNDQ4NmFjZSJ9"
+        },
+        {
+          "resource": "repo://site/project-context.md#L15-L26",
+          "version": "repo-lines-v1:sha256:9cf61c2d5052218aee49b2695cacb2907c388c9060ec3b521cec629381c6f766:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhZWQzYjkwMzVjYmZiMzk0ZTYxOTM3Nzk3ZTRmNzNlYWQ0YzU5NThkYmVlMjhlMmU4YmNjMDNmZDMyMTYwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkODczMGNiYTczMGNhMzIzYmM1ZWM0NzRmOTA3ZDk4ODk0ZGZhMjdlOTcxMmQ1MmM3MDRlNjcwMmY4NjBmN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YzVlNDdjYTUyZmFhM2RkOGZjNDZjNjc1YWI1OGE1YTdiYjkwNzIzMWUxYThkNjAwNzE3MDU3N2M0ZGE0NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3NTNmNWE2MTQwNzRjZjM1MGQwMmRiOGIzN2M5MzIxNjlmZjk1YWNiNWFiNWNiZDY4Y2QxZThjOGI3MjczZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87c48ff0763b4cb293edc8624b659c61",
+      "statement": "Канонический документ указывает frontend/apps/bff/src/bff.ts, context.ts и go/api.ts на SHA dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64 как места реализации BFF; инфраструктурные исходники принадлежат infra/pulumi/, pulumi/bootstrap/ и ansible/.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L37-L39",
+          "version": "repo-lines-v1:sha256:f1e926a372aca4f729bfc92399e335de118513418ed6bfaec972b33c49c2ea3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdkYzQ1MGQ3YTBjODM5MDZhMWRlNTdjM2NlNWMwMTJhMzhlOTRiNzFiOTJhMmFjMmMxZTNmNzQxOWU2NzgyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQwZDUyYjAxZTRiNTU4NTczNjc3NjNlNDdhZmJmMGYwYjk3MGM5NzJhZjljMDVmZGUyOTMyYjYxZjU5MzAzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNThhYjkwYjc0N2ZmZjRjMWI5MGUzNDlhYTJkNjBiYjNiNTA0YWExNzRjZjY4ZThmODg3YTE2MjY5MjEyZDI0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI1Y2RlOWQ2NWQ0Njc4NmFhZmUzZjlhYmE1Y2VhNGQyODFhNmEwNTgwZjU2ODI3YWE3ZWNhY2UxOTA3NmM5ZiJ9"
+        },
+        {
+          "resource": "repo://site/documentation/bff.md#L38-L49",
+          "version": "repo-lines-v1:sha256:185daeebefb6c01eac84320dbd6f7b2765f135c5db27193daddbe0a8ec5ff58b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWIwNWU5OTY2OWE5ODM3YTY3NmI4Mzc1NWQ4NzQ5N2MyOWRiOTMyYzU0YmIwMjRiOGQzYWFkZDgzMzZhMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjAyOTEyMjRhYTdjZjU4Mzc1ZThmMjU1YjU4NmEzZDBlZGU5N2JmZTMxOGI2NDJjOTgwODQwOGNmM2M0YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMzQwMTE4OTRlMzZkNmNhNGFkYTEyNzE1M2I5YWNkMTljMGI1ZTVhMmEwY2RlNDZlZWUyODUwZDlhYWEzZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZTgxYjVlNGExZGNjMjRmMmUxZmJkNjBkMzZiMmE1MTg1ZTRlNzljM2Q3M2FlZjVhZGZjMTQwZDJkYTkyNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88dac3ecf71041b285cf92d891e50e0c",
+      "statement": "Карта владельцев от 31.10.2026 относит @cdd-team/react, vite-plugin-bff-html, router, zustand и clsx к клиентским зависимостям frontend, oxlint-plugin-jsdoc — к корневому тулингу; места правки всех шести пакетов находятся в packages/ репозитория frontend-packages на SHA fa65157b5f6957fbf30fa2ebd4b3b75af19cc955, потребление зафиксировано на SHA frontend dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64.",
+      "evidence": [
+        {
+          "resource": "repo://site/project-context.md#L30-L41",
+          "version": "repo-lines-v1:sha256:bdab75be7101d105631da6c66fd91ec32248acb36e8c51f207a10ab3a9c2be49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMGU3YTFlNjU0NDU5NGJmYmIzNzM2OWNkYWE5OGZjZGMxNzM0NDM3NDBlOGM0ZjRmYjQ5ZmUzMGFiNWVhYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMDYzODU0Zjk2ODYwYjU0ZDYzYzZhYTdlNmY1ZGZiZTI0ZGFmNDM5ZGE5YzQ4ZmQ4NTFiODg4ZjRkNGYwYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3NTNmNWE2MTQwNzRjZjM1MGQwMmRiOGIzN2M5MzIxNjlmZjk1YWNiNWFiNWNiZDY4Y2QxZThjOGI3MjczZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NTE5NmUwNjc4Y2VkZTZiNTNiYzQyNWNkZDE1NmNjNTc0ZDUzZjllZjY4YWE4Nzk4NWYxZjkwYmFlYWIyYWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d708c182fe7446d29169dd2564ee4492",
+      "statement": "По карте владельцев выпуск пакетов принадлежит frontend-packages: release-please готовит release PR, после слияния release workflow проверяет и публикует выпущенные пакеты; GitHub Release не доказывает публикацию в npm, а карта зависимостей и CI не подтверждает прод.",
+      "evidence": [
+        {
+          "resource": "repo://site/project-context.md#L43-L43",
+          "version": "repo-lines-v1:sha256:25ccc958ef5d3701c1a076394d16f2265568f892af2d52957ec375d771012581:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVjY2M5NThlZjVkMzcwMWMxYTA3NjM5NGQxNmYyMjY1NTY4Zjg5MmFmMmQ1Mjk1N2VjMzc1ZDc3MTAxMjU4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVjY2M5NThlZjVkMzcwMWMxYTA3NjM5NGQxNmYyMjY1NTY4Zjg5MmFmMmQ1Mjk1N2VjMzc1ZDc3MTAxMjU4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY5NjFmZmNhNGNhMGRhNGY4Njg5YWE1NGYyMTZiMjg1MmI5Zjc3ZGEyOTFkYWE2M2NiZWU1NzQzMjExY2U5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA0NDRmMDQwZTM3NDYyMGIxMTY0NzA0MDdjMGRlMzc3MjAzYTEyYzE5OTQ0ZDMzN2Y3OTU5NjdmMTEzMTMxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c541bf18cb8141a0b2ab558a4dd8a770",
+      "statement": "Wiki является производным указателем, канонические сведения остаются в docs; реализацию сверяют с актуальным кодом компонента, а прод — с SHA релиза, датой и результатом сценария.",
+      "evidence": [
+        {
+          "resource": "repo://site/project-context.md#L28-L28",
+          "version": "repo-lines-v1:sha256:de1c39b005baf834f3b495d461514d204f70b5779a0c97a3086f4e93d162b422:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUxYzM5YjAwNWJhZjgzNGYzYjQ5NWQ0NjE1MTRkMjA0ZjcwYjU3NzlhMGM5N2EzMDg2ZjRlOTNkMTYyYjQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmUyYjMxM2M1Y2ZkNDhiNWRhOGIyZThjZTUxNDkzZDg4MjA4NTVlODE1YjYxOWM0MjNlYjMxNDQ1OTcyZGNmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzk0ODZjNmQ3N2YyOTUyNjk4NjgxOTM3MmYyNGRmNjUzN2JjMDkwMWIzY2NlMmQzNWVjOGQyYzZhYzkxNzAxYiJ9"
+        },
+        {
+          "resource": "repo://site/project-context.md#L9-L11",
+          "version": "repo-lines-v1:sha256:0fdd70eb7d451a3681517c407a146faa222d77dc9ed8234a38a274ff71450a2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NhMjE1MWZjOTNkMTk0OGQ3YjE1ZjdiOGRkNGU0MzIxYTVlMGEzNWJlMDRiMGM0MGE4NTY5MTlhY2VmNzQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYzNjcyOWU3MGZiODY0NDc5YzM1NjM2YzA0ZTY1ZTdlNTVhOTM0NDQ2MjVlMmJjN2ZkOTZhZWFmNjNlMTk2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkNjM5ODhjNzlkODU5NjdmMjgzNjAyMjk1YmE4ODYwZWU0MWQ0ZGI1NTJiNjk0YTA1NzRkMmIxNWVlZWRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjNWU0N2NhNTJmYWEzZGQ4ZmM0NmM2NzVhYjU4YTVhN2JiOTA3MjMxZTFhOGQ2MDA3MTcwNTc3YzRkYTQ0ZCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T15:47:09.601Z"
+    "at": "2026-10-31T13:49:52.870Z"
   }
 }
