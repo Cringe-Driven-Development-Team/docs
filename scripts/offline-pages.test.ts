@@ -41,6 +41,17 @@ test("offline: 10 схем теории и 3 схемы архитектуры",
   }
 });
 
+test("offline: пакеты Workbox и сборочная зависимость плагина объяснены явно", () => {
+  const workbox = section(read(THEORY), "Workbox");
+  expect(workbox).toContain("| Пакет | Где работает | За что отвечает |");
+  for (const [pkg, environment] of [
+    ["build", "При сборке"], ["routing", "В Service Worker"], ["strategies", "В Service Worker"],
+    ["precaching", "В Service Worker"], ["window", "На странице"],
+  ]) expect(workbox).toMatch(new RegExp(`\\| \`workbox-${pkg}\` \\| ${environment} \\| [^|]+\\|`));
+  const pluginProse = section(read(THEORY), "vite-plugin-pwa").split("```mermaid")[0] ?? "";
+  for (const name of ["workbox-build", "generateSW", "injectManifest"]) expect(pluginProse).toContain(`\`${name}\``);
+});
+
 test("offline: сетевой ответ возвращается независимо от разрешения кешировать", () => {
   const strategies = section(read(THEORY), "Стратегии кеширования");
   for (const strategy of ["CacheFirst", "NetworkFirst"]) {

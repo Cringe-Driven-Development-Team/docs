@@ -167,7 +167,7 @@ sequenceDiagram
   Q->>C: Есть запись?
   alt Попадание
     C-->>Q: Текущий ответ из кеша
-    rect rgb(240, 245, 255)
+    rect rgba(128, 128, 128, 0.12)
       Note over C,N: Фоновое обновление
       C->>N: Получить свежий ответ
       alt Получен ответ
@@ -201,10 +201,17 @@ sequenceDiagram
 
 ## Workbox
 
-Workbox — семейство npm-пакетов поверх браузерных API. `workbox-build` работает при сборке;
-`workbox-routing` выбирает обработчик запроса; `workbox-strategies` реализует стратегии;
-`workbox-precaching` управляет заранее выбранными файлами; `workbox-window` помогает странице
-с регистрацией и обновлениями. Браузер выполняет SW, а не сборщик Vite.
+Workbox — семейство npm-пакетов поверх браузерных API. Их задачи и среда выполнения различаются:
+
+| Пакет | Где работает | За что отвечает |
+| --- | --- | --- |
+| `workbox-build` | При сборке | Генерирует SW или подставляет список precache в написанный SW |
+| `workbox-routing` | В Service Worker | Выбирает обработчик запроса |
+| `workbox-strategies` | В Service Worker | Реализует стратегии кеширования |
+| `workbox-precaching` | В Service Worker | Управляет заранее выбранными файлами |
+| `workbox-window` | На странице | Помогает с регистрацией SW и обновлениями |
+
+Браузер выполняет SW, а не сборщик Vite.
 [Карта пакетов Workbox](https://developer.chrome.com/docs/workbox/modules/).
 
 Общая схема с плагином ниже отделяет подготовку файлов от их выполнения.
@@ -212,6 +219,7 @@ Workbox — семейство npm-пакетов поверх браузерн�
 ## vite-plugin-pwa
 
 Плагин связывает Vite с подготовкой веб-манифеста, SW, его регистрации и обновления.
+При сборке плагин использует `workbox-build` для режимов `generateSW` и `injectManifest`.
 Манифест описывает приложение для браузера; возможность установки PWA и работа без сети —
 разные свойства. Сам факт установки не доказывает доступность нужного ресурса офлайн.
 [Возможности плагина — Vite PWA](https://vite-pwa-org.netlify.app/guide/).
@@ -220,7 +228,7 @@ Workbox — семейство npm-пакетов поверх браузерн�
 flowchart TB
   subgraph Build["Сборка"]
     direction TB
-    V["Vite + vite-plugin-pwa"] --> W["Workbox build"]
+    V["Vite + vite-plugin-pwa"] --> W["workbox-build"]
     W --> Files["SW + список precache"]
     V --> M["Манифест + регистрация"]
   end
