@@ -41,6 +41,24 @@ test("offline: 10 схем теории и 3 схемы архитектуры",
   }
 });
 
+test("offline: сетевой ответ возвращается независимо от разрешения кешировать", () => {
+  const strategies = section(read(THEORY), "Стратегии кеширования");
+  for (const strategy of ["CacheFirst", "NetworkFirst"]) {
+    const part = strategies.split(`\n### ${strategy}\n`)[1]?.split(/\n### /)[0] ?? "";
+    const diagram = diagrams(part)[0]?.[1] ?? "";
+    expect(diagram, strategy).toContain('N{"Получен ответ сети?"}');
+    expect(diagram, strategy).toContain('N -->|"да"| Rnet["Вернуть сетевой ответ"]');
+    expect(diagram, strategy).toContain('Rnet -.->|"если разрешено"| Save["Сохранить в кеш"]');
+  }
+  const swr = strategies.split("\n### StaleWhileRevalidate\n")[1] ?? "";
+  const diagram = diagrams(swr)[0]?.[1] ?? "";
+  expect(diagram.match(/opt Разрешено кеширование/g)).toHaveLength(2);
+  const miss = diagram.split("else Промах")[1] ?? "";
+  expect(miss).toContain("alt Получен ответ");
+  expect(miss.indexOf("N-->>Q: Текущий сетевой ответ")).toBeGreaterThan(-1);
+  expect(miss.indexOf("N-->>Q: Текущий сетевой ответ")).toBeLessThan(miss.indexOf("opt Разрешено кеширование"));
+});
+
 test("offline: навигация и RPC не сохраняют личные данные", () => {
   const resources = section(read(ARCHITECTURE), "Что кешируем");
   for (const needle of ["NetworkOnly", "персональный HTML", "RPC", "не кешируем", "офлайн-страниц", "версионированные"]) expect(resources.toLowerCase(), needle).toContain(needle.toLowerCase());
