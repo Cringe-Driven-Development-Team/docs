@@ -6,8 +6,8 @@
 <a href="https://docs.cellestial.ru/modules/"><img src="https://img.shields.io/badge/Модули-2EA44F?style=for-the-badge&logo=roadmapdotsh&logoColor=white" alt="Планы модулей"></a>
 <a href="https://github.com/orgs/Cringe-Driven-Development-Team/projects/1"><img src="https://img.shields.io/badge/Доска_задач-1F6FEB?style=for-the-badge&logo=github&logoColor=white" alt="Доска задач"></a>
 <br>
-<a href="https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Фронтенд-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="Репозиторий фронтенда"></a>
-<a href="https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development"><img src="https://img.shields.io/badge/Бэкенд-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Репозиторий бэкенда"></a>
+<a href="https://github.com/Cringe-Driven-Development-Team/frontend"><img src="https://img.shields.io/badge/Фронтенд-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="Репозиторий фронтенда"></a>
+<a href="https://github.com/Cringe-Driven-Development-Team/backend"><img src="https://img.shields.io/badge/Бэкенд-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Репозиторий бэкенда"></a>
 <a href="https://github.com/Cringe-Driven-Development-Team"><img src="https://img.shields.io/badge/Организация-24292E?style=for-the-badge&logo=github&logoColor=white" alt="Организация команды"></a>
 </p>
 
@@ -30,15 +30,47 @@ Pages экспортирует уже обновлённую wiki после р�
 Карту владельцев пакетов подтверждают зависимости и CI на конкретном SHA;
 маршруты — в [контексте проекта](https://docs.cellestial.ru/project-context).
 
-Для общего поиска держи рядом клоны `docs`, `frontend`, `backend`, `infra` и проверь
-`git remote get-url origin`: нужны репозитории организации Cringe-Driven-Development-Team.
-Когда все четыре wiki готовы, один раз запусти `openwiki link` из общего родителя
-и выбери их в локальный workspace CDD; реестр не коммитится. При нескольких
-пространствах выбери нужное через `openwiki workspace use <имя>`.
-Агент использует `openwiki_search` в этом workspace и `openwiki_read` с ID wiki
-из результата только по запросу или при архитектурной неопределённости.
-Пока wiki или workspace не готовы либо MCP недоступен, читай имеющиеся
-`openwiki/quickstart.md`, канонический Markdown и исходники напрямую.
+### Общий поиск по четырём wiki
+
+В той же среде, где запускается агент (например, WSL), установи OpenWiki и интеграцию:
+
+```bash
+npm install -g openwiki@0.7.2
+openwiki integrations install codex   # или: openwiki integrations install claude
+```
+
+Держи рядом клоны организации `Cringe-Driven-Development-Team` с именами
+[`docs`](https://github.com/Cringe-Driven-Development-Team/docs),
+[`frontend`](https://github.com/Cringe-Driven-Development-Team/frontend),
+[`backend`](https://github.com/Cringe-Driven-Development-Team/backend),
+[`infra`](https://github.com/Cringe-Driven-Development-Team/infra); учебные копии не подходят.
+Из их общего каталога:
+
+```bash
+for repo in docs frontend backend infra; do (cd "$repo" && git remote get-url origin); done
+openwiki link                         # Create workspace → CDD → выбрать четыре wiki → Finish
+for repo in docs frontend backend infra; do (cd "$repo" && openwiki workspace current); done
+```
+
+Workspace хранится локально в `~/.openwiki`, в Git не попадает. Если wiki входит в
+несколько пространств, выбери нужное из её каталога: `openwiki workspace use CDD`.
+После установки интеграции перезапусти агента. Для поиска он вызывает `openwiki_search`,
+затем `openwiki_read` с ID wiki из результата; поиск нужен по задаче, а не при каждом старте.
+
+Перед использованием сверь каждую wiki с её собственным `main`:
+
+```bash
+for repo in docs frontend backend infra; do
+  git -C "$repo" fetch origin main
+  (cd "$repo" && bun scripts/openwiki-check.ts --against "$(git rev-parse origin/main)")
+done
+```
+
+Если wiki устарела или MCP недоступен, открой `openwiki/quickstart.md` нужного клона,
+затем проверь утверждение по актуальным документам и коду владельца. Планы будущих
+фич читай напрямую в [модулях](https://docs.cellestial.ru/modules/); код и wiki сами
+по себе не подтверждают работу на проде. `frontend-packages` находится по карте
+владельцев в `docs`, отдельная пятая wiki для общего поиска не требуется.
 
 ### Обновление OpenWiki
 
