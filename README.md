@@ -258,7 +258,7 @@ bun run check      # цветовая конвенция и легенды, бе
 bun run warm       # докачать иконки схем в .eraser/icons, неизвестное имя роняет
 bun run render     # dist/<name>.html и .png, подпапки в dist/<папка>/; в Docker
 bun run build      # validate + check + warm + render + переадресация индекса + VitePress + site:check; в Docker
-bun run site:dev   # dev-сервер для правок: http://localhost:5173/ (известная ошибка fastdom — ниже)
+bun run site:dev   # dev-сервер для правок: http://localhost:5173/
 bun run site       # build + превью всех веток origin в dist/branches/; в Docker
 bun run icons      # обновить icons.txt из каталога иконок Eraser
 bun run test
@@ -334,13 +334,10 @@ Ctrl+C в терминале. Если порт 4173 занят, останов�
 Пересобирай после обновления документации. Для повторного чтения той же копии достаточно команды
 `bunx vite preview`: Docker и повторный рендер схем не нужны.
 
-Этот способ обходит две известные ошибки текущей конфигурации:
-
-- **Белый экран в `bun run site:dev`** с ошибкой `fastdom.js … does not provide an export named 'default'`:
-  Mermaid в dev-режиме неправильно подключает `fastdom`. В статической сборке ошибка не воспроизводится.
-- **Ошибка сборки Docker на ARM64** `executable doesn't exist at /usr/local/bin/chromium`:
-  Dockerfile ищет браузер в `chrome-linux64/chrome`, а в ARM64-образе он лежит в `chrome-linux/chrome`.
-  Команда с `DIAGRAMS_NATIVE=1` и `CHROMIUM_PATH` выше использует браузер на хосте.
+Этот способ обходит известную ошибку сборки Docker на ARM64:
+`executable doesn't exist at /usr/local/bin/chromium`.
+Dockerfile ищет браузер в `chrome-linux64/chrome`, а в ARM64-образе он лежит в `chrome-linux/chrome`.
+Команда с `DIAGRAMS_NATIVE=1` и `CHROMIUM_PATH` выше использует браузер на хосте.
 
 ### Как править
 

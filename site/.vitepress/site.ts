@@ -4,7 +4,7 @@ function normalizeBase(value: string): string {
   return trimmed === "" ? "/" : `/${trimmed}/`;
 }
 
-export const SITE_BASE: string = normalizeBase(process.env.SITE_BASE ?? "/");
+export const SITE_BASE: string = normalizeBase(globalThis.process?.env.SITE_BASE ?? "/");
 
 /**
  * Куда ведёт старый якорь индекса схем (`/docs/diagrams/#ci`, `/docs/#bff/ci`): путь от корня сайта
