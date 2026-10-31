@@ -8,7 +8,7 @@
         "@eraserlabs/diagrams-cli": "0.1.0",
         "@mermaid-js/mermaid-cli": "11.17.0",
         "@panzoom/panzoom": "4.6.2",
-        "@tp-prepare/vitepress-module-graph": "0.3.0",
+        "@tp-prepare/vitepress-module-graph": "1.0.0",
         "@types/bun": "1.4.2",
         "gray-matter": "4.0.3",
         "lefthook": "2.1.14",
@@ -319,7 +319,7 @@
 
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.17.11", "", {}, "sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g=="],
 
-    "@tp-prepare/vitepress-module-graph": ["@tp-prepare/vitepress-module-graph@0.3.0", "", { "dependencies": { "force-graph": "^1.51.4", "gray-matter": "^4.0.3", "js-yaml": "^5.4.2" }, "peerDependencies": { "vitepress": "^1.6", "vue": "^3.5" }, "bin": { "module-graph": "dist/cli.mjs" } }, "sha512-TU26pQmR7osjLj+vvFj+gulUPyYl3U3/kkBwSLIloIttdoapPxoU3lBn9kmp87934sM7cZ4VM9jqnF8+NKPA3Q=="],
+    "@tp-prepare/vitepress-module-graph": ["@tp-prepare/vitepress-module-graph@1.0.0", "", { "dependencies": { "force-graph": "^1.51.4", "gray-matter": "^4.0.3", "js-yaml": "^5.4.2" }, "peerDependencies": { "vitepress": "2.0.0-alpha.21", "vue": "^3.5" }, "bin": { "module-graph": "dist/cli.mjs" } }, "sha512-qaD2zb/i4b2czFLD3kUxjB+DhvRs4N5X/OxOhpgK2NDnIY1LRedaIx/b5klIORTIVTIWAesbeCdFBebbnuZuDg=="],
 
     "@tweenjs/tween.js": ["@tweenjs/tween.js@25.0.0", "", {}, "sha512-XKLA6syeBUaPzx4j3qwMqzzq+V4uo72BnlbOjmuljLrRqdsd3qnzvZZoxvMHZ23ndsRS4aufU6JOZYpCbU6T1A=="],
 
