@@ -10,6 +10,18 @@ import { InlineLinkPreviewElementTransform } from '@nolebase/vitepress-plugin-in
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
 const modules = readModules(fileURLToPath(new URL('../modules', import.meta.url)));
+const documentationSidebar = [
+  {
+    text: 'Документация',
+    items: [
+      { text: 'Что работает сейчас', link: '/documentation/' },
+      { text: 'BFF: проверенная часть', link: '/documentation/bff' },
+      { text: 'Архитектура', link: '/architecture/' },
+      { text: 'CSRF: историческая проверка', link: '/security/csrf/' },
+      { text: 'Владельцы сведений', link: '/project-context' },
+    ],
+  },
+];
 
 export default withMermaid(
   defineConfig({
@@ -50,18 +62,8 @@ export default withMermaid(
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
       sidebar: {
-        '/documentation/': [
-          {
-            text: 'Документация',
-            items: [
-              { text: 'Что работает сейчас', link: '/documentation/' },
-              { text: 'BFF: проверенная часть', link: '/documentation/bff' },
-              { text: 'Архитектура', link: '/architecture/' },
-              { text: 'CSRF: историческая проверка', link: '/security/csrf/' },
-              { text: 'Владельцы сведений', link: '/project-context' },
-            ],
-          },
-        ],
+        '/documentation/': documentationSidebar,
+        '/architecture/': documentationSidebar,
         '/project-context': [
           { text: 'Контекст проекта', items: [{ text: 'Источники и правила', link: '/project-context' }] },
         ],

@@ -1,9 +1,16 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { diagramNames, indexNames } from "./build-index.ts";
+import config from "../site/.vitepress/config.mts";
 
 const PAGE = "site/architecture/index.md";
 const ORDER = ["deployment", "ci", "cd", "frontend", "contract", "infra"];
+
+test("architecture keeps the documentation sidebar", () => {
+  const sidebar = config.themeConfig!.sidebar as Record<string, unknown>;
+  expect(sidebar["/documentation/"]).toBeDefined();
+  expect(sidebar["/architecture/"]).toEqual(sidebar["/documentation/"]);
+});
 
 test('production evidence distinguishes configuration from scenarios', () => {
   const intro = readFileSync(PAGE, 'utf8').split('\n## deployment')[0]!;
