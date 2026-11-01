@@ -48,3 +48,22 @@ test('contract separates tRPC and OpenAPI', () => {
   expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff-router')?.label).toBe('/api/trpc');
   expect(doc.connections.find(e => e.from === 'bff-go-client' && e.to === 'go-api')?.label).toBe('/api/v1');
 });
+
+test('CI separates checks and publishing', () => {
+  const doc = readDiagram('ci'), nodes = indexById(doc);
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['frontend-ci>frontend-release', 'backend-ci>backend-image', 'packages-release>npm']));
+  for (const id of ['frontend-course-sync', 'backend-course-sync', 'static-upload', 'docs-pages']) expect(nodes[id], id).toBeDefined();
+  expect(nodes['fe-drift']).toBeUndefined();
+  expect(JSON.stringify(doc)).not.toMatch(/current\.json|Argo|Coolify/);
+});
+
+test('CD separates manual frontend from automatic backend', () => {
+  const doc = readDiagram('cd');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['operator>frontend-cd', 'backend-image>backend-cd', 'backend-cd>vps2', 'frontend-cd>gateway']));
+  expect(doc.connections.find(e => e.from === 'operator' && e.to === 'frontend-cd')?.label).toBe('workflow_dispatch');
+  expect(doc.connections.find(e => e.from === 'backend-cd' && e.to === 'vps2')?.label).toContain('gateway');
+  expect(edgePairs(doc)).not.toContain('frontend-ci>frontend-cd');
+  const text = JSON.stringify(doc);
+  for (const value of ['digest', 'ассеты', 'существующий выпуск', 'миграции', 'PRODUCTION_ENABLED=true']) expect(text).toContain(value);
+  expect(text).not.toMatch(/current\.json|Argo|Coolify/);
+});
