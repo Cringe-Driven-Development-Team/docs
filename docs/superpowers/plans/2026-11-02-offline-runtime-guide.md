@@ -118,13 +118,13 @@
 - Consumes: адрес первой страницы из задачи 1; тот же фактический SHA для согласованного описания кода.
 - Produces: `/documentation/offline/build-and-registration`, H1 «Сборка и регистрация SW», три схемы; ссылка на обзор `/documentation/offline/` без якоря.
 
-- [ ] **Step 1: Подтвердить пути, версии и связи пакетов.**
+- [x] **Step 1: Подтвердить пути, версии и связи пакетов.**
 
   На SHA выпуска прочитать `apps/client/src/serviceWorker.ts`, `apps/client/src/main.tsx`, `apps/client/vite.config.prod.ts`, `apps/client/vite/shared.ts`, `apps/client/vite/plugins.ts`, `apps/client/package.json` и соответствующие записи `bun.lock`.
 
   Проверить package.json опубликованных версий `vite-plugin-pwa`, `workbox-build`, `workbox-window` и использованных модулей Workbox. Для исходного проверенного выпуска это `vite-plugin-pwa@2.0.0` и Workbox `7.4.1`; не переносить значения на другой SHA без сверки. Объяснение виртуального модуля сверить с реализацией `resolveId`/`load` и регистратора в соответствующей версии плагина, а генерацию — с документацией `generateSW`.
 
-- [ ] **Step 2: Написать контракт второй страницы.**
+- [x] **Step 2: Написать контракт второй страницы.**
 
   В `scripts/offline-build-registration-pages.test.ts` проверить:
   - порядок H2: «Семейство Workbox», «Прямые и транзитивные зависимости», «Что делает vite-plugin-pwa», «Виртуальный модуль регистрации», «Как связаны сборка и регистрация», «Где настроен SW в Cellestial», «Что выполняется в браузере»;
@@ -135,18 +135,18 @@
   - три схемы: зависимости, две ветви сборки, регистрация/precache; в последовательности browser/BFF/Cache Storage представлены раздельно;
   - нет полного `VitePWA({...})` или реализации SW, публичные ссылки на код закреплены SHA.
 
-- [ ] **Step 3: Проверить красный результат.**
+- [x] **Step 3: Проверить красный результат.**
 
   Run: `bun test scripts/offline-build-registration-pages.test.ts`.
   Expected: отсутствие страницы, не ошибка окружения.
 
-- [ ] **Step 4: Написать страницу.**
+- [x] **Step 4: Написать страницу.**
 
   Граф зависимостей описывает установку npm-пакетов; схемы сборки и выполнения отдельно показывают состав браузерного кода. Не называть зависимости самого плагина devDependencies проекта. Минимальный фрагмент импорта и таблица ключей заменяют полный готовый конфиг.
 
   В двух ветвях сборки `workbox` через `workbox-build` создаёт `dist/sw.js`, а виртуальный модуль создаёт регистратор в SPA. В рантайме `registerSW` использует `workbox-window` и браузерный API; браузер получает SW с BFF, а SW сохраняет офлайн-комплект в Cache Storage. `inlineWorkboxRuntime` относится к коду внутри SW, а не к запрету отдельного чанка `workbox-window` на странице.
 
-- [ ] **Step 5: Проверить и зафиксировать часть.**
+- [x] **Step 5: Проверить и зафиксировать часть.**
 
   Run: `bun test scripts/offline-build-registration-pages.test.ts scripts/offline-runtime-pages.test.ts scripts/offline-pages.test.ts`.
   Expected: обе страницы и исторический материал проходят проверки.
