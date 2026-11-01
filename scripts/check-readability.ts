@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [mermaid|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -17,7 +17,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -49,6 +49,97 @@ function observe(page: Page) {
       legacyFaviconUrls.add(response.url()); optionalFaviconFailures.push(detail);
     } else failures.push(detail);
   });
+}
+
+type MermaidError = { url: string; time: number; message: string; html: string };
+async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
+  const errors: MermaidError[] = [];
+  const prefix = 'MERMAID_ERROR:';
+  page.on('console', message => {
+    if (message.text().startsWith(prefix)) errors.push(JSON.parse(message.text().slice(prefix.length)) as MermaidError);
+  });
+  await page.evaluateOnNewDocument(prefix => {
+    if (window !== window.top) return;
+    const seen = new WeakSet<Element>();
+    const selector = '.error-icon, .error-text, .mermaid-error';
+    const inspect = (node: Node) => {
+      if (!(node instanceof Element)) return;
+      const elements = [...(node.matches(selector) ? [node] : []), ...node.querySelectorAll(selector)];
+      for (const element of elements) {
+        if (seen.has(element)) continue;
+        seen.add(element);
+        console.debug(prefix + JSON.stringify({ url: location.href, time: performance.now(),
+          message: element.textContent ?? '', html: element.outerHTML.slice(0, 1000) }));
+      }
+    };
+    new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === 'characterData') inspect(record.target.parentElement!);
+        if (record.type === 'attributes') inspect(record.target);
+        for (const node of [...record.addedNodes, ...record.removedNodes]) inspect(node);
+      }
+    }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+  }, prefix);
+  return errors;
+}
+
+async function checkMermaid(browser: Browser, url: (path: string) => string): Promise<void> {
+  const fixture = await browser.newPage();
+  const events = await observeMermaidErrors(fixture);
+  try {
+    await fixture.goto('data:text/html,<html><body>Mermaid observer self-check</body></html>');
+    const transient = async () => {
+      await fixture.evaluate(() => {
+        const error = document.createElement('div');
+        error.innerHTML = '<svg><text class="error-text">Syntax error in text</text></svg>';
+        document.body.append(error);
+        error.remove();
+      });
+      await fixture.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
+      assert.equal(await fixture.$$eval('.error-text', nodes => nodes.length), 0);
+    };
+    await transient();
+    assert(events.some(event => event.message.includes('Syntax error in text')), 'transientErrorObserver: removed error must be recorded');
+    const before = events.length;
+    await fixture.reload();
+    await transient();
+    assert(events.length > before, 'transientErrorSurvivesReload: Node retains events across reload');
+    console.log('PASS transientErrorObserver and transientErrorSurvivesReload');
+  } finally {
+    await fixture.close();
+  }
+
+  const errors: MermaidError[] = [];
+  const states: unknown[] = [];
+  try {
+    for (const dark of [false, true]) {
+      const context = await browser.createBrowserContext();
+      try {
+        const page = await context.newPage();
+        observe(page);
+        const observed = await observeMermaidErrors(page);
+        await page.setViewport({ width: 2560, height: 1440 });
+        await page.evaluateOnNewDocument(dark => {
+          localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+        }, dark);
+        await page.goto(url('modules/2/tracks/offline/caching-strategies#networkonly'), { waitUntil: 'networkidle0' });
+        for (const action of ['direct', 'reload']) {
+          if (action === 'reload') await page.reload({ waitUntil: 'networkidle0' });
+          await page.waitForFunction(() => document.querySelectorAll('.mermaid svg').length === 5 && !document.querySelector('.mermaid .error-text'));
+          const actual = await page.evaluate(() => ({ dark: document.documentElement.classList.contains('dark'), theme: localStorage.getItem('vitepress-theme-appearance') }));
+          states.push({ expectedDark: dark, action, ...actual, errors: observed.length, svg: await page.$$eval('.mermaid svg', nodes => nodes.length) });
+          assert.equal(actual.dark, dark, JSON.stringify(actual));
+        }
+        errors.push(...observed);
+      } finally {
+        await context.close();
+      }
+    }
+    assert.deepEqual(errors, [], 'validDiagramsNeverShowError: no transient error DOM during load/reload');
+    console.log('PASS validDiagramsNeverShowError: direct/reload, persistent light/dark themes');
+  } finally {
+    await Bun.write(join(artifacts, `${label}-mermaid-errors.json`), JSON.stringify({ errors, states }, null, 2) + '\n');
+  }
 }
 
 // The timeout below observes the plugin's delayed width update; it is not product timing.
@@ -614,6 +705,7 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
