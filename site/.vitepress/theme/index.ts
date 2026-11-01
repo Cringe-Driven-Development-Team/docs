@@ -3,7 +3,7 @@
 import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
-import { defineComponent, h, inject, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
+import { defineComponent, h, inject, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
 import { diagramTarget } from '../site.ts';
 import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-graph/theme';
@@ -28,7 +28,12 @@ import './custom.css';
 
 const readabilities: ReadabilitiesOptions = {
   locales: { 'ru-RU': defaultRuLocale },
-  layoutSwitch: { defaultMode: LayoutMode.FullWidth },
+  layoutSwitch: {
+    defaultMode: LayoutMode.FullWidth,
+    disableAnimation: true,
+    pageLayoutMaxWidth: { disableAnimation: true },
+    contentLayoutMaxWidth: { disableAnimation: true },
+  },
   spotlight: { defaultToggle: false },
 };
 
@@ -53,19 +58,38 @@ const MERMAID_SETTLE_MS = 300;
 
 // Браузер прокручивает к якорю до того, как mermaid нарисует схемы; схемы выше якоря потом
 // вырастают и уносят раздел вниз. Когда все схемы на странице готовы, прокручиваем ещё раз.
-function scrollToHashAfterMermaid(): void {
+function scrollToHashAfterMermaid(): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cancel = () => {
+    clearTimeout(timer);
+    for (const event of ['wheel', 'touchstart', 'keydown']) window.removeEventListener(event, cancel);
+  };
+  const href = location.href;
   const hash = decodeURIComponent(location.hash.slice(1));
-  if (!hash) return;
+  if (!hash) return cancel;
   const started = Date.now();
+  for (const event of ['wheel', 'touchstart', 'keydown']) window.addEventListener(event, cancel, { passive: true });
   const tick = () => {
+    if (location.href !== href) { cancel(); return; }
     // Блоки .mermaid плагин создаёт асинхронно: первые MERMAID_SETTLE_MS их может ещё не быть.
     const elapsed = Date.now() - started;
     const blocks = [...document.querySelectorAll('.mermaid')];
-    const ready = elapsed >= MERMAID_SETTLE_MS && blocks.every((block) => block.querySelector('svg'));
+    // Nolebase 2.21.1 applies saved slider widths after a debounce, also across 1440px.
+    // Match its clamped value, not just an old nonempty inline style from the previous viewport.
+    const adjustable = document.body.matches('.VPNolebaseEnhancedReadabilitiesLayoutSwitchSidebarWidthAdjustableOnly,.VPNolebaseEnhancedReadabilitiesLayoutSwitchBothWidthAdjustable');
+    const widthsReady = !adjustable || (['page', 'content'] as const).every(kind => {
+      const saved = parseInt(localStorage.getItem(`vitepress-nolebase-enhanced-readabilities-${kind}-layout-max-width`) ?? String(kind === 'page' ? 10000 : 8000));
+      const percent = matchMedia('(min-width: 1440px)').matches
+        ? Math.ceil((Number.isNaN(saved) ? 10000 : Math.min(10000, Math.max(6000, saved))) / 100)
+        : 100;
+      return document.body.style.getPropertyValue(`--vp-nolebase-enhanced-readabilities-${kind}-max-width`) === `${percent}%`;
+    });
+    const ready = elapsed >= MERMAID_SETTLE_MS && widthsReady && blocks.every((block) => block.querySelector('svg'));
     if (!ready && elapsed < MERMAID_WAIT_MS) {
-      setTimeout(tick, 100);
+      timer = setTimeout(tick, 100);
       return;
     }
+    cancel();
     const target = document.getElementById(hash);
     if (!target) return;
     // Как у VitePress: заголовок под шапкой сайта, а не за ней.
@@ -75,6 +99,7 @@ function scrollToHashAfterMermaid(): void {
     window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - navBottom - 24 });
   };
   tick();
+  return cancel;
 }
 
 const theme: Theme = {
@@ -115,6 +140,9 @@ const theme: Theme = {
   },
   setup() {
     const route = useRoute();
+    let cancelScroll = () => {};
+    const scroll = () => { cancelScroll(); cancelScroll = scrollToHashAfterMermaid(); };
+    onBeforeUnmount(() => cancelScroll());
     onMounted(() => {
       const base = import.meta.env.BASE_URL;
       if (location.pathname === base) {
@@ -124,11 +152,12 @@ const theme: Theme = {
           return;
         }
       }
-      scrollToHashAfterMermaid();
+      scroll();
     });
     watch(
-      () => route.path,
-      () => nextTick(scrollToHashAfterMermaid),
+      () => [route.path, route.hash],
+      scroll,
+      { flush: 'post' },
     );
   },
 };

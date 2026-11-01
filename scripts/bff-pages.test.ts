@@ -507,7 +507,7 @@ test("выпуск, откат и сборка ведут к владельца�
     [BUILD_AND_RUN, "./service#health-check", SERVICE, "## Health check"],
     [BOOTSTRAP, "./build-and-run#сборка-и-образ", BUILD_AND_RUN, "## Сборка и образ"],
     [BOOTSTRAP, "./release#путь-до-production", RELEASE, "## Путь до production"],
-    [BOOTSTRAP, "./rollback#что-остается-доступным", ROLLBACK, "## Что остаётся доступным"],
+    [BOOTSTRAP, "./rollback", ROLLBACK, "## Как выбрать прежний выпуск"],
     [BOOTSTRAP, "./migration#переключение", MIGRATION, "## Переключение"],
     [BOOTSTRAP, "./service#health-check", SERVICE, "## Health check"],
     [BOOTSTRAP, "./service#ошибки-и-логи", SERVICE, "## Ошибки и логи"],

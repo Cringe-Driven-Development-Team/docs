@@ -35,6 +35,13 @@ test("config: three entrances keep architecture in documentation, no branch prev
     expect(documentation).toContain(`](${link})`);
   }
   expect(documentation).toContain('href="../openwiki/" target="_self"');
+  const observed = documentation.split("## Что подтверждено на проде")[1]?.split("## Архитектура")[0] ?? "";
+  const observations = observed.match(/^- .+$/gm) ?? [];
+  expect(observations).toHaveLength(5);
+  expect(observations[1]).toContain("не содержит пользователя и не устанавливает cookie");
+  expect(observations[2]).toContain("GET tRPC без CSRF-заголовка");
+  expect(observations[3]).toContain("GET tRPC с CSRF-заголовком");
+  expect(observed).toContain("POST-защита от чужого Origin");
   expect(documentation).toContain("31.10.2026");
   expect(documentation).toContain("не подтверждены");
 });
