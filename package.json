@@ -30,6 +30,7 @@
     "site:native": "bun scripts/build-site.ts",
     "icons": "bun scripts/fetch-icons.ts",
     "skills:sync": "bun scripts/skills-sync.ts",
+    "wiki:browser": "bun scripts/openwiki-browser-check.ts",
     "wiki:export": "bun scripts/export-openwiki.ts"
   },
   "devDependencies": {

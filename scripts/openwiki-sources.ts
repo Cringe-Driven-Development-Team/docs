@@ -14,7 +14,7 @@ const regularModes = new Set(['100644', '100755']);
 
 async function git(root: string, args: string[]): Promise<string> {
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-  const child = Bun.spawn(['git', '-c', 'core.hooksPath=/dev/null', ...args], {
+  const child = Bun.spawn(['git', '-c', 'core.hooksPath=/dev/null', '-c', `safe.directory=${root}`, ...args], {
     cwd: root, stdout: 'pipe', stderr: 'pipe',
     env: { ...env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_TERMINAL_PROMPT: '0' },
   });

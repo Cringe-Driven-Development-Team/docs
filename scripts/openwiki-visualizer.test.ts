@@ -86,6 +86,8 @@ const events = {};
 let headings = [], anchors = [];
 const el = () => ({
   innerHTML: '', textContent: '', scrollTop: 0, dataset: {},
+  append(child) { this.appended = child; },
+  removeEventListener() {},
   querySelectorAll(selector) { return selector.startsWith('.md h') ? headings : selector === '.md a' ? anchors : selector === '[data-workspace-home]' ? [document.querySelector('#map-button')] : []; },
   insertAdjacentHTML(_position, html) { this.innerHTML = html + this.innerHTML; },
   addEventListener(type, handler) { this[type] = handler; }
@@ -108,7 +110,7 @@ for (const id of ['#toggle-graph', '#theme']) {
   element.setAttribute = () => {};
 }
 let payload;
-initGraph = () => { G = { graphData(data) { if (data) payload = data; return payload; }, zoom() {} }; };
+initGraph = () => { G = { graphData(data) { if (data) payload = data; return payload; }, zoom() {}, onEngineStop() {} }; };
 masterGraph = input;
 refreshWorkspaceGraph();
 `;
@@ -147,9 +149,10 @@ test('initial URL, popstate and hashchange restore the page and never push histo
       const back = current;
       window.location.href += '#missing';
       events.hashchange();
-      return { initial, back, current, currentRoute, pushes, detail: elements['#detail'].innerHTML };
+      return { overlayPreserved: elements['#graph'].appended === elements['#graph-overlay'], initial, back, current, currentRoute, pushes, detail: elements['#detail'].innerHTML };
     })();
   `);
+  expect(result.overlayPreserved).toBe(true);
   expect(result.initial).toBe('frontend/architecture/bff');
   expect(result.back).toBe('docs/quickstart');
   expect(result.current).toBe('docs/quickstart');
@@ -255,4 +258,22 @@ test('native reader backlinks are escaped keyboard buttons', () => {
   `);
   expect(result).toContain('<button type="button" class="chip"');
   expect(result).not.toContain('<img');
+});
+
+
+test('initial graph fit runs once, cancels for graph input or page selection and skips a hidden panel', () => {
+  const result = runtime(browser + `
+    const panel = document.querySelector('#graph');
+    let stopped, fits = 0;
+    G = { onEngineStop(fn) { stopped = fn; }, zoomToFit() { fits++; }, graphData() { return {links:[]}; } };
+    fitInitialWorkspaceGraph(); stopped(); stopped();
+    const once = fits;
+    fitInitialWorkspaceGraph(); panel.pointerdown(); stopped();
+    fitInitialWorkspaceGraph(); panel.wheel(); stopped();
+    fitInitialWorkspaceGraph(); navigateWorkspace({wiki:'docs',page:'quickstart'}); stopped();
+    const cancelled = fits;
+    panel.clientWidth = 0; stopped = null; fitInitialWorkspaceGraph();
+    ({once, cancelled, hidden: stopped === null});
+  `);
+  expect(result).toEqual({once:1,cancelled:1,hidden:true});
 });

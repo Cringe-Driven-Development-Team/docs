@@ -4,6 +4,25 @@ const wikiOrder = Object.keys(wikiPalette);
 let masterGraph = null;
 let activeWiki = null;
 let currentRoute = null;
+let cancelInitialGraphFit = () => {};
+
+function fitInitialWorkspaceGraph() {
+    const panel = $('#graph');
+    if (panel.clientWidth === 0) return;
+    let pending = true;
+    cancelInitialGraphFit = () => {
+        pending = false;
+        panel.removeEventListener('pointerdown', cancelInitialGraphFit);
+        panel.removeEventListener('wheel', cancelInitialGraphFit);
+    };
+    panel.addEventListener('pointerdown', cancelInitialGraphFit, { passive: true });
+    panel.addEventListener('wheel', cancelInitialGraphFit, { passive: true });
+    G.onEngineStop(() => {
+        if (!pending) return;
+        cancelInitialGraphFit();
+        G.zoomToFit(0, 40);
+    });
+}
 
 function workspaceLegend() {
     $('#legend').innerHTML = wikiOrder.filter(wiki => activeWiki === null || wiki === activeWiki)
@@ -97,6 +116,7 @@ function workspaceNotFound(message) {
 }
 
 function navigateWorkspace(route, push = true) {
+    cancelInitialGraphFit();
     currentRoute = route;
     if (push) {
         const next = writeWikiRoute(new URL(window.location.href), route);
@@ -172,7 +192,10 @@ async function workspaceLoad(firstTime) {
     masterGraph = await response.json();
     refreshWorkspaceGraph();
     if (firstTime) {
+        // ForceGraph clears its container; retain the native legend and controls overlay.
+        const overlay = $('#graph-overlay');
         initGraph();
+        $('#graph').append(overlay);
         if (G) { G.graphData(buildGraphData()); G.zoom((4 / Math.cbrt(graph.nodes.length || 1)) * 1.35); }
         window.addEventListener('popstate', workspaceLocation);
         window.addEventListener('hashchange', workspaceLocation);
@@ -185,4 +208,5 @@ async function workspaceLoad(firstTime) {
         syncControls();
     }
     workspaceLocation();
+    if (firstTime) fitInitialWorkspaceGraph();
 }

@@ -1,82 +1,71 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { decorateVisualizer, exportWikiVisualizer, readWikiProvenance } from './export-openwiki';
-
-const checkpoint = { status: 'complete', updatedAt: '2026-10-24T17:03:09.475Z', gitHead: 'd20a0f0d6d80462569c761d2e2d9cdc1defbcee6' };
-const anchor = '<div class="main" id="main">';
-const files = ['index.html', 'client.js', 'client-lib.js', 'styles.css', 'graph.json'];
+import { exportWikiVisualizer } from './export-openwiki';
+import { createExportFixture } from './openwiki-export-fixture';
+import { exportStaticVisualizer } from 'openwiki/dist/visualize/static-export.js';
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
-
-test('reads only a complete checkpoint with ISO date and full SHA', () => {
-  expect(readWikiProvenance(checkpoint)).toEqual({ updatedAt: checkpoint.updatedAt, gitHead: checkpoint.gitHead });
-  for (const field of ['status', 'updatedAt', 'gitHead']) {
-    const invalid = { ...checkpoint } as Record<string, unknown>;
-    delete invalid[field];
-    expect(() => readWikiProvenance(invalid)).toThrow(field);
-  }
-  for (const [field, value] of [['status', 'running'], ['updatedAt', 'yesterday'], ['updatedAt', '2026-02-30T17:03:09.475Z'], ['gitHead', 'abc'], ['gitHead', 'z'.repeat(40)]]) {
-    expect(() => readWikiProvenance({ ...checkpoint, [field!]: value })).toThrow(field!);
-  }
-});
-
-test('inserts checkpoint provenance before the native main content', () => {
-  const result = decorateVisualizer(`<header>Wiki</header>${anchor}</div>`, 'body {}', checkpoint);
-  expect(result.html).toContain(`<time datetime="${checkpoint.updatedAt}">20:03 24 октября 2026 г. МСК</time>`);
-  expect(result.html).toContain(`href="https://github.com/Cringe-Driven-Development-Team/docs/commit/${checkpoint.gitHead}"`);
-  expect(result.html.indexOf(checkpoint.gitHead)).toBeLessThan(result.html.indexOf(anchor));
-  expect(result.css).toContain('body {}');
-  expect(result.css).toContain('@media');
-  expect(result.css).toContain('overflow-wrap');
-});
-
-test('rejects an unknown or ambiguous visualizer template', () => {
-  expect(() => decorateVisualizer('<html></html>', '', checkpoint)).toThrow('main');
-  expect(() => decorateVisualizer(anchor + anchor, '', checkpoint)).toThrow('main');
-});
-
 async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), 'wiki-export-'));
-  roots.push(root);
-  await mkdir(join(root, 'openwiki'));
-  return root;
+  const root = await mkdtemp(join(tmpdir(), 'wiki-export-')); roots.push(root);
+  return { root, snapshotDir: await createExportFixture(root) };
 }
-
-test('replaces stale output and decorates all five native exported assets', async () => {
-  const root = await fixture();
-  await writeFile(join(root, 'openwiki/.last-update.json'), JSON.stringify(checkpoint));
+test('publishes exactly four sources, seven assets, checkpoint provenance and replaces only wiki output', async () => {
+  const { root, snapshotDir } = await fixture();
   await mkdir(join(root, 'dist/openwiki'), { recursive: true });
   await writeFile(join(root, 'dist/openwiki/stale.txt'), 'old');
   await writeFile(join(root, 'dist/keep.txt'), 'keep');
-  await Bun.$`git -C ${root} init -q`.quiet();
-  await Bun.$`git -C ${root} -c user.name=Fixture -c user.email=fixture@example.com commit --allow-empty -qm fixture`.quiet();
-  const siteHead = (await Bun.$`git -C ${root} rev-parse HEAD`.text()).trim();
-  expect(siteHead).not.toBe(checkpoint.gitHead);
-  await exportWikiVisualizer(root, async (source, output) => {
-    expect(source).toBe(join(root, 'openwiki'));
-    await mkdir(output, { recursive: true });
-    await Promise.all(files.map(name => writeFile(join(output, name), name === 'index.html' ? anchor : 'native')));
-  });
-  for (const file of files) expect(await Bun.file(join(root, 'dist/openwiki', file)).exists()).toBe(true);
-  expect(await Bun.file(join(root, 'dist/openwiki/stale.txt')).exists()).toBe(false);
-  expect(await readFile(join(root, 'dist/keep.txt'), 'utf8')).toBe('keep');
-  const html = await readFile(join(root, 'dist/openwiki/index.html'), 'utf8');
-  expect(html).toContain(checkpoint.gitHead);
-  expect(html).not.toContain(siteHead);
-  expect(await readFile(join(root, 'dist/openwiki/styles.css'), 'utf8')).toContain('overflow-wrap');
+  await exportWikiVisualizer(root, { snapshotDir });
+  expect((await stat(join(root,'dist/openwiki'))).mode & 0o777).toBe(0o755);
+  const graph = await Bun.file(join(root, 'dist/openwiki/graph.json')).json();
+  const manifest = await Bun.file(join(root, 'dist/openwiki/manifest.json')).json();
+  expect(graph.sources.map((s: {id: string}) => s.id).sort()).toEqual(['backend', 'docs', 'frontend', 'infra']);
+  expect(graph.nodes.filter((n: {page: string}) => n.page === 'quickstart')).toHaveLength(4);
+  expect(manifest.sources).toEqual(graph.sources);
+  expect(manifest.sources[0].repositorySha).toBe('c'.repeat(40));
+  const checkpoint = await Bun.file(join(root,'openwiki/.last-update.json')).json();
+  expect(manifest.sources.every((s:{sourceSha:string}) => s.sourceSha === checkpoint.gitHead)).toBe(true);
+  const docs = manifest.sources.find((s:{id:string}) => s.id === 'docs');
+  expect(docs.repositorySha).toBe((await Bun.$`git -C ${root} rev-parse HEAD`.text()).trim());
+  expect(docs.repositorySha).not.toBe(docs.sourceSha);
+  expect(JSON.stringify(manifest)).not.toContain('wikiRoot');
+  expect(JSON.stringify(manifest)).not.toContain(root);
+  for (const name of ['index.html','client.js','client-lib.js','styles.css','graph.json','workspace-lib.js','manifest.json']) expect(await Bun.file(join(root,'dist/openwiki',name)).exists()).toBe(true);
+  expect(await Bun.file(join(root,'dist/openwiki/stale.txt')).exists()).toBe(false);
+  expect(await readFile(join(root,'dist/keep.txt'),'utf8')).toBe('keep');
+});
+test('invalid explicit snapshot preserves previously published output', async () => {
+  const { root, snapshotDir } = await fixture();
+  await mkdir(join(root,'dist/openwiki'), {recursive:true});
+  await writeFile(join(root,'dist/openwiki/keep'),'previous');
+  await rm(join(snapshotDir,'infra'), {recursive:true});
+  await expect(exportWikiVisualizer(root,{snapshotDir})).rejects.toThrow();
+  expect(await Bun.file(join(root,'dist/openwiki/keep')).text()).toBe('previous');
+});
+test('incomplete native export and unknown native assets preserve output', async () => {
+  for (const broken of ['missing','unsupported']) {
+    const { root, snapshotDir } = await fixture();
+    await mkdir(join(root,'dist/openwiki'),{recursive:true});
+    await writeFile(join(root,'dist/openwiki/keep'),'previous');
+    const nativeExport: typeof exportStaticVisualizer = async options => {
+      const result = await exportStaticVisualizer(options);
+      if (broken === 'missing') await rm(join(options.outputDir,'client-lib.js'));
+      else await writeFile(join(options.outputDir,'client.js'),'unknown');
+      return result;
+    };
+    await expect(exportWikiVisualizer(root,{snapshotDir}, { nativeExport })).rejects.toThrow();
+    expect(await Bun.file(join(root,'dist/openwiki/keep')).text()).toBe('previous');
+  }
 });
 
-test('validates checkpoint before invoking the exporter', async () => {
-  const root = await fixture();
-  let invoked = false;
-  await expect(exportWikiVisualizer(root, async () => { invoked = true; })).rejects.toThrow();
-  expect(invoked).toBe(false);
-});
-
-test('rejects an incomplete native export', async () => {
-  const root = await fixture();
-  await writeFile(join(root, 'openwiki/.last-update.json'), JSON.stringify(checkpoint));
-  await expect(exportWikiVisualizer(root, async () => {})).rejects.toThrow('index.html');
+test('preview uses its own docs checkout and reuses the identical offline platform snapshot', async () => {
+  const main = await fixture(), branch = await fixture();
+  await writeFile(join(branch.root,'openwiki/quickstart.md'),'---\ntitle: Branch docs\n---\nBranch-specific quickstart');
+  await exportWikiVisualizer(main.root,{snapshotDir:main.snapshotDir});
+  await exportWikiVisualizer(branch.root,{snapshotDir:main.snapshotDir});
+  const primary = await Bun.file(join(main.root,'dist/openwiki/graph.json')).json();
+  const preview = await Bun.file(join(branch.root,'dist/openwiki/graph.json')).json();
+  expect(preview.nodes.find((n: {id:string})=>n.id==='docs/quickstart').title).toBe('Branch docs');
+  expect(preview.sources.filter((s:{id:string})=>s.id!=='docs')).toEqual(primary.sources.filter((s:{id:string})=>s.id!=='docs'));
 });

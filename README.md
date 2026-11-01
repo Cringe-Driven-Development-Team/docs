@@ -492,3 +492,36 @@ Push в ветку запускает workflow Pages на `main`. Тот соб�
 `docs/superpowers/specs/2026-09-13-branch-previews-design.md`,
 `docs/superpowers/specs/2026-09-16-mvp-compose-design.md`,
 `docs/superpowers/specs/2026-09-27-docker-render-design.md`.
+
+### Общая публичная карта OpenWiki
+
+`/openwiki/` объединяет опубликованные wiki `docs`, `frontend`, `backend`, `infra`.
+Генерация содержимого остаётся ручной (`wiki:update-local`); Pages только читает
+готовые Markdown и checkpoint и автоматически публикует общий визуализатор.
+Локальные MCP workspace и соседние клоны для этой сборки не нужны.
+
+```bash
+bun run wiki:prepare
+OPENWIKI_SOURCES_DIR="$PWD/.openwiki-sources" bun run wiki:export
+bun run build
+bun run site
+```
+
+`wiki:prepare` получает только публичные `main` трёх платформ, без их hooks,
+скриптов и зависимостей. `wiki:export` без `OPENWIKI_SOURCES_DIR` получает новый
+снимок сам. Явно заданный повреждённый снимок останавливает сборку. Docker и
+Pages готовят снимок один раз; все превью используют его read-only, а wiki `docs`
+берут из собственной ветки. `SITE_BASE` и относительные assets сохраняют ссылки
+превью. Для проверки клиента: `bun run wiki:browser --fixture` или
+`bun run wiki:browser dist/openwiki` с `CHROMIUM_PATH` при необходимости.
+
+Дата и исходный SHA каждой wiki принадлежат checkpoint её владельца. Полные
+`sourceSha`, `repositorySha` прочитанных файлов, свежесть и время сборки доступны
+в `openwiki/manifest.json`. Устаревшая wiki отображается с предупреждением;
+непроверенная свежесть помечается отдельно. Код и wiki не подтверждают выкладку
+на прод. Без явных межрепозиторных wiki-ссылок граф имеет четыре компоненты.
+
+Для запуска Pages из платформ используется отдельный secret `DOCS_PAGES_TOKEN`
+(fine-grained: только `docs`, Actions write), настроенный владельцем в трёх
+репозиториях. Это право вызова workflow, а не вход сборки: токен не передаётся
+Docker или страницам. Чтение публичных wiki credentials не требует.
