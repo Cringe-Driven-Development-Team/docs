@@ -25,6 +25,9 @@ test("documentation sidebar is a linked collapsed tree", () => {
   expect(sidebar['/documentation/']).toEqual([{text: 'Документация', items: [
     {text: 'Что работает сейчас', link: '/documentation/'},
     {text: 'BFF: проверенная часть', link: '/documentation/bff'},
+    {text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
+      {text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration'},
+    ]},
     {text: 'Архитектура', link: '/documentation/architecture/'},
     {text: 'CSRF: историческая проверка', link: '/documentation/csrf/', collapsed: true, items: [
       {text: 'Сценарии', link: '/documentation/csrf/scenarios'},
