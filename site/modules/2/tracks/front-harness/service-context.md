@@ -67,8 +67,8 @@ Code — его настройки и MCP-серверы. Запуск из об
 
 | Вопрос | Где ответ |
 | --- | --- |
-| Как устроен прод | [Архитектура](https://docs.cellestial.ru/architecture/) |
-| Авторизация, CSRF | [CSRF](https://docs.cellestial.ru/security/csrf/) |
+| Как устроен прод | [Архитектура](https://docs.cellestial.ru/documentation/architecture/) |
+| Авторизация, CSRF | [CSRF](https://docs.cellestial.ru/documentation/csrf/) |
 | Что делаем в текущем модуле | трек модуля в [документации](https://docs.cellestial.ru/) |
 | Ручка бэка: поля, ошибки, код | контракт — `spec/openapi.json`; код — `../backend` |
 | Окружение, деплой | `../infra` |

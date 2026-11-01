@@ -31,7 +31,7 @@ try {
   const failures: string[] = [];
   for (const [source, selector] of [
     ['', '.VPNavBarMenu a'],
-    ['project-context', '.vp-doc a'],
+    ['documentation/project-context', '.vp-doc a'],
   ]) {
     try {
       await page.goto(`${server.url.origin}${SITE_BASE}${source}`, { waitUntil: 'networkidle0' });
@@ -45,8 +45,9 @@ try {
       assert(response && response.ok(), `${source || 'home'}: expected a new document, got SPA navigation`);
       assert.equal(new URL(page.url()).pathname, `${SITE_BASE}openwiki/`);
       assert.equal(await page.evaluate(() => (window as unknown as Record<string, unknown>).__wikiNavigationProbe), undefined);
-      await page.waitForSelector('html[data-static-export="true"] .wiki-provenance');
-      console.log(`PASS ${SITE_BASE}${source || '(home)'} click: new static wiki document`);
+      await page.waitForSelector('html[data-static-export="true"] .wiki-page-provenance');
+      assert.equal(await page.$$eval('.wiki-source', cards => cards.length), 4);
+      console.log(`PASS ${SITE_BASE}${source || '(home)'} click: new static wiki document with four sources`);
     } catch (error) {
       failures.push(`${source || 'home'}: ${String(error)}`);
     }
@@ -54,7 +55,7 @@ try {
   await page.goto(`${server.url.origin}${SITE_BASE}openwiki/`, { waitUntil: 'domcontentloaded' });
   for (const theme of ['light', 'dark']) {
     await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
-    const border = await page.$eval('.wiki-provenance', element => {
+    const border = await page.$eval('.wiki-page-provenance', element => {
       const css = getComputedStyle(element);
       return { width: css.borderBottomWidth, style: css.borderBottomStyle };
     });

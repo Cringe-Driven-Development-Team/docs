@@ -2,7 +2,7 @@
 
 <p align="center">
 <a href="https://docs.cellestial.ru/"><img src="https://img.shields.io/badge/Сайт-5C73E7?style=for-the-badge&logo=vitepress&logoColor=white" alt="Сайт документации"></a>
-<a href="https://docs.cellestial.ru/architecture/"><img src="https://img.shields.io/badge/Архитектура-EC2C40?style=for-the-badge&logo=eraser&logoColor=white" alt="Диаграммы архитектуры"></a>
+<a href="https://docs.cellestial.ru/documentation/architecture/"><img src="https://img.shields.io/badge/Архитектура-EC2C40?style=for-the-badge&logo=eraser&logoColor=white" alt="Диаграммы архитектуры"></a>
 <a href="https://docs.cellestial.ru/modules/"><img src="https://img.shields.io/badge/Модули-2EA44F?style=for-the-badge&logo=roadmapdotsh&logoColor=white" alt="Планы модулей"></a>
 <a href="https://github.com/orgs/Cringe-Driven-Development-Team/projects/1"><img src="https://img.shields.io/badge/Доска_задач-1F6FEB?style=for-the-badge&logo=github&logoColor=white" alt="Доска задач"></a>
 <br>
@@ -13,7 +13,7 @@
 
 <p align="center"><img src=".github/assets/nanami.gif" alt="" width="426"></p>
 
-**Содержание:** [Контекст проекта](https://docs.cellestial.ru/project-context) · [Диаграммы](#диаграммы) · [Локально](#локально) · [Как править](#как-править) ·
+**Содержание:** [Контекст проекта](https://docs.cellestial.ru/documentation/project-context) · [Диаграммы](#диаграммы) · [Локально](#локально) · [Как править](#как-править) ·
 [Сайт](#сайт) · [Модули](#модули) · [Превью веток](#превью-веток)
 
 [OpenWiki — тематический указатель](https://github.com/Cringe-Driven-Development-Team/docs/blob/main/openwiki/quickstart.md).
@@ -28,7 +28,7 @@ Pages экспортирует уже обновлённую wiki после р�
 работающее поведение требует отдельного свидетельства: SHA выкаченного релиза, дата
 и результат сценария на проде. Код и CI сами по себе не подтверждают выкладку.
 Карту владельцев пакетов подтверждают зависимости и CI на конкретном SHA;
-маршруты — в [контексте проекта](https://docs.cellestial.ru/project-context).
+маршруты — в [контексте проекта](https://docs.cellestial.ru/documentation/project-context).
 
 ### Общий поиск по четырём wiki
 
@@ -185,7 +185,7 @@ Actions только проверяет PR с изменениями `openwiki/*
 адреса в них старые.
 
 **Текущая архитектура** — срез 01.11.2026: gateway (Caddy/BFF), приватная VPS2
-(Go/PostgreSQL/Redis) и auxiliary (служебные интеграции). [Раздел архитектуры](https://docs.cellestial.ru/architecture/)
+(Go/PostgreSQL/Redis) и auxiliary (служебные интеграции). [Раздел архитектуры](https://docs.cellestial.ru/documentation/architecture/)
 содержит SHA выкладок, свидетельства SSH/HTTP и границы проверки. Включённый runtime
 не означает проверенный пользовательский сценарий. Старые k3s-схемы удалены;
 их опубликованные HTML-адреса направляются на текущие схемы.
@@ -216,11 +216,11 @@ Actions только проверяет PR с изменениями `openwiki/*
 | [front-libs-trusted-publishing](https://docs.cellestial.ru/modules/2/front-libs-trusted-publishing.html) | Trusted Publishing: GitHub OIDC identity, проверка repo/workflow и краткоживущие npm-права |
 | [front-libs-release](https://docs.cellestial.ru/modules/2/front-libs-release.html) | Каскадный релиз React → Zustand: CI, независимые версии, GitHub Releases и публикация в npm |
 
-Шесть корневых схем показаны на странице «Архитектура» (`/architecture/`) живыми карточками:
+Шесть корневых схем показаны на странице «Архитектура» (`/documentation/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
 `site/.vitepress/theme/Diagram.vue`). Добавил схему в корень `diagrams/` — добавь строку в таблицу,
 имя в `ROOT_NAMES` (`site/.vitepress/diagram-names.ts`: по нему берутся размеры и переадресуются
-старые якоря) и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/architecture/index.md`:
+старые якоря) и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/documentation/architecture/index.md`:
 тесты `scripts/build-index.test.ts` и `scripts/architecture-page.test.ts` упадут, если чего-то нет. Схема из подпапки
 рендерится в `dist/<папка>/<name>.html` и `.png`. Планы модулей исключены из меню
 архитектуры через `HIDDEN_FOLDERS`; удалённые папки перечислены в `LEGACY_FOLDERS`,
@@ -348,9 +348,9 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 
 Главная `https://docs.cellestial.ru/` — документация на
 [VitePress](https://vitepress.dev/): исходники страниц в `site/`, конфиг и меню в
-`site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/architecture/`), их файлы —
+`site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/documentation/architecture/`), их файлы —
 по адресам `/<name>.html` и `.png`. Старый индекс `/diagrams/` — переадресация:
-`#contract` ведёт на `/architecture/#contract`, прежний `#frozen-k3s/ci` — через заглушку на `/ci.html`; так же
+`#contract` ведёт на `/documentation/architecture/#contract`, прежний `#frozen-k3s/ci` — через заглушку на `/ci.html`; так же
 главная переводит старые ссылки `/#contract`.
 
 `bun run build` после рендера схем собирает VitePress (`bun run site:vitepress`) и переносит

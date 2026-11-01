@@ -2,13 +2,13 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 const quickstart = "https://github.com/Cringe-Driven-Development-Team/docs/blob/main/openwiki/quickstart.md";
-const context = readFileSync("site/project-context.md", "utf8");
+const context = readFileSync("site/documentation/project-context.md", "utf8");
 const readme = readFileSync("README.md", "utf8");
 const agents = readFileSync("AGENTS.md", "utf8");
 const claude = readFileSync("CLAUDE.md", "utf8");
 
 test("project-context links to the public visualizer", () => {
-  expect(context).toContain('href="./openwiki/"');
+  expect(context).toContain('href="../openwiki/"');
 });
 
 test("README retains the source Markdown link", () => {

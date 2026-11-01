@@ -74,7 +74,7 @@ description: Правка страниц сайта VitePress в site/ — но�
   `modules/2/bff-contract`. Компонент встраивает `<имя>.html` с масштабом.
 - Схема плана модуля — `diagrams/modules/<N>/`; папка должна быть в `HIDDEN_FOLDERS`
   (`site/.vitepress/diagram-names.ts`), для нового модуля добавь `modules/<N>`.
-- Схема корня (прод) — имя в `ROOT_NAMES` и раздел с `<Diagram>` на `site/architecture/index.md`
+- Схема корня (прод) — имя в `ROOT_NAMES` и раздел с `<Diagram>` на `site/documentation/architecture/index.md`
   (тесты `scripts/build-index.test.ts`, `scripts/architecture-page.test.ts`).
 - Mermaid — блок ` ```mermaid `; синтаксис проверяет `bun run mermaid` в сборке.
 

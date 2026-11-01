@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [scroll|pages|plugins ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [scroll|pages|plugins|hierarchy ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -9,12 +9,15 @@ import puppeteer from 'puppeteer';
 import type { Browser, Page } from 'puppeteer';
 import { SITE_BASE } from '../site/.vitepress/site';
 
-const artifacts = '.superpowers/sdd/2026-11-01-documentation-readability/readability';
+const artifacts = process.env.READABILITY_ARTIFACTS_DIR || '.superpowers/readability';
 mkdirSync(artifacts, { recursive: true });
 const label = SITE_BASE === '/' ? 'root' : 'branch';
 const failures: string[] = [];
+const optionalFaviconFailures: string[] = [];
+const legacyFaviconUrls = new Set<string>();
+let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['scroll', 'pages', 'plugins'].includes(section)));
+assert(sections.every(section => ['scroll', 'pages', 'plugins', 'hierarchy'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -31,10 +34,21 @@ const server = Bun.serve({
   },
 });
 function observe(page: Page) {
-  page.on('console', message => { if (message.type() === 'error') failures.push(`console: ${message.text()}`); });
+  page.on('console', message => {
+    if (message.type() !== 'error') return;
+    const detail = `console: ${message.text()} ${message.location().url ?? ''}`;
+    if (legacyFaviconUrls.has(message.location().url ?? '') && message.text() === 'Failed to load resource: the server responded with a status of 404 (Not Found)') optionalFaviconFailures.push(detail);
+    else failures.push(detail);
+  });
   page.on('pageerror', error => failures.push(`page: ${String(error)}`));
   page.on('requestfailed', request => failures.push(`request: ${request.url()} ${request.failure()?.errorText}`));
-  page.on('response', response => { if (response.status() >= 400) failures.push(`HTTP ${response.status()}: ${response.url()}`); });
+  page.on('response', response => {
+    if (response.status() < 400) return;
+    const detail = `HTTP ${response.status()}: ${response.url()}`;
+    if (checkingLegacyDiagram && response.status() === 404 && new URL(response.url()).pathname === '/favicon.ico') {
+      legacyFaviconUrls.add(response.url()); optionalFaviconFailures.push(detail);
+    } else failures.push(detail);
+  });
 }
 
 // The timeout below observes the plugin's delayed width update; it is not product timing.
@@ -128,7 +142,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
         assert.equal(await page.$('.mermaid .error-icon, .mermaid .error-text'), null, file);
         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${file} ${width}: overflow`);
         count += expected;
-        if (/auth-scenarios|offline\/deployment|security\/csrf\/scenarios/.test(path)) {
+        if (/auth-scenarios|offline\/deployment|documentation\/csrf\/scenarios/.test(path)) {
           await page.screenshot({ path: join(artifacts, `${label}-${path.replaceAll('/', '-')}-${width}-${dark ? 'dark' : 'light'}.png`) });
         }
       }
@@ -192,7 +206,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
     await visibleHash();
   }
   console.log(`PASS ${moved.length} moved old-ID landings and actual SPA links under ${SITE_BASE}`);
-  for (const path of ['', 'documentation/', 'modules/', 'modules/2/tracks/bff', 'modules/2/tracks/offline/deployment', 'modules/2/tracks/backend-cicd/release', 'modules/2/tracks/front-libs/setup', 'project-context']) {
+  for (const path of ['', 'documentation/', 'modules/', 'modules/2/tracks/bff', 'modules/2/tracks/offline/deployment', 'modules/2/tracks/backend-cicd/release', 'modules/2/tracks/front-libs/setup', 'documentation/project-context']) {
     for (const width of [1440, 390]) {
       await page.setViewport({ width, height: width === 390 ? 844 : 1000 });
       await page.goto(url(path), { waitUntil: 'networkidle0' });
@@ -206,7 +220,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
       await page.screenshot({ path: join(artifacts, `${label}-final-${path.replaceAll('/', '-') || 'home'}-${width}.png`) });
     }
   }
-  await page.goto(url('project-context'), { waitUntil: 'networkidle0' });
+  await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
   await page.evaluate(() => { (window as unknown as Record<string, unknown>).__wikiNavigation = true; });
   await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('.vp-doc a[href$="openwiki/"]')]);
   assert.equal(await page.evaluate(() => (window as unknown as Record<string, unknown>).__wikiNavigation), undefined);
@@ -250,12 +264,163 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
   await page.close();
 }
 
+async function checkHierarchy(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
+  observe(page);
+  const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/csrf/',
+    'documentation/csrf/scenarios', 'documentation/csrf/checks', 'documentation/project-context'];
+  const links = [routes[0], routes[1], routes[2], routes[3], routes[4], routes[5], routes[6]].map(path => `${SITE_BASE}${path}`);
+  const parent = '.VPSidebarItem.collapsible.level-1';
+  const caret = `${parent} > .item > button.caret`;
+  const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
+  const menu = '.VPLocalNav button.menu';
+  const marker = () => page.evaluate(() => (window as unknown as Record<string, unknown>).__hierarchy);
+  const tree = async () => assert.deepEqual(await page.$$eval('.VPSidebar a.link', els => els.map(el => el.getAttribute('href'))), links);
+  const expanded = async (value: boolean) => {
+    await page.waitForFunction((selector, value) => document.querySelector(selector)?.getAttribute('aria-expanded') === String(value), {}, caret, value);
+  };
+  const openMenu = async () => {
+    if (await page.$eval(menu, el => el.getAttribute('aria-expanded') === 'false')) {
+      await page.waitForSelector('.VPBackdrop', { hidden: true });
+      await page.locator(menu).click();
+    }
+    await page.waitForFunction(() => document.querySelector('.VPSidebar.open')?.getBoundingClientRect().left === 0);
+  };
+  const click = async (path: string, mobile: boolean) => {
+    if (mobile) await openMenu();
+    await page.locator(sidebarLink(path)).click();
+    await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}${path}`);
+    const headings: Record<string, string> = { 'documentation/csrf/': 'csrf-как-устроено', 'documentation/csrf/scenarios': 'csrf-сценарии',
+      'documentation/csrf/checks': 'csrf-проверка-и-ограничения' };
+    await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
+    if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
+    await tree();
+    assert.equal(await marker(), true, `${path}: expected SPA navigation`);
+  };
+  for (const width of [1440, 390]) {
+    const mobile = width === 390;
+    await page.setViewport({ width, height: mobile ? 844 : 1000 });
+    for (const route of routes) {
+      const response = await page.goto(url(route), { waitUntil: 'networkidle0' });
+      assert(response?.ok(), `${route}: canonical page must exist`);
+      await tree();
+      await expanded(route.startsWith('documentation/csrf/'));
+      assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
+      if (route !== 'documentation/architecture/') assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
+    }
+    await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
+    if (mobile) await openMenu();
+    await expanded(false);
+    await page.focus(caret);
+    await page.keyboard.press('Enter'); await expanded(true);
+    await page.keyboard.press('Space'); await expanded(false);
+    await page.keyboard.press('Enter'); await expanded(true);
+    await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
+    await click('documentation/csrf/', mobile);
+    await expanded(true);
+    await click('documentation/csrf/scenarios', mobile);
+    await page.reload({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
+    await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
+    await click('documentation/csrf/checks', mobile); await expanded(true);
+    await page.goBack({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
+    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/csrf/scenarios`);
+    assert.equal(await page.$eval(sidebarLink('documentation/csrf/scenarios'), el => el.getAttribute('aria-current')), 'page');
+    if (mobile) {
+      await openMenu(); await page.keyboard.press('Escape');
+      await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
+      assert.equal(await page.$eval(menu, el => document.activeElement === el), true, 'Escape restores menu focus');
+    }
+    await page.screenshot({ path: join(artifacts, `${label}-hierarchy-${width}.png`) });
+  }
+  console.log('PASS canonical tree, active parent, native caret, SPA/reload/Back, mobile Escape');
+  await page.setViewport({ width: 1440, height: 1000 });
+  const visibleHash = async () => {
+    await page.waitForFunction(() => !!document.getElementById(decodeURIComponent(location.hash.slice(1))));
+    // Mermaid and the reading plugin settle after hydration and width correction.
+    await new Promise(resolve => setTimeout(resolve, 1800));
+    assert(await page.evaluate(() => {
+      const rect = document.getElementById(decodeURIComponent(location.hash.slice(1)))!.getBoundingClientRect();
+      const header = Math.max(document.querySelector('.VPNav')?.getBoundingClientRect().bottom ?? 0, document.querySelector('.VPLocalNav')?.getBoundingClientRect().bottom ?? 0);
+      return rect.top >= header - 1 && rect.top < innerHeight && rect.bottom > header;
+    }), `Hidden target: ${page.url()}`);
+  };
+  const moves = [
+    ['architecture/', 'documentation/architecture/', 'архитектура-mvp'],
+    ['project-context', 'documentation/project-context', 'владельцы-командных-пакетов'],
+    ['security/csrf/', 'documentation/csrf/', 'три-cookie'],
+    ['security/csrf/scenarios', 'documentation/csrf/scenarios', 'первыи-заход-в-чистом-браузере'],
+    ['security/csrf/checks', 'documentation/csrf/checks', 'известные-ограничения'],
+  ];
+  for (const [old, canonical, heading] of moves) {
+    await page.goto(url(old!), { waitUntil: 'networkidle0' });
+    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}${canonical}`);
+    for (const hash of [heading!, encodeURIComponent(heading!)]) {
+      await page.goto(url(`${old}#${hash}`), { waitUntil: 'networkidle0' });
+      assert.equal(new URL(page.url()).pathname, `${SITE_BASE}${canonical}`);
+      assert.equal(new URL(page.url()).hash, `#${encodeURI(heading!)}`);
+      await visibleHash();
+    }
+  }
+  for (const [source, target] of [['#contract', 'documentation/architecture/#contract'],
+    ['diagrams/#contract', 'documentation/architecture/#contract'], ['diagrams/#nope', 'documentation/architecture/'],
+    ['diagrams/#%E0%A4%A', 'documentation/architecture/'], ['#nope', 'documentation/architecture/'],
+    ['diagrams/', 'documentation/architecture/'], ['#frozen-k3s/ci', 'ci.html'], ['diagrams/#frozen-k3s/ci', 'ci.html']]) {
+    checkingLegacyDiagram = target === 'ci.html';
+    await page.goto(url(source!), { waitUntil: 'networkidle0' });
+    checkingLegacyDiagram = false;
+    assert.equal(page.url(), url(target!));
+    if (target!.includes('#')) await visibleHash();
+  }
+  await page.goto(url(''), { waitUntil: 'networkidle0' });
+  assert.equal(new URL(page.url()).pathname, SITE_BASE);
+  await page.goto(url('documentation/architecture/#contract'), { waitUntil: 'networkidle0' });
+  const card = await page.$eval('.vp-doc #contract', el => {
+    let next = el.nextElementSibling;
+    while (next && !next.classList.contains('diagram')) next = next.nextElementSibling;
+    return next?.outerHTML ?? '';
+  });
+  assert(card.includes(`${SITE_BASE}contract.html`) && card.includes(`${SITE_BASE}contract.png`), 'Root diagram assets keep root paths');
+  assert(await page.$(`.diagram__canvas iframe[src="${SITE_BASE}contract.html"]`));
+  assert(await page.$(`.diagram__links a[href="${SITE_BASE}contract.html"]`));
+  for (const file of ['contract.html', 'contract.png']) assert.equal((await fetch(url(file))).status, 200);
+  console.log('PASS five old routes with raw/encoded hashes, diagram landings and root HTML/PNG');
+  await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
+  await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
+  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('.vp-doc a[href$="openwiki/"]')]);
+  assert.equal(await marker(), undefined);
+  assert.equal(new URL(page.url()).pathname, `${SITE_BASE}openwiki/`);
+  await page.waitForSelector('html[data-static-export="true"] .wiki-page-provenance');
+  assert.equal(await page.$$eval('.wiki-source', cards => cards.length), 4);
+  await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
+  await page.click('button[aria-label="Найти в документации"]');
+  await page.waitForSelector('#localsearch-input', { visible: true });
+  await page.type('#localsearch-input', 'CSRF: сценарии');
+  const result = `.VPLocalSearchBox a.result[href^="${SITE_BASE}documentation/csrf/scenarios"]`;
+  await page.waitForSelector(result, { visible: true }); await page.click(result);
+  await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/csrf/scenarios`);
+  await expanded(true); await tree();
+  const preview = '.VPNolebaseInlinePreviewLinkWrapper iframe';
+  await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
+  await page.hover(`.vp-doc a[href="${SITE_BASE}documentation/architecture/"]`);
+  await new Promise(resolve => setTimeout(resolve, 1600));
+  assert.equal(await page.$(preview), null);
+  await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
+  await page.hover(`.vp-doc a[href="${SITE_BASE}documentation/bff"]`);
+  await page.waitForSelector(preview, { visible: true });
+  assert.equal(await page.$eval(preview, el => new URL((el as HTMLIFrameElement).src).pathname), `${SITE_BASE}documentation/bff`);
+  await page.screenshot({ path: join(artifacts, `${label}-hierarchy-preview.png`) });
+  console.log('PASS static OpenWiki navigation, canonical local search and preview rules');
+  await context.close();
+}
+
 let browser: Browser | undefined;
 try {
   browser = await puppeteer.launch({
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('pages')) await checkPages(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('plugins')) {
@@ -436,10 +601,10 @@ try {
   for (const [path, selector] of [
     ['modules/2/tracks/offline/theory', '.vp-doc a.header-anchor'],
     ['modules/2/tracks/offline/theory', '.vp-doc a[href^="https://"]'],
-    ['project-context', `.vp-doc a[href="${SITE_BASE}modules/"]`],
-    ['project-context', `.vp-doc a[href="${SITE_BASE}architecture/"]`],
-    ['project-context', '.vp-doc a[href$="openwiki/"]'],
-    ['architecture/', '.diagram__links a[href$=".html"]'],
+    ['documentation/project-context', `.vp-doc a[href="${SITE_BASE}modules/"]`],
+    ['documentation/project-context', `.vp-doc a[href="${SITE_BASE}documentation/architecture/"]`],
+    ['documentation/project-context', '.vp-doc a[href$="openwiki/"]'],
+    ['documentation/architecture/', '.diagram__links a[href$=".html"]'],
   ]) {
     await page.goto(url(path!), { waitUntil: 'networkidle0' });
     await page.hover(selector!);
@@ -461,7 +626,7 @@ try {
     await page.screenshot({ path: join(artifacts, `${label}-${dark ? 'dark' : 'light'}.png`) });
   }
   await page.setViewport({ width: 390, height: 844 });
-  for (const path of [publishing, 'modules/2/tracks/offline/theory', 'project-context']) {
+  for (const path of [publishing, 'modules/2/tracks/offline/theory', 'documentation/project-context']) {
     await page.goto(url(path), { waitUntil: 'networkidle0' });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${path}: mobile overflow`);
   }
@@ -480,12 +645,14 @@ try {
   console.log('PASS mobile to desktop: saved width survives; desktop menu can expand again');
   }
   assert.equal(failures.length, 0, failures.join('\n'));
-  console.log(`PASS ${SITE_BASE}: no browser/page/request/HTTP errors`);
+  console.log(`PASS ${SITE_BASE}: no acceptance browser/page/request/HTTP errors`);
+  if (optionalFaviconFailures.length) console.log('KNOWN unchanged raw diagram favicon noise:', optionalFaviconFailures.join('\n'));
 } catch (error) {
   failures.push(String(error));
   throw error;
 } finally {
   await Bun.write(join(artifacts, `${label}-${sections.join("-") || "all"}-browser-errors.json`), JSON.stringify(failures, null, 2) + '\n');
+  await Bun.write(join(artifacts, `${label}-optional-favicon-errors.json`), JSON.stringify(optionalFaviconFailures, null, 2) + '\n');
   await browser?.close();
   await server.stop(true);
 }

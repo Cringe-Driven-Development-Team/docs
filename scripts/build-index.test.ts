@@ -84,18 +84,23 @@ test("renderRedirect: noindex, link to architecture/ and a script that follows d
   const html = renderRedirect(["ci", "contract"]);
   expect(html).toMatch(/^<!doctype html>/i);
   expect(html).toContain('<meta name="robots" content="noindex">');
-  expect(html).toContain('<a href="../architecture/">');
+  expect(html).toContain('<a href="../documentation/architecture/">');
   expect(html).toContain('["ci","contract"]');
-  expect(followRedirect(html, "#ci")).toBe("../architecture/#ci");
+  expect(followRedirect(html, "#ci")).toBe("../documentation/architecture/#ci");
   expect(followRedirect(html, "#bff/ci")).toBe("../bff/ci.html");
   expect(followRedirect(html, "#frozen-k3s/ci")).toBe("../frozen-k3s/ci.html");
   expect(followRedirect(html, "#frozen-k3s/cd")).toBe("../frozen-k3s/cd.html");
-  expect(followRedirect(html, "")).toBe("../architecture/");
-  expect(followRedirect(html, "#nope")).toBe("../architecture/");
+  expect(followRedirect(html, "")).toBe("../documentation/architecture/");
+  expect(followRedirect(html, "#nope")).toBe("../documentation/architecture/");
 });
 
 test("PAGE_REDIRECTS: old BFF pages to the track, removed bff diagrams to the current ones, relative targets", () => {
   expect(PAGE_REDIRECTS).toEqual([
+    { file: "architecture/index.html", target: "../documentation/architecture/" },
+    { file: "project-context.html", target: "documentation/project-context" },
+    { file: "security/csrf/index.html", target: "../../documentation/csrf/" },
+    { file: "security/csrf/scenarios.html", target: "../../documentation/csrf/scenarios" },
+    { file: "security/csrf/checks.html", target: "../../documentation/csrf/checks" },
     { file: "bff/index.html", target: "../modules/2/tracks/bff" },
     { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
     { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
@@ -201,6 +206,27 @@ test('k3s redirects preserve base and fragments', () => {
       expect(new URL(second, intermediate).href).toBe(`${base}${current}.html`);
       const direct = followRedirect(renderPageRedirect(entry.target), '#%D1%86')!;
       expect(new URL(direct, new URL(entry.file, base)).href).toBe(`${base}${current}.html#%D1%86`);
+    }
+  }
+});
+
+test('documentation redirects preserve base and hashes', () => {
+  const moves = [
+    ['architecture/index.html', '../documentation/architecture/', 'documentation/architecture/'],
+    ['project-context.html', 'documentation/project-context', 'documentation/project-context'],
+    ['security/csrf/index.html', '../../documentation/csrf/', 'documentation/csrf/'],
+    ['security/csrf/scenarios.html', '../../documentation/csrf/scenarios', 'documentation/csrf/scenarios'],
+    ['security/csrf/checks.html', '../../documentation/csrf/checks', 'documentation/csrf/checks'],
+  ] as const;
+  for (const [file, target, canonical] of moves) {
+    expect(PAGE_REDIRECTS).toContainEqual({file, target});
+    for (const base of ['/', '/branches/docs-documentation-hierarchy/']) {
+      for (const hash of ['', '#три-cookie', '#%D1%82%D1%80%D0%B8-cookie']) {
+        const old = new URL(base + file, 'https://site.invalid');
+        const actual = new URL(followRedirect(renderPageRedirect(target), hash)!, old);
+        expect(actual.pathname).toBe(base + canonical);
+        expect(actual.hash).toBe(new URL(hash || old.href, old).hash);
+      }
     }
   }
 });
