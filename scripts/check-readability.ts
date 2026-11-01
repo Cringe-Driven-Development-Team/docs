@@ -135,6 +135,24 @@ try {
   assert.equal(await selectedTab(), 'npm-токен');
   console.log('PASS Tabs: both directions by mouse/keyboard; visible release.yml icon');
 
+  await tabs[1]!.click();
+  await page.waitForNetworkIdle();
+  assert.match(await selectedTab() || '', /Trusted Publishing/);
+  assert.equal(await page.$eval('.vp-doc', element => (element as HTMLElement).innerText.includes('variable')), false,
+    'Token-only search phrase must be hidden while OIDC is active');
+  await page.click('button[aria-label="Найти в документации"]');
+  await page.waitForSelector('#localsearch-input', { visible: true });
+  await page.type('#localsearch-input', 'variable');
+  const tokenSearchResult = `.VPLocalSearchBox a.result[href="${SITE_BASE}${publishing}#два-способа-публикации"]`;
+  await page.waitForSelector(tokenSearchResult, { visible: true });
+  await page.screenshot({ path: join(artifacts, `${label}-inactive-tab-search.png`) });
+  await page.click(tokenSearchResult);
+  await page.waitForSelector('#localsearch-input', { hidden: true });
+  await page.waitForFunction(() => decodeURIComponent(location.hash) === '#два-способа-публикации');
+  assert.equal(new URL(page.url()).pathname, `${SITE_BASE}${publishing}`);
+  assert(await page.$('.vp-doc'), 'Search result opens publishing');
+  console.log('PASS local search: variable from inactive npm-token tab leads to publishing#два-способа-публикации');
+
   await context.close();
   const readerContext = await browser.createBrowserContext();
   page = await readerContext.newPage();

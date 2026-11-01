@@ -8,31 +8,39 @@ title: "Проверка выпуска и восстановление"
 
 ## Как проверить результат и восстановить выпуск
 
-После bootstrap ожидаем `1.2.0`, `1.0.0`, `0.2.0`; после описанного React-fix —
-`1.2.1`, `1.0.1`, `0.2.0`. Проверяем registry, а не только GitHub Releases:
+| Сценарий | React | Zustand | OpenAPI |
+| --- | --- | --- | --- |
+| После bootstrap | `1.2.0` | `1.0.0` | `0.2.0` |
+| После описанного React-fix | `1.2.1` | `1.0.1` | `0.2.0` |
 
-```sh
-npm view @cdd-team/react version
-npm view @cdd-team/zustand version
-npm view @cdd-team/openapi version
-npm view @cdd-team/zustand@1.0.1 peerDependencies --json
-```
+Это ожидаемый результат будущего сценария, не обещание наличия пакетов в npm сейчас.
 
-Для проверки второго выпуска в новом каталоге вне монорепозитория:
+1. Проверяем registry, а не только GitHub Releases:
 
-```sh
-mkdir cdd-libs-consumer
-cd cdd-libs-consumer
-bun init -y
-bun add @cdd-team/react@1.2.1 @cdd-team/zustand@1.0.1
-```
+   ```sh
+   npm view @cdd-team/react version
+   npm view @cdd-team/zustand version
+   npm view @cdd-team/openapi version
+   npm view @cdd-team/zustand@1.0.1 peerDependencies --json
+   ```
 
-Здесь версии — ожидаемый результат будущего сценария, не обещание наличия пакетов
-в npm сейчас. Добавляем в этот чистый проект интеграционный тест компонента и store
-из [раздела о совместимости](./compatibility#что-проверяет-ci) и запускаем его через `bun test`; отдельно проверяем типы и сборку
-потребителя. Установка сама по себе не проверяет хуки. Для vanilla повторяем
-проверку в другом чистом проекте, устанавливая только Zustand и импортируя
-`@cdd-team/zustand/vanilla` без React.
+2. Устанавливаем второй выпуск в новом каталоге вне монорепозитория:
+
+   ```sh
+   mkdir cdd-libs-consumer
+   cd cdd-libs-consumer
+   bun init -y
+   bun add @cdd-team/react@1.2.1 @cdd-team/zustand@1.0.1
+   ```
+
+3. Добавляем в этот чистый проект интеграционный тест компонента и store
+   из [раздела о совместимости](./compatibility#что-проверяет-ci) и запускаем его через
+   `bun test`; отдельно проверяем типы и сборку потребителя. Установка сама по себе
+   не проверяет хуки.
+4. Для vanilla повторяем проверку в другом чистом проекте, устанавливая только
+   Zustand и импортируя `@cdd-team/zustand/vanilla` без React.
+
+## Если публикация завершилась частично
 
 Если React опубликован, а публикация Zustand упала:
 
