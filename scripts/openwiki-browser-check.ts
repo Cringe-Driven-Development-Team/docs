@@ -82,6 +82,17 @@ async function main(args: string[]) {
         assert.equal(await page.evaluate('window.wikiXss'),undefined);
         assert.equal(await page.locator('.md script, .md [onerror]').count(),0);
       }
+      const graph = await (await page.request.get(base+'graph.json')).json();
+      for (const wiki of ['docs','frontend','backend','infra']) {
+        await page.goto(base+`?wiki=${wiki}&page=index`);
+        await page.locator('.md a', {hasText:/^architecture$/i}).click();
+        const route = new URL(page.url());
+        assert.equal(route.pathname, new URL(base).pathname, 'directory link retains preview prefix');
+        assert.equal(route.searchParams.get('wiki'),wiki,'directory link retains source wiki');
+        assert.equal(route.searchParams.get('page'),'architecture/index');
+        assert.match(await page.locator('.wiki-page-provenance').innerText(),new RegExp(`${wiki}/openwiki/architecture/index\\.md`));
+        assert.ok(graph.edges.some((edge: {source:string;target:string}) => edge.source === `${wiki}/index` && edge.target === `${wiki}/architecture/index`),'real directory link creates graph edge');
+      }
       await page.goto(base+'?wiki=infra&page=missing');
       await page.getByRole('heading',{name:'Страница не найдена'}).waitFor();
       await page.getByRole('button',{name:'Открыть карту docs'}).click();

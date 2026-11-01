@@ -47,7 +47,7 @@ export function writeWikiRoute(url: URL, route: WikiRoute): URL {
   return next;
 }
 
-/** Only published wiki Markdown links are navigation; null leaves an ordinary link intact. */
+/** Only published wiki page links are navigation; null leaves an ordinary link intact. */
 export function resolveWikiLink(from: WikiRoute, href: string, sources: readonly WikiSource[]): WikiRoute | null {
   try {
     validateRoute(from);
@@ -75,6 +75,7 @@ export function resolveWikiLink(from: WikiRoute, href: string, sources: readonly
     } else {
       if (path.startsWith('/') || path.includes('?')) return null;
       relativePath = decodeURIComponent(path);
+      if (relativePath.endsWith('/')) relativePath += 'index.md';
     }
     if (!safeText(relativePath) || !relativePath.endsWith('.md') || relativePath.startsWith('/')) return null;
     for (const part of relativePath.slice(0, -3).split('/')) {

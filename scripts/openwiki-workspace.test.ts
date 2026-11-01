@@ -39,6 +39,16 @@ describe('wiki link resolver', () => {
     expect(client.resolveWikiLink(from, './a.md', sources)).toEqual(from);
   });
 
+  test('resolves relative directories to the same wiki index', () => {
+    expect(client.resolveWikiLink({ wiki: 'docs', page: 'index' }, 'architecture/', sources)).toEqual({ wiki: 'docs', page: 'architecture/index' });
+    expect(client.resolveWikiLink(from, './#Раздел%20один', sources)).toEqual({ wiki: 'frontend', page: 'architecture/index', section: 'Раздел один' });
+    expect(client.resolveWikiLink(from, '../', sources)).toEqual({ wiki: 'frontend', page: 'index' });
+    expect(client.resolveWikiLink(from, '../раздел%20с%20пробелом/', sources)).toEqual({ wiki: 'frontend', page: 'раздел с пробелом/index' });
+    for (const href of ['../../', '%2e%2e/%2e%2e/', '/architecture/', '%2farchitecture/', 'architecture//', 'architecture/?raw=true', 'architecture/%00/', 'architecture/%5c/', 'architecture/%GH/', `${github}/backend/blob/main/openwiki/architecture/`, `${github}/backend/blob/old/openwiki/architecture/`, 'https://example.test/architecture/']) {
+      expect(client.resolveWikiLink(from, href, sources)).toBeNull();
+    }
+  });
+
   test('only allowlisted GitHub wiki main and snapshot links become internal', () => {
     expect(client.resolveWikiLink(from, `${github}/backend/blob/main/openwiki/architecture/a.md#api`, sources)).toEqual({ wiki: 'backend', page: 'architecture/a', section: 'api' });
     expect(client.resolveWikiLink(from, `${github}/infra/blob/${'4'.repeat(40)}/openwiki/quickstart.md`, sources)).toEqual({ wiki: 'infra', page: 'quickstart' });
@@ -60,6 +70,22 @@ describe('wiki link resolver', () => {
       expect(client.resolveWikiLink(from, href, sources)).toBeNull();
     }
   });
+});
+
+test('directory links create only existing same-wiki index edges and backlinks', async () => {
+  const wikiRoot = await mkdtemp(join(tmpdir(), 'workspace-directory-'));
+  try {
+    await mkdir(join(wikiRoot, 'architecture'));
+    await writeFile(join(wikiRoot, 'index.md'), '# Index\n[Architecture](architecture/)\n[Again](./architecture/#section)\n[Missing](missing/)\n[Outside](../)\n');
+    await writeFile(join(wikiRoot, 'architecture/index.md'), '# Architecture\n[Home](../)\n');
+    const graph = await buildWorkspaceGraph([{ wikiRoot, source: sources[1]! }], builtAt);
+    expect(graph.edges).toEqual([
+      { source: 'frontend/architecture/index', target: 'frontend/index' },
+      { source: 'frontend/index', target: 'frontend/architecture/index' },
+    ]);
+    expect(graph.nodes.find(node => node.id === 'frontend/architecture/index')!.backlinks).toEqual(['frontend/index']);
+    expect(graph.nodes.find(node => node.id === 'frontend/index')!.links).toEqual(['frontend/architecture/index']);
+  } finally { await rm(wikiRoot, { recursive: true, force: true }); }
 });
 
 describe('stable wiki routes', () => {

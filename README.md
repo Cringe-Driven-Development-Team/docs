@@ -484,8 +484,8 @@ Push в ветку запускает workflow Pages на `main`. Тот соб�
 правом push. Локально `bun run site` делает `git fetch --prune` всех веток
 `origin`.
 
-Из git worktree (`.claude/worktrees/…`) `bun run site` в Docker не работает: `.git` там ссылается на
-путь хоста, которого нет в контейнере. Запускай его из основного клона или `DIAGRAMS_NATIVE=1 bun run site`.
+Из git worktree (`.claude/worktrees/…`) запускай обычный `bun run site`: Docker-обёртка
+монтирует общий Git-каталог по исходному пути, чтобы ссылка из `.git` работала в контейнере.
 
 Дизайн: `docs/superpowers/specs/2026-09-12-eraser-diagrams-pipeline-design.md`,
 `docs/superpowers/specs/2026-09-13-diagram-colors-and-bun-design.md`,

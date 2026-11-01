@@ -14,6 +14,9 @@ export async function createExportFixture(root: string): Promise<string> {
     const wikiRoot = id === 'docs' ? join(root, 'openwiki') : join(snapshotDir, id, 'openwiki');
     await mkdir(wikiRoot, { recursive: true });
     await writeFile(join(wikiRoot, '.last-update.json'), JSON.stringify(checkpoint));
+    await mkdir(join(wikiRoot, 'architecture'));
+    await writeFile(join(wikiRoot, 'index.md'), '# Index\n[Architecture](architecture/)\n');
+    await writeFile(join(wikiRoot, 'architecture/index.md'), '# Architecture\n');
     await writeFile(join(wikiRoot, 'quickstart.md'), `---\ntitle: ${id} quickstart\ntype: Reference\n---\n# ${id}\n[Details](details.md#section)\n[Backend](https://github.com/Cringe-Driven-Development-Team/backend/blob/main/openwiki/quickstart.md)\n`);
     await writeFile(join(wikiRoot, 'details.md'), '---\ntitle: Details\ntype: Reference\n---\n# Details\n## Section\n<script>window.wikiXss = true</script><img src=x onerror="window.wikiXss=true">\n```mermaid\ngraph LR\n A --> B\n```\n');
     if (id !== 'docs') wikis.push({ wikiRoot: `${id}/openwiki`, source: { id, sourceSha: sha, repositorySha: ({frontend:'b',backend:'c',infra:'d'}[id]).repeat(40), updatedAt: checkpoint.updatedAt, freshness: 'stale' } });
