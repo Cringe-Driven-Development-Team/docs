@@ -46,7 +46,7 @@ SHA исходников подтверждает реализацию, а на�
 рендерятся eraser-diagrams. Масштаб — кнопками, Ctrl/⌘ + колесо или щипком;
 схему можно двигать. Ссылка «HTML» открывает её целиком.
 
-## deployment
+## Размещение компонентов {#deployment}
 
 **Где работает сервис и как идёт запрос?** Браузер обращается к Caddy/BFF на gateway,
 а BFF — к Go на VPS2. PostgreSQL и Redis находятся рядом с Go; auxiliary обслуживает
@@ -59,7 +59,7 @@ SHA исходников подтверждает реализацию, а на�
 
 <Diagram name="deployment" />
 
-## ci
+## Проверки CI {#ci}
 
 **Кто что проверяет и публикует?** Frontend CI проверяет код, а main publish с включённым
 флагом создаёт BFF image, S3-ассеты выбранного SHA и запись release-artifacts.
@@ -81,7 +81,7 @@ static загружает собственную статику в S3.
 
 <Diagram name="ci" />
 
-## cd
+## Выкатка CD {#cd}
 
 **Как выпуск становится работающим релизом?** Frontend CD запускается вручную через
 `workflow_dispatch`: выбирает выпуск, проверяет BFF digest и связанные ассеты,
@@ -101,7 +101,7 @@ Infra Pulumi/Ansible управляет ресурсами и конфигура
 
 <Diagram name="cd" />
 
-## frontend
+## Фронтенд {#frontend}
 
 **Где менять frontend и его зависимости?** Репозиторий frontend содержит `apps/client`,
 `apps/bff` и `packages/schemas`. Клиент использует командные React/router/zustand.
@@ -118,7 +118,7 @@ HTML-шаблон входит в образ BFF, а JS/CSS выпуска за�
 
 <Diagram name="frontend" />
 
-## contract
+## Контракт и генерация {#contract}
 
 **Какие контракты связывают стороны?** Браузер работает с BFF через tRPC;
 BFF вызывает Go по HTTP-контракту OpenAPI из Apidog. Go использует oapi-codegen,
@@ -135,7 +135,7 @@ Backend Contract drift заново генерирует контракт и с�
 
 <Diagram name="contract" />
 
-## infra
+## Инфраструктура {#infra}
 
 **Кто управляет инфраструктурой и служебными потоками?** Pulumi описывает облачные
 ресурсы, state хранится в отдельном проекте; Ansible настраивает серверы и Compose.

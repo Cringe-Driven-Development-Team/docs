@@ -10,6 +10,8 @@ title: Контракт
 
 ## Источники правды
 
+Схема показывает, откуда Go, BFF и браузер получают контракт и типы.
+
 ```mermaid
 flowchart LR
     D["Apidog: контракт Go"] -->|"make generate: cmd/apidog и oapi-codegen"| G["Go: сервер"]
@@ -21,31 +23,29 @@ flowchart LR
     R -->|"import type AppRouter, BootstrapData"| C["apps/client"]
 ```
 
-- **Go ↔ BFF.** Контракт Go ведётся в Apidog. Go забирает его сам: `make generate` в бэкенде запускает
-  [`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31)
-  и затем `oapi-codegen`. Монорепа выгружает тот же контракт в `spec/openapi.json`, и Orval строит по нему
-  клиент к Go для BFF и zod-схемы операций в пакет `@cdd/schemas`.
-- **Клиент ↔ BFF.** Контракт — роутер tRPC в `apps/bff/src/router/`. Клиент делает
-  `import type { AppRouter } from '@cdd/bff'`: в бандл не попадает ни строчки кода BFF.
-- **HTML → клиент.** Второй контракт — `BootstrapData = { user: CurrentUser | null }`, экспортируемый
-  BFF через `import type`. `CurrentUser` выводится из результата `users.me`, без ручной копии DTO.
-  Это данные HTML, не новая процедура tRPC. В них только пользователь; токенов, сроков, cookie,
-  ключей и служебных ответов Go нет. [Подробности](./bootstrap#контракт).
+| Граница | Источник правды и получение типов |
+| --- | --- |
+| Go ↔ BFF | Контракт Go ведётся в Apidog. Go забирает его сам: `make generate` в бэкенде запускает [`go run ./cmd/apidog`](https://github.com/go-park-mail-ru/2026_2_Cringe_Driven_Development/blob/4094350/Makefile#L31) и затем `oapi-codegen`. Монорепа выгружает тот же контракт в `spec/openapi.json`, и Orval строит по нему клиент к Go для BFF и zod-схемы операций в пакет `@cdd/schemas`. |
+| Клиент ↔ BFF | Контракт — роутер tRPC в `apps/bff/src/router/`. Клиент делает `import type { AppRouter } from '@cdd/bff'`: в бандл не попадает ни строчки кода BFF. |
+| HTML → клиент | Второй контракт — `BootstrapData = { user: CurrentUser \| null }`, экспортируемый BFF через `import type`. `CurrentUser` выводится из результата `users.me`, без ручной копии DTO. Это данные HTML, не новая процедура tRPC. |
 
-  ```ts
-  // apps/bff/src/bootstrap-types.ts — пример определения и экспорта из пакета @cdd/bff
-  import type { inferRouterOutputs } from '@trpc/server';
-  import type { AppRouter } from './router';
+В HTML только пользователь; токенов, сроков, cookie, ключей и служебных ответов Go нет.
+[Подробности bootstrap](./bootstrap#контракт).
 
-  type CurrentUser = inferRouterOutputs<AppRouter>['users']['me'];
-  export type BootstrapData = { user: CurrentUser | null };
-  ```
+```ts [apps/bff/src/bootstrap-types.ts]
+// apps/bff/src/bootstrap-types.ts — пример определения и экспорта из пакета @cdd/bff
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from './router';
+
+type CurrentUser = inferRouterOutputs<AppRouter>['users']['me'];
+export type BootstrapData = { user: CurrentUser | null };
+```
 
 - **Apidog описывает только Go.** Публичного OpenAPI у BFF нет: overlay, публичный контракт и их проверки
   в CI больше не нужны.
 - **Валидация.** Вход процедур проверяют zod-схемы, сгенерированные из контракта Go: правило поля
-  описано один раз, в Apidog. Формы клиента в модуле №2 этих схем не используют — см. [«Клиент»](#клиент). Выход не проверяется во время работы — типы ответа берутся из Orval, а Go —
-  наш сервис.
+  описано один раз, в Apidog. Формы клиента в модуле №2 этих схем не используют — см. [«Клиент»](./client#клиент).
+  Выход не проверяется во время работы — типы ответа берутся из Orval, а Go — наш сервис.
 
 ## Что меняется в контракте Go
 
@@ -65,7 +65,11 @@ Go становится серверным API для BFF, поэтому его
 
 ## Команды
 
-`bun run sync` выполняет два шага подряд:
+Команда Bun выполняет два шага подряд:
+
+```sh [Bun]
+bun run sync
+```
 
 1. `apidog` выгружает контракт Go из Apidog в `spec/openapi.json`;
 2. `orval` генерирует по нему клиент к Go и zod-схемы (см. ниже).
@@ -77,7 +81,7 @@ Go становится серверным API для BFF, поэтому его
 
 `orval.config.ts` в корне монорепы — две цели, обе читают контракт Go:
 
-```ts
+```ts [orval.config.ts]
 import { defineConfig } from 'orval';
 
 export default defineConfig({
@@ -126,12 +130,12 @@ export default defineConfig({
 из HTML, отдельного вызова нет.
 
 Процедуры обновления токенов нет: refresh делает сам BFF (см.
-[«Авторизация и CSRF»](./auth#access-истек)). `auth.login` и `auth.register` построены на `publicProcedure`, `auth.logout` — на
+[«Access истёк»](./auth-scenarios#access-истек)). `auth.login` и `auth.register` построены на `publicProcedure`, `auth.logout` — на
 `optionalSessionProcedure`: если сессия есть, она даёт `ctx.go`, но без сессии не отвечает `UNAUTHORIZED`.
 Остальные — на `authedProcedure`: она требует сессию и даёт процедуре `ctx.go` — клиент Go с уже свежим
 access. Как устроены `createContext` и обе процедуры — в [«Авторизации и CSRF»](./auth).
 
-```ts
+```ts [apps/bff/src/router/cells.ts]
 // apps/bff/src/router/cells.ts
 import { z } from 'zod';
 import { authedProcedure, router } from '../trpc';
@@ -147,7 +151,7 @@ export const cells = router({
 });
 ```
 
-```ts
+```ts [apps/bff/src/router/index.ts]
 // apps/bff/src/router/index.ts
 export const appRouter = router({ auth, users, notebooks, cells });
 export type AppRouter = typeof appRouter;
@@ -155,81 +159,15 @@ export type AppRouter = typeof appRouter;
 
 *Пример; имена схем и методов клиента Go — по выгрузке Orval.*
 
-## Как добавить процедуру
+## Как добавить процедуру {#как-добавить-процедуру}
 
-1. Согласовать имя процедуры, query/mutation, вход, результат, ошибки и необходимость авторизации.
-2. Если нужной операции Go нет, сначала изменить контракт в Apidog и реализацию Go, затем выполнить
-   `bun run sync`: Orval обновит клиент и схемы. Если существующих операций достаточно, новый OpenAPI не нужен.
-3. Добавить процедуру в роутер tRPC. Для passthrough взять подходящие схемы Orval; собственный вход
-   агрегированной процедуры описать в BFF на Zod. Hono подключает общий HTTP-адаптер
-   (см. [«Каркас»](./service#каркас)); отдельная Hono-ручка для каждой процедуры не нужна.
-4. В обработчике вызвать общий клиент Go, при необходимости собрать несколько ответов для интерфейса.
-   Предметная логика остаётся в Go.
-5. Экспортировать `AppRouter`: TypeScript выводит методы, типы входов и ответов официального клиента
-   из роутера. Кодогенерации клиента BFF → браузер нет; независимой OpenAPI-спецификации BFF тоже нет.
-6. Вызвать `api.<процедура>.query(...)` или `.mutate(...)` на фронте; выполнить `typecheck` и ручную
-   проверку результата, ошибок и авторизации.
+Новая процедура проходит согласование, подключение к Go и проверку через официальный клиент.
+Шесть шагов и связанный пример — [Как добавить процедуру](./procedures#как-добавить-процедуру).
 
-Например, существующая операция получения блокнота связывает сервер и клиент так:
+## Процедуры экранов {#процедуры-экранов}
 
-```ts
-// apps/bff/src/router/notebooks.ts
-import { z } from 'zod';
-import { authedProcedure, router } from '../trpc';
-
-export const notebooks = router({
-  get: authedProcedure
-    .input(z.object({ id: z.number().int() }))
-    .query(({ ctx, input }) => ctx.go.getNotebook(input.id)),
-});
-
-// apps/bff/src/router/index.ts
-export const appRouter = router({ auth, users, notebooks, cells });
-export type AppRouter = typeof appRouter;
-
-// apps/client: api — один раз настроенный официальный клиент из раздела «Клиент»
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import type { AppRouter } from '@cdd/bff';
-
-type NotebookInput = inferRouterInputs<AppRouter>['notebooks']['get'];
-type NotebookResult = inferRouterOutputs<AppRouter>['notebooks']['get'];
-const input: NotebookInput = { id: 1 };
-const notebook: NotebookResult = await api.notebooks.get.query({ id: 1 });
-```
-
-*Фрагменты разных файлов; имя метода Go — по выгрузке Orval. Тип результата берётся из Go-клиента
-через обработчик роутера, без ручного DTO и обязательной runtime-проверки всех ответов.*
-
-## Процедуры экранов
-
-Процедура ресурса — одно действие или один ресурс. Если экрану нужно больше одного вызова Go, для него
-заводится процедура в роутере `views`: она делает вызовы Go параллельно и отдаёт один ответ. Процедуры
-ресурсов остаются для действий и отдельных виджетов.
-
-Сейчас каждый экран фронта делает по одному запросу: список блокнотов —
-[`GET /notebooks`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/pages/NotebooksPage/NotebooksPage.tsx#L32),
-блокнот —
-[`GET /notebooks/{id}`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/pages/NotebookPage/NotebookPage.tsx#L38),
-поэтому процедур экранов пока нет.
-
-::: info
-`views.notebook` появится вместе с треком [«Авто-VPS»](../notebook-vps): странице блокнота понадобится и
-сам блокнот, и статус его окружения.
-:::
-
-```ts
-// apps/bff/src/router/views.ts
-export const views = router({
-  notebook: authedProcedure
-    .input(z.object({ id: z.number().int() }))
-    .query(async ({ ctx, input }) => {
-      const [notebook, runtime] = await Promise.all([ctx.go.getNotebook(input.id), ctx.go.getRuntime(input.id)]);
-      return { notebook, runtime };
-    }),
-});
-```
-
-*Пример; `getRuntime` — будущая ручка трека «Авто-VPS».*
+Роутер `views` собирает несколько ответов Go для одного экрана; `views.notebook` остаётся будущим примером.
+Условия и исходный пример — [Процедуры экранов](./procedures#процедуры-экранов).
 
 ## Ошибки
 
@@ -264,101 +202,12 @@ Go отвечает на ошибку телом `Error { code, message }`. BFF 
 
 *Пример; коды приложения — из контракта Go.*
 
-## Клиент
+## Клиент {#клиент}
 
-В модуле №2 используются официальные `@trpc/client` и `@trpc/server` совместимых версий 11.x,
-а на BFF — официальный `zod`. Подтрек [«tRPC (client)»](../trpc-client) подключает клиент в приложении.
-Собственные React и Zustand команды продолжают использоваться.
+Официальный `@trpc/client` получает типы через `import type AppRouter` и работает с `/api/trpc`.
+Настройка, обработка ошибок и границы MVP — [Клиент](./client#клиент).
 
-Клиент настраивается один раз в общем модуле транспорта:
+## Какие вызовы BFF принимает {#какие-вызовы-bff-принимает}
 
-```ts
-// apps/client/src/api/client.ts
-import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
-import type { AppRouter, BootstrapData } from '@cdd/bff';
-
-export const api = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: '/api/trpc',
-      maxURLLength: 2000,
-      headers: { 'X-CSRF': '1' },
-      fetch(url, options) {
-        return fetch(url, { ...options, credentials: 'same-origin' });
-      },
-    }),
-  ],
-});
-
-const notebook = await api.notebooks.get.query({ id: 1 });
-await api.cells.create.mutate({ notebookId: 1, kind: 'code' });
-
-try {
-  await api.notebooks.get.query({ id: 1 });
-} catch (error) {
-  if (error instanceof TRPCClientError) {
-    const data = (error as TRPCClientError<AppRouter>).data;
-    // data.code — код tRPC, data.appCode — код приложения,
-    // data.zodError — ошибки полей от errorFormatter.
-    if (data?.code === 'UNAUTHORIZED') {
-      // Перевести стор сессии в «гость» и показать форму входа.
-    }
-  }
-  throw error;
-}
-```
-
-`AppRouter` и `BootstrapData` импортируются только как типы; вывод входов/ответов через
-`inferRouterInputs` / `inferRouterOutputs` тоже использует `import type`. Серверный runtime-код в
-клиентский бандл не попадает. Начальные данные пользователь получает из HTML без нового Zod в браузере.
-
-Транспорт работает с `/api/trpc` на том же origin. [Официальный `httpBatchLink`](https://trpc.io/docs/client/links/httpBatchLink)
-отвечает за батчинг и деление батча по `maxURLLength`, заголовок `X-CSRF: 1` и cookie добавляет общая
-настройка. Реализацию HTTP RPC в модуле №2 писать не нужно. Query идут через GET, mutation — через POST;
-успешный конверт содержит `result.data`, ошибка — `error` (см. [«Ошибки»](#ошибки)). Если ошибка
-возникла в `createContext`, на батч может прийти один конверт `{ error }`: официальный клиент
-разбирает его для всех вызовов. Ошибки приходят как `TRPCClientError`, их поля читаются из `data`,
-а сообщения интерфейс выбирает по `data.appCode`, не по тексту `message`.
-
-Подписок пока нет. Потоковый вывод ячеек, когда понадобится, пойдёт через SSE на `fetch`: у `EventSource`
-нельзя поставить заголовок `X-CSRF`.
-
-**Ручная приёмка MVP.** Проверить успешные query/mutation; неверный вход — ошибка полей
-`data.zodError`; `UNAUTHORIZED` — гость и форма входа; клиент не выполняет refresh и не читает cookie.
-Новые автотесты клиента в MVP не требуются, существующие проверки репозитория сохраняются.
-
-**Формы.** Поля форм клиент проверяет своими правилами, как сейчас
-([`src/utils/credentials.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/f499d4e/src/utils/credentials.ts#L28)):
-своего Zod пока нет. Если вход не прошёл схему на BFF, форма раскладывает `data.zodError` по полям.
-
-В модуле №3 появляются собственные [клиент и сервер tRPC](/modules/3/tracks/trpc) и свой
-[Zod](/modules/3/tracks/zod): общие схемы `@cdd/schemas` проверяют поля на BFF и в браузере вместо
-ручных правил, вместе со своим [React Hook Form](/modules/3/tracks/react-hook-form).
-
-## Какие вызовы BFF принимает
-
-[RFC 10017 §6.1.3.6](https://www.rfc-editor.org/rfc/rfc10017#section-6.1.3.6):
-
-> When implementing a dynamically configurable proxy, the BFF MUST ensure that it only allows requests to explicitly permitted hosts and paths.
-
-BFF ничего не проксирует: процедуры роутера вызывают Go сгенерированным клиентом, путь и метод
-заданы в коде. HTML-хендлер использует тот же общий клиент с фиксированным `GET /users/me` и общей
-логикой refresh; произвольный путь из URL браузера в Go не передаётся. Он не вызывает tRPC по HTTP.
-API, публичные и служебные маршруты обрабатываются до HTML fallback; внешние `/api/v1` и остальные
-неизвестные `/api/*` не становятся SPA-страницей.
-
-Для RPC проверки CSRF идут раньше роутера (см. [«Авторизация и CSRF»](./auth#как-bff-обрабатывает-вызов)), поэтому
-вызов без `X-CSRF` получит `403`. Вызов несуществующей процедуры получает `404 NOT_FOUND` от tRPC без
-запроса в Go:
-
-```http
-POST /api/trpc/notebooks.delete
-Content-Type: application/json
-X-CSRF: 1
-Origin: https://cellestial.ru
-
-404 Not Found
-{ "error": { "message": "No procedure found on path \"notebooks.delete\"", "code": -32004, "data": { "code": "NOT_FOUND", "httpStatus": 404, "path": "notebooks.delete" } } }
-```
-
-*Пример; удаления блокнота в контракте нет.*
+BFF вызывает только заданные в коде операции Go; неизвестная процедура не передаётся в Go.
+Допустимые запросы и пример отказа — [Какие вызовы BFF принимает](./client#какие-вызовы-bff-принимает).

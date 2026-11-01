@@ -9,6 +9,8 @@ title: "Первоначальная настройка"
 Новые имена сначала надо зарегистрировать. Разовый bootstrap и следующий
 автоматический релиз — два отдельных шага плана CDD.
 
+## Разовый bootstrap
+
 1. Создаём npm-организацию `cdd-team`, проверяем права участников на первичную
    публичную публикацию и доступность имён `@cdd-team/react`, `@cdd-team/zustand`,
    `@cdd-team/openapi`. Меняем имена, внутренние ссылки и `repository.url` на
@@ -33,13 +35,16 @@ title: "Первоначальная настройка"
    Эти же версии записываем в `.release-please-manifest.json`; пути, `component`
    и формат тегов согласуем с `release-please-config.json`. Одной ручной публикации
    в npm недостаточно для корректной точки отсчёта release-please.
-5. На странице каждого зарегистрированного пакета задаём
+
+## Настройка автоматического выпуска
+
+1. На странице каждого зарегистрированного пакета задаём
    [Trusted Publisher](./publishing#trusted-publishing-через-oidc): owner
    `Cringe-Driven-Development-Team`, repository `frontend-packages`, workflow
    filename `release.yml`, environment только при использовании, **Allow npm publish**.
    Подтверждаем новое доверие успешным workflow-выпуском в срок
    [первичной проверки доверия](./publishing#trusted-publishing-через-oidc); если срок прошёл, настройку пересоздаём.
-6. Следующий `fix` идёт через feature PR → release PR → workflow. Например,
+2. Следующий `fix` идёт через feature PR → release PR → workflow. Например,
    исправление React выпускает `1.2.1` и зависимый Zustand `1.0.1`; это проверка
    автоматического OIDC-релиза после ручного bootstrap. OpenAPI остаётся `0.2.0`.
 

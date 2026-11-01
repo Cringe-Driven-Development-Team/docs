@@ -106,3 +106,24 @@
   aspect-ratio: auto !important;
   max-height: none !important;
 }
+
+/* Простые таблицы переносят текст, длинные значения прокручиваются только внутри таблицы. */
+.vp-doc table {
+  width: 100%;
+}
+.vp-doc th,
+.vp-doc td {
+  overflow-wrap: anywhere;
+}
+.vp-doc #кто-за-что-отвечает + table :is(th, td):first-child {
+  overflow-wrap: normal;
+}
+
+/* Mermaid должен измерять iframe и во время загрузки: display:none даёт нулевой холст. */
+.VPNolebaseInlinePreviewLinkPopupIframe {
+  display: block !important;
+}
+.VPNolebaseInlinePreviewLinkPopupLoading {
+  position: absolute;
+  inset: 0;
+}

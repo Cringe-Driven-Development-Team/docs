@@ -5,34 +5,45 @@ import { loadModuleDir } from "@tp-prepare/vitepress-module-graph/node";
 const TRACK = "site/modules/2/tracks/offline.md";
 const THEORY = "site/modules/2/tracks/offline/theory.md";
 const ARCHITECTURE = "site/modules/2/tracks/offline/architecture.md";
+const STRATEGIES = "site/modules/2/tracks/offline/caching-strategies.md";
+const DEPLOYMENT = "site/modules/2/tracks/offline/deployment.md";
+const CHECKS = "site/modules/2/tracks/offline/checks.md";
+const PAGES = [THEORY, STRATEGIES, ARCHITECTURE, DEPLOYMENT, CHECKS];
 const read = (file: string) => readFileSync(file, "utf8");
-const section = (md: string, title: string) => md.split(`\n## ${title}\n`)[1]?.split(/\n## /)[0] ?? "";
+const section = (md: string, title: string) => md.replace(/ \{#[^}]+\}/g, "").split(`\n## ${title}\n`)[1]?.split(/\n## /)[0] ?? "";
 const diagrams = (md: string) => [...md.matchAll(/^```mermaid\n([\s\S]*?)^```/gm)];
 
 test("offline: подстраницы зарегистрированы в порядке чтения", () => {
   const track = loadModuleDir("site/modules").modules
     .find((module) => module.id === "2")?.tracks.find((track) => track.id === "offline");
   expect(track?.pages.map((page) => page.title)).toEqual([
-    "Теория офлайн-режима", "Архитектура офлайн-режима Cellestial",
+    "Теория офлайн-режима", "Стратегии кеширования", "Архитектура офлайн-режима Cellestial",
+    "Размещение и обновление", "Проверка офлайн-режима",
   ]);
 });
 
 test("offline: теория и архитектура идут от основ к самостоятельной проверке", () => {
   for (const [file, headings] of [
     [THEORY, ["Service Worker", "Жизненный цикл", "Где хранится кеш", "Когда наполняется кеш", "Стратегии кеширования", "Workbox", "vite-plugin-pwa", "Что проверить в понимании"]],
+    [STRATEGIES, ["Перед выбором стратегии", "CacheOnly", "NetworkOnly", "CacheFirst", "NetworkFirst", "StaleWhileRevalidate", "Сравнение стратегий"]],
+    [DEPLOYMENT, ["Адрес и scope", "Кто за что отвечает", "Обновление комплекта"]],
+    [CHECKS, ["Вопросы для реализации", "Сценарии проверки"]],
     [ARCHITECTURE, ["Основа: SPA и BFF", "Подготовка офлайн-режима", "Открытие с сетью", "Открытие без сети", "Потеря сети в открытом приложении", "Что кешируем", "Размещение и обновление", "Границы режима", "Вопросы для реализации", "Сценарии проверки"]],
   ] as const) {
-    expect(read(file).match(/^## .+$/gm)?.map((line) => line.slice(3))).toEqual([...headings]);
+    expect(read(file).match(/^## .+$/gm)?.map((line) => line.slice(3).replace(/ \{#[^}]+\}/g, ""))).toEqual([...headings]);
   }
 });
 
-test("offline: 10 схем теории и 4 схемы архитектуры", () => {
+test("offline: 5 схем основ, 5 стратегий и 4 схемы архитектуры", () => {
   const theory = read(THEORY);
   const architecture = read(ARCHITECTURE);
-  expect(diagrams(theory)).toHaveLength(10);
+  const strategies = read(STRATEGIES);
+  expect(diagrams(theory)).toHaveLength(5);
+  expect(diagrams(strategies)).toHaveLength(5);
+  expect(PAGES.flatMap((file) => diagrams(read(file)))).toHaveLength(14);
   expect(diagrams(architecture)).toHaveLength(4);
   for (const strategy of ["CacheOnly", "NetworkOnly", "CacheFirst", "NetworkFirst", "StaleWhileRevalidate"]) {
-    const part = theory.split(`\n### ${strategy}\n`)[1]?.split(/\n### |\n## /)[0] ?? "";
+    const part = section(strategies, strategy);
     expect(diagrams(part), strategy).toHaveLength(1);
   }
   for (const mode of ["generateSW", "injectManifest"]) expect(section(theory, "vite-plugin-pwa")).toContain(mode);
@@ -78,15 +89,17 @@ test("offline: пакеты Workbox и сборочная зависимость
 });
 
 test("offline: сетевой ответ возвращается независимо от разрешения кешировать", () => {
-  const strategies = section(read(THEORY), "Стратегии кеширования");
+  const strategies = read(STRATEGIES);
+  const shared = section(strategies, "Перед выбором стратегии");
+  for (const pattern of [/разные факты/, /независимо от статуса/, /отдельной политики/, /503/, /не означает сетевой отказ/]) expect(shared).toMatch(pattern);
   for (const strategy of ["CacheFirst", "NetworkFirst"]) {
-    const part = strategies.split(`\n### ${strategy}\n`)[1]?.split(/\n### /)[0] ?? "";
+    const part = section(strategies, strategy);
     const diagram = diagrams(part)[0]?.[1] ?? "";
     expect(diagram, strategy).toContain('N{"Получен ответ сети?"}');
     expect(diagram, strategy).toContain('N -->|"да"| Rnet["Вернуть сетевой ответ"]');
     expect(diagram, strategy).toContain('Rnet -.->|"если разрешено"| Save["Сохранить в кеш"]');
   }
-  const swr = strategies.split("\n### StaleWhileRevalidate\n")[1] ?? "";
+  const swr = section(strategies, "StaleWhileRevalidate");
   const diagram = diagrams(swr)[0]?.[1] ?? "";
   expect(diagram.match(/opt Разрешено кеширование/g)).toHaveLength(2);
   const miss = diagram.split("else Промах")[1] ?? "";
@@ -118,14 +131,14 @@ test("offline: индикатор сети — подсказка, сессия 
 });
 
 test("offline: переходы между документами и обратно без якорей", () => {
-  for (const link of ["./offline/theory", "./offline/architecture"]) expect(read(TRACK)).toContain(`](${link})`);
+  for (const link of ["./offline/theory", "./offline/caching-strategies", "./offline/architecture", "./offline/deployment", "./offline/checks"]) expect(read(TRACK)).toContain(`](${link})`);
   expect(read(THEORY)).toContain("](./architecture)");
   expect(read(ARCHITECTURE)).toContain("](./theory)");
-  for (const file of [THEORY, ARCHITECTURE]) expect(read(file)).toContain("](../offline)");
+  for (const file of PAGES) expect(read(file)).toContain("](../offline)");
 });
 
 test("offline: учебные страницы не содержат кода приложения и чувствительных значений", () => {
-  for (const file of [TRACK, THEORY, ARCHITECTURE]) {
+  for (const file of [TRACK, ...PAGES]) {
     const md = read(file);
     expect(md.replace(/^```mermaid[^\n]*\n[\s\S]*?^```[ \t]*$/gm, ""), file).not.toContain("```");
     expect(md, file).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
@@ -133,4 +146,43 @@ test("offline: учебные страницы не содержат кода п
     expect(md.replace(/^```[\s\S]*?^```/gm, ""), file).not.toContain("{{");
     expect(md, file).not.toMatch(/registerRoute\(|navigator\.serviceWorker\.register\(|VitePWA\(/);
   }
+});
+
+// Перенесённые темы должны открываться прямо у владельца; старые закладки сохраняют резюме.
+test("offline: перенесённые якоря сохраняют понятные переходы", () => {
+  for (const [source, id, target, title, summary] of [
+    [THEORY, "стратегии-кеширования", "./caching-strategies#стратегии-кеширования", "# Стратегии кеширования", "источник ответа"],
+    ...["CacheOnly", "NetworkOnly", "CacheFirst", "NetworkFirst", "StaleWhileRevalidate"].map((name) =>
+      [THEORY, name.toLowerCase(), `./caching-strategies#${name.toLowerCase()}`, `## ${name}`, name]),
+    [ARCHITECTURE, "размещение-и-обновление", "./deployment#размещение-и-обновление", "# Размещение и обновление", "комплект"],
+    [ARCHITECTURE, "вопросы-для-реализации", "./checks#вопросы-для-реализации", "## Вопросы для реализации", "Обоснуйте"],
+    [ARCHITECTURE, "сценарии-проверки", "./checks#сценарии-проверки", "## Сценарии проверки", "после реализации"],
+  ]) {
+    const md = read(source!);
+    const stub = md.split(`{#${id}}`)[1]?.split(/\n##? /)[0] ?? "";
+    expect(stub, id).toContain(summary!);
+    expect(stub, id).toContain(`](${target})`);
+    expect(read(`site/modules/2/tracks/offline/${target!.slice(2).split("#")[0]}.md`)).toContain(title!);
+  }
+});
+
+test("offline: размещение показывает роли и незавершённый каркас, обновление — ограничения", () => {
+  const md = read(DEPLOYMENT);
+  const address = section(md, "Адрес и scope");
+  for (const needle of ["- **Адрес SW:**", "https://cellestial.ru/sw.js", "- **Scope:**", "- **Размещение:**", "origin", "CDN"]) expect(address).toContain(needle);
+  const roles = section(md, "Кто за что отвечает");
+  for (const role of ["Сборка", "Публичная статика BFF", "Браузер", "SW", "CDN"]) expect(roles).toContain(`| ${role} |`);
+  expect(roles).toMatch(/::: info[\s\S]*список файлов пока пуст[\s\S]*не уже готовые маршруты[\s\S]*:::/);
+  for (const needle of ["без сессии", "Go API", "bootstrap", "студент выбирает", "предварительное сохранение"]) expect(roles).toContain(needle);
+  const updates = section(md, "Обновление комплекта");
+  expect(updates.match(/^- /gm)).toHaveLength(3);
+  for (const needle of ["согласованный комплект", "прежний контроллер", "не является универсальным решением"]) expect(updates).toContain(needle);
+});
+
+test("offline: вопросы и все десять сценариев остаются проверками после реализации", () => {
+  const md = read(CHECKS);
+  expect(md).toContain("Проверить после реализации");
+  expect(section(md, "Вопросы для реализации").match(/^- /gm)).toHaveLength(10);
+  expect(section(md, "Сценарии проверки").match(/^\| [^ -]/gm)).toHaveLength(11);
+  for (const needle of ["HTTP 401 / 403 / 404 / HTML 503", "прерванная установка", "HTML не попадает в RPC", "не является отчётом", "собственные проверки"]) expect(md).toContain(needle);
 });

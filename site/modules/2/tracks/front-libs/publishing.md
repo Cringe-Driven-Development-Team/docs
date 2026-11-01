@@ -8,20 +8,35 @@ title: "Публикация в npm"
 
 ## Два способа публикации
 
-### Публикация с npm-токеном
+<span id="публикация-с-npm-токеном"></span>
+<span id="trusted-publishing-через-oidc"></span>
+
+Рекомендуемый способ — Trusted Publishing через OIDC. npm-токен оставлен для сравнения.
+Подготовка версии и проверки пакета одинаковы при обоих способах авторизации:
+
+1. release-please готовит release PR с версиями и CHANGELOG.
+2. Bun устанавливает зависимости, проверяет и собирает пакет.
+3. npm CLI получает права одним из способов ниже и публикует подготовленный архив.
+
+Авторизация подтверждает право публикации; качество архива проверяется отдельно.
+
+::: tabs
+
+== npm-токен
 
 Это сравниваемый подход, а не установленная история старого CI CDD. В исходниках
 подтверждены ручные `release:*` с `bun publish` у
 [React](https://github.com/Cringe-Driven-Development-Team/react/blob/63dad3f59971b82dcd740e4a60a08f7c687044bf/package.json#L37-L39) и
 [OpenAPI](https://github.com/Cringe-Driven-Development-Team/openapi-cdd/blob/8008594d68d04f6f525d506888689ce66948d93e/package.json#L43-L45).
 
-Владелец создаёт granular token в npm, сохраняет его в GitHub **Secrets** как
-`NPM_TOKEN`; нужный шаг job получает его в env `NODE_AUTH_TOKEN`, откуда npm CLI
-читает секрет через настройку registry. Обычная repository variable для этого не подходит.
-Одного env недостаточно: конфигурация `.npmrc` должна содержать ссылку на переменную,
-а не значение секрета:
+1. Владелец создаёт granular token в npm и сохраняет его в GitHub **Secrets** как
+   `NPM_TOKEN`. Обычная repository variable для этого не подходит.
+2. Нужный шаг job получает токен в env `NODE_AUTH_TOKEN`, откуда npm CLI читает секрет
+   через настройку registry.
+3. Одного env недостаточно: конфигурация `.npmrc` должна содержать ссылку на переменную,
+   а не значение секрета:
 
-```ini
+```ini [.npmrc]
 //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
@@ -50,16 +65,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-Уточнение на 2026-10-17: поддерживаются granular tokens; classic/automation tokens
-удалены. Для этого примера нужны права пакета/scoped packages **Read and write
-(publish and stage)** и допустимый политиками Bypass 2FA; stage-only не разрешает
-`npm publish`. npm объявил прекращение прямой публикации granular-токенами в январе
-2027 года. Это контекст сравнения, не рекомендация внедрять такой CI.
-[Правила npm access tokens](https://docs.npmjs.com/about-access-tokens/).
-
 <Diagram name="modules/2/front-libs-npm-token" />
 
-### Trusted Publishing через OIDC
+== Trusted Publishing (рекомендуется)
 
 **OIDC (OpenID Connect)** — стандарт, позволяющий сервису проверить, кто к нему
 обращается, через доверенного поставщика идентификации. В нашем CI таким поставщиком
@@ -101,7 +109,7 @@ ID-токен GitHub подтверждает идентичность запу�
 установки/проверки совместимого npm CLI после `setup-node` здесь опущены
 (версию проверяем через `npm --version`).
 
-```yaml
+```yaml [release.yml]
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -118,6 +126,17 @@ jobs:
       - run: npm publish --access public
         working-directory: packages/react
 ```
+
+:::
+
+## Общие ограничения и права
+
+Уточнение на 2026-10-17: поддерживаются granular tokens; classic/automation tokens
+удалены. Для этого примера нужны права пакета/scoped packages **Read and write
+(publish and stage)** и допустимый политиками Bypass 2FA; stage-only не разрешает
+`npm publish`. npm объявил прекращение прямой публикации granular-токенами в январе
+2027 года. Это контекст сравнения, не рекомендация внедрять такой CI.
+[Правила npm access tokens](https://docs.npmjs.com/about-access-tokens/).
 
 Workflow с другим filename или repo не совпадёт с этим доверием и не получит
 npm-права. Не передаём постоянный npm-секрет в env или `.npmrc` публикации.
