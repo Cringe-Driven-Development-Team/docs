@@ -4,7 +4,8 @@
 // У bun нет своих API для копирования и удаления каталогов, временных каталогов и дописывания в файл: там node:fs.
 import { appendFileSync, cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { preparePlatformWikis, readPreparedPlatformWikis } from "./openwiki-sources.ts";
+import { join, resolve } from "node:path";
 import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
 import { INDEX_FILE, renderRedirect, writePageRedirects } from "./build-index.ts";
 
@@ -166,6 +167,11 @@ function stepFailure(step: string, outcome: Outcome): BuildResult {
   return { status: "failed", failedStep: outcome === "timeout" ? `${step} (timeout)` : step };
 }
 
+export function previewBuildEnv(env: Record<string, string | undefined>, slug: string, snapshotDir: string): Record<string, string | undefined> {
+  const clean = Object.fromEntries(Object.entries(env).filter(([key]) => !/(TOKEN|SECRET|PASSWORD|CREDENTIAL)/i.test(key)));
+  return { ...clean, OPENWIKI_SOURCES_DIR: resolve(snapshotDir), SITE_BASE: branchSiteBase(slug) };
+}
+
 function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
   const dir = join(tmpRoot, branch.slug);
   const worktreeOutcome = run(["git", "worktree", "add", "--detach", dir, branch.sha]);
@@ -194,7 +200,7 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
     }
     const buildOutcome = run(["bun", "run", "build"], {
       ...options,
-      env: { ...process.env, SITE_BASE: branchSiteBase(branch.slug) },
+      env: previewBuildEnv(process.env, branch.slug, process.env.OPENWIKI_SOURCES_DIR!),
     });
     if (buildOutcome !== "ok") return stepFailure("bun run build", buildOutcome);
     if (!existsSync(join(dir, "dist", "index.html"))) return { status: "failed", failedStep: "dist" };
@@ -212,6 +218,10 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
 
 async function main(argv: string[]): Promise<number> {
   const started = Date.now();
+  const snapshotDir = resolve(process.env.OPENWIKI_SOURCES_DIR ?? ".openwiki-sources");
+  if (process.env.OPENWIKI_SOURCES_DIR !== undefined) await readPreparedPlatformWikis(snapshotDir);
+  else await preparePlatformWikis(snapshotDir);
+  process.env.OPENWIKI_SOURCES_DIR = snapshotDir;
   if (argv.includes("--main-built")) {
     if (!existsSync(INDEX_FILE)) {
       console.error(`site: --main-built given but ${INDEX_FILE} is missing`);

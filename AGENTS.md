@@ -51,7 +51,7 @@
   `.codex/hooks.json` проверяет все модули после `apply_patch` и shell-команд; запуск и доверие —
   [README](./README.md#работа-в-codex). Оба хука молчат при успехе и без установленного пакета.
   Pre-commit `lefthook` проверяет модули при коммите. Перед коммитом прогони `bun run modules:check` сам.
-- `bun run site` из git worktree в Docker не работает — запускай из основного клона.
+- Из git worktree запускай обычный `bun run site`: Docker-обёртка монтирует общий Git-каталог по исходному пути.
 - Сайт — VitePress в `site/` (главная `/`), схемы — страница `/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
   на конкретном SHA.

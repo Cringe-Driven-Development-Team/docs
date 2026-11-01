@@ -1,66 +1,53 @@
-import { access, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
-export type WikiProvenance = { updatedAt: string; gitHead: string };
-
-export function readWikiProvenance(raw: unknown): WikiProvenance {
-  const value = raw as Record<string, unknown> | null;
-  if (!value || value.status !== 'complete') throw new Error('Invalid checkpoint status: expected complete');
-  const updatedAt = value.updatedAt;
-  if (typeof updatedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(updatedAt)
-      || !Number.isFinite(Date.parse(updatedAt)) || new Date(updatedAt).toISOString() !== updatedAt) {
-    throw new Error('Invalid checkpoint updatedAt: expected an ISO UTC date');
-  }
-  if (typeof value.gitHead !== 'string' || !/^[a-fA-F0-9]{40}$/.test(value.gitHead)) {
-    throw new Error('Invalid checkpoint gitHead: expected a full 40-character hex SHA');
-  }
-  return { updatedAt, gitHead: value.gitHead };
-}
-
-export function decorateVisualizer(html: string, css: string, info: WikiProvenance): { html: string; css: string } {
-  const anchor = '<div class="main" id="main">';
-  if (html.split(anchor).length !== 2) throw new Error('Expected exactly one native visualizer main insertion point');
-  const dateParts = new Intl.DateTimeFormat('ru-RU', {
-    timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit',
-    day: 'numeric', month: 'long', year: 'numeric', hourCycle: 'h23',
-  }).formatToParts(new Date(info.updatedAt));
-  const dateFields = Object.fromEntries(dateParts.map(({ type, value }) => [type, value]));
-  const date = `${dateFields.hour}:${dateFields.minute} ${dateFields.day} ${dateFields.month} ${dateFields.year} г. МСК`;
-  const metadata = `<aside class="wiki-provenance" aria-label="Wiki provenance">Updated <time datetime="${info.updatedAt}">${date}</time><span>Commit <a href="https://github.com/Cringe-Driven-Development-Team/docs/commit/${info.gitHead}">${info.gitHead}</a></span></aside>\n`;
-  return {
-    html: html.replace('</head>', '<link rel="icon" type="image/svg+xml" href="../favicon.svg" />\n</head>').replace(anchor, metadata + anchor),
-    css: css + `\n/* Static wiki checkpoint provenance */\n.wiki-provenance { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; padding: .6rem 1rem; font-size: .8rem; flex-shrink: 0; border-bottom: 1px solid var(--edge); }\n.wiki-provenance a { color: inherit; overflow-wrap: anywhere; }\n.wiki-provenance span { min-width: 0; }\n@media (max-width: 600px) { .wiki-provenance { flex-direction: column; } }\n`,
-  };
-}
+import { access, chmod, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { exportStaticVisualizer } from 'openwiki/dist/visualize/static-export.js';
+import { buildWorkspaceGraph } from './openwiki-workspace.ts';
+import { prepareDocsWiki, preparePlatformWikis, readPreparedPlatformWikis } from './openwiki-sources.ts';
+import { adaptWorkspaceAssets } from './openwiki-visualizer.ts';
+import type { WorkspaceManifest } from './openwiki-workspace.ts';
+export { readWikiProvenance } from './openwiki-workspace.ts';
+export type { WikiProvenance } from './openwiki-workspace.ts';
 
 export async function exportWikiVisualizer(
-  root: string,
-  runVisualizer?: (source: string, output: string) => Promise<void>,
+  root: string, options: { snapshotDir?: string } = {},
+  deps: { nativeExport?: typeof exportStaticVisualizer } = {},
 ): Promise<void> {
-  const source = join(root, 'openwiki');
-  const info = readWikiProvenance(JSON.parse(await readFile(join(source, '.last-update.json'), 'utf8')));
-  const output = join(root, 'dist/openwiki');
-  await rm(output, { recursive: true, force: true });
-  if (runVisualizer) {
-    await runVisualizer(source, output);
-  } else {
-    const child = Bun.spawn([join(root, 'node_modules/.bin/openwiki'), 'visualize', source, '--export', output], {
-      cwd: root, stdout: 'inherit', stderr: 'inherit',
-    });
-    if (await child.exited !== 0) throw new Error('OpenWiki visualizer export failed');
-  }
-  for (const name of ['index.html', 'client.js', 'client-lib.js', 'styles.css', 'graph.json']) {
-    try { await access(join(output, name)); }
-    catch { throw new Error(`Missing OpenWiki export asset: ${name}`); }
-  }
-  const decorated = decorateVisualizer(
-    await readFile(join(output, 'index.html'), 'utf8'),
-    await readFile(join(output, 'styles.css'), 'utf8'), info,
-  );
-  await writeFile(join(output, 'index.html'), decorated.html);
-  await writeFile(join(output, 'styles.css'), decorated.css);
+  root = resolve(root);
+  const snapshot = options.snapshotDir ?? process.env.OPENWIKI_SOURCES_DIR;
+  const platforms = snapshot !== undefined ? await readPreparedPlatformWikis(snapshot) : await preparePlatformWikis(join(root, '.openwiki-sources'));
+  const wikis = [await prepareDocsWiki(root), ...platforms];
+  if (wikis.map(w => w.source.id).sort().join(',') !== 'backend,docs,frontend,infra') throw new Error('Publication requires exactly docs, frontend, backend, infra');
+  const builtAt = new Date().toISOString();
+  const graph = await buildWorkspaceGraph(wikis, builtAt);
+  for (const wiki of wikis) if (!graph.nodes.some(node => node.wiki === wiki.source.id && node.page === 'quickstart')) throw new Error(`Missing ${wiki.source.id}/quickstart`);
+  const manifest: WorkspaceManifest = { schemaVersion: 1, builtAt, sources: graph.sources };
+  const dist = join(root, 'dist'), output = join(dist, 'openwiki');
+  await mkdir(dist, { recursive: true });
+  const stage = await mkdtemp(join(dist, '.openwiki-stage-'));
+  let backup: string | undefined;
+  try {
+    await (deps.nativeExport ?? exportStaticVisualizer)({ wikiRoot: wikis[0]!.wikiRoot, outputDir: stage });
+    for (const name of ['index.html', 'client.js', 'client-lib.js', 'styles.css', 'graph.json']) await access(join(stage, name));
+    const version = (await Bun.file(new URL('../node_modules/openwiki/package.json', import.meta.url)).json()).version;
+    const assets = adaptWorkspaceAssets({ html: await readFile(join(stage,'index.html'),'utf8'), css: await readFile(join(stage,'styles.css'),'utf8'), clientJs: await readFile(join(stage,'client.js'),'utf8') }, version);
+    const bundle = await Bun.build({ entrypoints: [new URL('./openwiki-client-lib.ts', import.meta.url).pathname], target: 'browser', format: 'esm' });
+    if (!bundle.success || bundle.outputs.length !== 1) throw new Error(`Workspace browser bundle failed: ${bundle.logs.join('\n')}`);
+    await Promise.all([
+      writeFile(join(stage,'index.html'), assets.html), writeFile(join(stage,'styles.css'), assets.css), writeFile(join(stage,'client.js'), assets.clientJs),
+      writeFile(join(stage,'workspace-lib.js'), await bundle.outputs[0]!.text()),
+      writeFile(join(stage,'graph.json'), JSON.stringify(graph)), writeFile(join(stage,'manifest.json'), JSON.stringify(manifest)),
+    ]);
+    try {
+      await access(output);
+      backup = await mkdtemp(join(dist,'.openwiki-previous-'));
+      await rm(backup,{recursive:true});
+      await rename(output,backup);
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+    await chmod(stage, 0o755);
+    try { await rename(stage,output); } catch (error) { if (backup) await rename(backup,output); throw error; }
+    if (backup) await rm(backup,{recursive:true,force:true});
+  } finally { await rm(stage,{recursive:true,force:true}); }
 }
-
 if (import.meta.main) {
   try { await exportWikiVisualizer(process.cwd()); }
   catch (error) { console.error(error); process.exitCode = 1; }

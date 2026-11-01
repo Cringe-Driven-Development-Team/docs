@@ -232,3 +232,23 @@ test("runScript: success returns 0, mounts the repo root derived from cwd, and t
   ]);
   expect(calls[2]).toContain("F:/Github/x:/work");
 });
+
+test('snapshot and Git metadata use separate argv mounts without shell interpolation or tokens', () => {
+  const path = "/tmp/wiki $(touch nope) ' source";
+  const args = dockerRunArgs('image','/repo','build',[], {snapshotDir:path,gitCommonDir:'/git/common'});
+  expect(args).toContain(`${path}:/openwiki-sources:ro`);
+  expect(args).toContain('OPENWIKI_SOURCES_DIR=/openwiki-sources');
+  expect(args).toContain('/git/common:/git/common');
+  expect(args.at(-1)).not.toContain(path);
+  expect(args.join(' ')).not.toContain('TOKEN');
+});
+
+test('build prepares inputs once and injects only the fixed snapshot location into Docker', async () => {
+  const calls: string[][] = []; let prepared = 0;
+  const {deps} = fakeDeps(cmd => {calls.push(cmd); return 0;}, {env:{DOCS_PAGES_TOKEN:'must-not-leak'}});
+  deps.prepareInputs = async () => { prepared++; return {snapshotDir:'/snapshot'}; };
+  expect(await runScript(['build'],deps)).toBe(0);
+  expect(prepared).toBe(1);
+  expect(calls.at(-1)).toContain('/snapshot:/openwiki-sources:ro');
+  expect(calls.flat().join(' ')).not.toContain('must-not-leak');
+});

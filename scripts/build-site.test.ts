@@ -100,3 +100,13 @@ test("BOARD_SNAPSHOT is the ignored board snapshot path", () => {
   expect(BOARD_SNAPSHOT).toBe("site/modules/board.json");
   expect(readFileSync(".gitignore", "utf8").split(/\r?\n/)).toContain(BOARD_SNAPSHOT);
 });
+
+test('preview shares absolute platform snapshot but retains branch base without credentials', async () => {
+  const { previewBuildEnv } = await import('./build-site');
+  const env = previewBuildEnv({ PATH:'/bin', DIAGRAMS_IN_CONTAINER:'1', DOCS_PAGES_TOKEN:'secret', GH_TOKEN:'other' }, 'feature', '/snapshot');
+  expect(env.OPENWIKI_SOURCES_DIR).toBe('/snapshot');
+  expect(env.SITE_BASE).toBe('/branches/feature/');
+  expect(env.PATH).toBe('/bin');
+  expect(JSON.stringify(env)).not.toContain('secret');
+  expect(env.GH_TOKEN).toBeUndefined();
+});
