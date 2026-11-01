@@ -31,14 +31,13 @@ description: Правка страниц сайта VitePress в site/ — но�
   `aside` управляет правым оглавлением, а не левой навигацией. Для переезда опубликованного адреса —
   раздел «Переезд и удаление страницы».
 
-### Preview ссылок
+### Переходы по ссылкам
 
-Inline Link Preview подключён Markdown-transform в `site/.vitepress/config.mts` и компонентом
-`DocLinkPreview` в `site/.vitepress/theme/index.ts`. Политика — `canPreviewDocLink` в
-`site/.vitepress/link-preview.ts`: текстовые документы того же origin внутри текущего `SITE_BASE`
-допустимы; текущая страница и её якоря, внешние ссылки, файлы, OpenWiki, корневая архитектура
-(`/architecture/` и `/documentation/architecture/`) и графы модулей исключены.
-`/modules/2/tracks/offline/architecture` — обычный документ, preview допустим.
+Ссылки Markdown/VitePress — обычные ссылки: наведение не открывает popup или iframe.
+Клик открывает документ или его якорь в текущей базе `SITE_BASE`; история, reload/Back и
+сохранённая ширина чтения продолжают работать. Проверяй это секцией `plugins` существующего
+browser CLI; `scroll` проверяет видимость якорей после Mermaid, `hierarchy` — меню и поиск.
+Не сбрасывай настройки ширины ради проверки ссылок.
 
 Для полного перехода в OpenWiki сохраняй native `target="_self"`. При переносе страницы пересчитай
 относительный raw `href`: к raw HTML база автоматически не добавляется.
@@ -223,7 +222,7 @@ Markdown страницы — шаблон Vue. Ошибки ниже видны
   | `hierarchy` | Дерево, вложенные маршруты, старые ссылки и поиск |
   | `scroll` | Якоря после отрисовки Mermaid и сохранённые ширины |
   | `pages` | Отображение страниц и Mermaid |
-  | `plugins` | Ширина, Tabs/клавиатура, Group Icons, preview и граф |
+  | `plugins` | Ширина, Tabs/клавиатура, Group Icons, обычные ссылки без hover-popup |
   | `title` | Видимость бренда |
 
   Можно выбрать несколько секций, без аргументов выполняются все. Подбирай проверки к изменению;

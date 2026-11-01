@@ -6,7 +6,6 @@ import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/n
 import { SITE_BASE } from './site.ts';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
-import { InlineLinkPreviewElementTransform } from '@nolebase/vitepress-plugin-inline-link-preview/markdown-it';
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
 const modules = readModules(fileURLToPath(new URL('../modules', import.meta.url)));
@@ -44,7 +43,6 @@ export default withMermaid(
         include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'],
         exclude: [
           '@nolebase/vitepress-plugin-enhanced-readabilities/client',
-          '@nolebase/vitepress-plugin-inline-link-preview/client',
         ],
       },
     },
@@ -53,7 +51,6 @@ export default withMermaid(
       config(md) {
         md.use(tabsMarkdownPlugin);
         md.use(groupIconMdPlugin);
-        md.use(InlineLinkPreviewElementTransform, { tag: 'DocLinkPreview' });
       },
     },
     // Сообщения не сжимаются под ширину колонки, длинные переносятся; широкая схема прокручивается.
