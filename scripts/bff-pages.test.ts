@@ -8,17 +8,18 @@ export const MIGRATION = "site/modules/2/tracks/bff/migration.md";
 export const INFRASTRUCTURE = "site/modules/2/tracks/bff/infrastructure.md";
 export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
+export const AUTH_SCENARIOS = "site/modules/2/tracks/bff/auth-scenarios.md";
 export const SERVICE = "site/modules/2/tracks/bff/service.md";
 // SERVICE сюда не входит: проверка «нет IPv4» ниже ловит 127.0.0.1 из healthcheck; свои проверки — в тестах «Сервис BFF».
 export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
 export const RELEASE = "site/modules/2/tracks/bff/release.md";
 export const ROLLBACK = "site/modules/2/tracks/bff/rollback.md";
-export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, AUTH, BOOTSTRAP, RELEASE, ROLLBACK];
+export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, AUTH, AUTH_SCENARIOS, BOOTSTRAP, RELEASE, ROLLBACK];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
 export const TIP =
-  "История проверки 07.10.2026, до BFF. Это не описание текущей защиты. Проверенный гостевой маршрут — [BFF сейчас](/documentation/bff); целевые сценарии — [план трека](/modules/2/tracks/bff/auth).";
+  "История проверки 07.10.2026, до BFF. Это не описание текущей защиты. Проверенный гостевой маршрут — [BFF сейчас](/documentation/bff); целевые сценарии — [план трека](/modules/2/tracks/bff/auth-scenarios).";
 
 /** Первый блок `:::` страницы: после frontmatter и строки `# `, если она есть. */
 export function firstBlock(md: string): string {
@@ -44,7 +45,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [workspace, contract, auth, service, bootstrap, migration, infrastructure, release, rollback]");
+  expect(md).toContain("pages: [workspace, contract, auth, auth-scenarios, service, bootstrap, migration, infrastructure, release, rollback]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -115,9 +116,14 @@ function scenarios(md: string): { title: string; body: string }[] {
     });
 }
 
-test("в «Авторизация и CSRF» семь сценариев сессии со схемой и пометкой", () => {
-  expect(existsSync(AUTH)).toBe(true);
-  const list = scenarios(readFileSync(AUTH, "utf8"));
+test("в «Сценариях авторизации BFF» семь сценариев со схемой и пометкой", () => {
+  expect(existsSync(AUTH_SCENARIOS)).toBe(true);
+  const md = readFileSync(AUTH_SCENARIOS, "utf8");
+  expect(md).toContain("title: Сценарии авторизации BFF");
+  expect(md.indexOf("::: info Статус плана")).toBeLessThan(md.indexOf("## Сценарии"));
+  expect(firstBlock(md)).toContain("Проект: проверить после внедрения");
+  expect(md).not.toContain("::: tabs");
+  const list = scenarios(md);
   expect(list.map((s) => s.title)).toEqual([
     "Вход", "Запрос данных", "Access истёк", "Параллельные RPC", "Выход",
     "Сессия кончилась", "Первый вход после переезда",
@@ -154,7 +160,8 @@ test("CSRF: три подраздела со своими схемами и пр
     "### Атака с чужого сайта", "#### Запрос с поддомена", "### Переход по внешней ссылке",
   ]) expect(auth.split("\n").filter((line) => line === heading).length, heading).toBe(1);
   expect(auth).not.toContain("WebSocket");
-  expect(auth).toContain("три схемы CSRF и семь сценариев сессии");
+  expect(auth).toContain("три схемы CSRF");
+  expect(auth).not.toContain("```mermaid");
   expect(subsection(csrf, "Переход по внешней ссылке")).toContain("](./bootstrap)");
 
   const readme = readFileSync("README.md", "utf8");
@@ -165,8 +172,8 @@ test("CSRF: три подраздела со своими схемами и пр
 });
 
 test("параллельные RPC — один refresh в Go, прежний якорь сохранён", () => {
-  expect(existsSync(AUTH)).toBe(true);
-  const auth = readFileSync(AUTH, "utf8");
+  expect(existsSync(AUTH_SCENARIOS)).toBe(true);
+  const auth = readFileSync(AUTH_SCENARIOS, "utf8");
   const parallel = scenarios(auth).find((s) => s.title === "Параллельные RPC");
   expect(parallel).toBeDefined();
   expect(parallel!.body).toContain("users.me");
@@ -174,7 +181,7 @@ test("параллельные RPC — один refresh в Go, прежний я
   const toGo = parallel!.body.split("\n").filter((line) => /^\s*\w+-+>>[+-]?A:/.test(line));
   expect(toGo.filter((line) => line.includes("/auth/refresh")).length).toBe(1);
   expect(auth).toContain('<a id="две-вкладки"></a>');
-  expect(readFileSync(MIGRATION, "utf8")).toContain("](./auth#параллельные-rpc)");
+  expect(readFileSync(MIGRATION, "utf8")).toContain("](./auth-scenarios#параллельные-rpc)");
   expect(auth).toContain("### Параллельные RPC");
 });
 
@@ -266,7 +273,7 @@ function scenarioArrows(md: string): string[] {
 }
 
 test("в сценариях браузер вызывает tRPC", () => {
-  const arrows = scenarioArrows(readFileSync(AUTH, "utf8"));
+  const arrows = scenarioArrows(readFileSync(AUTH_SCENARIOS, "utf8"));
   const fromClient = arrows.filter((line) => /^\s*[FB]-+>>[+-]?[BP]:/.test(line));
   expect(fromClient.length).toBeGreaterThan(0);
   for (const line of fromClient) expect(line).not.toContain("/api/v1");
@@ -308,7 +315,7 @@ test("ошибка createContext на батч — один конверт", () 
 });
 
 test("конверт успеха — result.data", () => {
-  const auth = readFileSync(AUTH, "utf8");
+  const auth = readFileSync(AUTH_SCENARIOS, "utf8");
   expect(auth).not.toContain("{ result: User }");
   expect(auth).not.toContain("{ result: null }");
   expect(auth).toContain("{ result: { data: User } }");
@@ -623,8 +630,8 @@ test("перенесённые ссылки ведут сразу к владе�
     [WORKSPACE, "../bff#как-устроен-контракт", TRACK, "## Как устроен контракт"],
     [MIGRATION, "./contract#клиент", CONTRACT, "## Клиент"],
     [MIGRATION, "./contract#роутер", CONTRACT, "## Роутер"],
-    [MIGRATION, "./auth#параллельные-rpc", AUTH, "### Параллельные RPC"],
-    [MIGRATION, "./auth#первыи-вход-после-переезда", AUTH, "### Первый вход после переезда"],
+    [MIGRATION, "./auth-scenarios#параллельные-rpc", AUTH_SCENARIOS, "### Параллельные RPC"],
+    [MIGRATION, "./auth-scenarios#первыи-вход-после-переезда", AUTH_SCENARIOS, "### Первый вход после переезда"],
     [AUTH, "./infrastructure#две-vps", INFRASTRUCTURE, "## Две VPS"],
   ]) {
     expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
@@ -640,4 +647,47 @@ test("миграция сохраняет cookie, исходную схему и
   const cookies = section(md, "Cookie до и после");
   for (const needle of ["access_token", "/api/v1", "refresh_token", "/api/v1/auth", "__Host-csrf", "document.cookie", "__Host-Http-session", "Secure", "без `Domain`", "refresh_expires_in"]) expect(cookies, needle).toContain(needle);
   for (const needle of ["31.10.2026", "остаются планом", "не последствия XSS"]) expect(md, needle).toContain(needle);
+});
+
+
+test("auth сохраняет опубликованные якоря и направляет к полным сценариям", () => {
+  const auth = readFileSync(AUTH, "utf8");
+  const target = readFileSync(AUTH_SCENARIOS, "utf8");
+  for (const [title, id] of [
+    ["Сценарии", "сценарии"], ["Вход", "вход"], ["Запрос данных", "запрос-данных"],
+    ["Access истёк", "access-истек"], ["Параллельные RPC", "параллельные-rpc"],
+    ["Выход", "выход"], ["Сессия кончилась", "сессия-кончилась"],
+    ["Первый вход после переезда", "первыи-вход-после-переезда"],
+  ]) {
+    const level = title === "Сценарии" ? "##" : "###";
+    expect(auth, id).toContain(`${level} ${title} {#${id}}`);
+    expect(auth, id).toContain(`](./auth-scenarios#${id})`);
+    expect(target, id).toContain(`${level} ${title}\n`);
+  }
+  expect(auth).toContain('<a id="две-вкладки"></a>');
+  expect(auth).toContain("](./auth-scenarios#две-вкладки)");
+  expect(target).toContain('<a id="две-вкладки"></a>');
+  for (const [source, link, file, heading] of [
+    [CONTRACT, "./auth-scenarios#access-истек", AUTH_SCENARIOS, "### Access истёк"],
+    [AUTH_SCENARIOS, "./auth#cookie-сессии", AUTH, "## Cookie сессии"],
+    [AUTH_SCENARIOS, "./auth#как-bff-обрабатывает-вызов", AUTH, "## Как BFF обрабатывает вызов"],
+    [AUTH_SCENARIOS, "./auth#csrf", AUTH, "## CSRF"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
+    expect(readFileSync(file!, "utf8"), heading).toContain(heading!);
+  }
+});
+
+test("сценарии сохраняют условия refresh, выхода и потери сессии", () => {
+  const list = scenarios(readFileSync(AUTH_SCENARIOS, "utf8"));
+  for (const [title, needles] of [
+    ["Access истёк", ["меньше 30 с", "новая cookie", "один запрос"]],
+    ["Параллельные RPC", ["одной вкладки", "один вызов refresh", "в любом порядке", "inflight", "ещё 10 с"]],
+    ["Выход", ["подтверждает их отмену", "восстановить cookie", "разных RPC", "401", "Без cookie сессии Go не вызывается", "стираются всегда"]],
+    ["Сессия кончилась", ["отозван", "UNAUTHORIZED", "Max-Age", "не обращаясь в Go"]],
+    ["Первый вход после переезда", ["user: null", "без вызова Go", "стирает три старые"]],
+  ] as const) {
+    const body = list.find((s) => s.title === title)?.body ?? "";
+    for (const needle of needles) expect(body, `${title}: ${needle}`).toContain(needle);
+  }
 });

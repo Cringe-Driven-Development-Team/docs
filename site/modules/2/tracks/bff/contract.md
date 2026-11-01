@@ -126,7 +126,7 @@ export default defineConfig({
 из HTML, отдельного вызова нет.
 
 Процедуры обновления токенов нет: refresh делает сам BFF (см.
-[«Авторизация и CSRF»](./auth#access-истек)). `auth.login` и `auth.register` построены на `publicProcedure`, `auth.logout` — на
+[«Access истёк»](./auth-scenarios#access-истек)). `auth.login` и `auth.register` построены на `publicProcedure`, `auth.logout` — на
 `optionalSessionProcedure`: если сессия есть, она даёт `ctx.go`, но без сессии не отвечает `UNAUTHORIZED`.
 Остальные — на `authedProcedure`: она требует сессию и даёт процедуре `ctx.go` — клиент Go с уже свежим
 access. Как устроены `createContext` и обе процедуры — в [«Авторизации и CSRF»](./auth).

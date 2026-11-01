@@ -4,7 +4,8 @@ title: Авторизация и CSRF
 
 # Миграция на BFF: авторизация и CSRF
 
-Как BFF будет хранить сессию и обновлять токены: три схемы CSRF и семь сценариев сессии по шагам.
+Как BFF будет хранить сессию и обновлять токены: cookie, порядок обработки вызова и три схемы CSRF.
+Семь сценариев сессии вынесены в [отдельный документ](./auth-scenarios).
 Общая картина — [«Обзор»](../bff), формат ручек — [«Контракт»](./contract). Как защита устроена сейчас —
 в разделе [CSRF](/security/csrf/).
 
@@ -76,7 +77,7 @@ same-site запрос может отправить cookie, если прило
 
 Для сессий BFF не нужны Redis и память процесса: токены и сроки находятся в зашифрованной cookie,
 а отзыв refresh-токена выполняет Go. В памяти BFF есть только краткий кэш одновременных refresh,
-описанный ниже; он не хранит действующие сессии и исчезает при перезапуске. Деплой с тем же
+описанный в порядке обработки вызова; он не хранит действующие сессии и исчезает при перезапуске. Деплой с тем же
 `SESSION_KEY` не разлогинивает пользователей, новых сервисов не появляется. Смена `SESSION_KEY`
 разлогинивает всех.
 
@@ -235,197 +236,48 @@ GET HTML не меняет предметные данные и не выпол�
 обычные CSRF-проверки: разрешённый внешний переход не отменяет защиту API.
 Встроенный браузер другого приложения со своим хранилищем cookie может оставаться гостем.
 
-## Сценарии
 
-Участники: `F` — код фронта, `B` — браузер, `P` — BFF, `A` — Go API.
+## Сценарии {#сценарии}
 
-### Вход
+Вход, запросы и завершение сессии разобраны в [сценариях авторизации BFF](./auth-scenarios#сценарии).
+Каждый сценарий остаётся проектом для проверки после внедрения.
 
-Фронт шлёт логин с заголовком `X-CSRF: 1`. BFF проверяет заголовок и `Origin`, вызывает Go и
-получает токены в JSON. Токены остаются в BFF: браузеру уходят `User` и новая cookie, а три старые
-cookie стираются.
+### Вход {#вход}
 
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  F->>B: POST /api/trpc/auth.login, X-CSRF: 1
-  B->>P: POST /api/trpc/auth.login, Origin свой
-  Note over P: заголовок X-CSRF есть, Origin равен APP_ORIGIN
-  P->>A: POST /api/v1/auth/login
-  A-->>P: 200 { user, tokens }
-  P-->>B: 200 { result: { data: User } }, Set-Cookie __Host-Http-session
-  Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
-  B-->>F: 200 User
-```
+BFF получает токены от Go, ставит cookie сессии и стирает три старые cookie.
+[Полный сценарий входа](./auth-scenarios#вход).
 
-*Проект: проверить после внедрения.*
+### Запрос данных {#запрос-данных}
 
-### Запрос данных
+Фронт не читает токены: BFF расшифровывает cookie и передаёт access в Go.
+[Полный сценарий запроса данных](./auth-scenarios#запрос-данных).
 
-BFF расшифровывает cookie и подставляет access токен как `Authorization: Bearer`. Фронт про токены
-ничего не знает.
+### Access истёк {#access-истек}
 
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  F->>B: GET /api/trpc/notebooks.list, X-CSRF: 1
-  B->>P: GET /api/trpc/notebooks.list, Cookie __Host-Http-session
-  Note over P: расшифровывает cookie, access ещё живой
-  P->>A: GET /api/v1/notebooks, Authorization: Bearer
-  A-->>P: 200
-  P-->>B: 200
-  B-->>F: 200
-```
-
-*Проект: проверить после внедрения.*
-
-### Access истёк
-
-Если до `accessExp` меньше 30 с, BFF обновляет токены сам, а потом выполняет исходный запрос.
-Фронт делает один запрос и не замечает refresh; новая cookie приходит с обычным ответом.
-
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  F->>B: GET /api/trpc/notebooks.list, X-CSRF: 1
-  B->>P: GET /api/trpc/notebooks.list, Cookie __Host-Http-session
-  Note over P: до accessExp меньше 30 с
-  P->>A: POST /api/v1/auth/refresh, refresh_token
-  A-->>P: 200 TokenPair
-  P->>A: GET /api/v1/notebooks, Authorization: Bearer новый access
-  A-->>P: 200
-  P-->>B: 200, Set-Cookie __Host-Http-session новая
-  B-->>F: 200
-```
-
-*Проект: проверить после внедрения.*
+Если до `accessExp` меньше 30 с, BFF обновляет токены перед исходным запросом.
+[Полный сценарий обновления access](./auth-scenarios#access-истек).
 
 <a id="две-вкладки"></a>
 
-### Параллельные RPC
+### Параллельные RPC {#параллельные-rpc}
 
-`users.me` и `notebooks.list` отправлены из одной вкладки разными HTTP-запросами со старой cookie,
-у которой access почти истёк. Go получает один вызов refresh, а оба RPC используют новую пару.
-После refresh вызовы данных в Go независимы: они могут выполняться параллельно и завершаться
-в любом порядке.
+Два RPC из одной вкладки ждут один refresh и получают одну новую пару токенов;
+успешный результат хранится ещё 10 секунд в одном экземпляре BFF.
+[Полный сценарий параллельных RPC](./auth-scenarios#параллельные-rpc).
+Прежний якорь «Две вкладки» ведёт к [этому же сценарию](./auth-scenarios#две-вкладки).
 
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  F->>B: GET users.me и notebooks.list
-  B->>P: GET /api/trpc/users.me, старая cookie
-  B->>P: GET /api/trpc/notebooks.list, старая cookie
-  P->>A: POST /api/v1/auth/refresh, refresh_token
-  Note over P: оба RPC ждут одну Promise в inflight
-  A-->>P: 200 TokenPair
-  par users.me
-    P->>A: GET /api/v1/users/me, Bearer новый access
-    A-->>P: 200
-  and notebooks.list
-    P->>A: GET /api/v1/notebooks, Bearer новый access
-    A-->>P: 200
-  end
-  P-->>B: users.me, Set-Cookie новая
-  P-->>B: notebooks.list, Set-Cookie с той же парой
-  Note over P: успешный результат хранится ещё 10 с
-```
+### Выход {#выход}
 
-*Проект: проверить после внедрения.*
+Клиент останавливает новые защищённые запросы и ждёт завершения или подтверждённой отмены отправленных,
+затем вызывает `auth.logout`. После CSRF выход всегда успешен и cookie стираются.
+[Полный сценарий выхода](./auth-scenarios#выход).
 
-### Выход
+### Сессия кончилась {#сессия-кончилась}
 
-Клиент сначала дожидается остальных защищённых HTTP-запросов или подтверждает их отмену, а новые
-не отправляет. Иначе ответ старого RPC может прийти после успешного выхода и восстановить cookie.
-Это правило действует для разных RPC, даже если они не попали в один батч.
+Отклонённый refresh приводит к удалению cookie и `UNAUTHORIZED`; без cookie Go не вызывается.
+[Полный сценарий завершения сессии](./auth-scenarios#сессия-кончилась).
 
-После проверки CSRF процедура `auth.logout` (при истёкшем access — после refresh) вызывает Go с Bearer и `refresh_token` в теле, стирает cookie
-и отвечает успехом. Даже если Go вернул `401` (токен уже недействителен), клиент получает успех: сессии
-больше нет в любом случае. Без cookie сессии Go не вызывается, а ответ тот же; три старые cookie
-стираются всегда.
+### Первый вход после переезда {#первыи-вход-после-переезда}
 
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  F->>B: GET /api/trpc/notebooks.list
-  B->>P: GET /api/trpc/notebooks.list
-  F->>B: пользователь нажал «Выход»
-  Note over F,B: новые защищённые RPC не отправляются
-  P->>A: GET /api/v1/notebooks
-  A-->>P: 200
-  P-->>B: ответ старого RPC, возможный Set-Cookie
-  B-->>F: прежний запрос завершился
-  F->>B: POST /api/trpc/auth.logout, X-CSRF: 1
-  B->>P: POST /api/trpc/auth.logout, Cookie __Host-Http-session
-  P->>A: POST /api/v1/auth/logout, Authorization: Bearer, { refresh_token }
-  A-->>P: 204
-  P-->>B: 200 { result: {} }, Set-Cookie __Host-Http-session Max-Age=0
-  Note over P: успех и когда Go ответил 401
-  Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
-  B-->>F: успех
-```
-
-*Проект: проверить после внедрения.*
-
-### Сессия кончилась
-
-Refresh-токен отозван или не принят Go. Go отвечает `401`, BFF стирает cookie и отвечает
-`UNAUTHORIZED`; фронт показывает форму входа. Если refresh просто истёк, браузер уже удалил
-cookie (`Max-Age` = `refresh_expires_in`), и `authedProcedure` отвечает `UNAUTHORIZED`, не обращаясь в Go.
-
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  participant A as Go API
-  F->>B: GET /api/trpc/users.me, X-CSRF: 1
-  B->>P: GET /api/trpc/users.me, Cookie __Host-Http-session
-  Note over P: до accessExp меньше 30 с
-  P->>A: POST /api/v1/auth/refresh, refresh_token
-  A-->>P: 401
-  Note over P: refresh отозван или не принят, сессия кончилась
-  P-->>B: 401 UNAUTHORIZED, Set-Cookie Max-Age=0
-  B-->>F: 401
-  Note over F: гость - показать форму входа
-```
-
-*Проект: проверить после внедрения.*
-
-### Первый вход после переезда
-
-У пользователя в браузере старые cookie `access_token`, `refresh_token` и `__Host-csrf`, а новой
-`__Host-Http-session` нет. HTML содержит `user: null` без вызова Go; клиент показывает форму входа.
-Пользователь входит заново, и ответ входа ставит новую cookie и стирает три старые.
-
-```mermaid
-sequenceDiagram
-  participant F as Фронт
-  participant B as Браузер
-  participant P as BFF
-  B->>P: GET HTML через Caddy, старые cookie, без __Host-Http-session
-  Note over P: Go не вызывается
-  P-->>B: 200 HTML с user null
-  B-->>F: bootstrap user null
-  Note over F: гость - показать форму входа
-  F->>B: POST /api/trpc/auth.login, X-CSRF: 1
-  B->>P: POST /api/trpc/auth.login
-  P-->>B: 200 { result: { data: User } }, Set-Cookie __Host-Http-session
-  Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
-```
-
-*Проект: проверить после внедрения.*
+Без новой cookie HTML содержит `user: null`; повторный вход ставит сессию и стирает старые cookie.
+[Полный сценарий первого входа](./auth-scenarios#первыи-вход-после-переезда).
