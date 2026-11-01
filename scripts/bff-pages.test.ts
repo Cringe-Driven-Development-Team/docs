@@ -6,6 +6,8 @@ export const TRACK = "site/modules/2/tracks/bff.md";
 export const WORKSPACE = "site/modules/2/tracks/bff/workspace.md";
 export const MIGRATION = "site/modules/2/tracks/bff/migration.md";
 export const INFRASTRUCTURE = "site/modules/2/tracks/bff/infrastructure.md";
+export const PROCEDURES = "site/modules/2/tracks/bff/procedures.md";
+export const CLIENT = "site/modules/2/tracks/bff/client.md";
 export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
 export const AUTH_SCENARIOS = "site/modules/2/tracks/bff/auth-scenarios.md";
@@ -14,7 +16,7 @@ export const SERVICE = "site/modules/2/tracks/bff/service.md";
 export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
 export const RELEASE = "site/modules/2/tracks/bff/release.md";
 export const ROLLBACK = "site/modules/2/tracks/bff/rollback.md";
-export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, AUTH, AUTH_SCENARIOS, BOOTSTRAP, RELEASE, ROLLBACK];
+export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, PROCEDURES, CLIENT, AUTH, AUTH_SCENARIOS, BOOTSTRAP, RELEASE, ROLLBACK];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
@@ -45,7 +47,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [workspace, contract, auth, auth-scenarios, service, bootstrap, migration, infrastructure, release, rollback]");
+  expect(md).toContain("pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, bootstrap, migration, infrastructure, release, rollback]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -185,7 +187,7 @@ test("параллельные RPC — один refresh в Go, прежний я
   expect(auth).toContain("### Параллельные RPC");
 });
 
-export const PROCEDURES = [
+const RPC_PROCEDURES = [
   "auth.register",
   "auth.login",
   "auth.logout",
@@ -215,13 +217,13 @@ test("«Контракт» описывает tRPC", () => {
     "Команды",
     "Генерация Orval",
     "Роутер",
-    "Как добавить процедуру",
-    "Процедуры экранов",
+    "Как добавить процедуру {#как-добавить-процедуру}",
+    "Процедуры экранов {#процедуры-экранов}",
     "Ошибки",
-    "Клиент",
-    "Какие вызовы BFF принимает",
+    "Клиент {#клиент}",
+    "Какие вызовы BFF принимает {#какие-вызовы-bff-принимает}",
   ]);
-  for (const needle of ["AppRouter", "views.notebook", "appCode", "inferRouterOutputs", "/api/trpc", "createContext", "authedProcedure", "goZod", "client: 'zod'"]) {
+  for (const needle of ["AppRouter", "appCode", "inferRouterOutputs", "createContext", "authedProcedure", "goZod", "client: 'zod'"]) {
     expect(md, needle).toContain(needle);
   }
   for (const needle of ["bff.overlay.yaml", "openapi.public.json", "client: 'hono'", "Собственные ручки"]) {
@@ -233,7 +235,8 @@ test("в таблице роутера все 9 процедур", () => {
   const rows = section(readFileSync(CONTRACT, "utf8"), "Роутер")
     .split("\n")
     .filter((line) => line.startsWith("|"));
-  for (const p of PROCEDURES) expect(rows.some((row) => row.includes(`\`${p}\``)), p).toBe(true);
+  expect(rows).toHaveLength(11);
+  for (const p of RPC_PROCEDURES) expect(rows.some((row) => row.includes(`\`${p}\``)), p).toBe(true);
   expect(rows.some((row) => row.includes("auth.refresh"))).toBe(false);
 });
 
@@ -305,13 +308,15 @@ test("не-JSON до createContext — 415, а не 403", () => {
     expect(subsection(auth, title, level), title).toContain("415");
   }
   expect(section(auth, "CSRF")).toContain("первыми из проверок BFF");
-  expect(section(readFileSync(CONTRACT, "utf8"), "Какие вызовы BFF принимает")).toContain("Content-Type: application/json");
+  expect(section(readFileSync(CLIENT, "utf8"), "Какие вызовы BFF принимает")).toContain("Content-Type: application/json");
 });
 
 test("ошибка createContext на батч — один конверт", () => {
-  const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
+  const client = section(readFileSync(CLIENT, "utf8"), "Клиент");
   expect(client).toContain("один конверт");
   expect(client).toContain("httpBatchLink");
+  const calls = section(readFileSync(CLIENT, "utf8"), "Какие вызовы BFF принимает");
+  for (const needle of ["проверки CSRF идут раньше роутера", "без `X-CSRF` получит `403`", "404 NOT_FOUND", "запроса в Go", "HTML fallback", "неизвестные `/api/*`", "RFC 10017"]) expect(calls, needle).toContain(needle);
 });
 
 test("конверт успеха — result.data", () => {
@@ -322,9 +327,9 @@ test("конверт успеха — result.data", () => {
 });
 
 test("поле ячейки — kind, как в контракте Go", () => {
-  const contract = readFileSync(CONTRACT, "utf8");
-  expect(contract).not.toContain("type: 'code'");
-  expect(contract).toContain("kind: 'code'");
+  const client = readFileSync(CLIENT, "utf8");
+  expect(client).not.toContain("type: 'code'");
+  expect(client).toContain("kind: 'code'");
 });
 
 test("выход отзывает refresh и при истёкшем access", () => {
@@ -336,7 +341,7 @@ test("выход отзывает refresh и при истёкшем access", ()
 });
 
 test("MVP uses official tRPC", () => {
-  const client = section(readFileSync(CONTRACT, "utf8"), "Клиент");
+  const client = section(readFileSync(CLIENT, "utf8"), "Клиент");
   for (const needle of ["@trpc/client", "createTRPCClient<AppRouter>", "httpBatchLink", "maxURLLength: 2000", "TRPCClientError", "X-CSRF", "same-origin", "data.code", "data.appCode", "data.zodError"]) {
     expect(client, needle).toContain(needle);
   }
@@ -360,15 +365,15 @@ test("подтрек tRPC-клиента сохраняет опубликова
 });
 
 test("procedure flow uses AppRouter without SDK generation", () => {
-  const md = readFileSync(CONTRACT, "utf8");
+  const md = readFileSync(PROCEDURES, "utf8");
   const flow = section(md, "Как добавить процедуру");
   const at = (title: string) => md.indexOf(`\n## ${title}\n`);
-  expect(at("Роутер")).toBeLessThan(at("Как добавить процедуру"));
   expect(at("Как добавить процедуру")).toBeLessThan(at("Процедуры экранов"));
   expect(flow.match(/^\d\. /gm)).toHaveLength(6);
   for (const needle of ["имя", "query/mutation", "вход", "результат", "ошибки", "авторизац", "Apidog", "bun run sync", "Orval", "Zod", "Hono", "адаптер", "AppRouter", "TypeScript", "Кодогенерации клиента", "typecheck"]) expect(flow, needle).toContain(needle);
   for (const needle of ["get: authedProcedure", "ctx.go.getNotebook(input.id)", "api.notebooks.get.query({ id: 1 })", "inferRouterInputs", "inferRouterOutputs"]) expect(flow, needle).toContain(needle);
-  expect(section(md, "Процедуры экранов")).toContain("будущая ручка");
+  const views = section(md, "Процедуры экранов");
+  for (const needle of ["views.notebook", "Promise.all", "getRuntime", "будущая ручка", "поэтому процедур экранов пока нет", "344ad0b"]) expect(views, needle).toContain(needle);
 });
 
 test("карта задач BFF сохраняет последовательность и границы", () => {
@@ -381,9 +386,9 @@ test("карта задач BFF сохраняет последовательн�
 
 test("новые ссылки контракта ведут на существующие заголовки", () => {
   for (const [source, link, target, heading] of [
-    ["site/modules/2/tracks/trpc-client.md", "./bff/contract#клиент", CONTRACT, "## Клиент"],
-    ["site/modules/2/tracks/trpc-client.md", "./bff/contract#как-добавить-процедуру", CONTRACT, "## Как добавить процедуру"],
-    [CONTRACT, "./service#каркас", SERVICE, "## Каркас"],
+    ["site/modules/2/tracks/trpc-client.md", "./bff/client#клиент", CLIENT, "## Клиент"],
+    ["site/modules/2/tracks/trpc-client.md", "./bff/procedures#как-добавить-процедуру", PROCEDURES, "## Как добавить процедуру"],
+    [PROCEDURES, "./service#каркас", SERVICE, "## Каркас"],
   ]) {
     expect(readFileSync(source!, "utf8"), link).toContain(link!);
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
@@ -408,7 +413,7 @@ test("«Контракт»: схемы Orval — пакет @cdd/schemas для 
   expect(section(md, "Генерация Orval")).toContain("target: 'packages/schemas/src/zod.ts'");
   expect(md).not.toContain("apps/bff/src/go/zod.ts");
   expect(section(md, "Роутер")).toContain("from '@cdd/schemas'");
-  const client = section(md, "Клиент");
+  const client = section(readFileSync(CLIENT, "utf8"), "Клиент");
   for (const needle of ["src/utils/credentials.ts", "zodError", "/modules/3/tracks/zod", "/modules/3/tracks/react-hook-form"]) expect(client, needle).toContain(needle);
   expect(md).not.toContain("resolve: { alias");
 });
@@ -505,7 +510,7 @@ test("bootstrap: сессия, ошибки, кеширование и выпу�
   expect(release.indexOf("Загрузить ассеты")).toBeLessThan(release.indexOf("Выкатить образ"));
   expect(release).toContain("Ошибка загрузки запрещает выкладку");
   expect(section(md, "Проверка")).toContain("Проект: проверить после внедрения");
-  const allowed = section(readFileSync(CONTRACT, "utf8"), "Какие вызовы BFF принимает");
+  const allowed = section(readFileSync(CLIENT, "utf8"), "Какие вызовы BFF принимает");
   expect(allowed).toContain("HTML-хендлер");
   expect(allowed).toContain("GET /users/me");
 });
@@ -566,7 +571,7 @@ test("MVP release differs from future canary", () => {
   for (const needle of ["один экземпляр", "короткое окно", "SESSION_KEY", "frontend/issues/4", "неизменяемый", "предыдущего", "Откат"]) expect(bootstrap, needle).toContain(needle);
   const canary = subsection(release, "Канарейка — следующий этап");
   for (const needle of ["стабильный сегмент", "HTML", "RPC", "ошибок", "задержек", "возврат трафика", "cookie", "refresh", "открытыми вкладками", "Go/БД", "10 секунд", "между процессами"]) expect(canary.toLowerCase(), needle).toContain(needle.toLowerCase());
-  expect(section(readFileSync(CONTRACT, "utf8"), "Клиент")).toContain("UNAUTHORIZED");
+  expect(section(readFileSync(CLIENT, "utf8"), "Клиент")).toContain("UNAUTHORIZED");
 });
 
 test("migration arrow label is short", () => {
@@ -628,7 +633,7 @@ test("обзор сохраняет переходы с перенесённых
 test("перенесённые ссылки ведут сразу к владельцу темы и существующему заголовку", () => {
   for (const [source, link, target, heading] of [
     [WORKSPACE, "../bff#как-устроен-контракт", TRACK, "## Как устроен контракт"],
-    [MIGRATION, "./contract#клиент", CONTRACT, "## Клиент"],
+    [MIGRATION, "./client#клиент", CLIENT, "## Клиент"],
     [MIGRATION, "./contract#роутер", CONTRACT, "## Роутер"],
     [MIGRATION, "./auth-scenarios#параллельные-rpc", AUTH_SCENARIOS, "### Параллельные RPC"],
     [MIGRATION, "./auth-scenarios#первыи-вход-после-переезда", AUTH_SCENARIOS, "### Первый вход после переезда"],
@@ -689,5 +694,50 @@ test("сценарии сохраняют условия refresh, выхода �
   ] as const) {
     const body = list.find((s) => s.title === title)?.body ?? "";
     for (const needle of needles) expect(body, `${title}: ${needle}`).toContain(needle);
+  }
+});
+
+test("контракт сохраняет старые якоря и прямые переходы к новым владельцам", () => {
+  const md = readFileSync(CONTRACT, "utf8");
+  for (const [file, title, id] of [
+    [PROCEDURES, "Как добавить процедуру", "как-добавить-процедуру"],
+    [PROCEDURES, "Процедуры экранов", "процедуры-экранов"],
+    [CLIENT, "Клиент", "клиент"],
+    [CLIENT, "Какие вызовы BFF принимает", "какие-вызовы-bff-принимает"],
+  ]) {
+    expect(existsSync(file!), file).toBe(true);
+    const target = readFileSync(file!, "utf8");
+    const page = file === PROCEDURES ? "procedures" : "client";
+    expect(md, id).toContain(`## ${title} {#${id}}`);
+    expect(md, id).toContain(`](./${page}#${id})`);
+    expect(target, id).toContain(`## ${title}\n`);
+  }
+  expect(readFileSync(PROCEDURES, "utf8")).toContain("title: Добавление процедур BFF");
+  expect(readFileSync(CLIENT, "utf8")).toContain("title: Клиент tRPC");
+  expect(readFileSync(PROCEDURES, "utf8").split("\n").filter((line) => line.startsWith("## "))).toEqual(["## Как добавить процедуру", "## Процедуры экранов"]);
+  expect(readFileSync(CLIENT, "utf8").split("\n").filter((line) => line.startsWith("## "))).toEqual(["## Клиент", "## Какие вызовы BFF принимает"]);
+});
+
+test("ошибки контракта сохраняют конверт и значимые ограничения", () => {
+  const md = section(readFileSync(CONTRACT, "utf8"), "Ошибки");
+  for (const needle of ["BAD_REQUEST", "UNAUTHORIZED", "FORBIDDEN", "NOT_FOUND", "CONFLICT", "BAD_GATEWAY", "s2s_forbidden", "сессия не трогается", "errorFormatter", "appCode", "zodError", "error.flatten()", "stack", '"error"', '"httpStatus": 404', '"path": "notebooks.get"']) expect(md, needle).toContain(needle);
+  const client = section(readFileSync(CLIENT, "utf8"), "Клиент");
+  for (const needle of ["result.data", "один конверт `{ error }`", "GET", "POST", "SSE", "EventSource", "не читает cookie", "Новые автотесты клиента в MVP не требуются"]) expect(client, needle).toContain(needle);
+});
+
+test("перенесённые темы используют прямые ссылки и существующие заголовки", () => {
+  for (const [source, link, target, heading] of [
+    [CONTRACT, "./client#клиент", CLIENT, "## Клиент"],
+    [CLIENT, "./contract#ошибки", CONTRACT, "## Ошибки"],
+    [CLIENT, "./auth#как-bff-обрабатывает-вызов", AUTH, "## Как BFF обрабатывает вызов"],
+    [PROCEDURES, "./client#клиент", CLIENT, "## Клиент"],
+    [PROCEDURES, "./contract#роутер", CONTRACT, "## Роутер"],
+    [CLIENT, "./contract#роутер", CONTRACT, "## Роутер"],
+    [CLIENT, "./procedures#как-добавить-процедуру", PROCEDURES, "## Как добавить процедуру"],
+    [AUTH, "./client#какие-вызовы-bff-принимает", CLIENT, "## Какие вызовы BFF принимает"],
+    ["site/modules/3/tracks/zod.md", "/modules/2/tracks/bff/client#клиент", CLIENT, "## Клиент"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
+    expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
   }
 });

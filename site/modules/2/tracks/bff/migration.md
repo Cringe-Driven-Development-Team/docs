@@ -72,7 +72,7 @@ refresh не доходят до браузера, а значит, XSS на с�
 Клиент создаётся в
 [`src/api/client.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/344ad0b/src/api/client.ts#L29)
 с `baseUrl: '/api/v1'` и `credentials: 'include'`. Его заменяет официальный `@trpc/client`
-(см. [«Клиент»](./contract#клиент)): типы процедур и HTML — `import type { AppRouter, BootstrapData }` из BFF, на каждый
+(см. [«Клиент»](./client#клиент)): типы процедур и HTML — `import type { AppRouter, BootstrapData }` из BFF, на каждый
 вызов `X-CSRF: 1`, cookie он не читает. Refresh на `401` и повтор после `403` уходят; `UNAUTHORIZED`
 означает гостя и форму входа. До первого рендера клиент читает JSON из HTML в свой стор сессии,
 без стартового `users.me`; процедура остаётся для явного обновления. Некорректный bootstrap — ошибка
