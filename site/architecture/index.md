@@ -26,37 +26,37 @@ Ctrl/⌘ + колесо, щипок на телефоне; схему можно
   <a href="../frozen-k3s/integrations.html" target="_self">integrations</a>,
   <a href="../frozen-k3s/frontend-monorepo.html" target="_self">frontend-monorepo</a>.
 
-## deployment
+## Размещение компонентов {#deployment}
 
 Историческая схема до BFF. Одна VPS в Selectel: Caddy, Go API и Postgres в Docker Compose; S3 и CDN для статики; клиент.
 
 <Diagram name="deployment" />
 
-## ci
+## Проверки CI {#ci}
 
 GitHub-репозитории, CI-пайплайны, проверка Contract drift, GHCR и S3.
 
 <Diagram name="ci" />
 
-## cd
+## Выкатка CD {#cd}
 
 Историческая схема до BFF: CD фронта через S3 и откат, выкладка статики в бакет за CDN, CD бэка через `ansible-playbook`.
 
 <Diagram name="cd" />
 
-## frontend
+## Фронтенд {#frontend}
 
 Историческая модель до BFF: репозиторий клиента, контракт из Apidog, модель релизов.
 
 <Diagram name="frontend" />
 
-## contract
+## Контракт и генерация {#contract}
 
 Историческая модель генерации до BFF. Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift.
 
 <Diagram name="contract" />
 
-## infra
+## Инфраструктура {#infra}
 
 Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноутбука студента.
 

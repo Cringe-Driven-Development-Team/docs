@@ -8,10 +8,10 @@ const ORDER = ["deployment", "ci", "cd", "frontend", "contract", "infra"];
 test("every root diagram is on /architecture/ with a heading and a Diagram", () => {
   const page = readFileSync(PAGE, "utf8");
   for (const name of indexNames(diagramNames())) {
-    expect(page, name).toContain(`\n## ${name}\n`);
-    expect(page, name).toContain(`<Diagram name="${name}"`);
+    const section = page.split(`{#${name}}`)[1]?.split("\n## ")[0] ?? "";
+    expect(section, name).toContain(`<Diagram name="${name}"`);
   }
-  const headings = [...page.matchAll(/^## (\S+)$/gm)].map((match) => match[1]);
+  const headings = [...page.matchAll(/^## .+ \{#([^}]+)\}$/gm)].map((match) => match[1]);
   expect(headings).toEqual(ORDER);
 });
 
@@ -58,4 +58,16 @@ test("page has no links to the removed bff diagrams, keeps frozen k3s", () => {
   const page = readFileSync(PAGE, "utf8");
   expect(page).not.toContain("../bff/");
   expect(page).toContain("../frozen-k3s/deployment.html");
+});
+
+test("current behavior points to documentation and the CSRF sidebar names history", () => {
+  const modules = readFileSync("site/modules/index.md", "utf8");
+  expect(modules).toContain("](/documentation/)");
+  expect(modules).not.toContain("](/security/csrf/)");
+  const context = readFileSync("site/project-context.md", "utf8");
+  expect(context).toContain("](/documentation/)");
+  const config = readFileSync("site/.vitepress/config.mts", "utf8");
+  const sidebar = config.split("'/security/csrf/': [")[1]?.split("],")[0] ?? "";
+  expect(sidebar).toContain("text: 'CSRF: история 07.10.2026'");
+  expect(sidebar).toContain("link: '/documentation/bff'");
 });

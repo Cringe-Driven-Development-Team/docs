@@ -14,7 +14,7 @@ curl сам хранит cookie в файле и отправляет их, ка
 того же файла. Используйте тестовую учётную запись; файл cookie содержит токены — не
 публикуйте его.
 
-```bash
+```bash [Историческая проверка curl]
 API=https://cellestial.ru/api/v1
 cookie_jar=$(mktemp)
 csrf_token() { awk '$6 == "__Host-csrf" { print $7 }' "$cookie_jar"; }

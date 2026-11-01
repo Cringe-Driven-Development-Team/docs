@@ -68,8 +68,9 @@ export default withMermaid(
         '/modules/': moduleSidebar(modules),
         '/security/csrf/': [
           {
-            text: 'CSRF',
+            text: 'CSRF: история 07.10.2026',
             items: [
+              { text: 'BFF: проверенная часть сейчас', link: '/documentation/bff' },
               { text: 'Как устроено', link: '/security/csrf/' },
               { text: 'Сценарии', link: '/security/csrf/scenarios' },
               { text: 'Проверка и ограничения', link: '/security/csrf/checks' },
