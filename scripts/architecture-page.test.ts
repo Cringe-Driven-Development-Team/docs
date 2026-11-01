@@ -5,6 +5,18 @@ import { diagramNames, indexNames } from "./build-index.ts";
 const PAGE = "site/architecture/index.md";
 const ORDER = ["deployment", "ci", "cd", "frontend", "contract", "infra"];
 
+test('production evidence distinguishes configuration from scenarios', () => {
+  const intro = readFileSync(PAGE, 'utf8').split('\n## deployment')[0]!;
+  for (const value of ['Архитектура работающего сервиса', '{#архитектура-mvp}', '01.11.2026',
+    '6e1a0d81bc284e87aa4a9561d7b65eee835a26c3', 'baf512e9a7bd7e5452554cdc89baa20e24aa7a32',
+    '26205cff0bdfd9c1d74e9f23557d8c931c724b9573ee49ce1b6eec3748c233f3',
+    '41302004065', 'RUNTIME_ENABLED=true', 'gateway', 'VPS2', 'auxiliary']) {
+    expect(intro, value).toContain(value);
+  }
+  expect(intro).toMatch(/runtime[\s\S]*не проверен/);
+  expect(intro).toMatch(/Авторизованн[\s\S]*не проверен/);
+});
+
 test("every root diagram is on /architecture/ with a heading and a Diagram", () => {
   const page = readFileSync(PAGE, "utf8");
   for (const name of indexNames(diagramNames())) {
@@ -54,8 +66,8 @@ test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => 
   }
 });
 
-test("page has no links to the removed bff diagrams, keeps frozen k3s", () => {
+test("page has no links to removed diagram folders", () => {
   const page = readFileSync(PAGE, "utf8");
   expect(page).not.toContain("../bff/");
-  expect(page).toContain("../frozen-k3s/deployment.html");
+  expect(page).not.toContain("../frozen-k3s/");
 });

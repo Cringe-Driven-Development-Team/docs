@@ -1,3 +1,4 @@
+import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../site/.vitepress/diagram-names.ts';
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
@@ -20,4 +21,13 @@ test("shared site helpers load in a browser without Node process", () => {
   ).replace(/^export /gm, "");
   expect(runInNewContext(`${source}\nSITE_BASE`)).toBe("/");
   expect(runInNewContext(`${source}\nSITE_BASE`, { process: { env: { SITE_BASE: "/branches/vitepress-2" } } })).toBe("/branches/vitepress-2/");
+});
+
+
+test('diagramTarget keeps deleted k3s anchors reachable through legacy redirects', () => {
+  const folders = [...HIDDEN_FOLDERS, ...LEGACY_FOLDERS];
+  for (const hash of ['#frozen-k3s/ci', '#frozen-k3s%2Fci']) {
+    expect(diagramTarget(hash, ROOT_NAMES, folders)).toBe('frozen-k3s/ci.html');
+  }
+  expect(diagramTarget('#nope', ROOT_NAMES, folders)).toBe('architecture/');
 });

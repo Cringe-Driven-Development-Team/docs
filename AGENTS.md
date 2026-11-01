@@ -31,7 +31,7 @@
 
 - Правь схемы только по скиллу `.agents/skills/eraser-diagrams/SKILL.md`: формат, цвета, раскладка,
   цикл validate → check → render → осмотр PNG.
-- Рабочие схемы MVP — в корне `diagrams/`. `diagrams/frozen-k3s/` заморожена, не правится.
+- Схемы работающего сервиса — в корне `diagrams/`. Удалённые варианты не рендерятся; старые HTML-адреса направляются на текущие схемы через `PAGE_REDIRECTS`.
 - Схемы плана модуля — в `diagrams/modules/<N>/`, папка в `HIDDEN_FOLDERS` (`site/.vitepress/diagram-names.ts`),
   на страницу модуля — `<Diagram name="modules/<N>/<имя>" />`.
 - Схемы корня описывают прод. Факты бери из кода, не из памяти: инфраструктура — репозиторий
