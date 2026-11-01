@@ -158,6 +158,48 @@ async function visitMermaidDiagrams(page: Page, expected: number): Promise<void>
   assert.equal(await page.$$eval('div.language-mermaid pre', nodes => nodes.length), 0);
 }
 
+async function checkMermaidLifecycle(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    await observe(page);
+    await page.setViewport({ width: 390, height: 844 });
+    const client = await page.createCDPSession();
+    const listeners = async () => {
+      await page.waitForFunction(() => document.getAnimations().every(animation => animation.playState !== 'running'));
+      const { result } = await client.send('Runtime.evaluate', { expression: 'document' });
+      const { listeners } = await client.send('DOMDebugger.getEventListeners', { objectId: result.objectId! });
+      await client.send('Runtime.releaseObject', { objectId: result.objectId! });
+      return { config: listeners.filter(listener => listener.type === 'vitepress-mermaid:config-updated').length,
+        toolbar: listeners.filter(listener => listener.type === 'vitepress-mermaid:toolbar-updated').length };
+    };
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
+    await visitMermaidDiagrams(page, 5);
+    assert.deepEqual(await listeners(), { config: 10, toolbar: 5 });
+    for (let visit = 0; visit < 3; visit++) {
+      // Leave while mounted diagrams are re-rendering, including queued render work.
+      await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+      await page.$eval('.vp-doc a[href="./theory"]', node => (node as HTMLElement).click());
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/theory') && document.querySelector('.vp-doc h1')?.textContent?.includes('Теория офлайн'));
+      await visitMermaidDiagrams(page, 5);
+      assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Leaving a page releases its Mermaid components');
+      await page.$eval('.vp-doc a[href="./caching-strategies#networkonly"]', node => (node as HTMLElement).click());
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies') && document.querySelectorAll('div.language-mermaid').length === 5);
+      await visitMermaidDiagrams(page, 5);
+      assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Repeated SPA visits do not accumulate Mermaid listeners');
+    }
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.mermaid-container');
+    await page.$eval('.vp-doc a[href="./theory"]', node => (node as HTMLElement).click());
+    await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Теория офлайн'));
+    await visitMermaidDiagrams(page, 5);
+    assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Leaving during initial/lazy rendering releases old components');
+    console.log('PASS Mermaid lifecycle: repeated SPA, active rendering and bounded document listeners');
+  } finally {
+    await context.close();
+  }
+}
+
 async function checkMermaid(browser: Browser, url: (path: string) => string): Promise<void> {
   const fixture = await browser.newPage();
   const events = await observeMermaidErrors(fixture);
@@ -193,6 +235,8 @@ async function checkMermaid(browser: Browser, url: (path: string) => string): Pr
   } finally {
     await fixture.close();
   }
+
+  await checkMermaidLifecycle(browser, url);
 
   const errors: MermaidError[] = [];
   const states: unknown[] = [];
