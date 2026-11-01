@@ -1,6 +1,7 @@
 import { afterAll, expect, spyOn, test } from 'bun:test';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 import { prepareDocsWiki, preparePlatformWikis, readPreparedPlatformWikis } from './openwiki-sources.ts';
 
@@ -259,6 +260,20 @@ test('docs reads current checkout wiki and HEAD with the docs source classifier'
   expect((await prepareDocsWiki(repo.root)).source).toEqual({ id: 'docs', repositorySha: repo.wikiCommit, sourceSha: repo.sourceCommit, updatedAt: '2026-10-31T13:53:00.000Z', freshness: 'fresh' });
   write(repo.root, 'site/documentation/a.md', 'changed'); commit(repo.root);
   expect((await prepareDocsWiki(repo.root)).source.freshness).toBe('stale');
+});
+
+test('docs rejects a shallow checkout missing its checkpoint commit and reads provenance after full history is fetched', async () => {
+  const f = fixture(), repo = f.repos.docs;
+  const shallow = join(f.base, 'shallow-docs');
+  git(f.base, 'clone', '--depth=1', pathToFileURL(repo.root).href, shallow);
+  expect(git(shallow, 'rev-parse', '--is-shallow-repository')).toBe('true');
+  await expect(prepareDocsWiki(shallow)).rejects.toThrow('git cat-file failed');
+  git(shallow, 'fetch', '--unshallow', 'origin');
+  expect(git(shallow, 'rev-parse', '--is-shallow-repository')).toBe('false');
+  expect((await prepareDocsWiki(shallow)).source).toEqual({
+    id: 'docs', repositorySha: repo.wikiCommit, sourceSha: repo.sourceCommit,
+    updatedAt: '2026-10-31T13:53:00.000Z', freshness: 'fresh',
+  });
 });
 
 const parity = {
