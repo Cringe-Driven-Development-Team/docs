@@ -4,7 +4,20 @@ import { diagramNames, indexNames } from "./build-index.ts";
 import config from "../site/.vitepress/config.mts";
 
 const PAGE = "site/documentation/architecture/index.md";
-const ORDER = ["deployment", "ci", "cd", "frontend", "contract", "infra"];
+const ORDER = ["server-access", "deployment", "ci", "cd", "frontend", "contract", "infra"];
+
+test("server access identifies roles without publishing addresses", () => {
+  const page = readFileSync(PAGE, "utf8");
+  const section = page.split("{#server-access}")[1]?.split("\n## ")[0] ?? "";
+  for (const value of ["VPS1", "gateway", "cellestial.ru", "VPS2", "backend",
+    "VPS3", "auxiliary", "hooks.cellestial.ru", "deploy", "личный", "приватном",
+    "https://github.com/Cringe-Driven-Development-Team/agent-plugins-private/blob/main/plugins/cellestial-ops/skills/cellestial-ops/SKILL.md"]) {
+    expect(section, value).toContain(value);
+  }
+  expect(section).toMatch(/VPS2[^\n]+через VPS1/);
+  expect(section).not.toMatch(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+  expect(section).not.toContain("ssh -");
+});
 
 test("documentation sidebar is a linked collapsed tree", () => {
   const sidebar = config.themeConfig!.sidebar as Record<string, unknown>;
