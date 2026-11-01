@@ -108,7 +108,7 @@ assert(Math.abs(scrollAfterExit - scrollBeforeFullscreen) <= 1);
 
 ### Task 3: Форк renderer и исправление lifecycle (поручение 2026-11-02)
 
-Пользователь разрешил форк после независимого Important finding; исполнение остаётся inline executing-plans. Это завершение оставшегося исправления, задачи 1/2 не повторять.
+Пользователь разрешил форк после независимого Important finding и уточнил владельца — личный аккаунт YarikMix; исполнение остаётся inline executing-plans. Это завершение оставшегося исправления, задачи 1/2 не повторять.
 
 **Files:** форк `/home/oleg/2026_H2/.mermaid-renderer-worktrees/lifecycle`: `src/MermaidRenderer.ts`, `src/MermaidDiagram.vue`, `src/composables/useMermaidRenderer.ts`; соответствующие `tests/MermaidRenderer.test.ts`, `tests/components/MermaidDiagram.test.ts`, `tests/composables/useMermaidRenderer.test.ts`; `package.json`, `bun.lock`, `.gitignore`, `README.md`, собранный `dist/`. Docs: `package.json`, `bun.lock`, `scripts/check-readability.ts` и эта спека/план.
 

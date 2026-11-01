@@ -46,7 +46,7 @@
     "openwiki": "0.7.2",
     "typescript": "7.0.2",
     "vitepress": "2.0.0-alpha.21",
-    "vitepress-mermaid-renderer": "github:Cringe-Driven-Development-Team/vitepress-mermaid-renderer#959ec6d3c66ca898ec76f288642906e648598b88",
+    "vitepress-mermaid-renderer": "github:YarikMix/vitepress-mermaid-renderer#9e6c070e5d305086688b9067904061fee7bd6384",
     "vitepress-plugin-group-icons": "1.8.1",
     "vitepress-plugin-tabs": "0.9.1"
   }
