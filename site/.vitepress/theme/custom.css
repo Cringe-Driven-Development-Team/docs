@@ -1,3 +1,10 @@
+.VPNavBarTitle .title > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
 /* Схемы Mermaid (обёртка vitepress-plugin-mermaid): натуральный размер, прокрутка внутри блока. */
 .vp-doc .mermaid {
   overflow-x: auto;

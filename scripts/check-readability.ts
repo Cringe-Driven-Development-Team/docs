@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [scroll|pages|plugins|hierarchy ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -17,7 +17,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['scroll', 'pages', 'plugins', 'hierarchy'].includes(section)));
+assert(sections.every(section => ['scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -414,12 +414,123 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await context.close();
 }
 
+async function checkTitle(browser: Browser, url: (path: string) => string): Promise<void> {
+  const measurements: unknown[] = [];
+  const issues: string[] = [];
+  for (const mode of [null, 3]) for (const dark of [false, true]) {
+    const context = await browser.createBrowserContext();
+    const page = await context.newPage();
+    observe(page);
+    await page.setCacheEnabled(false);
+    await page.evaluateOnNewDocument(mode => {
+      if (window !== window.top) return;
+      localStorage.clear();
+      if (mode !== null) localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
+    }, mode);
+    const measure = async (route: string, viewport: number, resize = false) => {
+      await page.evaluate(value => document.documentElement.classList.toggle('dark', value), dark);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      });
+      await page.waitForFunction(() => document.getAnimations().every(animation => animation.playState !== 'running'));
+      const state = await page.evaluate(() => {
+        const link = document.querySelector<HTMLAnchorElement>('.VPNavBarTitle .title')!;
+        const span = link.querySelector<HTMLSpanElement>(':scope > span')!;
+        const nav = document.querySelector<HTMLElement>('.VPNavBar')!;
+        const rect = (element: Element) => {
+          const { left, top, right, bottom, width, height } = element.getBoundingClientRect();
+          return { left, top, right, bottom, width, height };
+        };
+        const bounds = { span: rect(span), link: rect(link), navbar: rect(nav),
+          viewport: { left: 0, top: 0, right: innerWidth, bottom: innerHeight } };
+        const controls = [...nav.querySelectorAll('a, button, input')]
+          .filter(element => element !== link && !link.contains(element))
+          .map(rect).filter(box => box.width > 0 && box.height > 0);
+        const glyphs = [];
+        const walker = document.createTreeWalker(span, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          const text = node.textContent ?? '';
+          for (let offset = 0; offset < text.length; offset++) {
+            if (!/\S/u.test(text[offset]!)) continue;
+            const range = document.createRange();
+            range.setStart(node, offset); range.setEnd(node, offset + 1);
+            glyphs.push({ character: text[offset], rects: [...range.getClientRects()].map(box => ({
+              left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+            })) });
+          }
+        }
+        return { text: span.textContent, tooltip: link.title, href: link.href, bounds, controls, glyphs,
+          fontSize: getComputedStyle(span).fontSize, navHeight: rect(nav).height,
+          sidebarWidth: document.querySelector('.VPSidebar')?.getBoundingClientRect().width ?? 0,
+          documentWidth: document.documentElement.scrollWidth, scrollX,
+          savedMode: localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode') };
+      });
+      const name = `${route || '/'} ${viewport} ${dark ? 'dark' : 'light'} mode=${mode ?? 'fresh'}${resize ? ' resize' : ''}`;
+      const problem = (message: string) => issues.push(`${name}: ${message}`);
+      if (state.text !== 'Cringe Driven Development' || state.tooltip !== 'Cringe Driven Development') problem('brand or tooltip changed');
+      if (state.href !== url('')) problem(`home href ${state.href}`);
+      if (state.documentWidth > viewport + 1 || state.scrollX !== 0) problem('horizontal overflow');
+      if (mode === 3 && state.savedMode !== '3') problem(`saved mode lost: ${state.savedMode}`);
+      const lines: number[] = [];
+      for (const glyph of state.glyphs) {
+        if (!glyph.rects.length) problem(`missing range ${glyph.character}`);
+        for (const box of glyph.rects) {
+          if (!lines.some(top => Math.abs(top - box.top) <= 1)) lines.push(box.top);
+          for (const [bound, limit] of Object.entries(state.bounds)) {
+            if (box.left < limit.left - 1 || box.right > limit.right + 1 || box.top < limit.top - 1 || box.bottom > limit.bottom + 1)
+              problem(`clipped range ${JSON.stringify(glyph)} outside ${bound} ${JSON.stringify(limit)}`);
+          }
+          if (state.controls.some(control => box.left < control.right - 1 && box.right > control.left + 1 && box.top < control.bottom - 1 && box.bottom > control.top + 1))
+            problem(`range intersects controls: ${JSON.stringify(glyph)}`);
+        }
+      }
+      if (lines.length < 1 || lines.length > 2) problem(`${lines.length} title lines`);
+      measurements.push({ route: `/${route}`, viewport, mode, dark, resize, lines: lines.length, ...state });
+      if ([390, 960, 1440].includes(viewport) && !resize) await page.screenshot({
+        path: join(artifacts, `${label}-title-${route.replaceAll('/', '-') || 'home'}-${viewport}-${dark ? 'dark' : 'light'}-${mode ?? 'fresh'}.png`),
+      });
+    };
+    for (const route of ['', 'documentation/', 'documentation/csrf/scenarios', 'modules/2/tracks/bff']) {
+      for (const viewport of [320, 390, 768, 960, 1280, 1440]) {
+        await page.setViewport({ width: viewport, height: 1000 });
+        await page.goto(url(route), { waitUntil: 'networkidle0' });
+        await measure(route, viewport);
+        // Reach the native link with real Tab presses, including the skip link before it.
+        let focused = false;
+        for (let tab = 0; tab < 20 && !focused; tab++) {
+          await page.keyboard.press('Tab');
+          focused = await page.evaluate(() => document.activeElement === document.querySelector('.VPNavBarTitle .title'));
+        }
+        assert(focused, `${route} ${viewport}: title inaccessible by Tab`);
+        await page.keyboard.press('Enter');
+        await page.waitForFunction(home => location.href === home, {}, url(''));
+        await page.waitForNetworkIdle();
+      }
+      await page.goto(url(route), { waitUntil: 'networkidle0' });
+      const savedMode = await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode'));
+      for (const viewport of [1440, 390, 1440]) {
+        await page.setViewport({ width: viewport, height: 1000 });
+        await measure(route, viewport, true);
+        assert.equal(await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode')), savedMode, 'Resize changed saved reading mode');
+      }
+      await page.waitForNetworkIdle();
+    }
+    await context.close();
+  }
+  await Bun.write(join(artifacts, `${label}-title-measurements.json`), JSON.stringify(measurements, null, 2) + '\n');
+  await Bun.write(join(artifacts, `${label}-title-failures.json`), JSON.stringify(issues, null, 2) + '\n');
+  assert.equal(issues.length, 0, issues.join('\n'));
+  console.log(`PASS title: ${measurements.length} glyph geometry samples, both themes, fresh/saved mode, Tab/Enter and resize`);
+}
+
 let browser: Browser | undefined;
 try {
   browser = await puppeteer.launch({
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('pages')) await checkPages(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
