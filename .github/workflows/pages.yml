@@ -65,6 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/download-artifact@v4
         continue-on-error: true
@@ -88,7 +89,11 @@ jobs:
             icons-
       - run: >-
           docker run --rm -v "$PWD:/work" -w /work docs-render:ci
-          bash -c "bun install --frozen-lockfile && bun run typecheck && bun run test && bun run build"
+          bash -c "bun install --frozen-lockfile && bun run wiki:prepare"
+      - run: >-
+          docker run --rm -v "$PWD:/work" -v "$PWD/.openwiki-sources:/openwiki-sources:ro"
+          -e OPENWIKI_SOURCES_DIR=/openwiki-sources -w /work docs-render:ci
+          bash -c "bun install --frozen-lockfile && bun run typecheck && bun run test && bun run build && bun run wiki:browser dist/openwiki && bun run wiki:browser --fixture"
       - if: steps.icons.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
@@ -96,6 +101,7 @@ jobs:
           key: icons-${{ hashFiles('diagrams/**/*.json') }}
       - run: >-
           docker run --rm -v "$PWD:/work" -v "$GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY"
+          -v "$PWD/.openwiki-sources:/openwiki-sources:ro" -e OPENWIKI_SOURCES_DIR=/openwiki-sources
           -e GITHUB_STEP_SUMMARY -w /work docs-render:ci bash -c "bun run site --main-built"
       - uses: actions/upload-pages-artifact@v3
         with:

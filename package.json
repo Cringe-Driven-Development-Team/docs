@@ -13,6 +13,7 @@
     "check": "bun scripts/check-colors.ts",
     "prepare": "bun scripts/install-hooks.ts",
     "modules:check": "module-graph check",
+    "wiki:prepare": "bun scripts/openwiki-sources.ts --output .openwiki-sources",
     "wiki:check": "bun scripts/openwiki-check.ts",
     "wiki:update-local": "bun scripts/openwiki-update-local.ts",
     "render": "bun scripts/docker.ts render",
@@ -29,6 +30,7 @@
     "site:native": "bun scripts/build-site.ts",
     "icons": "bun scripts/fetch-icons.ts",
     "skills:sync": "bun scripts/skills-sync.ts",
+    "wiki:browser": "bun scripts/openwiki-browser-check.ts",
     "wiki:export": "bun scripts/export-openwiki.ts"
   },
   "devDependencies": {

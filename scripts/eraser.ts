@@ -2,7 +2,7 @@
 // потому что cmd.exe на Windows glob не раскрывает, а CLI сам этого не делает.
 // CLI запускается под node: под bun запуск Chrome зависает
 // (docs/superpowers/specs/2026-09-13-diagram-colors-and-bun-design.md §2.1).
-// Схемы лежат в diagrams/ и в одном уровне подпапок (diagrams/frozen-k3s/). CLI именует
+// Схемы лежат в diagrams/ и в подпапках планов (diagrams/modules/<N>/). CLI именует
 // выход по basename входа, поэтому render вызывается по разу на папку со своим --out-dir
 // (docs/superpowers/specs/2026-09-16-mvp-compose-design.md §2, §9.2).
 // Свой --out-dir для render передавать нельзя: скрипт добавляет его сам для каждой папки.

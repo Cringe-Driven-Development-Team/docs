@@ -184,34 +184,20 @@ Actions только проверяет PR с изменениями `openwiki/*
 (коммит `e8fd4bb`). Спеки и планы в `docs/superpowers/` написаны до переноса,
 адреса в них старые.
 
-**MVP: одна VPS** — прежняя модель до BFF, в которой фронт ходил в Go API напрямую;
-дизайн в `docs/superpowers/specs/2026-09-29-mvp-single-vps-design.md`.
-**Frozen: k3s** заморожена в `diagrams/frozen-k3s/`, её схемы не правятся;
-дизайн в `docs/superpowers/specs/2026-09-15-frontend-monorepo-design.md`.
-
-Схемы MVP (`diagrams/`): `deployment`, `cd`, `frontend`, `contract` сохранены как история
-до BFF; `ci` и `infra` целиком не перепроверены на проде. Подтверждённая часть на 31.10.2026 —
-[гостевой маршрут BFF](https://docs.cellestial.ru/documentation/bff), там же SHA выкладок,
-свидетельства и границы проверки.
+**Текущая архитектура** — срез 01.11.2026: gateway (Caddy/BFF), приватная VPS2
+(Go/PostgreSQL/Redis) и auxiliary (служебные интеграции). [Раздел архитектуры](https://docs.cellestial.ru/architecture/)
+содержит SHA выкладок, свидетельства SSH/HTTP и границы проверки. Включённый runtime
+не означает проверенный пользовательский сценарий. Старые k3s-схемы удалены;
+их опубликованные HTML-адреса направляются на текущие схемы.
 
 | Схема | Что показывает |
 | --- | --- |
-| [deployment](https://docs.cellestial.ru/deployment.html) | История до BFF: Одна VPS в Selectel: Caddy, Go API, Postgres; S3/CDN, клиент |
-| [ci](https://docs.cellestial.ru/ci.html) | GitHub-репозитории, CI-пайплайны, Contract drift, GHCR, S3 |
-| [cd](https://docs.cellestial.ru/cd.html) | История до BFF: CD фронта через S3, откат, выкладка статики в бакет статики за CDN, CD бэка через ansible-playbook |
-| [frontend](https://docs.cellestial.ru/frontend.html) | История до BFF: Репа клиента, контракт из Apidog, модель релизов |
-| [contract](https://docs.cellestial.ru/contract.html) | История до BFF: Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift |
-| [infra](https://docs.cellestial.ru/infra.html) | Проекты Selectel, стейт Pulumi, домен; Pulumi и Ansible с ноута студента |
-
-Frozen: k3s (`diagrams/frozen-k3s/`):
-
-| Схема | Что показывает |
-| --- | --- |
-| [deployment](https://docs.cellestial.ru/frozen-k3s/deployment.html) | VPS в Selectel, k3s, S3/CDN, клиент |
-| [ci](https://docs.cellestial.ru/frozen-k3s/ci.html) | GitHub-репозитории, CI-пайплайны и их цели |
-| [cd](https://docs.cellestial.ru/frozen-k3s/cd.html) | CD через Argo CD, канарейка, превью на Coolify |
-| [integrations](https://docs.cellestial.ru/frozen-k3s/integrations.html) | Внешние сервисы и кто с ними говорит |
-| [frontend-monorepo](https://docs.cellestial.ru/frozen-k3s/frontend-monorepo.html) | Монорепа клиента и BFF, Contract check, канарейка |
+| [deployment](https://docs.cellestial.ru/deployment.html) | Браузер → Caddy/BFF → Go на VPS2, PostgreSQL/Redis, S3/CDN, отдельный auxiliary |
+| [ci](https://docs.cellestial.ru/ci.html) | Проверки и публикация GHCR/S3/npm, владельцы репозиториев, course-sync и Pages |
+| [cd](https://docs.cellestial.ru/cd.html) | Ручной frontend CD/rollback, автоматический backend CD через gateway, отдельный infra apply |
+| [frontend](https://docs.cellestial.ru/frontend.html) | Client/BFF/schemas, командные библиотеки, внешний владелец Vite plugin и npm-пакетов |
+| [contract](https://docs.cellestial.ru/contract.html) | tRPC браузер/BFF и OpenAPI BFF/Go, Apidog, Orval/Zod, oapi-codegen и drift |
+| [infra](https://docs.cellestial.ru/infra.html) | Три VPS, Pulumi state/Ansible, auxiliary integrations/backup и границы runtime |
 
 Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
 (`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через
@@ -230,15 +216,15 @@ Frozen: k3s (`diagrams/frozen-k3s/`):
 | [front-libs-trusted-publishing](https://docs.cellestial.ru/modules/2/front-libs-trusted-publishing.html) | Trusted Publishing: GitHub OIDC identity, проверка repo/workflow и краткоживущие npm-права |
 | [front-libs-release](https://docs.cellestial.ru/modules/2/front-libs-release.html) | Каскадный релиз React → Zustand: CI, независимые версии, GitHub Releases и публикация в npm |
 
-Схемы MVP показаны на странице «Архитектура» (`/architecture/`) живыми карточками:
+Шесть корневых схем показаны на странице «Архитектура» (`/architecture/`) живыми карточками:
 масштаб кнопками и Ctrl/⌘ + колесо, щипок, перетаскивание, полный экран (компонент
 `site/.vitepress/theme/Diagram.vue`). Добавил схему в корень `diagrams/` — добавь строку в таблицу,
 имя в `ROOT_NAMES` (`site/.vitepress/diagram-names.ts`: по нему берутся размеры и переадресуются
 старые якоря) и раздел `## <имя>` с `<Diagram name="<имя>" />` на `site/architecture/index.md`:
 тесты `scripts/build-index.test.ts` и `scripts/architecture-page.test.ts` упадут, если чего-то нет. Схема из подпапки
-рендерится в `dist/<папка>/<name>.html` и `.png`. Замороженная `frozen-k3s/`
-(`HIDDEN_FOLDERS` в `site/.vitepress/diagram-names.ts`) в меню не показывается, её схемы
-открываются по ссылкам из таблицы выше.
+рендерится в `dist/<папка>/<name>.html` и `.png`. Планы модулей исключены из меню
+архитектуры через `HIDDEN_FOLDERS`; удалённые папки перечислены в `LEGACY_FOLDERS`,
+а старые HTML-адреса — в `PAGE_REDIRECTS`.
 
 ### Локально
 
@@ -364,7 +350,7 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 [VitePress](https://vitepress.dev/): исходники страниц в `site/`, конфиг и меню в
 `site/.vitepress/config.mts`. Схемы — в меню «Архитектура» (`/architecture/`), их файлы —
 по адресам `/<name>.html` и `.png`. Старый индекс `/diagrams/` — переадресация:
-`#contract` ведёт на `/architecture/#contract`, `#frozen-k3s/ci` — на `/frozen-k3s/ci.html`; так же
+`#contract` ведёт на `/architecture/#contract`, прежний `#frozen-k3s/ci` — через заглушку на `/ci.html`; так же
 главная переводит старые ссылки `/#contract`.
 
 `bun run build` после рендера схем собирает VitePress (`bun run site:vitepress`) и переносит
@@ -381,8 +367,8 @@ GitHub Actions, иначе job `deploy` падает с «Get Pages site failed�
 называет файл и поле.
 
 Модули — план: что ещё не сделано и будет реализовано, вместе с проектными документами треков.
-Текущие страницы отделяют проверенный прод от исторических описаний; у старых схем корня
-указаны ограничения актуальности. Сделанный трек остаётся в архиве
+Текущие страницы и корневые схемы описывают датированный срез прода с явными
+свидетельствами и границами проверки. Сделанный трек остаётся в архиве
 модуля как история, а прод описывается в разделе вне модулей.
 
 - **`site/modules/people.yaml`** — люди: GitHub-логин, имя, роль, направление
@@ -484,11 +470,44 @@ Push в ветку запускает workflow Pages на `main`. Тот соб�
 правом push. Локально `bun run site` делает `git fetch --prune` всех веток
 `origin`.
 
-Из git worktree (`.claude/worktrees/…`) `bun run site` в Docker не работает: `.git` там ссылается на
-путь хоста, которого нет в контейнере. Запускай его из основного клона или `DIAGRAMS_NATIVE=1 bun run site`.
+Из git worktree (`.claude/worktrees/…`) запускай обычный `bun run site`: Docker-обёртка
+монтирует общий Git-каталог по исходному пути, чтобы ссылка из `.git` работала в контейнере.
 
 Дизайн: `docs/superpowers/specs/2026-09-12-eraser-diagrams-pipeline-design.md`,
 `docs/superpowers/specs/2026-09-13-diagram-colors-and-bun-design.md`,
 `docs/superpowers/specs/2026-09-13-branch-previews-design.md`,
 `docs/superpowers/specs/2026-09-16-mvp-compose-design.md`,
 `docs/superpowers/specs/2026-09-27-docker-render-design.md`.
+
+### Общая публичная карта OpenWiki
+
+`/openwiki/` объединяет опубликованные wiki `docs`, `frontend`, `backend`, `infra`.
+Генерация содержимого остаётся ручной (`wiki:update-local`); Pages только читает
+готовые Markdown и checkpoint и автоматически публикует общий визуализатор.
+Локальные MCP workspace и соседние клоны для этой сборки не нужны.
+
+```bash
+bun run wiki:prepare
+OPENWIKI_SOURCES_DIR="$PWD/.openwiki-sources" bun run wiki:export
+bun run build
+bun run site
+```
+
+`wiki:prepare` получает только публичные `main` трёх платформ, без их hooks,
+скриптов и зависимостей. `wiki:export` без `OPENWIKI_SOURCES_DIR` получает новый
+снимок сам. Явно заданный повреждённый снимок останавливает сборку. Docker и
+Pages готовят снимок один раз; все превью используют его read-only, а wiki `docs`
+берут из собственной ветки. `SITE_BASE` и относительные assets сохраняют ссылки
+превью. Для проверки клиента: `bun run wiki:browser --fixture` или
+`bun run wiki:browser dist/openwiki` с `CHROMIUM_PATH` при необходимости.
+
+Дата и исходный SHA каждой wiki принадлежат checkpoint её владельца. Полные
+`sourceSha`, `repositorySha` прочитанных файлов, свежесть и время сборки доступны
+в `openwiki/manifest.json`. Устаревшая wiki отображается с предупреждением;
+непроверенная свежесть помечается отдельно. Код и wiki не подтверждают выкладку
+на прод. Без явных межрепозиторных wiki-ссылок граф имеет четыре компоненты.
+
+Для запуска Pages из платформ используется отдельный secret `DOCS_PAGES_TOKEN`
+(fine-grained: только `docs`, Actions write), настроенный владельцем в трёх
+репозиториях. Это право вызова workflow, а не вход сборки: токен не передаётся
+Docker или страницам. Чтение публичных wiki credentials не требует.

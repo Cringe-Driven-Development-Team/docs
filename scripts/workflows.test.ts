@@ -25,3 +25,10 @@ describe("workflows", () => {
     expect(upload?.if).toBe("!cancelled()");
   });
 });
+
+for (const file of ["ci.yml", "pages.yml"]) {
+  test(`${file}: wiki build checkout includes the older checkpoint commit without persisted credentials`, () => {
+    const checkout = load(file).jobs.build?.steps?.find(step => String(step.uses).startsWith("actions/checkout@"));
+    expect(checkout?.with).toMatchObject({ "fetch-depth": 0, "persist-credentials": false });
+  });
+}

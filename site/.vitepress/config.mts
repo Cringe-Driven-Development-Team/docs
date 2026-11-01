@@ -56,7 +56,7 @@ export default withMermaid(
             items: [
               { text: 'Что работает сейчас', link: '/documentation/' },
               { text: 'BFF: проверенная часть', link: '/documentation/bff' },
-              { text: 'Архитектура и исторические схемы', link: '/architecture/' },
+              { text: 'Архитектура', link: '/architecture/' },
               { text: 'CSRF: историческая проверка', link: '/security/csrf/' },
               { text: 'Владельцы сведений', link: '/project-context' },
             ],

@@ -17,7 +17,7 @@ export function canvasSize(png: ImageSize | undefined): DiagramSize {
   return { width: Math.round(png.width / 2), height: Math.round(png.height / 2), rendered: true };
 }
 
-// Схемы корня и замороженных папок, у которых есть PNG в dist/.
+// Схемы корня и скрытых планов модулей, у которых есть PNG в dist/.
 export function names(dist: string): string[] {
   const hidden = HIDDEN_FOLDERS.flatMap((folder) => {
     const dir = join(dist, folder);

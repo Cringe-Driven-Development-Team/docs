@@ -1,37 +1,38 @@
 {
   "entities": [
-    { "tag": "Textbox", "id": "historical-status", "x": 0, "y": 0, "width": 900, "height": 100, "text": "**Историческая схема MVP до BFF**\nНе описывает текущий прод. Проверенная часть на 31.10.2026: https://docs.cellestial.ru/documentation/bff" },
-    { "tag": "Icon", "id": "client", "x": 0, "y": 460, "icon": "chrome", "texts": [{ "text": "Client (браузер)" }] },
-
-    { "tag": "Group", "id": "selectel", "color": "blue", "x": 360, "y": 140, "width": 840, "height": 700, "isContainer": true, "title": { "text": "Selectel", "icon": "cloud" } },
-
-    { "tag": "Group", "id": "vps", "color": "blue", "styleMode": "plain", "x": 380, "y": 180, "width": 560, "height": 160, "containerId": "selectel", "isContainer": true, "title": { "text": "VPS · Docker Compose", "icon": "docker" } },
-    { "tag": "Icon", "id": "vps-caddy", "x": 400, "y": 220, "containerId": "vps", "icon": "server", "texts": [{ "text": "Caddy" }] },
-    { "tag": "Icon", "id": "vps-go", "x": 640, "y": 220, "containerId": "vps", "icon": "go", "texts": [{ "text": "Go API" }] },
-    { "tag": "Icon", "id": "vps-postgres", "x": 800, "y": 220, "containerId": "vps", "icon": "postgres", "texts": [{ "text": "Postgres" }] },
-
-    { "tag": "Icon", "id": "domain", "x": 1060, "y": 220, "containerId": "selectel", "icon": "globe", "texts": [{ "text": "cellestial.ru" }] },
-
-    { "tag": "Icon", "id": "cdn", "x": 400, "y": 460, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN cdn.cellestial.ru" }] },
-    { "tag": "Icon", "id": "s3-front", "x": 640, "y": 460, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · фронт: releases/{sha}/, index.html, current.json" }] },
-    { "tag": "Icon", "id": "s3-notebooks", "x": 880, "y": 460, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · ноутбуки (приватный)" }] },
-    { "tag": "Icon", "id": "cdn-static", "x": 400, "y": 680, "containerId": "selectel", "icon": "cloud", "texts": [{ "text": "CDN static.cellestial.ru" }] },
-    { "tag": "Icon", "id": "s3-static", "x": 640, "y": 680, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · статика (публичный)" }] },
-    { "tag": "Icon", "id": "s3-avatars", "x": 880, "y": 680, "containerId": "selectel", "icon": "database", "texts": [{ "text": "S3 · аватарки (публичный)" }] },
-
-    { "tag": "Legend", "id": "legend", "x": 1260, "y": 140, "width": 340, "entries": [{ "text": "Наша инфраструктура", "color": "#2866c4" }, { "text": "Пользовательский трафик", "color": "#c38424" }, { "text": "Прочие связи", "color": "#1c1c1c" }] }
+    {"tag":"Textbox","id":"verification","x":0,"y":0,"width":1440,"text":"**Размещение проверено 01.11.2026** · HTTPS/гостевой BFF и доступность Go; успешный login и runtime-сессия не проверены."},
+    {"tag":"Icon","id":"client","x":0,"y":300,"icon":"chrome","texts":[{"text":"Браузер"}]},
+    {"tag":"Group","id":"selectel","x":220,"y":160,"width":1280,"height":1080,"isContainer":true,"title":{"text":"Selectel · работающий сервис","icon":"cloud"},"color":"blue"},
+    {"tag":"Group","id":"gateway","x":260,"y":220,"width":420,"height":180,"isContainer":true,"title":{"text":"Gateway · Docker Compose","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"caddy","x":300,"y":280,"icon":"server","texts":[{"text":"Caddy · HTTPS"}],"containerId":"gateway"},
+    {"tag":"Icon","id":"bff","x":500,"y":280,"icon":"server","texts":[{"text":"BFF · HTML и tRPC"}],"containerId":"gateway"},
+    {"tag":"Group","id":"vps2","x":760,"y":220,"width":660,"height":420,"isContainer":true,"title":{"text":"VPS2 · приватная сеть","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"go-api","x":800,"y":300,"icon":"go","texts":[{"text":"Go API"}],"containerId":"vps2"},
+    {"tag":"Icon","id":"postgres","x":1120,"y":300,"icon":"postgres","texts":[{"text":"PostgreSQL 18"}],"containerId":"vps2"},
+    {"tag":"Icon","id":"redis","x":1120,"y":500,"icon":"redis","texts":[{"text":"Redis 8"}],"containerId":"vps2"},
+    {"tag":"Group","id":"auxiliary","x":260,"y":480,"width":420,"height":180,"isContainer":true,"title":{"text":"Auxiliary · служебные интеграции","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"hooks","x":400,"y":540,"icon":"bell","texts":[{"text":"Hooks / Telegram proxy"}],"containerId":"auxiliary"},
+    {"tag":"Group","id":"release-assets","x":260,"y":740,"width":760,"height":180,"isContainer":true,"title":{"text":"JS / CSS выбранного выпуска","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"cdn-release","x":300,"y":800,"icon":"cloud","texts":[{"text":"CDN релизов"}],"containerId":"release-assets"},
+    {"tag":"Icon","id":"s3-release","x":700,"y":800,"icon":"database","texts":[{"text":"S3 релизов"}],"containerId":"release-assets"},
+    {"tag":"Group","id":"static-assets","x":260,"y":1000,"width":760,"height":180,"isContainer":true,"title":{"text":"Изображения / шрифты · static","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"cdn-static","x":300,"y":1060,"icon":"cloud","texts":[{"text":"CDN статики"}],"containerId":"static-assets"},
+    {"tag":"Icon","id":"s3-static","x":700,"y":1060,"icon":"database","texts":[{"text":"S3 статики"}],"containerId":"static-assets"},
+    {"tag":"Icon","id":"s3-notebooks","x":1160,"y":800,"icon":"database","texts":[{"text":"S3 блокнотов"}],"containerId":"selectel"},
+    {"tag":"Icon","id":"s3-avatars","x":1160,"y":1060,"icon":"database","texts":[{"text":"S3 аватарок · настроен"}],"containerId":"selectel"},
+    {"tag":"Textbox","id":"s3-status","x":0,"y":1060,"width":200,"text":"S3: наличие и конфигурация подтверждены. Пользовательский CRUD не проверен."},
+    {"tag":"Legend","id":"legend","x":1600,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]}
   ],
   "connections": [
-    { "tag": "Relationship", "from": "client", "to": "vps-caddy", "label": "https://cellestial.ru: HTML, /api/v1", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "cdn", "label": "https://cdn.cellestial.ru", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "cdn-static", "label": "https://static.cellestial.ru", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "client", "to": "s3-avatars", "label": "https://{uuid}.selstorage.ru", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "vps-caddy", "to": "vps-go", "label": "/api/v1/*" },
-    { "tag": "Relationship", "from": "vps-caddy", "to": "s3-front", "label": "index.html" },
-    { "tag": "Relationship", "from": "vps-go", "to": "vps-postgres" },
-    { "tag": "Relationship", "from": "vps-go", "to": "s3-notebooks" },
-    { "tag": "Relationship", "from": "vps-go", "to": "s3-avatars" },
-    { "tag": "Relationship", "from": "s3-front", "to": "cdn", "label": "static" },
-    { "tag": "Relationship", "from": "s3-static", "to": "cdn-static", "label": "static" }
+    {"tag":"Relationship","from":"client","to":"caddy","label":"HTTPS","color":"orange","lineStyle":"solid"},
+    {"tag":"Relationship","from":"caddy","to":"bff","label":"HTML / tRPC"},
+    {"tag":"Relationship","from":"bff","to":"go-api","label":"HTTP · приватная сеть"},
+    {"tag":"Relationship","from":"go-api","to":"postgres","label":"SQL"},
+    {"tag":"Relationship","from":"go-api","to":"redis","label":"кеш / токены"},
+    {"tag":"Relationship","from":"client","to":"cdn-release","label":"JS / CSS","color":"orange","lineStyle":"solid"},
+    {"tag":"Relationship","from":"s3-release","to":"cdn-release","label":"origin"},
+    {"tag":"Relationship","from":"client","to":"cdn-static","label":"картинки / шрифты","color":"orange","lineStyle":"solid"},
+    {"tag":"Relationship","from":"s3-static","to":"cdn-static","label":"origin"},
+    {"tag":"Relationship","from":"go-api","to":"s3-notebooks","label":"S3 · настроен"}
   ]
 }

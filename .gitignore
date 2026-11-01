@@ -9,3 +9,7 @@ site/.vitepress/cache/
 tmp-mermaid/
 site/modules/board.json
 openwiki/.run.json
+.openwiki-sources*/
+
+# VitePress intermediate build output
+/site/.vitepress/.temp/
