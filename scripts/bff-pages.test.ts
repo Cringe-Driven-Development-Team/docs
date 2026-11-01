@@ -12,11 +12,11 @@ export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
 export const AUTH_SCENARIOS = "site/modules/2/tracks/bff/auth-scenarios.md";
 export const SERVICE = "site/modules/2/tracks/bff/service.md";
-// SERVICE сюда не входит: проверка «нет IPv4» ниже ловит 127.0.0.1 из healthcheck; свои проверки — в тестах «Сервис BFF».
+export const BUILD_AND_RUN = "site/modules/2/tracks/bff/build-and-run.md";
 export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
 export const RELEASE = "site/modules/2/tracks/bff/release.md";
 export const ROLLBACK = "site/modules/2/tracks/bff/rollback.md";
-export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, PROCEDURES, CLIENT, AUTH, AUTH_SCENARIOS, BOOTSTRAP, RELEASE, ROLLBACK];
+export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, PROCEDURES, CLIENT, AUTH, AUTH_SCENARIOS, SERVICE, BUILD_AND_RUN, BOOTSTRAP, RELEASE, ROLLBACK];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
@@ -47,7 +47,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, bootstrap, migration, infrastructure, release, rollback]");
+  expect(md).toContain("pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, bootstrap, build-and-run, migration, infrastructure, release, rollback]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -254,7 +254,7 @@ test("инфраструктура: раздел «Две VPS» сохраняе
   }
   for (const file of BFF_PAGES) {
     // Номера разделов RFC («§6.1.3.3.2», «section-6.1.3.3.2») похожи на IPv4, их не считаем.
-    const text = readFileSync(file, "utf8").replace(/(§|section-)\d+(\.\d+)*/g, "");
+    const text = readFileSync(file, "utf8").replace(/(§|section-)\d+(\.\d+)*/g, "").replaceAll(file === BUILD_AND_RUN ? "127.0.0.1" : "", "");
     expect(text, file).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
   }
 });
@@ -441,12 +441,11 @@ test("подстраница «Сервис BFF»: разделы по поря�
   const order = ["## Каркас", "## Переменные окружения", "## Health check", "## Ошибки и логи", "## Сборка и образ", "## На проде"].map((h) => md.indexOf(h));
   expect(order.every((i) => i > 0)).toBe(true);
   expect([...order].sort((a, b) => a - b)).toEqual(order);
-  for (const s of ["fetchRequestHandler", "@trpc/server/adapters/fetch", "resHeaders", "/health", "SESSION_KEY", "APP_ORIGIN", "GO_API_URL", "oven/bun:", "-alpine", "bun build", "--target bun", "bff:3000", "service_healthy", "BFF_IMAGE_TAG", "frontend/issues/4"]) expect(md, s).toContain(s);
+  for (const s of ["fetchRequestHandler", "@trpc/server/adapters/fetch", "resHeaders", "/health", "SESSION_KEY", "APP_ORIGIN", "GO_API_URL", "isDev: false", "appCodeOf(error)", "graceful shutdown"]) expect(md, s).toContain(s);
   expect(md).not.toContain("@hono/trpc-server");
   // значения ключа нет; строка compose `SESSION_KEY: ${SESSION_KEY:?…}` — подстановка, не значение
   expect(md).not.toMatch(/(?<!\$\{)SESSION_KEY\s*[:=]\s*(?!\$\{SESSION_KEY:)\S{8,}/);
-  // реальных адресов нет; 127.0.0.1 — адрес healthcheck внутри контейнера
-  expect(md.replaceAll("127.0.0.1", "")).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
+  expect(md).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
 });
 
 test("подстраница «Сервис BFF»: ссылки на соседей ведут на существующие заголовки", () => {
@@ -454,29 +453,79 @@ test("подстраница «Сервис BFF»: ссылки на сосед�
   for (const [link, file, heading] of [
     ["./contract#роутер", CONTRACT, "## Роутер"],
     ["./auth#как-bff-обрабатывает-вызов", AUTH, "## Как BFF обрабатывает вызов"],
-    ["./migration#переключение", MIGRATION, "## Переключение"],
-    ["./workspace#монорепа-фронта", WORKSPACE, "## Монорепа фронта"],
     ["./contract#ошибки", CONTRACT, "## Ошибки"],
     ["(#переменные-окружения)", SERVICE, "## Переменные окружения"],
-    ["(#на-проде)", SERVICE, "## На проде"],
+    ["./build-and-run#на-проде", BUILD_AND_RUN, "## На проде"],
   ] as const) {
     expect(md, link).toContain(link);
     expect(readFileSync(file, "utf8"), heading).toContain(heading);
   }
 });
 
-test("подстраница «Сервис BFF»: шаблоны Ansible в строковом коде не съедает Vue", () => {
-  // В блоках ``` VitePress ставит v-pre, а `{{ … }}` в строке Vue подставляет как выражение — имя пропадает.
-  const prose = readFileSync(SERVICE, "utf8").replace(/^```[\s\S]*?^```/gm, "");
-  const inline = prose.match(/`[^`\n]+`/g) ?? [];
-  expect(inline.filter((code) => code.includes("{{"))).toEqual([]);
-  expect(prose).toContain("APP_ORIGIN=https://{{ app_domain }}");
-  // Существующий playbook принимает тег; целевой поток передаёт digest.
-  const prod = section(readFileSync(SERVICE, "utf8"), "На проде");
-  for (const needle of ["deploy-bff.yml", "pull-image.yml", "bff_image_tag", "BFF_IMAGE_TAG={{ bff_image_tag }}", "validate.yml", "session_key", "bff_image_ref", "infra#74"]) expect(prod, needle).toContain(needle);
+test("сервис и сборка: шаблоны Ansible не съедает Vue", () => {
+  for (const file of [SERVICE, BUILD_AND_RUN]) {
+    const prose = readFileSync(file, "utf8").replace(/^```[\s\S]*?^```/gm, "");
+    const inline = prose.match(/`[^`\n]+`/g) ?? [];
+    expect(inline.filter((code) => code.includes("{{")), file).toEqual([]);
+    expect(prose.match(/<code v-pre>[^<]*<\/code>/g)?.filter((code) => code.includes(":$")) ?? [], file).toEqual([]);
+  }
+  const prod = section(readFileSync(BUILD_AND_RUN, "utf8"), "На проде");
+  for (const needle of ["APP_ORIGIN=https://{{ app_domain }}", "deploy-bff.yml", "pull-image.yml", "bff_image_tag", "BFF_IMAGE_TAG={{ bff_image_tag }}", "validate.yml", "session_key", "bff_image_ref", "infra#74"]) expect(prod, needle).toContain(needle);
   expect(prod).not.toContain("три места");
-  // в HTML-теге markdown-it-emoji превращает «:$» в 😒 — двоеточие пишется сущностью
-  expect(prose.match(/<code v-pre>[^<]*<\/code>/g)?.filter((code) => code.includes(":$")) ?? []).toEqual([]);
+});
+
+test("сборка вынесена с фиксированными путями, образом и проектными оговорками", () => {
+  expect(existsSync(BUILD_AND_RUN)).toBe(true);
+  const md = readFileSync(BUILD_AND_RUN, "utf8");
+  expect(md).toContain("title: Сборка и запуск BFF");
+  expect(md.split("\n").filter((line) => line.startsWith("## "))).toEqual(["## Сборка и образ", "## На проде"]);
+  expect(firstBlock(md)).toContain("целевое состояние");
+  for (const needle of ["apps/bff/dist/bff.js", "bun build src/index.ts --target bun --outfile dist/bff.js", "serialize-javascript", "но не в клиентский", "node_modules", "^build", "цикл", "apps/bff/Dockerfile", "docker build -f apps/bff/Dockerfile .", "oven/bun:1.4.3-alpine", "12.10.2026", "не ниже 1.4.0", 'USER bun', 'CMD ["bun", "bff.js"]', "/app/client/index.html", "./client/public/", "service_healthy", "127.0.0.1:3000/health", "bff:3000", "PORT=8080", "Ansible Vault", "175e37ae77ae3b495ab7dd29c5d41a23e25aec50"]) expect(md, needle).toContain(needle);
+  const service = readFileSync(SERVICE, "utf8");
+  expect(service).not.toContain("```dockerfile");
+  expect(service).not.toContain("```yaml");
+  for (const [title, id] of [["Сборка и образ", "сборка-и-образ"], ["На проде", "на-проде"]]) {
+    expect(service).toContain(`## ${title} {#${id}}`);
+    expect(service).toContain(`](./build-and-run#${id})`);
+    expect(md).toContain(`## ${title}\n`);
+  }
+});
+
+test("bootstrap: поля, ошибки и кеширование читаются таблицами, проверка шаблона шагами", () => {
+  const md = readFileSync(BOOTSTRAP, "utf8");
+  for (const title of ["Контракт", "Ошибки", "Кеширование"]) expect(section(md, title).match(/^\|/gm)?.length, title).toBeGreaterThan(3);
+  expect(section(md, "Вставка данных").match(/^\d\. /gm)).toHaveLength(3);
+  for (const needle of ["HEAD HTML", "без тела", "Sec-Fetch-Site: cross-site", "SameSite=Lax", "публичн", "HttpOnly", "Strict"]) expect(md, needle).toContain(needle);
+  expect(section(md, "Выпуск и откат")).not.toContain("1. ");
+});
+
+test("выпуск, откат и сборка ведут к владельцам уникальных требований", () => {
+  for (const [source, link, target, heading] of [
+    [BUILD_AND_RUN, "./workspace#монорепа-фронта", WORKSPACE, "## Монорепа фронта"],
+    [BUILD_AND_RUN, "./migration#переключение", MIGRATION, "## Переключение"],
+    [BUILD_AND_RUN, "./release#один-sha-два-артефакта", RELEASE, "## Один SHA, два артефакта"],
+    [BUILD_AND_RUN, "./service#health-check", SERVICE, "## Health check"],
+    [BOOTSTRAP, "./build-and-run#сборка-и-образ", BUILD_AND_RUN, "## Сборка и образ"],
+    [BOOTSTRAP, "./release#путь-до-production", RELEASE, "## Путь до production"],
+    [BOOTSTRAP, "./rollback#что-остается-доступным", ROLLBACK, "## Что остаётся доступным"],
+    [BOOTSTRAP, "./migration#переключение", MIGRATION, "## Переключение"],
+    [BOOTSTRAP, "./service#health-check", SERVICE, "## Health check"],
+    [BOOTSTRAP, "./service#ошибки-и-логи", SERVICE, "## Ошибки и логи"],
+    [BOOTSTRAP, "./contract#ошибки", CONTRACT, "## Ошибки"],
+    [SERVICE, "./bootstrap#ошибки", BOOTSTRAP, "## Ошибки"],
+    [SERVICE, "./bootstrap#кеширование", BOOTSTRAP, "## Кеширование"],
+    [WORKSPACE, "./release#один-sha-два-артефакта", RELEASE, "## Один SHA, два артефакта"],
+    [RELEASE, "./build-and-run#сборка-и-образ", BUILD_AND_RUN, "## Сборка и образ"],
+    [RELEASE, "./bootstrap#контракт", BOOTSTRAP, "## Контракт"],
+    [ROLLBACK, "./release#термины", RELEASE, "## Термины"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
+    expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
+  }
+  const release = readFileSync(RELEASE, "utf8");
+  for (const needle of ["auto_inactive: false", "auto_merge: false", "deployment: false", "анонимное скачивание", "единственный успешный", "org.opencontainers.image.revision", "RPC", "CDN"]) expect(release, needle).toContain(needle);
+  const rollback = readFileSync(ROLLBACK, "utf8");
+  for (const needle of ["другим", "failure", "error", "неизвестен", "до изменения VPS", "последние пять", "независимо от возраста", "очистка откладывается", "SESSION_KEY", "не откатывает Go API"]) expect(rollback, needle).toContain(needle);
 });
 
 
@@ -505,10 +554,10 @@ test("bootstrap: сессия, ошибки, кеширование и выпу�
   expect(section(md, "Вставка данных")).toContain("отказ старта");
   const cache = section(md, "Кеширование");
   for (const value of ["гостевые", "private, no-store", "PWA"]) expect(cache, value).toContain(value);
-  const release = section(md, "Выпуск и откат");
-  expect(release.indexOf("Загрузить ассеты")).toBeGreaterThan(-1);
-  expect(release.indexOf("Загрузить ассеты")).toBeLessThan(release.indexOf("Выкатить образ"));
-  expect(release).toContain("Ошибка загрузки запрещает выкладку");
+  const release = section(readFileSync(RELEASE, "utf8"), "Путь до production");
+  expect(release.indexOf("загружает ассеты")).toBeGreaterThan(-1);
+  expect(release.indexOf("загружает ассеты")).toBeLessThan(release.indexOf("Workflow вызывает"));
+  expect(release).toContain("Ошибка любого шага запрещает CD");
   expect(section(md, "Проверка")).toContain("Проект: проверить после внедрения");
   const allowed = section(readFileSync(CLIENT, "utf8"), "Какие вызовы BFF принимает");
   expect(allowed).toContain("HTML-хендлер");
@@ -517,11 +566,10 @@ test("bootstrap: сессия, ошибки, кеширование и выпу�
 
 test("bootstrap: новые ссылки с якорями ведут на существующие заголовки", () => {
   for (const [source, link, target, heading] of [
-    [WORKSPACE, "./bootstrap#выпуск-и-откат", BOOTSTRAP, "## Выпуск и откат"],
+    [WORKSPACE, "./release#один-sha-два-артефакта", RELEASE, "## Один SHA, два артефакта"],
     [CONTRACT, "./bootstrap#контракт", BOOTSTRAP, "## Контракт"],
     [AUTH, "./bootstrap#html-запрос", BOOTSTRAP, "## HTML-запрос"],
     [SERVICE, "./bootstrap#вставка-данных", BOOTSTRAP, "## Вставка данных"],
-    [SERVICE, "./bootstrap#выпуск-и-откат", BOOTSTRAP, "## Выпуск и откат"],
   ]) {
     expect(readFileSync(source!, "utf8"), link).toContain(link!);
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
@@ -567,8 +615,10 @@ test("MVP release differs from future canary", () => {
   const service = readFileSync(SERVICE, "utf8");
   const health = section(service, "Health check");
   for (const needle of ["liveness", "готовность", "конфигурации", "шаблона", "graceful shutdown", "конечный срок", "один экземпляр"]) expect(health.toLowerCase(), needle).toContain(needle.toLowerCase());
-  const bootstrap = section(readFileSync(BOOTSTRAP, "utf8"), "Выпуск и откат");
-  for (const needle of ["один экземпляр", "короткое окно", "SESSION_KEY", "frontend/issues/4", "неизменяемый", "предыдущего", "Откат"]) expect(bootstrap, needle).toContain(needle);
+  const artifacts = section(readFileSync(RELEASE, "utf8"), "Один SHA, два артефакта");
+  expect(artifacts).toContain("неизменяемый");
+  const rollback = readFileSync(ROLLBACK, "utf8");
+  for (const needle of ["SESSION_KEY", "frontend/issues/4", "предыдущего", "Откат"]) expect(rollback, needle).toContain(needle);
   const canary = subsection(release, "Канарейка — следующий этап");
   for (const needle of ["стабильный сегмент", "HTML", "RPC", "ошибок", "задержек", "возврат трафика", "cookie", "refresh", "открытыми вкладками", "Go/БД", "10 секунд", "между процессами"]) expect(canary.toLowerCase(), needle).toContain(needle.toLowerCase());
   expect(section(readFileSync(CLIENT, "utf8"), "Клиент")).toContain("UNAUTHORIZED");

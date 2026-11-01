@@ -2,7 +2,7 @@
 title: Откат
 ---
 
-[← Трек BFF](../bff) · [Как проходит выкатка](./release) · [Серверный bootstrap](./bootstrap)
+[← Трек BFF](../bff) · [Как проходит выкатка](./release) · [Сборка и запуск](./build-and-run)
 
 # Ручной откат BFF
 
@@ -14,6 +14,8 @@ title: Откат
 :::
 
 ## Как выбрать прежний выпуск
+
+Значения SHA, digest и двух видов Deployments — в [«Терминах»](./release#термины).
 
 Workflow читает историю `production` Deployments через GitHub API. Каждая успешная запись содержит
 полный SHA в `ref` и точный `image_ref` по digest в `payload`. Если последняя попытка закончилась
@@ -30,6 +32,8 @@ Workflow читает историю `production` Deployments через GitHub 
 источником истории релизов.
 
 ## Проверка и переключение
+
+Схема показывает, когда workflow может выбрать цель и когда должен остановиться до изменения VPS.
 
 ```mermaid
 flowchart TD

@@ -9,7 +9,7 @@ subtasks:
   - "tRPC (server)"
   - title: "Turborepo + bun workspaces"
     issues: [frontend#44]
-pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, bootstrap, migration, infrastructure, release, rollback]
+pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, bootstrap, build-and-run, migration, infrastructure, release, rollback]
 ---
 
 ::: info
@@ -38,8 +38,9 @@ BFF ходит в Go API общим клиентом с единой обраб�
 | Настроить официальный транспорт и обработку ошибок | [Клиент tRPC](./bff/client) |
 | Настроить сессию, refresh и защиту от CSRF | [Авторизация и CSRF](./bff/auth) |
 | Проследить вход, refresh, параллельные RPC и выход | [Сценарии авторизации BFF](./bff/auth-scenarios) |
-| Собрать каркас, конфигурацию, health check и запуск | [Сервис BFF](./bff/service) |
+| Собрать каркас, конфигурацию, health check и логи | [Сервис BFF](./bff/service) |
 | Передать пользователя в HTML и запустить клиент | [Серверный bootstrap](./bff/bootstrap) |
+| Собрать образ и настроить окружение запуска | [Сборка и запуск BFF](./bff/build-and-run) |
 | Сравнить исходную и целевую схемы и переключить клиент | [Миграция на BFF](./bff/migration) |
 | Подготовить две VPS, S2S и перенос Go/Postgres | [Инфраструктура BFF](./bff/infrastructure) |
 | Выпустить образ BFF и ассеты одного SHA | [Выкатка](./bff/release) |
