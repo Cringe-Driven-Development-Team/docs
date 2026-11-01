@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [mermaid|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -13,11 +13,12 @@ const artifacts = process.env.READABILITY_ARTIFACTS_DIR || '.superpowers/readabi
 mkdirSync(artifacts, { recursive: true });
 const label = SITE_BASE === '/' ? 'root' : 'branch';
 const failures: string[] = [];
+const mermaidErrors: MermaidError[][] = [];
 const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -33,7 +34,7 @@ const server = Bun.serve({
     return new Response('Not found', { status: 404 });
   },
 });
-function observe(page: Page) {
+async function observe(page: Page): Promise<MermaidError[]> {
   page.on('console', message => {
     if (message.type() !== 'error') return;
     const detail = `console: ${message.text()} ${message.location().url ?? ''}`;
@@ -49,6 +50,266 @@ function observe(page: Page) {
       legacyFaviconUrls.add(response.url()); optionalFaviconFailures.push(detail);
     } else failures.push(detail);
   });
+  const errors = await observeMermaidErrors(page);
+  mermaidErrors.push(errors);
+  return errors;
+}
+
+type MermaidError = { url: string; time: number; message: string; html: string };
+async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
+  const errors: MermaidError[] = [];
+  const prefix = 'MERMAID_ERROR:';
+  page.on('console', message => {
+    if (message.text().startsWith(prefix)) errors.push(JSON.parse(message.text().slice(prefix.length)) as MermaidError);
+  });
+  await page.evaluateOnNewDocument(prefix => {
+    if (window !== window.top) return;
+    const seen = new WeakSet<Element>();
+    const selector = '.error-icon, .error-text, .diagram-error';
+    const inspect = (node: Node) => {
+      if (!(node instanceof Element)) return;
+      const elements = [...(node.matches(selector) ? [node] : []), ...node.querySelectorAll(selector)];
+      for (const element of elements) {
+        if (seen.has(element)) continue;
+        seen.add(element);
+        console.debug(prefix + JSON.stringify({ url: location.href, time: performance.now(),
+          message: element.textContent ?? '', html: element.outerHTML.slice(0, 1000) }));
+      }
+    };
+    new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === 'characterData') inspect(record.target.parentElement!);
+        if (record.type === 'attributes') inspect(record.target);
+        for (const node of [...record.addedNodes, ...record.removedNodes]) inspect(node);
+      }
+    }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+  }, prefix);
+  return errors;
+}
+
+async function checkMermaidInteraction(page: Page): Promise<void> {
+  const container = await page.$('.mermaid-container');
+  assert(container, 'interactiveFlowchartAndSequence: diagram needs interactive controls');
+  await container.scrollIntoView();
+  const mode = await page.evaluate(() => innerWidth <= 768 ? '.mobile-controls' : '.desktop-controls');
+  const button = (name: string) => `.mermaid-container ${mode} button[aria-label="${name}"]`;
+  const transform = () => container.$eval('.mermaid-viewport', node => (node as HTMLElement).style.transform);
+  const settled = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+  await settled();
+  const initial = await transform();
+  const overlaps = await container.evaluate(node => {
+    const controls = [...node.querySelectorAll('.controls')].map(element => element.getBoundingClientRect()).filter(rect => rect.width && rect.height);
+    return [...node.querySelectorAll('.mermaid svg text, .mermaid svg foreignObject')].filter(element => {
+      const rect = element.getBoundingClientRect();
+      return controls.some(control => rect.left < control.right && rect.right > control.left && rect.top < control.bottom && rect.bottom > control.top);
+    }).map(element => element.textContent);
+  });
+  assert.deepEqual(overlaps, [], 'Toolbar must not cover diagram labels');
+  await page.focus(button('Увеличить'));
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Уменьшить');
+  await page.keyboard.down('Shift'); await page.keyboard.press('Tab'); await page.keyboard.up('Shift');
+  await page.keyboard.press('Enter');
+  await settled();
+  assert.notEqual(await transform(), initial, 'Zoom changes the visible diagram');
+  const zoomed = await transform();
+  await page.click(button('Уменьшить'));
+  await settled();
+  assert.notEqual(await transform(), zoomed, 'Zoom out changes the visible diagram');
+  await page.click(button('Сбросить вид'));
+  await settled();
+  assert.equal(await transform(), initial, 'Reset restores the fitted diagram');
+  await page.click(button('Увеличить'));
+  const area = await container.$('.diagram-wrapper');
+  const rect = await area!.boundingBox();
+  assert(rect);
+  const beforeDrag = await transform();
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(rect.x + rect.width / 2 + 30, rect.y + rect.height / 2 + 20, { steps: 5 });
+  await page.mouse.up();
+  assert.notEqual(await transform(), beforeDrag, 'Drag moves the enlarged diagram');
+  await page.click(button('Сбросить вид'));
+  await settled();
+  const state = () => page.evaluate(() => ({ y: scrollY, settings: Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('vitepress-nolebase-'))) }));
+  const before = await state();
+  for (const exit of ['button', 'Escape']) {
+    await page.click(button('На весь экран'));
+    await page.waitForFunction(() => document.fullscreenElement?.matches('.mermaid-container'));
+    if (exit === 'button') await page.click(`.mermaid-container:fullscreen ${mode} button[aria-label="На весь экран"]`);
+    else await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.fullscreenElement);
+    assert.deepEqual(await state(), before, 'Fullscreen preserves scroll and reading settings');
+  }
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Interactive diagram must not expand the page');
+}
+
+async function visitMermaidDiagrams(page: Page, expected: number): Promise<void> {
+  const blocks = await page.$$('.vp-doc div.language-mermaid');
+  assert.equal(blocks.length, expected, 'All source Mermaid blocks are present');
+  for (const block of blocks) {
+    await block.scrollIntoView();
+    await page.waitForFunction(block => {
+      const diagram = block.querySelector<HTMLElement>('.mermaid');
+      return diagram?.querySelector('svg') && diagram.style.opacity === '1' && !diagram.classList.contains('mermaid-rendering');
+    }, {}, block);
+  }
+  assert.equal(await page.$$eval('.mermaid svg', nodes => nodes.length), expected);
+  assert.equal(await page.$$eval('div.language-mermaid pre', nodes => nodes.length), 0);
+}
+
+async function checkMermaidLifecycle(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    await observe(page);
+    await page.setViewport({ width: 390, height: 844 });
+    const client = await page.createCDPSession();
+    const listeners = async () => {
+      await page.waitForFunction(() => document.getAnimations().every(animation => animation.playState !== 'running'));
+      const { result } = await client.send('Runtime.evaluate', { expression: 'document' });
+      const { listeners } = await client.send('DOMDebugger.getEventListeners', { objectId: result.objectId! });
+      await client.send('Runtime.releaseObject', { objectId: result.objectId! });
+      return { config: listeners.filter(listener => listener.type === 'vitepress-mermaid:config-updated').length,
+        toolbar: listeners.filter(listener => listener.type === 'vitepress-mermaid:toolbar-updated').length };
+    };
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
+    await visitMermaidDiagrams(page, 5);
+    assert.deepEqual(await listeners(), { config: 10, toolbar: 5 });
+    for (let visit = 0; visit < 3; visit++) {
+      // Leave while mounted diagrams are re-rendering, including queued render work.
+      await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+      await page.$eval('.vp-doc a[href="./theory"]', node => (node as HTMLElement).click());
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/theory') && document.querySelector('.vp-doc h1')?.textContent?.includes('Теория офлайн'));
+      await visitMermaidDiagrams(page, 5);
+      assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Leaving a page releases its Mermaid components');
+      await page.$eval('.vp-doc a[href="./caching-strategies#networkonly"]', node => (node as HTMLElement).click());
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies') && document.querySelectorAll('div.language-mermaid').length === 5);
+      await visitMermaidDiagrams(page, 5);
+      assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Repeated SPA visits do not accumulate Mermaid listeners');
+    }
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.mermaid-container');
+    await page.$eval('.vp-doc a[href="./theory"]', node => (node as HTMLElement).click());
+    await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Теория офлайн'));
+    await visitMermaidDiagrams(page, 5);
+    assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Leaving during initial/lazy rendering releases old components');
+    console.log('PASS Mermaid lifecycle: repeated SPA, active rendering and bounded document listeners');
+  } finally {
+    await context.close();
+  }
+}
+
+async function checkMermaid(browser: Browser, url: (path: string) => string): Promise<void> {
+  const fixture = await browser.newPage();
+  const events = await observeMermaidErrors(fixture);
+  try {
+    await fixture.goto('data:text/html,<html><body>Mermaid observer self-check</body></html>');
+    const transient = async () => {
+      await fixture.evaluate(() => {
+        const error = document.createElement('div');
+        error.innerHTML = '<svg><text class="error-text">Syntax error in text</text></svg>';
+        document.body.append(error);
+        error.remove();
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        const rendererError = document.createElement('div');
+        rendererError.className = 'diagram-error';
+        rendererError.textContent = 'Не удалось отрисовать схему';
+        container.append(rendererError);
+        document.body.append(container);
+        rendererError.remove();
+        container.remove();
+      });
+      await fixture.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
+      assert.equal(await fixture.$$eval('.error-text', nodes => nodes.length), 0);
+    };
+    await transient();
+    assert(events.some(event => event.message.includes('Syntax error in text')), 'transientErrorObserver: removed error must be recorded');
+    assert(events.some(event => event.message.includes('Не удалось отрисовать схему')), 'transientErrorObserver: removed renderer error must be recorded');
+    const before = events.length;
+    await fixture.reload();
+    await transient();
+    assert(events.length > before, 'transientErrorSurvivesReload: Node retains events across reload');
+    console.log('PASS transientErrorObserver and transientErrorSurvivesReload');
+  } finally {
+    await fixture.close();
+  }
+
+  await checkMermaidLifecycle(browser, url);
+
+  const errors: MermaidError[] = [];
+  const states: unknown[] = [];
+  try {
+    for (const width of [2560, 390]) for (const mode of [null, 3]) for (const dark of [false, true]) {
+      const context = await browser.createBrowserContext();
+      try {
+        const page = await context.newPage();
+        const observed = await observe(page);
+        await page.setViewport({ width, height: width === 390 ? 844 : 1440 });
+        await page.evaluateOnNewDocument(({ dark, mode }) => {
+          if (window !== window.top) return;
+          localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+          if (mode !== null) localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
+          const samples: unknown[] = [];
+          (window as unknown as Record<string, unknown>).__mermaidGeometry = samples;
+          const timer = setInterval(() => {
+            const heading = document.getElementById('networkonly');
+            samples.push({ time: performance.now(), scroll: scrollY, documentHeight: document.documentElement.scrollHeight,
+              viewportHeight: innerHeight, top: heading?.getBoundingClientRect().top });
+            if (samples.length >= 100) clearInterval(timer);
+          }, 50);
+        }, { dark, mode });
+        const name = `${label}-mermaid-${width}-${mode ?? 'fresh'}-${dark ? 'dark' : 'light'}`;
+        await page.goto(url('modules/2/tracks/offline/caching-strategies#networkonly'), { waitUntil: 'networkidle0' });
+        if (mode === null) await page.waitForSelector('body.VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth');
+        for (const action of ['direct', 'reload']) {
+          if (action === 'reload') await page.reload({ waitUntil: 'networkidle0' });
+          await page.waitForFunction(() => {
+            const rect = document.getElementById('networkonly')!.getBoundingClientRect();
+            const bottom = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().bottom ?? 0;
+            return rect.top >= Math.max(0, bottom('.VPNav'), bottom('.VPLocalNav')) - 1 && rect.top < innerHeight;
+          });
+          states.push({ name, action, trajectory: await page.evaluate(() => (window as unknown as Record<string, unknown>).__mermaidGeometry) });
+          await visitMermaidDiagrams(page, 5);
+          const actual = await page.evaluate(() => ({ dark: document.documentElement.classList.contains('dark'), theme: localStorage.getItem('vitepress-theme-appearance') }));
+          states.push({ expectedDark: dark, action, ...actual, errors: observed.length, svg: await page.$$eval('.mermaid svg', nodes => nodes.length) });
+          assert.equal(actual.dark, dark, JSON.stringify(actual));
+        }
+        await checkMermaidInteraction(page);
+        await page.screenshot({ path: join(artifacts, `${name}-flowchart.png`) });
+        await page.goto(url('modules/2/tracks/bff/auth-scenarios'), { waitUntil: 'networkidle0' });
+        await page.waitForSelector('.mermaid svg');
+        await checkMermaidInteraction(page);
+        await page.screenshot({ path: join(artifacts, `${name}-sequence.png`) });
+        const beforeTheme = await page.$eval('.mermaid svg .actor', node => getComputedStyle(node).fill);
+        await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+        await page.waitForFunction((oldFill, expectedDark) => {
+          const actor = document.querySelector('.mermaid svg .actor');
+          return document.documentElement.classList.contains('dark') === expectedDark && actor && getComputedStyle(actor).fill !== oldFill;
+        }, {}, beforeTheme, !dark);
+        // Reconfigure during rendering, then leave through a real VitePress link while fullscreen.
+        const controls = width === 390 ? '.mobile-controls' : '.desktop-controls';
+        await page.click(`.mermaid-container ${controls} button[aria-label="На весь экран"]`);
+        await page.waitForFunction(() => !!document.fullscreenElement);
+        await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+        await page.$eval('.vp-doc a[href="./auth#cookie-сессии"]', node => (node as HTMLElement).click());
+        await page.waitForFunction(() => location.pathname.endsWith('/bff/auth') && !document.fullscreenElement);
+        await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+        await new Promise(resolve => setTimeout(resolve, 1800));
+        assert.equal(await page.$('.mermaid-dialog-backdrop, body.mermaid-dialog-open'), null);
+        assert.equal(await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode')), mode === null ? '1' : String(mode));
+        console.log(`PASS ${name}: flowchart/sequence, keyboard zoom, drag, fullscreen, theme and rapid SPA`);
+        errors.push(...observed);
+      } finally {
+        await context.close();
+      }
+    }
+    assert.deepEqual(errors, [], 'validDiagramsNeverShowError: no transient error DOM during load/reload');
+    console.log('PASS validDiagramsNeverShowError: direct/reload, persistent light/dark themes');
+  } finally {
+    await Bun.write(join(artifacts, `${label}-mermaid-errors.json`), JSON.stringify({ errors, states }, null, 2) + '\n');
+  }
 }
 
 // The timeout below observes the plugin's delayed width update; it is not product timing.
@@ -56,7 +317,7 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
   for (const mode of [1, 3, 4, 5]) {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
-    observe(page);
+    await observe(page);
     await page.evaluateOnNewDocument(mode => {
       localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
       localStorage.setItem('vitepress-nolebase-enhanced-readabilities-page-layout-max-width', '10000');
@@ -105,12 +366,16 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
     await page.click('.vp-doc a[href="./client#клиент"]');
     await page.waitForFunction(() => location.pathname.endsWith('/bff/client'));
     await visible('rapid SPA supersedes pending hash');
-    await page.goto(url('modules/2/tracks/bff/contract#как-добавить-процедуру'), { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => !!(document.getElementById('app') as unknown as { __vue_app__?: unknown }).__vue_app__);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.mouse.wheel({ deltaY: 200 });
-    await new Promise(resolve => setTimeout(resolve, 1800));
-    assert(await page.evaluate(() => scrollY < 1000), 'Pending correction must respect intentional reader scroll');
+    for (const input of ['wheel', 'touchstart', 'keydown']) {
+      await page.goto(url('modules/2/tracks/bff/contract#как-добавить-процедуру'), { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => !!(document.getElementById('app') as unknown as { __vue_app__?: unknown }).__vue_app__);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      if (input === 'wheel') await page.mouse.wheel({ deltaY: 200 });
+      else if (input === 'keydown') await page.keyboard.press('ArrowDown');
+      else await page.evaluate(() => window.dispatchEvent(new Event('touchstart', { bubbles: true })));
+      await new Promise(resolve => setTimeout(resolve, 1800));
+      assert(await page.evaluate(() => scrollY < 1000), `Pending correction respects reader ${input}`);
+    }
     await context.close();
     console.log(`PASS hash visibility: direct, immediate breakpoint fragments, SPA, rapid navigation and reader scroll; saved mode ${mode}`);
   }
@@ -120,7 +385,7 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
 async function checkOrdinaryLinks(browser: Browser, url: (path: string) => string) {
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
-  observe(page);
+  await observe(page);
   await page.setCacheEnabled(false);
   const theory = 'modules/2/tracks/offline/theory';
   const target = 'modules/2/tracks/offline/caching-strategies#networkonly';
@@ -130,7 +395,10 @@ async function checkOrdinaryLinks(browser: Browser, url: (path: string) => strin
   const settled = async (path: string) => {
     const expected = [...readFileSync(`site/${path.split('#')[0]}.md`, 'utf8').matchAll(/^```mermaid$/gm)].length;
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
-    await page.waitForFunction(expected => document.querySelectorAll('.mermaid svg').length === expected, {}, expected);
+    if (expected) await page.waitForFunction(() => [...document.querySelectorAll('div.language-mermaid')].every(block => {
+      const rect = block.getBoundingClientRect();
+      return rect.bottom <= 0 || rect.top >= innerHeight || !!block.querySelector('.mermaid svg');
+    }));
     assert.equal(await page.$('.mermaid .error-icon, .mermaid .error-text'), null);
     await delay(1800);
   };
@@ -154,8 +422,10 @@ async function checkOrdinaryLinks(browser: Browser, url: (path: string) => strin
   try {
     for (const viewport of [2560, 390]) for (const dark of [false, true]) {
       await page.setViewport({ width: viewport, height: viewport === 390 ? 844 : 1440 });
+      await page.goto(url(''), { waitUntil: 'networkidle0' });
+      await page.evaluate(dark => localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light'), dark);
       await page.goto(url(theory), { waitUntil: 'networkidle0' });
-      await page.evaluate(value => document.documentElement.classList.toggle('dark', value), dark);
+      assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), dark);
       await settled(theory);
       const name = `${label}-ordinary-links-${viewport}-${dark ? 'dark' : 'light'}`;
       const savedMode = (await geometry()).mode;
@@ -210,7 +480,7 @@ async function checkOrdinaryLinks(browser: Browser, url: (path: string) => strin
 
 async function checkPages(browser: Browser, url: (path: string) => string) {
   const page = await browser.newPage();
-  observe(page);
+  await observe(page);
   const visibleHash = async () => {
     await page.waitForFunction(() => {
       const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
@@ -220,17 +490,25 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
       return top >= Math.max(0, bottom('.VPNav'), bottom('.VPLocalNav')) - 1 && top < innerHeight;
     });
   };
-  for (const width of [1440, 390]) {
+  for (const width of [2560, 390]) {
     await page.setViewport({ width, height: width === 390 ? 844 : 1000 });
     for (const dark of [false, true]) {
+      const context = await browser.createBrowserContext();
+      const page = await context.newPage();
+      await observe(page);
+      await page.setViewport({ width, height: width === 390 ? 844 : 1440 });
+      await page.evaluateOnNewDocument(dark => {
+        if (window !== window.top) return;
+        localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+      }, dark);
       let count = 0;
       for (const file of mermaidFiles()) {
         const path = file.replace(/^site\//, '').replace(/index\.md$/, '').replace(/\.md$/, '');
         const expected = [...readFileSync(file, 'utf8').matchAll(/^```mermaid$/gm)].length;
         await page.goto(url(path), { waitUntil: 'networkidle0' });
-        await page.evaluate(value => document.documentElement.classList.toggle('dark', value), dark);
+        assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), dark);
         await page.waitForFunction(() => document.getAnimations().every(animation => animation.playState !== 'running'));
-        await page.waitForFunction(expected => document.querySelectorAll('.mermaid svg').length === expected, {}, expected);
+        await visitMermaidDiagrams(page, expected);
         assert.equal(await page.$('.mermaid .error-icon, .mermaid .error-text'), null, file);
         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${file} ${width}: overflow`);
         count += expected;
@@ -240,6 +518,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
       }
       assert.equal(count, 44);
       console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 44 source Mermaid blocks rendered, no errors/overflow`);
+      await context.close();
     }
   }
   // Explicit migration map from the approved anchors inventory; every old landing is usable.
@@ -359,7 +638,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
 async function checkHierarchy(browser: Browser, url: (path: string) => string): Promise<void> {
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
-  observe(page);
+  await observe(page);
   const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/csrf/',
     'documentation/csrf/scenarios', 'documentation/csrf/checks', 'documentation/project-context'];
   const links = [routes[0], routes[1], routes[2], routes[3], routes[4], routes[5], routes[6]].map(path => `${SITE_BASE}${path}`);
@@ -504,7 +783,7 @@ async function checkTitle(browser: Browser, url: (path: string) => string): Prom
   for (const mode of [null, 3]) for (const dark of [false, true]) {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
-    observe(page);
+    await observe(page);
     await page.setCacheEnabled(false);
     await page.evaluateOnNewDocument(mode => {
       if (window !== window.top) return;
@@ -614,6 +893,7 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
@@ -633,7 +913,7 @@ try {
       await request.continue();
     })().catch(error => failures.push(`intercept: ${String(error)}`));
   });
-  observe(page);
+  await observe(page);
   const url = (path: string) => `${server.url.origin}${SITE_BASE}${path}`;
   const publishing = 'modules/2/tracks/front-libs/publishing';
   const fullWidth = 'body.VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth';
@@ -748,7 +1028,7 @@ try {
   await context.close();
   const readerContext = await browser.createBrowserContext();
   page = await readerContext.newPage();
-  observe(page);
+  await observe(page);
   await page.setViewport({ width: 1440, height: 1000 });
   await page.goto(url(publishing), { waitUntil: 'networkidle0' });
 
@@ -803,6 +1083,7 @@ try {
   await page.waitForSelector(fullWidth);
   console.log('PASS mobile to desktop: saved width survives; desktop menu can expand again');
   }
+  assert.deepEqual(mermaidErrors.flat(), [], 'No transient Mermaid errors in any observed document');
   assert.equal(failures.length, 0, failures.join('\n'));
   console.log(`PASS ${SITE_BASE}: no acceptance browser/page/request/HTTP errors`);
   if (optionalFaviconFailures.length) console.log('KNOWN unchanged raw diagram favicon noise:', optionalFaviconFailures.join('\n'));

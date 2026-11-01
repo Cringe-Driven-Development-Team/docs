@@ -5,14 +5,13 @@
   line-height: 1.2;
 }
 
-/* Схемы Mermaid (обёртка vitepress-plugin-mermaid): натуральный размер, прокрутка внутри блока. */
-.vp-doc .mermaid {
-  overflow-x: auto;
-  margin: 16px 0;
+/* Renderer вписывает натуральный SVG в интерактивный viewport. */
+.vp-doc .mermaid-container .diagram-wrapper {
+  /* Панель остаётся вне области схемы, чтобы не перекрывать подписи на мобильном экране. */
+  bottom: 76px;
 }
 .vp-doc .mermaid svg {
   display: block;
-  margin: 0 auto;
   max-width: none;
 }
 

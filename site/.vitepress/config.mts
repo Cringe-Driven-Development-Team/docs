@@ -1,6 +1,5 @@
 // Конфиг сайта документации. Спека: docs/superpowers/specs/2026-10-07-vitepress-csrf-docs-design.md §4.
 import { defineConfig } from 'vitepress';
-import { withMermaid } from 'vitepress-plugin-mermaid';
 import { fileURLToPath } from 'node:url';
 import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/node';
 import { SITE_BASE } from './site.ts';
@@ -25,8 +24,7 @@ const documentationSidebar = [
   },
 ];
 
-export default withMermaid(
-  defineConfig({
+export default defineConfig({
     lang: 'ru-RU',
     title: 'Cringe Driven Development',
     description: 'Документация команды: архитектура и безопасность сервиса cellestial.ru',
@@ -38,7 +36,7 @@ export default withMermaid(
     vite: {
       plugins: [groupIconVitePlugin()],
       ssr: { noExternal: ['@tp-prepare/vitepress-module-graph', /^@nolebase\//] },
-      // Mermaid подключается плагином после сканирования Vite: его CommonJS-хелперы нужны до гидратации.
+      // CommonJS-хелперы нужны до гидратации темы.
       optimizeDeps: {
         include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'],
         exclude: [
@@ -53,8 +51,6 @@ export default withMermaid(
         md.use(groupIconMdPlugin);
       },
     },
-    // Сообщения не сжимаются под ширину колонки, длинные переносятся; широкая схема прокручивается.
-    mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {
       nav: [
         { text: 'OpenWiki', link: '/openwiki/', target: '_self', activeMatch: '^/openwiki/' },
@@ -105,5 +101,4 @@ export default withMermaid(
         },
       },
     },
-  }),
-);
+});

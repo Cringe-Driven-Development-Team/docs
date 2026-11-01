@@ -1,7 +1,9 @@
 // Тема по умолчанию; на главной старый якорь индекса схем (#contract) переводит на «Архитектуру».
 // Модули: граф, архив и шапка трека — из пакета @tp-prepare/vitepress-module-graph (шапка — в слоте doc-before).
 import DefaultTheme from 'vitepress/theme';
-import { useRoute } from 'vitepress';
+import { useData, useRoute } from 'vitepress';
+import { createMermaidRenderer } from 'vitepress-mermaid-renderer';
+import 'vitepress-mermaid-renderer/css';
 import type { Theme } from 'vitepress';
 import { defineComponent, h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
@@ -111,6 +113,36 @@ const theme: Theme = {
   },
   setup() {
     const route = useRoute();
+    const { isDark } = useData();
+    const controls = {
+      zoomIn: 'enabled', zoomOut: 'enabled', resetView: 'enabled', toggleFullscreen: 'enabled',
+      copyCode: 'disabled', download: 'disabled', toggleToolbar: 'disabled',
+    } as const;
+    onMounted(() => {
+      const renderer = createMermaidRenderer({
+        static: false, startOnLoad: false, securityLevel: 'strict',
+        theme: isDark.value ? 'dark' : 'default',
+        sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false },
+      });
+      renderer.setToolbar({
+        showLanguageLabel: false, fullscreenMode: 'browser',
+        desktop: controls, mobile: controls, fullscreen: controls,
+        i18n: { tooltips: {
+          zoomIn: 'Увеличить', zoomOut: 'Уменьшить', resetView: 'Сбросить вид', toggleFullscreen: 'На весь экран',
+          renderErrorText: 'Не удалось отрисовать схему',
+          toggleErrorDetailsText: 'Показать подробности', toggleErrorDetailsHideText: 'Скрыть подробности',
+        } },
+      });
+    });
+    watch(isDark, dark => createMermaidRenderer({ theme: dark ? 'dark' : 'default' }));
+    const exitMermaidFullscreen = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && document.fullscreenElement?.matches('.mermaid-container')) {
+        event.preventDefault();
+        void document.exitFullscreen();
+      }
+    };
+    onMounted(() => document.addEventListener('keydown', exitMermaidFullscreen));
+    onBeforeUnmount(() => document.removeEventListener('keydown', exitMermaidFullscreen));
     let cancelScroll = () => {};
     const scroll = () => { cancelScroll(); cancelScroll = scrollToHashAfterMermaid(); };
     onBeforeUnmount(() => cancelScroll());
