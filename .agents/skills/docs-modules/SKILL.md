@@ -7,9 +7,10 @@ description: Правка данных модулей и треков в site/mo
 
 Этот скилл правится в `.agents/skills/docs-modules/`, затем `bun run skills:sync`. Команды ниже — bash (на Windows Git Bash).
 
-Применяй при любой правке `site/modules/**`: frontmatter треков и модулей, `people.yaml`,
-`module-graph.yaml`. Текст страниц, ссылки, подстраницы как документы и переадресации старых адресов —
-скилл `docs-site`.
+Применяй при правке данных в `site/modules/`: frontmatter треков и модулей, `people.yaml`,
+`module-graph.yaml`. Для правки только текста страниц, ссылок и переадресаций старых адресов
+используй `docs-site`. Если меняются и текст, и данные (например, `pages` при добавлении подстраницы),
+применяй оба скилла к соответствующим частям.
 
 Формат задаёт пакет `@tp-prepare/vitepress-module-graph`: описание —
 `node_modules/@tp-prepare/vitepress-module-graph/README.md`, проверки —
