@@ -1,8 +1,11 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Документы трека «BFF» модуля октября: страница трека и шесть подстраниц.
+// Документы трека «BFF» модуля октября: обзор и страницы по задачам читателя.
 export const TRACK = "site/modules/2/tracks/bff.md";
+export const WORKSPACE = "site/modules/2/tracks/bff/workspace.md";
+export const MIGRATION = "site/modules/2/tracks/bff/migration.md";
+export const INFRASTRUCTURE = "site/modules/2/tracks/bff/infrastructure.md";
 export const CONTRACT = "site/modules/2/tracks/bff/contract.md";
 export const AUTH = "site/modules/2/tracks/bff/auth.md";
 export const SERVICE = "site/modules/2/tracks/bff/service.md";
@@ -10,7 +13,7 @@ export const SERVICE = "site/modules/2/tracks/bff/service.md";
 export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
 export const RELEASE = "site/modules/2/tracks/bff/release.md";
 export const ROLLBACK = "site/modules/2/tracks/bff/rollback.md";
-export const BFF_PAGES = [TRACK, CONTRACT, AUTH, BOOTSTRAP, RELEASE, ROLLBACK];
+export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, AUTH, BOOTSTRAP, RELEASE, ROLLBACK];
 export const CSRF_PAGES = ["site/security/csrf/index.md", "site/security/csrf/scenarios.md", "site/security/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
@@ -41,7 +44,7 @@ test("плашек про отвергнутый вариант нет", () => {
 test("в треке есть раздел tRPC и подстраницы", () => {
   const md = readFileSync(TRACK, "utf8");
   expect(md).toContain("## tRPC");
-  expect(md).toContain("pages: [contract, auth, service, bootstrap, release, rollback]");
+  expect(md).toContain("pages: [workspace, contract, auth, service, bootstrap, migration, infrastructure, release, rollback]");
   expect(md).not.toContain('- "tRPC (client)"');
   expect(md).toContain("](./trpc-client)");
   expect(md).toContain('- "tRPC (server)"');
@@ -60,8 +63,8 @@ function subsection(md: string, title: string, level: 3 | 4 = 3): string {
   return next === -1 ? rest : rest.slice(0, next);
 }
 
-test("обзор: клиент вызывает tRPC", () => {
-  const md = readFileSync(TRACK, "utf8");
+test("миграция: клиент вызывает tRPC", () => {
+  const md = readFileSync(MIGRATION, "utf8");
   const before = section(md, "Было и стало");
   expect(before).toContain("/api/trpc/* на bff:3000");
   expect(before).not.toContain("/api/v1/* на bff:3000");
@@ -171,7 +174,7 @@ test("параллельные RPC — один refresh в Go, прежний я
   const toGo = parallel!.body.split("\n").filter((line) => /^\s*\w+-+>>[+-]?A:/.test(line));
   expect(toGo.filter((line) => line.includes("/auth/refresh")).length).toBe(1);
   expect(auth).toContain('<a id="две-вкладки"></a>');
-  expect(readFileSync(TRACK, "utf8")).toContain("](./bff/auth#параллельные-rpc)");
+  expect(readFileSync(MIGRATION, "utf8")).toContain("](./auth#параллельные-rpc)");
   expect(auth).toContain("### Параллельные RPC");
 });
 
@@ -234,8 +237,8 @@ test("openapi-cdd встречается только в одной фразе �
   expect(count(AUTH)).toBe(0);
 });
 
-test("в «Обзоре» есть раздел «Две VPS»", () => {
-  const md = readFileSync(TRACK, "utf8");
+test("инфраструктура: раздел «Две VPS» сохраняет ключ и будущий mTLS", () => {
+  const md = readFileSync(INFRASTRUCTURE, "utf8");
   for (const needle of ["## Две VPS", "X-BFF-Key", "BFF_API_KEY", "mTLS"]) {
     expect(md, needle).toContain(needle);
   }
@@ -403,17 +406,14 @@ test("«Контракт»: схемы Orval — пакет @cdd/schemas для 
   expect(md).not.toContain("resolve: { alias");
 });
 
-test("в треке есть схема монорепы фронта", () => {
-  const md = readFileSync(TRACK, "utf8");
+test("монорепа вынесена вместе со схемой и границами сборки", () => {
+  const md = readFileSync(WORKSPACE, "utf8");
   const part = section(md, "Монорепа фронта");
   expect(part).toContain('<Diagram name="modules/2/frontend-monorepo" />');
-  expect(part).toContain("#как-устроен-контракт");
+  expect(part).toContain("../bff#как-устроен-контракт");
   expect(part).toContain("frontend/issues/44");
-  // порядок разделов: контракт → монорепа → было и стало
-  const at = (title: string) => md.indexOf(`\n## ${title}\n`);
-  expect(at("Как устроен контракт")).toBeGreaterThan(-1);
-  expect(at("Как устроен контракт")).toBeLessThan(at("Монорепа фронта"));
-  expect(at("Монорепа фронта")).toBeLessThan(at("Было и стало"));
+  for (const needle of ["apps/client", "apps/bff", "packages/schemas", "import type", "^build", "вне `bff#build`", "после обеих сборок"]) expect(part, needle).toContain(needle);
+  expect(readFileSync(TRACK, "utf8")).not.toContain('<Diagram name="modules/2/frontend-monorepo" />');
 });
 
 test("tRPC (server) делает Денис, Валентин — сторона Go", () => {
@@ -442,8 +442,8 @@ test("подстраница «Сервис BFF»: ссылки на сосед�
   for (const [link, file, heading] of [
     ["./contract#роутер", CONTRACT, "## Роутер"],
     ["./auth#как-bff-обрабатывает-вызов", AUTH, "## Как BFF обрабатывает вызов"],
-    ["../bff#переключение", TRACK, "## Переключение"],
-    ["../bff#монорепа-фронта", TRACK, "## Монорепа фронта"],
+    ["./migration#переключение", MIGRATION, "## Переключение"],
+    ["./workspace#монорепа-фронта", WORKSPACE, "## Монорепа фронта"],
     ["./contract#ошибки", CONTRACT, "## Ошибки"],
     ["(#переменные-окружения)", SERVICE, "## Переменные окружения"],
     ["(#на-проде)", SERVICE, "## На проде"],
@@ -505,7 +505,7 @@ test("bootstrap: сессия, ошибки, кеширование и выпу�
 
 test("bootstrap: новые ссылки с якорями ведут на существующие заголовки", () => {
   for (const [source, link, target, heading] of [
-    [TRACK, "./bff/bootstrap#выпуск-и-откат", BOOTSTRAP, "## Выпуск и откат"],
+    [WORKSPACE, "./bootstrap#выпуск-и-откат", BOOTSTRAP, "## Выпуск и откат"],
     [CONTRACT, "./bootstrap#контракт", BOOTSTRAP, "## Контракт"],
     [AUTH, "./bootstrap#html-запрос", BOOTSTRAP, "## HTML-запрос"],
     [SERVICE, "./bootstrap#вставка-данных", BOOTSTRAP, "## Вставка данных"],
@@ -536,7 +536,7 @@ test("SameSite explains direct and external navigation", () => {
 });
 
 test("S2S is readable and mTLS is future", () => {
-  const vps = section(readFileSync(TRACK, "utf8"), "Две VPS");
+  const vps = section(readFileSync(INFRASTRUCTURE, "utf8"), "Две VPS");
   for (const title of ["S2S-ключ", "mTLS — следующий этап", "Перенос Go и Postgres"]) expect(vps, title).toContain(`### ${title}`);
   const key = subsection(vps, "S2S-ключ");
   for (const needle of ["Назначение", "Проверка", "раньше Bearer", "ConstantTimeCompare", "403", "s2s_forbidden", "BAD_GATEWAY", "502", "503", "refresh не делает", "сессию не трогает", "Хранение", "Ротация", "старый", "новый"]) expect(key, needle).toContain(needle);
@@ -548,7 +548,7 @@ test("S2S is readable and mTLS is future", () => {
 });
 
 test("MVP release differs from future canary", () => {
-  const track = readFileSync(TRACK, "utf8");
+  const track = readFileSync(MIGRATION, "utf8");
   const release = section(track, "Переключение");
   for (const needle of ["один экземпляр", "короткое окно", "playbook", "Откат", "SESSION_KEY", "прежним", "promote"]) expect(release, needle).toContain(needle);
   expect(release.indexOf("Загрузить ассеты")).toBeLessThan(release.indexOf("образ BFF"));
@@ -563,7 +563,7 @@ test("MVP release differs from future canary", () => {
 });
 
 test("migration arrow label is short", () => {
-  const before = section(readFileSync(TRACK, "utf8"), "Было и стало");
+  const before = section(readFileSync(MIGRATION, "utf8"), "Было и стало");
   const label = before.match(/P -->\|"([^"]+)"\| A/ )?.[1];
   expect(label).toBeDefined();
   expect(label).not.toContain("http://");
@@ -590,4 +590,54 @@ test("текущий BFF отделяет наблюдение прода от �
     expect(link[1]).toMatch(/^[a-f0-9]{40}$/);
   }
   expect(readFileSync(TRACK, "utf8")).toContain("[Как работает сейчас](/documentation/bff)");
+});
+
+
+test("обзор сохраняет переходы с перенесённых якорей на полные разделы", () => {
+  const track = readFileSync(TRACK, "utf8");
+  for (const [page, level, title, id] of [
+    ["workspace", "##", "Монорепа фронта", "монорепа-фронта"],
+    ["migration", "##", "Было и стало", "было-и-стало"],
+    ["migration", "##", "Cookie до и после", "cookie-до-и-после"],
+    ["migration", "##", "Почему BFF", "почему-bff"],
+    ["migration", "##", "Что меняется", "что-меняется"],
+    ["migration", "###", "Фронт", "фронт"],
+    ["migration", "###", "BFF", "bff"],
+    ["migration", "###", "Go API", "go-api"],
+    ["migration", "###", "Infra", "infra"],
+    ["migration", "##", "Переключение", "переключение"],
+    ["migration", "###", "Канарейка — следующий этап", "канареика-—-следующии-этап"],
+    ["infrastructure", "##", "Две VPS", "две-vps"],
+    ["infrastructure", "###", "S2S-ключ", "s2s-ключ"],
+    ["infrastructure", "###", "mTLS — следующий этап", "mtls-—-следующии-этап"],
+    ["infrastructure", "###", "Перенос Go и Postgres", "перенос-go-и-postgres"],
+  ]) {
+    expect(track, id).toContain(`${level} ${title} {#${id}}`);
+    expect(track, id).toContain(`](./bff/${page}#${id})`);
+    expect(readFileSync(`site/modules/2/tracks/bff/${page}.md`, "utf8"), id).toContain(`${level} ${title}\n`);
+  }
+});
+
+test("перенесённые ссылки ведут сразу к владельцу темы и существующему заголовку", () => {
+  for (const [source, link, target, heading] of [
+    [WORKSPACE, "../bff#как-устроен-контракт", TRACK, "## Как устроен контракт"],
+    [MIGRATION, "./contract#клиент", CONTRACT, "## Клиент"],
+    [MIGRATION, "./contract#роутер", CONTRACT, "## Роутер"],
+    [MIGRATION, "./auth#параллельные-rpc", AUTH, "### Параллельные RPC"],
+    [MIGRATION, "./auth#первыи-вход-после-переезда", AUTH, "### Первый вход после переезда"],
+    [AUTH, "./infrastructure#две-vps", INFRASTRUCTURE, "## Две VPS"],
+  ]) {
+    expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
+    expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
+  }
+});
+
+test("миграция сохраняет cookie, исходную схему и границу проверенного", () => {
+  const md = readFileSync(MIGRATION, "utf8");
+  expect(md.split("\n").filter((line) => line.startsWith("## "))).toEqual([
+    "## Было и стало", "## Cookie до и после", "## Почему BFF", "## Что меняется", "## Переключение",
+  ]);
+  const cookies = section(md, "Cookie до и после");
+  for (const needle of ["access_token", "/api/v1", "refresh_token", "/api/v1/auth", "__Host-csrf", "document.cookie", "__Host-Http-session", "Secure", "без `Domain`", "refresh_expires_in"]) expect(cookies, needle).toContain(needle);
+  for (const needle of ["31.10.2026", "остаются планом", "не последствия XSS"]) expect(md, needle).toContain(needle);
 });

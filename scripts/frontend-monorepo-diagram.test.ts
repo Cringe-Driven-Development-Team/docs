@@ -78,3 +78,9 @@ test("frontend-monorepo: packaging consumes both builds outside the workspaces",
   expect(pairs).not.toContain("package-image>bff-build");
   expect(doc.entities.filter((e) => e.containerId === "monorepo" && e.tag === "Group").map((e) => e.id).sort()).toEqual(["ws-bff", "ws-client", "ws-schemas"]);
 });
+
+test("frontend-monorepo: схема сопровождает текст workspace", () => {
+  const workspace = readFileSync("site/modules/2/tracks/bff/workspace.md", "utf8");
+  expect(workspace).toContain('<Diagram name="modules/2/frontend-monorepo" />');
+  for (const needle of ["apps/client", "apps/bff", "packages/schemas", "@trpc/client", "@trpc/server", "Turborepo"]) expect(workspace, needle).toContain(needle);
+});
