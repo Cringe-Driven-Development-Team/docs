@@ -116,6 +116,98 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
   }
 }
 
+// Observe ordinary VitePress links after fonts, Mermaid and saved reading widths settle.
+async function checkOrdinaryLinks(browser: Browser, url: (path: string) => string) {
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
+  observe(page);
+  await page.setCacheEnabled(false);
+  const theory = 'modules/2/tracks/offline/theory';
+  const target = 'modules/2/tracks/offline/caching-strategies#networkonly';
+  const popup = '.VPNolebaseInlinePreviewLinkWrapper, .VPNolebaseInlinePreviewLinkPopupIframe';
+  const states: unknown[] = [];
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const settled = async (path: string) => {
+    const expected = [...readFileSync(`site/${path.split('#')[0]}.md`, 'utf8').matchAll(/^```mermaid$/gm)].length;
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    await page.waitForFunction(expected => document.querySelectorAll('.mermaid svg').length === expected, {}, expected);
+    assert.equal(await page.$('.mermaid .error-icon, .mermaid .error-text'), null);
+    await delay(1800);
+  };
+  const geometry = () => page.evaluate(() => ({
+    y: scrollY, x: scrollX, width: document.documentElement.scrollWidth,
+    height: document.documentElement.scrollHeight,
+    content: document.querySelector('.VPDoc .content-container')!.getBoundingClientRect().width,
+    mode: localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode'),
+    heading: document.getElementById('networkonly')?.getBoundingClientRect().top,
+  }));
+  const visible = async (stage: string) => {
+    const state = await page.evaluate(() => {
+      const rect = document.getElementById('networkonly')!.getBoundingClientRect();
+      const bottom = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().bottom ?? 0;
+      return { top: rect.top, bottom: rect.bottom, header: Math.max(0, bottom('.VPNav'), bottom('.VPLocalNav')), height: innerHeight };
+    });
+    states.push({ stage, ...state, ...await geometry() });
+    assert(state.top >= state.header - 1 && state.top < state.height && state.bottom > state.header,
+      `${stage}: NetworkOnly hidden ${JSON.stringify(state)}`);
+  };
+  try {
+    for (const viewport of [2560, 390]) for (const dark of [false, true]) {
+      await page.setViewport({ width: viewport, height: viewport === 390 ? 844 : 1440 });
+      await page.goto(url(theory), { waitUntil: 'networkidle0' });
+      await page.evaluate(value => document.documentElement.classList.toggle('dark', value), dark);
+      await settled(theory);
+      const name = `${label}-ordinary-links-${viewport}-${dark ? 'dark' : 'light'}`;
+      const savedMode = (await geometry()).mode;
+      for (const hash of ['cacheonly', 'networkonly', 'cachefirst', 'networkfirst', 'stalewhilerevalidate', 'networkonly']) {
+        const selector = `.vp-doc a[href="./caching-strategies#${hash}"]`;
+        await page.$eval(selector, element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+        await delay(300);
+        const before = await geometry();
+        const popupAppeared = page.waitForSelector(popup, { timeout: 1600 }).then(() => true, () => false);
+        const box = await (await page.$(selector))!.boundingBox();
+        assert(box);
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        const previewSeen = await popupAppeared;
+        await page.screenshot({ path: join(artifacts, `${name}-first-hover-${hash}.png`) });
+        await delay(1600);
+        const after = await geometry();
+        states.push({ name, hash, previewSeen, before, after });
+        await page.screenshot({ path: join(artifacts, `${name}-hover-${hash}.png`) });
+        assert.equal(previewSeen, false, `${name} #${hash}: hover must not open a preview popup/iframe`);
+        assert.equal(await page.$(popup), null);
+        assert.deepEqual(after, before, `${name} #${hash}: hover moved the document`);
+      }
+      await page.evaluate(() => { (window as unknown as Record<string, unknown>).__ordinaryLinkSpa = true; });
+      await page.click('.vp-doc a[href="./caching-strategies#networkonly"]');
+      await page.waitForFunction(target => decodeURIComponent(location.href) === decodeURIComponent(target), {}, url(target));
+      for (let sample = 0; sample < 20; sample++) {
+        states.push({ name, stage: 'click trajectory', sample, ...await geometry() });
+        await delay(100);
+      }
+      await settled(target);
+      await visible(`${name} click`);
+      assert.equal(await page.evaluate(() => (window as unknown as Record<string, unknown>).__ordinaryLinkSpa), true, 'Ordinary link uses SPA navigation');
+      assert.equal((await geometry()).mode, savedMode, 'Link preserves reading width');
+      await page.screenshot({ path: join(artifacts, `${name}-target.png`) });
+      const before = await geometry();
+      await delay(1000);
+      assert.deepEqual(await geometry(), before, 'Settled target must remain stable');
+      await page.reload({ waitUntil: 'networkidle0' });
+      await settled(target); await visible(`${name} reload`);
+      await page.goBack({ waitUntil: 'networkidle0' });
+      await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}${theory}`);
+      await settled(theory);
+      assert.equal((await geometry()).mode, savedMode, 'Back preserves reading width');
+      assert.equal(await page.$(popup), null);
+      console.log(`PASS ordinary links ${viewport} ${dark ? 'dark' : 'light'}: repeated hover stable, click/hash/Mermaid, reload/Back and saved width`);
+    }
+  } finally {
+    await Bun.write(join(artifacts, `${label}-ordinary-link-states.json`), JSON.stringify(states, null, 2) + '\n');
+    await context.close();
+  }
+}
+
 async function checkPages(browser: Browser, url: (path: string) => string) {
   const page = await browser.newPage();
   observe(page);
@@ -330,6 +422,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       await openMenu(); await page.keyboard.press('Escape');
       await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
       assert.equal(await page.$eval(menu, el => document.activeElement === el), true, 'Escape restores menu focus');
+      await page.waitForFunction(() => document.querySelector('.VPSidebar')!.getBoundingClientRect().right <= 0);
+      await page.waitForSelector('.VPBackdrop', { hidden: true });
     }
     await page.screenshot({ path: join(artifacts, `${label}-hierarchy-${width}.png`) });
   }
@@ -400,17 +494,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.waitForSelector(result, { visible: true }); await page.click(result);
   await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/csrf/scenarios`);
   await expanded(true); await tree();
-  const preview = '.VPNolebaseInlinePreviewLinkWrapper iframe';
-  await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
-  await page.hover(`.vp-doc a[href="${SITE_BASE}documentation/architecture/"]`);
-  await new Promise(resolve => setTimeout(resolve, 1600));
-  assert.equal(await page.$(preview), null);
-  await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
-  await page.hover(`.vp-doc a[href="${SITE_BASE}documentation/bff"]`);
-  await page.waitForSelector(preview, { visible: true });
-  assert.equal(await page.$eval(preview, el => new URL((el as HTMLIFrameElement).src).pathname), `${SITE_BASE}documentation/bff`);
-  await page.screenshot({ path: join(artifacts, `${label}-hierarchy-preview.png`) });
-  console.log('PASS static OpenWiki navigation, canonical local search and preview rules');
+  console.log('PASS static OpenWiki navigation and canonical local search');
   await context.close();
 }
 
@@ -535,6 +619,7 @@ try {
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('pages')) await checkPages(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('plugins')) {
+  await checkOrdinaryLinks(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   const context = await browser.createBrowserContext();
   let page = await context.newPage();
   const importRequested = page.waitForRequest(request => request.url().includes('/panzoom.es.'), { timeout: 10000 });
@@ -552,11 +637,8 @@ try {
   const url = (path: string) => `${server.url.origin}${SITE_BASE}${path}`;
   const publishing = 'modules/2/tracks/front-libs/publishing';
   const fullWidth = 'body.VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth';
-  const preview = '.VPNolebaseInlinePreviewLinkWrapper iframe';
   const width = () => page.$eval('.VPDoc .content-container', element => element.getBoundingClientRect().width);
   const selectedTab = () => page.$eval('[role=tab][aria-selected=true]', element => element.textContent);
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
   await page.setViewport({ width: 1440, height: 1000 });
   await page.goto(url(publishing), { waitUntil: 'domcontentloaded' });
   await page.waitForSelector(fullWidth);
@@ -689,40 +771,6 @@ try {
   assert(await width() <= 688);
   assert.equal(await page.evaluate(() => (window as unknown as Record<string, unknown>).__readabilitySpaProbe), true);
   console.log('PASS narrow selection persists after reload and ordinary SPA link click');
-
-  await page.goto(url('modules/2/tracks/offline/theory'), { waitUntil: 'networkidle0' });
-  const allowed = '.vp-doc a[href="./architecture"]';
-  await page.hover(allowed);
-  await page.waitForSelector(preview, { visible: true, timeout: 8000 });
-  assert.equal(await page.$eval(preview, element => new URL((element as HTMLIFrameElement).src).pathname), `${SITE_BASE}modules/2/tracks/offline/architecture`);
-  const frame = await (await page.$(preview))!.contentFrame();
-  assert(frame);
-  await frame.waitForSelector('.vp-doc');
-  const nested = await frame.$('.vp-doc p a[href="./theory"]');
-  if (nested) {
-    await nested.hover();
-    await delay(1600);
-    assert.equal(await frame.$(preview), null, 'No recursive preview inside iframe');
-  }
-  await page.mouse.move(0, 0);
-  await page.waitForSelector(preview, { hidden: true, timeout: 8000 });
-  console.log('PASS text hover creates current-base iframe, no recursion, closes on leave');
-
-  // Use real text links for every exclusion; diagram links stay ordinary anchors.
-  for (const [path, selector] of [
-    ['modules/2/tracks/offline/theory', '.vp-doc a.header-anchor'],
-    ['modules/2/tracks/offline/theory', '.vp-doc a[href^="https://"]'],
-    ['documentation/project-context', `.vp-doc a[href="${SITE_BASE}modules/"]`],
-    ['documentation/project-context', `.vp-doc a[href="${SITE_BASE}documentation/architecture/"]`],
-    ['documentation/project-context', '.vp-doc a[href$="openwiki/"]'],
-    ['documentation/architecture/', '.diagram__links a[href$=".html"]'],
-  ]) {
-    await page.goto(url(path!), { waitUntil: 'networkidle0' });
-    await page.hover(selector!);
-    await delay(1600);
-    assert.equal(await page.$(preview), null, `Unexpected preview: ${path} ${selector}`);
-  }
-  console.log('PASS no preview: local hash, external URL, module graph, architecture, OpenWiki, diagram');
 
   await page.setViewport({ width: 390, height: 844 });
   await page.setViewport({ width: 1440, height: 1000 });

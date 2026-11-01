@@ -3,7 +3,7 @@
 import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
-import { defineComponent, h, inject, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
+import { defineComponent, h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
 import { diagramTarget } from '../site.ts';
 import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-graph/theme';
@@ -17,12 +17,7 @@ import {
   type Options as ReadabilitiesOptions,
 } from '@nolebase/vitepress-plugin-enhanced-readabilities/client';
 import { defaultRuLocale } from '@nolebase/vitepress-plugin-enhanced-readabilities/locales';
-import {
-  InjectionKey as PreviewKey, NolebaseInlineLinkPreview, NolebaseInlineLinkPreviewPlugin,
-} from '@nolebase/vitepress-plugin-inline-link-preview/client';
-import { canPreviewDocLink } from '../link-preview';
 import '@nolebase/vitepress-plugin-enhanced-readabilities/client/style.css';
-import '@nolebase/vitepress-plugin-inline-link-preview/client/style.css';
 import 'virtual:group-icons.css';
 import './custom.css';
 
@@ -36,22 +31,6 @@ const readabilities: ReadabilitiesOptions = {
   },
   spotlight: { defaultToggle: false },
 };
-
-const DocLinkPreview = defineComponent({
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    const options = inject(PreviewKey, {});
-    provide(PreviewKey, {
-      ...options,
-      previewLocalHostName: false,
-      // 2.21.1 passes only the host to this callback; keep the full href in this closure.
-      handleShouldPreviewHostNames: () => canPreviewDocLink(String(attrs.href), location.href, import.meta.env.BASE_URL),
-    });
-    return () => attrs.href == null
-      ? h('a', attrs, slots.default?.())
-      : h(NolebaseInlineLinkPreview, { ...attrs, href: String(attrs.href) }, slots);
-  },
-});
 
 const MERMAID_WAIT_MS = 5000;
 const MERMAID_SETTLE_MS = 300;
@@ -128,14 +107,6 @@ const theme: Theme = {
     installModuleGraph(app, data);
     enhanceAppWithTabs(app);
     app.provide(ReadabilitiesKey, readabilities);
-    app.use(NolebaseInlineLinkPreviewPlugin, {
-      locales: { 'ru-RU': { popup: {
-        loading: 'Загрузка…', loadingAriaLabel: 'Загрузка предпросмотра',
-        openInCurrentPage: 'Открыть страницу', openInCurrentPageAriaLabel: 'Открыть страницу',
-        iframeAriaLabel: 'Предпросмотр страницы',
-      } } },
-    });
-    app.component('DocLinkPreview', DocLinkPreview);
     app.component('Diagram', Diagram);
   },
   setup() {
