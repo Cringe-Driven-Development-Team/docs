@@ -130,6 +130,12 @@ Enhanced Readabilities настроен в `site/.vitepress/theme/index.ts`: `La
 - Схема корня (прод) — имя в `ROOT_NAMES` и раздел с `<Diagram>` на `site/documentation/architecture/index.md`
   (тесты `scripts/build-index.test.ts`, `scripts/architecture-page.test.ts`).
 - Mermaid — блок ` ```mermaid `; синтаксис проверяет `bun run mermaid` в сборке.
+  Интерактивный `vitepress-mermaid-renderer` подключён из темы: масштаб, перемещение,
+  сброс и нативный fullscreen; Escape закрывает полноэкранную схему. Исходные fences
+  обрабатывает обычный Markdown VitePress, старый `withMermaid` не подключается.
+  Renderer лениво создаёт схемы вне экрана: для проверки всех блоков прокрути до каждого
+  и дождись SVG. Пустая выборка `.mermaid` при оставшемся исходном коде не означает готовность.
+  Проверяй якорь до тестового обхода схем, иначе сама проверка меняет положение страницы.
 
 ## Ловушки VitePress
 
@@ -219,6 +225,7 @@ Markdown страницы — шаблон Vue. Ошибки ниже видны
 
   | Секция | Что проверяет |
   | --- | --- |
+  | `mermaid` | Краткие ошибки с document-start, обе темы после reload, масштаб/перемещение/сброс, клавиатура и fullscreen |
   | `hierarchy` | Дерево, вложенные маршруты, старые ссылки и поиск |
   | `scroll` | Якоря после отрисовки Mermaid и сохранённые ширины |
   | `pages` | Отображение страниц и Mermaid |
@@ -229,6 +236,12 @@ Markdown страницы — шаблон Vue. Ошибки ниже видны
   полный повторный прогон при каждой правке обычного текста не нужен. `READABILITY_ARTIFACTS_DIR`
   задаёт необязательный каталог результатов. Проверяй собранный HTML: Vite dev использует fallback
   для generated iframe и не заменяет такую проверку.
+- При смене renderer или поведения Mermaid запускай `mermaid pages scroll` после сборки:
+  `mermaid` наблюдает error DOM с начала загрузки, включая краткую ошибку, исчезнувшую
+  к финальному SVG. Чистая console и финальное отсутствие ошибок этого не доказывают.
+  `pages` проходит все исходные блоки, включая lazy-схемы; `scroll` проверяет якоря
+  отдельно от такого обхода. Для reload сохраняй тему через `vitepress-theme-appearance`
+  и проверяй фактический dark/light после загрузки, а не только подпись результата.
 - Для base-зависимых изменений собери и проверь корень и вложенную базу: например,
   `SITE_BASE=/branches/readability/ DIAGRAMS_NATIVE=1 bun run build`, затем
   `SITE_BASE=/branches/readability/ CHROMIUM_PATH='/путь/к/chrome' bun scripts/check-readability.ts hierarchy scroll`.
