@@ -4,6 +4,9 @@ import { withMermaid } from 'vitepress-plugin-mermaid';
 import { fileURLToPath } from 'node:url';
 import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/node';
 import { SITE_BASE } from './site.ts';
+import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
+import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
+import { InlineLinkPreviewElementTransform } from '@nolebase/vitepress-plugin-inline-link-preview/markdown-it';
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
 const modules = readModules(fileURLToPath(new URL('../modules', import.meta.url)));
@@ -19,11 +22,25 @@ export default withMermaid(
     head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }]],
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
     vite: {
-      ssr: { noExternal: ['@tp-prepare/vitepress-module-graph'] },
+      plugins: [groupIconVitePlugin()],
+      ssr: { noExternal: ['@tp-prepare/vitepress-module-graph', /^@nolebase\//] },
       // Mermaid подключается плагином после сканирования Vite: его CommonJS-хелперы нужны до гидратации.
-      optimizeDeps: { include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'] },
+      optimizeDeps: {
+        include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'],
+        exclude: [
+          '@nolebase/vitepress-plugin-enhanced-readabilities/client',
+          '@nolebase/vitepress-plugin-inline-link-preview/client',
+        ],
+      },
     },
-    markdown: { codeCopyButton: { tooltipText: 'Копировать код' } },
+    markdown: {
+      codeCopyButton: { tooltipText: 'Копировать код' },
+      config(md) {
+        md.use(tabsMarkdownPlugin);
+        md.use(groupIconMdPlugin);
+        md.use(InlineLinkPreviewElementTransform, { tag: 'DocLinkPreview' });
+      },
+    },
     // Сообщения не сжимаются под ширину колонки, длинные переносятся; широкая схема прокручивается.
     mermaid: { securityLevel: 'strict', sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false } },
     themeConfig: {

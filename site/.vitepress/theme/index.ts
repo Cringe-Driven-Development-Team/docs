@@ -3,14 +3,50 @@
 import DefaultTheme from 'vitepress/theme';
 import { useRoute } from 'vitepress';
 import type { Theme } from 'vitepress';
-import { h, nextTick, onMounted, watch } from 'vue';
+import { defineComponent, h, inject, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
 import { diagramTarget } from '../site.ts';
 import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-graph/theme';
 import '@tp-prepare/vitepress-module-graph/style.css';
 import { data } from '../../modules/modules.data.ts';
 import Diagram from './Diagram.vue';
+import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client';
+import {
+  InjectionKey as ReadabilitiesKey, LayoutMode,
+  NolebaseEnhancedReadabilitiesMenu, NolebaseEnhancedReadabilitiesScreenMenu,
+  type Options as ReadabilitiesOptions,
+} from '@nolebase/vitepress-plugin-enhanced-readabilities/client';
+import { defaultRuLocale } from '@nolebase/vitepress-plugin-enhanced-readabilities/locales';
+import {
+  InjectionKey as PreviewKey, NolebaseInlineLinkPreview, NolebaseInlineLinkPreviewPlugin,
+} from '@nolebase/vitepress-plugin-inline-link-preview/client';
+import { canPreviewDocLink } from '../link-preview';
+import '@nolebase/vitepress-plugin-enhanced-readabilities/client/style.css';
+import '@nolebase/vitepress-plugin-inline-link-preview/client/style.css';
+import 'virtual:group-icons.css';
 import './custom.css';
+
+const readabilities: ReadabilitiesOptions = {
+  locales: { 'ru-RU': defaultRuLocale },
+  layoutSwitch: { defaultMode: LayoutMode.FullWidth },
+  spotlight: { defaultToggle: false },
+};
+
+const DocLinkPreview = defineComponent({
+  inheritAttrs: false,
+  setup(_, { attrs, slots }) {
+    const options = inject(PreviewKey, {});
+    provide(PreviewKey, {
+      ...options,
+      previewLocalHostName: false,
+      // 2.21.1 passes only the host to this callback; keep the full href in this closure.
+      handleShouldPreviewHostNames: () => canPreviewDocLink(String(attrs.href), location.href, import.meta.env.BASE_URL),
+    });
+    return () => attrs.href == null
+      ? h('a', attrs, slots.default?.())
+      : h(NolebaseInlineLinkPreview, { ...attrs, href: String(attrs.href) }, slots);
+  },
+});
 
 const MERMAID_WAIT_MS = 5000;
 const MERMAID_SETTLE_MS = 300;
@@ -43,9 +79,38 @@ function scrollToHashAfterMermaid(): void {
 
 const theme: Theme = {
   extends: DefaultTheme,
-  Layout: () => h(DefaultTheme.Layout, null, { 'doc-before': trackHeader }),
+  Layout: defineComponent({
+    setup() {
+      const desktop = ref(true);
+      let stop: (() => void) | undefined;
+      onMounted(() => {
+        const query = matchMedia('(min-width: 768px)');
+        const update = () => { desktop.value = query.matches; };
+        update();
+        query.addEventListener('change', update);
+        stop = () => query.removeEventListener('change', update);
+      });
+      onBeforeUnmount(() => stop?.());
+      // 2.21.1 disables desktop controls on mobile; remount restores them without resetting storage.
+      return () => h(DefaultTheme.Layout, null, {
+        'doc-before': trackHeader,
+        'nav-bar-content-after': () => h(NolebaseEnhancedReadabilitiesMenu, { key: desktop.value ? 'desktop' : 'mobile' }),
+        'nav-screen-content-after': () => h(NolebaseEnhancedReadabilitiesScreenMenu, { key: desktop.value ? 'desktop' : 'mobile' }),
+      });
+    },
+  }),
   enhanceApp({ app }) {
     installModuleGraph(app, data);
+    enhanceAppWithTabs(app);
+    app.provide(ReadabilitiesKey, readabilities);
+    app.use(NolebaseInlineLinkPreviewPlugin, {
+      locales: { 'ru-RU': { popup: {
+        loading: 'Загрузка…', loadingAriaLabel: 'Загрузка предпросмотра',
+        openInCurrentPage: 'Открыть страницу', openInCurrentPageAriaLabel: 'Открыть страницу',
+        iframeAriaLabel: 'Предпросмотр страницы',
+      } } },
+    });
+    app.component('DocLinkPreview', DocLinkPreview);
     app.component('Diagram', Diagram);
   },
   setup() {

@@ -98,6 +98,7 @@ function onFullscreenChange(): void {
 onMounted(async () => {
   if (!size.value.rendered || !canvas.value || !frame.value) return;
   const { default: Panzoom } = await import('@panzoom/panzoom');
+  if (!canvas.value || !frame.value) return;
   panzoom = Panzoom(canvas.value, { cursor: 'grab', maxScale: MAX_SCALE, animate: false });
   frame.value.addEventListener('wheel', onWheel, { passive: false });
   observer = new ResizeObserver(([entry]) => {
