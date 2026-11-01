@@ -11,12 +11,12 @@ test("mergeConflicts: VitePress files that already exist in dist", () => {
   ]);
 });
 
-test("protectedFiles: html and png of every diagram, the diagrams index and the old BFF pages", () => {
-  expect(protectedFiles(["contract", "frozen-k3s/ci"])).toEqual([
+test("protectedFiles: diagrams, index and removed-page redirects cannot be overwritten", () => {
+  expect(protectedFiles(["contract", "modules/2/bff-contract"])).toEqual([
     "contract.html",
     "contract.png",
-    "frozen-k3s/ci.html",
-    "frozen-k3s/ci.png",
+    "modules/2/bff-contract.html",
+    "modules/2/bff-contract.png",
     "diagrams/index.html",
     "bff/index.html",
     "bff/contract.html",
@@ -26,5 +26,10 @@ test("protectedFiles: html and png of every diagram, the diagrams index and the 
     "bff/cd.html",
     "bff/infra.html",
     "bff/frontend-monorepo.html",
+    "frozen-k3s/deployment.html",
+    "frozen-k3s/ci.html",
+    "frozen-k3s/cd.html",
+    "frozen-k3s/integrations.html",
+    "frozen-k3s/frontend-monorepo.html",
   ]);
 });

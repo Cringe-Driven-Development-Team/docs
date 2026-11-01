@@ -46,13 +46,6 @@ SHA исходников подтверждает реализацию, а на�
 рендерятся eraser-diagrams. Масштаб — кнопками, Ctrl/⌘ + колесо или щипком;
 схему можно двигать. Ссылка «HTML» открывает её целиком.
 
-Замороженный вариант в меню не показывается, его схемы открываются по прямым адресам:
-
-- k3s: <a href="../frozen-k3s/deployment.html" target="_self">deployment</a>,
-  <a href="../frozen-k3s/ci.html" target="_self">ci</a>, <a href="../frozen-k3s/cd.html" target="_self">cd</a>,
-  <a href="../frozen-k3s/integrations.html" target="_self">integrations</a>,
-  <a href="../frozen-k3s/frontend-monorepo.html" target="_self">frontend-monorepo</a>.
-
 ## deployment
 
 **Где работает сервис и как идёт запрос?** Браузер обращается к Caddy/BFF на gateway,
@@ -80,7 +73,8 @@ static загружает собственную статику в S3.
 Источники: [frontend checks/publish](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/ci.yml#L23-L138),
 [backend jobs и course-sync](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/.github/workflows/ci.yml#L17-L254),
 [npm publishing](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/.github/workflows/release.yml#L33-L90),
-[static Check/Upload](https://github.com/Cringe-Driven-Development-Team/static/blob/a0cea30d81d00f2e7d915b7fa0c92a25851b4e87/.github/workflows/ci.yml#L19-L52).
+[static Check/Upload](https://github.com/Cringe-Driven-Development-Team/static/blob/a0cea30d81d00f2e7d915b7fa0c92a25851b4e87/.github/workflows/ci.yml#L19-L52),
+[Pages: подготовка, экспорт и deploy](https://github.com/Cringe-Driven-Development-Team/docs/blob/8bfd2e2519d6602f44dc88e2576a5e4f3908fca9/.github/workflows/pages.yml#L60-L122).
 
 <Diagram name="ci" />
 
@@ -99,7 +93,8 @@ Infra Pulumi/Ansible управляет ресурсами и конфигура
 Источники: [ручной frontend CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/cd.yml#L3-L114),
 [rollback](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/rollback.yml#L3-L110),
 [backend CD и known_hosts для jump](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/.github/workflows/cd.yml#L14-L81),
-[выбор backend-хоста](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/deploy-backend.yml#L1-L37).
+[выбор backend-хоста](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/deploy-backend.yml#L1-L37),
+[миграции при старте Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/internal/app/app.go#L43-L67).
 
 <Diagram name="cd" />
 
@@ -149,6 +144,10 @@ Docs/Pages экспортирует существующие wiki, генера�
 Источники: [распределение Ansible plays](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/site.yml#L1-L30),
 [auxiliary Compose](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/roles/hooks/templates/compose.yml.j2#L1-L51),
 [backup auxiliary](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/roles/restic_backup/templates/restic-backup.service.j2#L3-L16),
-[включение runtime](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/inventory/group_vars/all/vars.yml#L75).
+[включение runtime](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/inventory/group_vars/all/vars.yml#L75),
+[проект и бакет state](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/pulumi/bootstrap/index.ts#L15-L74),
+[ресурсы и backup bucket](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/pulumi/index.ts#L785-L832),
+[OpenStack runtime adapter](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/internal/runtime/adapters/openstack/provider.go#L38-L100),
+[очередь и Telegram proxy](https://github.com/Cringe-Driven-Development-Team/.github/blob/515352beac1a5a3ae98140121ca40e25f9551707/services/webhook-alerts/README.md#L3-L29).
 
 <Diagram name="infra" />

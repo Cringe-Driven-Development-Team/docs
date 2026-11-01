@@ -66,8 +66,8 @@ test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => 
   }
 });
 
-test("page has no links to the removed bff diagrams, keeps frozen k3s", () => {
+test("page has no links to removed diagram folders", () => {
   const page = readFileSync(PAGE, "utf8");
   expect(page).not.toContain("../bff/");
-  expect(page).toContain("../frozen-k3s/deployment.html");
+  expect(page).not.toContain("../frozen-k3s/");
 });

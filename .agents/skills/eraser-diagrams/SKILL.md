@@ -8,9 +8,8 @@ description: Use when creating or editing diagrams/*.json or diagrams/<folder>/*
 Применяй при любой правке `diagrams/*.json`, `diagrams/<папка>/*.json` и `diagrams/modules/<N>/*.json`.
 Один файл = одна диаграмма = одна страница на GitHub Pages. Схемы не
 сливать. Новые схемы кладутся в корень `diagrams/`, схемы плана модуля — в
-`diagrams/modules/<N>/` (папка в `HIDDEN_FOLDERS`, в «Архитектуру» не попадает). Папка
-`diagrams/frozen-k3s/` заморожена: файлы в ней не
-правятся, для новой архитектуры на их основе заводится новая схема в корне.
+`diagrams/modules/<N>/` (папка в `HIDDEN_FOLDERS`, в «Архитектуру» не попадает). Удалённые варианты не рендерятся; их старые HTML-адреса направляются на текущие
+схемы через `PAGE_REDIRECTS` в `scripts/build-index.ts`.
 
 ## Формат, который принимает CLI 0.1.0
 

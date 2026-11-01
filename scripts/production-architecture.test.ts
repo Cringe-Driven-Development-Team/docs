@@ -67,3 +67,14 @@ test('CD separates manual frontend from automatic backend', () => {
   for (const value of ['digest', 'ассеты', 'существующий выпуск', 'миграции', 'PRODUCTION_ENABLED=true']) expect(text).toContain(value);
   expect(text).not.toMatch(/current\.json|Argo|Coolify/);
 });
+
+
+test('infra backup storage belongs to Selectel, separate from external Telegram', () => {
+  const nodes = indexById(readDiagram('infra'));
+  let zone = nodes['backup-s3']!;
+  while (zone.containerId) zone = nodes[zone.containerId]!;
+  expect(zone.color).toBe('blue');
+  let telegram = nodes['telegram']!;
+  while (telegram.containerId) telegram = nodes[telegram.containerId]!;
+  expect(telegram.color).toBe('green');
+});

@@ -16,7 +16,7 @@ export function indexNames(names: readonly string[]): string[] {
   return names.filter((name) => !HIDDEN_FOLDERS.some((folder) => name.startsWith(`${folder}/`)));
 }
 
-// Имена схем относительно diagrams/, без .json: "ci", "frozen-k3s/ci".
+// Имена схем относительно diagrams/, без .json: "ci", "modules/2/bff-contract".
 export function diagramNames(dir = DIAGRAMS_DIR): string[] {
   return listDiagrams(dir).map((file) => file.slice(dir.length + 1, -".json".length));
 }
@@ -79,6 +79,12 @@ export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
   { file: "bff/cd.html", target: "../cd.html" },
   { file: "bff/infra.html", target: "../infra.html" },
   { file: "bff/frontend-monorepo.html", target: "../modules/2/frontend-monorepo.html" },
+  // Старые k3s-схемы удалены; опубликованные адреса ведут на текущую архитектуру.
+  { file: "frozen-k3s/deployment.html", target: "../deployment.html" },
+  { file: "frozen-k3s/ci.html", target: "../ci.html" },
+  { file: "frozen-k3s/cd.html", target: "../cd.html" },
+  { file: "frozen-k3s/integrations.html", target: "../infra.html" },
+  { file: "frozen-k3s/frontend-monorepo.html", target: "../frontend.html" },
 ];
 
 // Модули переехали с YYYY-MM на номер (спека 2026-10-09-module-number-urls §3): старый адрес каждой
@@ -132,6 +138,6 @@ if (import.meta.main) {
   await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
   console.error(`${INDEX_FILE}: переадресация на architecture/`);
   await writePageRedirects();
-  console.error(`dist/bff/: переадресация ${PAGE_REDIRECTS.length} старых адресов раздела bff/`);
+  console.error(`dist: переадресация ${PAGE_REDIRECTS.length} старых адресов страниц и схем`);
   console.error(`dist/modules/: переадресация ${moduleRedirects("dist").length} старых адресов модулей`);
 }

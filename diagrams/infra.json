@@ -22,9 +22,9 @@
     {"tag":"Icon","id":"hooks","x":1000,"y":1060,"icon":"bell","texts":[{"text":"Hooks · SQLite / outbox"}],"containerId":"aux-services"},
     {"tag":"Icon","id":"proxy","x":1240,"y":1060,"icon":"server","texts":[{"text":"Telegram proxy"}],"containerId":"aux-services"},
     {"tag":"Icon","id":"restic","x":1440,"y":1060,"icon":"database","texts":[{"text":"Restic · auxiliary"}],"containerId":"aux-services"},
-    {"tag":"Group","id":"external","x":0,"y":800,"width":260,"height":480,"isContainer":true,"title":{"text":"Внешние сервисы","icon":"cloud"},"color":"green"},
+    {"tag":"Group","id":"external","x":0,"y":800,"width":260,"height":240,"isContainer":true,"title":{"text":"Внешние сервисы","icon":"cloud"},"color":"green"},
     {"tag":"Icon","id":"telegram","x":80,"y":880,"icon":"telegram","texts":[{"text":"Telegram"}],"containerId":"external"},
-    {"tag":"Icon","id":"backup-s3","x":80,"y":1120,"icon":"database","texts":[{"text":"S3 backup auxiliary"}],"containerId":"external"},
+    {"tag":"Icon","id":"backup-s3","x":1200,"y":760,"icon":"database","texts":[{"text":"S3 backup auxiliary"}],"containerId":"product-project"},
     {"tag":"Textbox","id":"runtime-status","x":920,"y":1360,"width":720,"text":"**RUNTIME_ENABLED=true** · механизм включён. Создание, исполнение и удаление runtime-VPS не проверены. Восстановление продукта из backup не проверено; Restic auxiliary не является backup PostgreSQL."},
     {"tag":"Legend","id":"legend","x":1760,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Рабочее место","color":"#242424"},{"text":"Пайплайн и внешние системы, пунктир","color":"#3a3a3a"},{"text":"Алерты и уведомления, точки","color":"#bd413a"},{"text":"Прочие связи","color":"#1c1c1c"}]}
   ],

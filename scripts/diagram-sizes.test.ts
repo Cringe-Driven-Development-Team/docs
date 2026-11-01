@@ -22,14 +22,14 @@ test("parsePngSize: IHDR width and height; short or non-PNG bytes — undefined"
   expect(parsePngSize(new TextEncoder().encode("not a png at all, just some text"))).toBeUndefined();
 });
 
-test("names: root diagrams plus PNGs of every hidden folder, including modules/2", () => {
+test("names: root and module plans are included, stale legacy PNGs are ignored", () => {
   const dir = mkdtempSync(join(tmpdir(), "sizes-"));
   try {
     for (const file of ["frozen-k3s/ci.png", "modules/2/bff-contract.png", "modules/2/notes.txt"]) {
       mkdirSync(join(dir, file, ".."), { recursive: true });
       writeFileSync(join(dir, file), "");
     }
-    expect(names(dir)).toEqual([...ROOT_NAMES, "frozen-k3s/ci", "modules/2/bff-contract"]);
+    expect(names(dir)).toEqual([...ROOT_NAMES, "modules/2/bff-contract"]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
