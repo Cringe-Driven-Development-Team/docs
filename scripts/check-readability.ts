@@ -516,8 +516,8 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
           await page.screenshot({ path: join(artifacts, `${label}-${path.replaceAll('/', '-')}-${width}-${dark ? 'dark' : 'light'}.png`) });
         }
       }
-      assert.equal(count, 44);
-      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 44 source Mermaid blocks rendered, no errors/overflow`);
+      assert.equal(count, 50);
+      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 50 source Mermaid blocks rendered, no errors/overflow`);
       await context.close();
     }
   }
@@ -641,8 +641,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await observe(page);
   const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/csrf/',
     'documentation/csrf/scenarios', 'documentation/csrf/checks', 'documentation/project-context'];
-  const links = [routes[0], routes[1], routes[2], routes[3], routes[4], routes[5], routes[6]].map(path => `${SITE_BASE}${path}`);
-  const parent = '.VPSidebarItem.collapsible.level-1';
+  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', routes[2], routes[3], routes[4], routes[5], routes[6]].map(path => `${SITE_BASE}${path}`);
+  const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/csrf/"])`;
   const caret = `${parent} > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
   const menu = '.VPLocalNav button.menu';
