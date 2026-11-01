@@ -3,13 +3,23 @@ import { readFileSync } from "node:fs";
 import { diagramNames, indexNames } from "./build-index.ts";
 import config from "../site/.vitepress/config.mts";
 
-const PAGE = "site/architecture/index.md";
+const PAGE = "site/documentation/architecture/index.md";
 const ORDER = ["deployment", "ci", "cd", "frontend", "contract", "infra"];
 
-test("architecture keeps the documentation sidebar", () => {
+test("documentation sidebar is a linked collapsed tree", () => {
   const sidebar = config.themeConfig!.sidebar as Record<string, unknown>;
-  expect(sidebar["/documentation/"]).toBeDefined();
-  expect(sidebar["/architecture/"]).toEqual(sidebar["/documentation/"]);
+  expect(Object.keys(sidebar)).toEqual(['/documentation/', '/modules/']);
+  expect(sidebar['/documentation/']).toEqual([{text: 'Документация', items: [
+    {text: 'Что работает сейчас', link: '/documentation/'},
+    {text: 'BFF: проверенная часть', link: '/documentation/bff'},
+    {text: 'Архитектура', link: '/documentation/architecture/'},
+    {text: 'CSRF: историческая проверка', link: '/documentation/csrf/', collapsed: true, items: [
+      {text: 'Сценарии', link: '/documentation/csrf/scenarios'},
+      {text: 'Проверка и ограничения', link: '/documentation/csrf/checks'},
+    ]},
+    {text: 'Владельцы сведений', link: '/documentation/project-context'},
+  ]}]);
+  expect(config.themeConfig!.nav).toContainEqual({text: 'Документация', link: '/documentation/', activeMatch: '^/documentation/'});
 });
 
 test('production evidence distinguishes configuration from scenarios', () => {
@@ -24,7 +34,7 @@ test('production evidence distinguishes configuration from scenarios', () => {
   expect(intro).toMatch(/Авторизованн[\s\S]*не проверен/);
 });
 
-test("every root diagram is on /architecture/ with a heading and a Diagram", () => {
+test("every root diagram is on /documentation/architecture/ with a heading and a Diagram", () => {
   const page = readFileSync(PAGE, "utf8");
   for (const name of indexNames(diagramNames())) {
     const section = page.split(`{#${name}}`)[1]?.split("\n## ")[0] ?? "";
@@ -36,7 +46,7 @@ test("every root diagram is on /architecture/ with a heading and a Diagram", () 
 
 test("config: three entrances keep architecture in documentation, no branch previews in the nav", () => {
   const config = readFileSync("site/.vitepress/config.mts", "utf8");
-  expect(config).toContain("link: '/architecture/'");
+  expect(config).toContain("link: '/documentation/architecture/'");
   const nav = config.split("nav: [")[1]?.split("],")[0] ?? "";
   expect([...nav.matchAll(/text: '([^']+)'/g)].map(match => match[1])).toEqual([
     "OpenWiki", "Документация", "Модули",
@@ -50,7 +60,7 @@ test("config: three entrances keep architecture in documentation, no branch prev
   expect(home).not.toContain("/diagrams/");
   expect(home).toContain("/documentation/");
   const documentation = readFileSync("site/documentation/index.md", "utf8");
-  for (const link of ["/documentation/bff", "/architecture/", "/security/csrf/", "/project-context", "/modules/"]) {
+  for (const link of ["/documentation/bff", "/documentation/architecture/", "/documentation/csrf/", "/documentation/project-context", "/modules/"]) {
     expect(documentation).toContain(`](${link})`);
   }
   expect(documentation).toContain('href="../openwiki/" target="_self"');
@@ -76,7 +86,7 @@ test("docs tell to add a new root diagram to ROOT_NAMES and to the page", () => 
     const text = readFileSync(file, "utf8");
     expect(text, file).toContain("site/.vitepress/diagram-names.ts");
     expect(text, file).toContain("ROOT_NAMES");
-    expect(text, file).toContain("site/architecture/index.md");
+    expect(text, file).toContain("site/documentation/architecture/index.md");
   }
 });
 
@@ -89,11 +99,9 @@ test("page has no links to removed diagram folders", () => {
 test("current behavior points to documentation and the CSRF sidebar names history", () => {
   const modules = readFileSync("site/modules/index.md", "utf8");
   expect(modules).toContain("](/documentation/)");
-  expect(modules).not.toContain("](/security/csrf/)");
-  const context = readFileSync("site/project-context.md", "utf8");
+  expect(modules).not.toContain("](/documentation/csrf/)");
+  const context = readFileSync("site/documentation/project-context.md", "utf8");
   expect(context).toContain("](/documentation/)");
-  const config = readFileSync("site/.vitepress/config.mts", "utf8");
-  const sidebar = config.split("'/security/csrf/': [")[1]?.split("],")[0] ?? "";
-  expect(sidebar).toContain("text: 'CSRF: история 07.10.2026'");
-  expect(sidebar).toContain("link: '/documentation/bff'");
+  expect(context).toContain('](/documentation/architecture/#contract)');
+  expect(readFileSync(PAGE, 'utf8')).toContain('{#contract}');
 });

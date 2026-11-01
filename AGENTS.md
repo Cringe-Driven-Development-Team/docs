@@ -2,7 +2,7 @@
 
 Документация сервиса Cringe-Driven-Development-Team: архитектурные схемы как код
 (eraser-diagrams JSON → HTML и PNG → GitHub Pages). Обзор, команды и таблица схем — `README.md`.
-Где искать актуальный общепроектный контекст и владельцев сведений — [страница «Контекст проекта»](https://docs.cellestial.ru/project-context).
+Где искать актуальный общепроектный контекст и владельцев сведений — [страница «Контекст проекта»](https://docs.cellestial.ru/documentation/project-context).
 
 ## Проект
 
@@ -38,7 +38,7 @@
   `Cringe-Driven-Development-Team/infra` (`pulumi/`, bootstrap-стек `pulumi/bootstrap/`, `ansible/`).
   Каждую подпись и связь сверяй с исходником, связи не выдумывай.
 - Новая схема — новая строка в таблице README; схема корня — ещё имя в `ROOT_NAMES`
-  (`site/.vitepress/diagram-names.ts`) и раздел с `<Diagram>` на `site/architecture/index.md`
+  (`site/.vitepress/diagram-names.ts`) и раздел с `<Diagram>` на `site/documentation/architecture/index.md`
   (тесты `scripts/build-index.test.ts`, `scripts/architecture-page.test.ts`).
 
 ## Сборка
@@ -52,7 +52,7 @@
   [README](./README.md#работа-в-codex). Оба хука молчат при успехе и без установленного пакета.
   Pre-commit `lefthook` проверяет модули при коммите. Перед коммитом прогони `bun run modules:check` сам.
 - Из git worktree запускай обычный `bun run site`: Docker-обёртка монтирует общий Git-каталог по исходному пути.
-- Сайт — VitePress в `site/` (главная `/`), схемы — страница `/architecture/`. Новая страница — файл в
+- Сайт — VitePress в `site/` (главная `/`), схемы — страница `/documentation/architecture/`. Новая страница — файл в
   `site/` и пункт `sidebar` в `site/.vitepress/config.mts`; утверждения о коде — со ссылкой на файл и строку
   на конкретном SHA.
 - Модули — `site/modules/`: люди в `people.yaml`, настройки графа в `module-graph.yaml`, модуль — каталог с номером (`2`), трек — `tracks/<id>.md`; формат и

@@ -16,9 +16,12 @@ const documentationSidebar = [
     items: [
       { text: 'Что работает сейчас', link: '/documentation/' },
       { text: 'BFF: проверенная часть', link: '/documentation/bff' },
-      { text: 'Архитектура', link: '/architecture/' },
-      { text: 'CSRF: историческая проверка', link: '/security/csrf/' },
-      { text: 'Владельцы сведений', link: '/project-context' },
+      { text: 'Архитектура', link: '/documentation/architecture/' },
+      { text: 'CSRF: историческая проверка', link: '/documentation/csrf/', collapsed: true, items: [
+        { text: 'Сценарии', link: '/documentation/csrf/scenarios' },
+        { text: 'Проверка и ограничения', link: '/documentation/csrf/checks' },
+      ] },
+      { text: 'Владельцы сведений', link: '/documentation/project-context' },
     ],
   },
 ];
@@ -58,27 +61,12 @@ export default withMermaid(
     themeConfig: {
       nav: [
         { text: 'OpenWiki', link: '/openwiki/', target: '_self', activeMatch: '^/openwiki/' },
-        { text: 'Документация', link: '/documentation/', activeMatch: '^/(documentation/|architecture/|project-context|security/)' },
+        { text: 'Документация', link: '/documentation/', activeMatch: '^/documentation/' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
       sidebar: {
         '/documentation/': documentationSidebar,
-        '/architecture/': documentationSidebar,
-        '/project-context': [
-          { text: 'Контекст проекта', items: [{ text: 'Источники и правила', link: '/project-context' }] },
-        ],
         '/modules/': moduleSidebar(modules),
-        '/security/csrf/': [
-          {
-            text: 'CSRF: история 07.10.2026',
-            items: [
-              { text: 'BFF: проверенная часть сейчас', link: '/documentation/bff' },
-              { text: 'Как устроено', link: '/security/csrf/' },
-              { text: 'Сценарии', link: '/security/csrf/scenarios' },
-              { text: 'Проверка и ограничения', link: '/security/csrf/checks' },
-            ],
-          },
-        ],
       },
       socialLinks: [{ icon: 'github', link: 'https://github.com/Cringe-Driven-Development-Team/docs' }],
       outline: { level: [2, 3], label: 'На этой странице' },

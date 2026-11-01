@@ -1,5 +1,5 @@
 // Пишет dist/diagrams/index.html: старый индекс схем переехал на страницу «Архитектура»
-// (site/architecture/), здесь — переадресация старых якорей #<схема> и #<папка>/<схема>.
+// (site/documentation/architecture/), здесь — переадресация старых якорей #<схема> и #<папка>/<схема>.
 // Ещё отдаёт имена схем и размеры PNG сборке сайта.
 // Использование: bun scripts/build-index.ts
 import { existsSync, readdirSync } from "node:fs";
@@ -52,11 +52,11 @@ export function renderRedirect(rootNames: readonly string[]): string {
   <title>Схемы переехали</title>
 </head>
 <body>
-  <p>Схемы переехали на страницу <a href="../architecture/">«Архитектура»</a>.</p>
+  <p>Схемы переехали на страницу <a href="../documentation/architecture/">«Архитектура»</a>.</p>
   <script>
     const diagramTarget = ${String(diagramTarget)};
     const target = diagramTarget(location.hash, ${JSON.stringify(rootNames)}, ${JSON.stringify([...HIDDEN_FOLDERS, ...LEGACY_FOLDERS])});
-    location.replace("../" + (target ?? "architecture/"));
+    location.replace("../" + (target ?? "documentation/architecture/"));
   </script>
 </body>
 </html>
@@ -69,6 +69,11 @@ export const INDEX_FILE = join("dist", "diagrams", "index.html");
 // Старые страницы раздела /bff/ переехали в трек модуля (спека 2026-10-08-bff-into-module §5.4).
 // Цели относительные: так переадресация работает и в превью веток.
 export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
+  { file: "architecture/index.html", target: "../documentation/architecture/" },
+  { file: "project-context.html", target: "documentation/project-context" },
+  { file: "security/csrf/index.html", target: "../../documentation/csrf/" },
+  { file: "security/csrf/scenarios.html", target: "../../documentation/csrf/scenarios" },
+  { file: "security/csrf/checks.html", target: "../../documentation/csrf/checks" },
   { file: "bff/index.html", target: "../modules/2/tracks/bff" },
   { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
   { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
@@ -136,7 +141,7 @@ export async function writePageRedirects(dist = "dist"): Promise<void> {
 
 if (import.meta.main) {
   await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
-  console.error(`${INDEX_FILE}: переадресация на architecture/`);
+  console.error(`${INDEX_FILE}: переадресация на documentation/architecture/`);
   await writePageRedirects();
   console.error(`dist: переадресация ${PAGE_REDIRECTS.length} старых адресов страниц и схем`);
   console.error(`dist/modules/: переадресация ${moduleRedirects("dist").length} старых адресов модулей`);

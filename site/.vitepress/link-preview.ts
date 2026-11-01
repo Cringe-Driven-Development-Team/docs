@@ -10,7 +10,7 @@ export function canPreviewDocLink(href: string, currentHref: string, siteBase: s
     if (normalize(target.pathname) === normalize(current.pathname)) return false;
     const path = target.pathname.slice(base.length).replace(/\/$/, '');
     return !!path && !/\.[^/]+$/.test(path)
-      && !/^(?:openwiki|architecture)(?:\/|$)/.test(path)
+      && !/^(?:openwiki|architecture|documentation\/architecture)(?:\/|$)/.test(path)
       && !/^modules(?:\/\d+)?$/.test(path);
   } catch {
     return false;

@@ -18,10 +18,10 @@ export function diagramTarget(hash: string, rootNames: readonly string[], hidden
   try {
     name = decodeURIComponent(name);
   } catch {
-    return "architecture/";
+    return "documentation/architecture/";
   }
-  if (rootNames.includes(name)) return `architecture/#${name}`;
+  if (rootNames.includes(name)) return `documentation/architecture/#${name}`;
   const slash = name.indexOf("/");
   if (slash > 0 && hiddenFolders.includes(name.slice(0, slash))) return `${name}.html`;
-  return "architecture/";
+  return "documentation/architecture/";
 }

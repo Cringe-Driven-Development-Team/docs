@@ -18,7 +18,7 @@
 без `Accept: text/html` возвращает `404`; это не свидетельство недоступности формы входа.
 Результат согласуется с [маршрутизацией BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/bff/src/app.ts#L34-L55).
 
-Старое описание Double Submit Cookie сохранено по [прежнему адресу CSRF](/security/csrf/)
+Старое описание Double Submit Cookie сохранено по [прежнему адресу CSRF](/documentation/csrf/)
 как история проверки 07.10.2026. Его три cookie и `X-CSRF-Token` не описывают проверенный
 гостевой маршрут BFF.
 
