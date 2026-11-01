@@ -28,3 +28,23 @@ test('infra separates service roles', () => {
   expect(status.text).toContain('RUNTIME_ENABLED=true');
   expect(status.text).toContain('не проверен');
 });
+
+test('browser calls BFF, BFF calls Go', () => {
+  const doc = readDiagram('frontend'), nodes = indexById(doc);
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>bff', 'bff>go-api']));
+  expect(edgePairs(doc)).not.toContain('client>go-api');
+  expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff')?.label).toContain('/api/trpc');
+  expect(doc.connections.find(e => e.from === 'bff' && e.to === 'go-api')?.label).toContain('/api/v1');
+  expect(nodes['bff-plugin']?.containerId).toBe('repo-packages');
+  for (const name of ['@cdd-team/react', '@cdd-team/router', '@cdd-team/zustand']) expect(JSON.stringify(doc)).toContain(name);
+});
+
+test('contract separates tRPC and OpenAPI', () => {
+  const doc = readDiagram('contract');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining([
+    'apidog>orval', 'apidog>oapi-codegen', 'orval>bff-go-client', 'orval>zod-schemas',
+    'client>bff-router', 'bff-router>bff-go-client', 'bff-go-client>go-api',
+  ]));
+  expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff-router')?.label).toBe('/api/trpc');
+  expect(doc.connections.find(e => e.from === 'bff-go-client' && e.to === 'go-api')?.label).toBe('/api/v1');
+});

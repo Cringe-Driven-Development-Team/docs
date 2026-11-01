@@ -43,8 +43,8 @@ SHA исходников подтверждает реализацию, а на�
 :::
 
 ::: warning
-`ci`, `cd`, `frontend` и `contract` ниже ещё показывают историческую модель;
-`deployment` и `infra` обновлены по срезу 01.11.2026.
+`ci` и `cd` ниже ещё показывают историческую модель;
+остальные четыре схемы обновлены по срезу 01.11.2026.
 :::
 
 Схемы хранятся в [`diagrams/`](https://github.com/Cringe-Driven-Development-Team/docs/tree/main/diagrams),
@@ -85,13 +85,35 @@ GitHub-репозитории, CI-пайплайны, проверка Contract 
 
 ## frontend
 
-Историческая модель до BFF: репозиторий клиента, контракт из Apidog, модель релизов.
+**Где менять frontend и его зависимости?** Репозиторий frontend содержит `apps/client`,
+`apps/bff` и `packages/schemas`. Клиент использует командные React/router/zustand.
+Их исходники и Vite BFF HTML plugin принадлежат отдельному репозиторию frontend-packages,
+который публикует npm-пакеты; frontend потребляет версии этих пакетов.
+BFF отдаёт HTML с bootstrap и обслуживает tRPC, ведёт сессию и вызывает Go.
+HTML-шаблон входит в образ BFF, а JS/CSS выпуска загружаются через CDN.
+Это описание реализации; успешные авторизованные сценарии не подтверждены срезом.
+
+Источники: [зависимости клиента и Vite plugin](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/apps/client/package.json#L14-L22),
+[маршруты HTML/tRPC](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/apps/bff/src/app.ts#L20-L55),
+[серверная сессия](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/apps/bff/src/session/session.ts#L18-L36),
+[публикация библиотек](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/.github/workflows/release.yml#L33-L90).
 
 <Diagram name="frontend" />
 
 ## contract
 
-Историческая модель генерации до BFF. Spec-first: контракт в Apidog, кодогенерация бэка и фронта, Contract drift.
+**Какие контракты связывают стороны?** Браузер работает с BFF через tRPC;
+BFF вызывает Go по HTTP-контракту OpenAPI из Apidog. Go использует oapi-codegen,
+а Orval создаёт fetch-client и Zod-схемы для BFF. Эти генераторы читают экспортированный
+snapshot, а не обращаются к Apidog при каждом пользовательском запросе.
+Backend Contract drift заново генерирует контракт и сравнивает его с репозиторием;
+отдельный frontend drift workflow в проверенном срезе отсутствует.
+Генерация, совпадение типов и drift не доказывают выкладку или работу пользовательского сценария.
+
+Источники: [Orval: клиент и Zod](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/orval.config.ts#L3-L23),
+[CSRF и контекст tRPC](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/apps/bff/src/context.ts#L15-L31),
+[вызов Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/apps/bff/src/go/fetch.ts#L8-L24),
+[backend drift](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/.github/workflows/contract-drift.yml#L1-L40).
 
 <Diagram name="contract" />
 
