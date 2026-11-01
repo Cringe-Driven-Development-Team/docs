@@ -63,18 +63,21 @@ SHA исходников подтверждает реализацию, а на�
 
 **Кто что проверяет и публикует?** Frontend CI проверяет код, а main publish с включённым
 флагом создаёт BFF image, S3-ассеты выбранного SHA и запись release-artifacts.
-Backend CI проверяет Go/runtime-agent/kernel images и публикует Go image.
+Backend CI проверяет Go/runtime-agent/kernel images; публикация образов выполняется
+при push/main или `workflow_dispatch` независимо от `PRODUCTION_ENABLED`, который
+ограничивает production deploy.
 Публикация артефактов отделена от production CD. Course-sync копирует main командных
 frontend/backend в учебные репозитории при включённом `COURSE_SYNC_ENABLED`.
-Infra проверяет и применяет Pulumi/Ansible; docs собирает Pages и экспортирует
-существующие wiki. Frontend-packages публикует библиотеки/Vite plugin через npm OIDC,
+В infra общие checks предшествуют двум отдельным путям: preview в PR и apply
+при push/main или ручном запуске на main. Docs собирает Pages и экспортирует существующие wiki. Frontend-packages публикует библиотеки/Vite plugin через npm OIDC,
 static загружает собственную статику в S3.
 
 Источники: [frontend checks/publish](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/ci.yml#L23-L138),
 [backend jobs и course-sync](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/.github/workflows/ci.yml#L17-L254),
 [npm publishing](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/.github/workflows/release.yml#L33-L90),
 [static Check/Upload](https://github.com/Cringe-Driven-Development-Team/static/blob/a0cea30d81d00f2e7d915b7fa0c92a25851b4e87/.github/workflows/ci.yml#L19-L52),
-[Pages: подготовка, экспорт и deploy](https://github.com/Cringe-Driven-Development-Team/docs/blob/8bfd2e2519d6602f44dc88e2576a5e4f3908fca9/.github/workflows/pages.yml#L60-L122).
+[Pages: подготовка, экспорт и deploy](https://github.com/Cringe-Driven-Development-Team/docs/blob/8bfd2e2519d6602f44dc88e2576a5e4f3908fca9/.github/workflows/pages.yml#L60-L122),
+[infra preview/apply](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/.github/workflows/infra.yml#L78-L190).
 
 <Diagram name="ci" />
 

@@ -78,3 +78,20 @@ test('infra backup storage belongs to Selectel, separate from external Telegram'
   while (telegram.containerId) telegram = nodes[telegram.containerId]!;
   expect(telegram.color).toBe('green');
 });
+
+test('CI uses service-specific publish flags and backend event gates', () => {
+  const doc = readDiagram('ci'), nodes = indexById(doc);
+  const status = nodes['ci-scope'];
+  expect(status?.tag).toBe('Textbox');
+  if (status?.tag !== 'Textbox') throw new Error('CI scope must explain publication conditions');
+  expect(status.text).toContain('Frontend main publish: PRODUCTION_ENABLED');
+  expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main / manual');
+});
+
+test('infra preview and apply independently follow checks', () => {
+  const doc = readDiagram('ci');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['infra-checks>infra-preview', 'infra-checks>infra-apply']));
+  expect(edgePairs(doc)).not.toContain('infra-preview>infra-apply');
+  expect(doc.connections.find(e => e.to === 'infra-preview')?.label).toBe('PR');
+  expect(doc.connections.find(e => e.to === 'infra-apply')?.label).toBe('main / manual');
+});

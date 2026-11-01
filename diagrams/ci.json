@@ -10,8 +10,8 @@
     {"tag":"Activity","id":"backend-image","x":1120,"y":260,"width":160,"height":80,"texts":[{"text":"Образ Go"}],"containerId":"be-repo"},
     {"tag":"Activity","id":"backend-course-sync","x":1120,"y":440,"width":160,"height":80,"texts":[{"text":"course-sync · копия main"}],"containerId":"be-repo"},
     {"tag":"Activity","id":"backend-drift","x":800,"y":440,"width":160,"height":80,"texts":[{"text":"Contract drift · schedule / manual"}],"containerId":"be-repo"},
-    {"tag":"Group","id":"infra-repo","x":40,"y":680,"width":620,"height":300,"isContainer":true,"title":{"text":"infra","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
-    {"tag":"Activity","id":"infra-preview","x":80,"y":760,"width":160,"height":80,"texts":[{"text":"Pulumi preview / checks"}],"containerId":"infra-repo"},
+    {"tag":"Group","id":"infra-repo","x":40,"y":680,"width":620,"height":380,"isContainer":true,"title":{"text":"infra","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
+    {"tag":"Activity","id":"infra-checks","x":80,"y":760,"width":160,"height":80,"texts":[{"text":"Checks"}],"containerId":"infra-repo"},
     {"tag":"Activity","id":"infra-apply","x":400,"y":760,"width":160,"height":80,"texts":[{"text":"Pulumi / Ansible apply"}],"containerId":"infra-repo"},
     {"tag":"Group","id":"docs-repo","x":760,"y":680,"width":620,"height":300,"isContainer":true,"title":{"text":"docs","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
     {"tag":"Icon","id":"docs-source","x":800,"y":760,"icon":"book-open","texts":[{"text":"docs/main + существующие wiki"}],"containerId":"docs-repo"},
@@ -29,7 +29,8 @@
     {"tag":"Icon","id":"static-assets","x":1660,"y":960,"icon":"database","texts":[{"text":"Общая статика"}],"containerId":"storage"},
     {"tag":"Group","id":"npm-registry","x":1560,"y":1200,"width":320,"height":300,"isContainer":true,"title":{"text":"npm registry","icon":"cloud"},"color":"green"},
     {"tag":"Icon","id":"npm","x":1660,"y":1280,"icon":"npm","texts":[{"text":"Пакеты библиотеки / Vite"}],"containerId":"npm-registry"},
-    {"tag":"Textbox","id":"ci-scope","x":0,"y":1680,"width":1880,"text":"Main publish: PRODUCTION_ENABLED. Course-sync: COURSE_SYNC_ENABLED. Публикация release-artifacts не выкладывает frontend. Генерация OpenWiki ручная; Pages экспортирует Markdown."},
+    {"tag":"Textbox","id":"ci-scope","x":0,"y":1680,"width":1880,"text":"Frontend main publish: PRODUCTION_ENABLED=true. Backend images: push main / manual. Course-sync: COURSE_SYNC_ENABLED=true. Публикация release-artifacts не выкладывает frontend. Генерация OpenWiki ручная; Pages экспортирует Markdown."},
+    {"tag":"Activity","id":"infra-preview","x":400,"y":940,"width":160,"height":80,"texts":[{"text":"Pulumi preview"}],"containerId":"infra-repo"},
     {"tag":"Legend","id":"legend","x":2020,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Пайплайн и внешние системы, пунктир","color":"#3a3a3a"},{"text":"Прочие связи","color":"#1c1c1c"}]}
   ],
   "connections": [
@@ -39,11 +40,12 @@
     {"tag":"Relationship","from":"frontend-release","to":"release-assets","label":"ассеты SHA","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"backend-ci","to":"backend-image","label":"build / publish"},
     {"tag":"Relationship","from":"backend-ci","to":"backend-course-sync","label":"main · flag"},
-    {"tag":"Relationship","from":"backend-image","to":"go-image","label":"SHA tag","color":"black","lineStyle":"dashed"},
-    {"tag":"Relationship","from":"infra-preview","to":"infra-apply","label":"main"},
+    {"tag":"Relationship","from":"backend-image","to":"go-image","label":"push main / manual","color":"black","lineStyle":"dashed"},
+    {"tag":"Relationship","from":"infra-checks","to":"infra-apply","label":"main / manual"},
     {"tag":"Relationship","from":"docs-source","to":"docs-pages","label":"push / dispatch","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"packages-release","to":"npm","label":"OIDC","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"static-check","to":"static-upload","label":"push main"},
-    {"tag":"Relationship","from":"static-upload","to":"static-assets","label":"upload","color":"black","lineStyle":"dashed"}
+    {"tag":"Relationship","from":"static-upload","to":"static-assets","label":"upload","color":"black","lineStyle":"dashed"},
+    {"tag":"Relationship","from":"infra-checks","to":"infra-preview","label":"PR"}
   ]
 }
