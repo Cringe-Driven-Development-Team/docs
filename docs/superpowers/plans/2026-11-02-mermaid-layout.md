@@ -254,7 +254,7 @@ site/modules/2/tracks/offline/theory.md                        5
 
 ## Завершение выбранного процесса
 
-- [ ] Провести предусмотренное выбранным skill независимое ревью docs и fork diff и исправить findings.
+- [x] Провести предусмотренное выбранным skill независимое ревью docs и fork diff и исправить findings.
   При SDD review каждой задачи обязателен; итоговое ревью его не заменяет.
 - [ ] По `cdd-tasks`/`docs-site` открыть docs PR в main с «Что», «Решения», «Проверка» и
   `https://docs.cellestial.ru/branches/docs-mermaid-layout/modules/2/tracks/offline/caching-strategies#stalewhilerevalidate`.

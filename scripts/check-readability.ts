@@ -87,6 +87,33 @@ async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
   return errors;
 }
 
+async function checkFullscreenUnmount(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    await observe(page);
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
+    const card = await page.waitForSelector('figure[data-diagram-kind="mermaid"]');
+    assert(card);
+    await card.scrollIntoView();
+    await card.waitForSelector('button[aria-label="На весь экран"]');
+    const overflow = await page.evaluate(() => document.body.style.overflow);
+    await card.evaluate(node => {
+      const state = window as unknown as { pendingFullscreenCard: Element; rejectFullscreen: (error: Error) => void };
+      state.pendingFullscreenCard = node;
+      Object.defineProperty(node, 'requestFullscreen', { value: () => new Promise<void>((_, reject) => { state.rejectFullscreen = reject; }) });
+    });
+    await card.$eval('button[aria-label="На весь экран"]', node => (node as HTMLElement).click());
+    await page.$eval('.VPNavBarTitle a', node => (node as HTMLElement).click());
+    await page.waitForFunction(() => !(window as unknown as { pendingFullscreenCard: Element }).pendingFullscreenCard.isConnected);
+    await page.evaluate(() => (window as unknown as { rejectFullscreen: (error: Error) => void }).rejectFullscreen(new TypeError('Fullscreen rejected after navigation')));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+    assert.equal(await page.evaluate(() => document.body.style.overflow), overflow, 'Late fullscreen rejection must not lock scrolling on the destination page');
+    assert.equal(await page.$('.diagram--overlay'), null);
+    console.log('PASS fullscreen unmount: late rejection leaves destination scrolling unlocked');
+  } finally { await context.close(); }
+}
+
 async function checkDiagramFrameInteraction(page: Page, selector: string): Promise<void> {
   const diagram = await page.waitForSelector(selector);
   assert(diagram);
@@ -1204,6 +1231,7 @@ try {
   });
   await observe(page);
   const url = (path: string) => `${server.url.origin}${SITE_BASE}${path}`;
+  await checkFullscreenUnmount(browser, url);
   const publishing = 'modules/2/tracks/front-libs/publishing';
   const fullWidth = 'body.VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth';
   const width = () => page.$eval('.VPDoc .content-container', element => element.getBoundingClientRect().width);

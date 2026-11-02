@@ -72,6 +72,7 @@ async function toggleFullscreen(): Promise<void> {
   if (typeof card.value.requestFullscreen === 'function') {
     try { await card.value.requestFullscreen(); return; } catch { /* Fall back when native fullscreen is unavailable. */ }
   }
+  if (!card.value?.isConnected) return;
   overlay.value = true;
   document.body.style.overflow = 'hidden';
   scheduleFit();
