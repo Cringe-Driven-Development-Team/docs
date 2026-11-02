@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1b229afa737bf76e56dfd609d65f67eecf0568662079271d8c067771efa67ab7",
+  "pageVersion": "sha256:b3e4680961605f0afb4ae5b2e1c11468a0c37f26c39f36c40439f2ab8726c548",
   "claims": [
     {
       "id": "claim_9346bc20c2384b7ea46b21ca5d0bb0c4",
@@ -38,17 +38,27 @@
     },
     {
       "id": "claim_22167a17a1d64055967cdeb95c2ab279",
-      "statement": "Раздел site/security/csrf/ помечен как исторический и не описывает текущую защиту BFF.",
+      "statement": "Раздел site/documentation/csrf/ помечен как исторический и не описывает текущую защиту BFF.",
       "evidence": [
         {
-          "resource": "repo://site/security/csrf/index.md#L1-L5",
-          "version": "repo-lines-v1:sha256:f09cde5383ffdbbf74fc06a2bb509f3809bbc0218657f8f2eef192432860fe63:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIyNzNhMmNhMjdiZGVjZDk5OWQ4YzE1YTEwYWY4YTk4MWFjODJkZTk0YmVlZWEwZjFhZWM1MmNlMzcwZTQyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQwNDI3MzZlMTQwY2Q3NWE4YmYwOWNkOGUwMWRkNTdlNTZiYTc1NDQzOTA4MzI1N2RiZjZmM2UyZmI4MjUwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2YyZTYzNWQ1NmJkZDMyZGVlOGNlMzIwODc1ZGY3YzZmYTA2YjQ4MTA5Yzc0ZTU2NDVlMTQ1MDIyZmE1ZjIyOSJ9"
+          "resource": "repo://site/documentation/csrf/index.md#L1-L5",
+          "version": "repo-lines-v1:sha256:6f24d90be895d453445056fd5987f28fd28fd374f03d5c5bf36412811f509d4b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIyNzNhMmNhMjdiZGVjZDk5OWQ4YzE1YTEwYWY4YTk4MWFjODJkZTk0YmVlZWEwZjFhZWM1MmNlMzcwZTQyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQwNDI3MzZlMTQwY2Q3NWE4YmYwOWNkOGUwMWRkNTdlNTZiYTc1NDQzOTA4MzI1N2RiZjZmM2UyZmI4MjUwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2YyZTYzNWQ1NmJkZDMyZGVlOGNlMzIwODc1ZGY3YzZmYTA2YjQ4MTA5Yzc0ZTU2NDVlMTQ1MDIyZmE1ZjIyOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5688d031a76a4ee2955bde1a16b28c92",
+      "statement": "В архитектурном срезе 01.11.2026 на BFF baf512e9a7bd7e5452554cdc89baa20e24aa7a32 повторно проверены /login 200 и GET users.me: без X-CSRF — 403, с X-CSRF: 1 без сессии — 401; версию BFF установили по revision и digest живого контейнера.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L20-L33",
+          "version": "repo-lines-v1:sha256:97b501f7dcb7faebe59bd1c10218fb6211fcdc19bbd65733205fdbb5ce682559:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMTFiOGZkODNmYjJhOWJkZjU5YWJjNWYxZGJiZmRkMGJhM2QyZDQwOTNmMjg5NjYwOTJmYzA2ZjIxYWRmMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhZGRhMzdlNTg2NGVlZmJjZmUzMmM3YTQ0MWM4ODUxNTdkMDMzNWEwN2IxMzc5ZDA2YTdiNWM0YmEzY2E3MDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlNmYzZDc3ZTI4MGU5MzI0MTM3NTNlNDhlMDhiOWI3NDc5ZWQ1N2IwNDM5NTE4NGJjMDQyM2VhMWNiMjNiMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiZmFhMTc5ODU4MTQ5ZDgzY2MwZjg1OTVmNWZiNjM3ZmI1NWE3N2E5NTUyODY0YzMzYjE3YjdhZDJhZjQ0YTQifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-31T13:49:52.870Z"
+    "at": "2026-11-02T21:45:57.919Z"
   }
 }

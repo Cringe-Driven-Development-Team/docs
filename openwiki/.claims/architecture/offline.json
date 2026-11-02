@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3c8cbefbdea247e79081ae06b4fc833288cb6c777a215e7570a73b411e16ce8f",
+  "claims": [
+    {
+      "id": "claim_e044938ab92a49ecadf7f2b3325270d5",
+      "statement": "Гостевой прогон 02.11.2026 01:46 UTC+3 в чистом Chrome на Ubuntu на SHA HTML e3b327f58f8ef929afe0403ed7c7487abba2c48d подтвердил активный /sw.js scope / с controller, precache только offline.html и манифеста, офлайн-/login без внешних ресурсов при отключении сети страницы и SW и возврат формы кнопкой «Повторить».",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/index.md#L169-L181",
+          "version": "repo-lines-v1:sha256:7e257483685a90c6e69ca22b2b3604b937fc0e2cbc67f5fabd273a73751bd8c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxYmJhYWFjMjFmZTExNGNkNzgzMmYxZWFiYTY0ZjU0OWUyM2M1YzY5NDY5YTgxMTg3YWVjYWRlOTU3YzVkNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhZDhjMGU0ZDYwOTNkNjM1Njk4OTM2NWQ2ZWJmM2ZmNjU4MGE4Y2ZhMDY4MmMyMWQ3ODI2NjljOTkzMmFkNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZGFkMTUxMDJjOGQ0MWRhYWY3ODRlMWVkY2YwODU4YzU0MDRiODYxOThmOTU1ZTM5MThiNTdlYzI1MjJhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ODljZTc2ZTZkNDhjZTdmMTk1Zjk2ODVmYWNiNTI0ZjJiM2I3NjgwYjE1ZDVjOGNlMGUxYTczYzJkYzRiOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_091e09f164c0458ab10a2a506021c921",
+      "statement": "Отдельный прогон 02.11.2026 00:28 UTC+3 на том же SHA подтвердил нативный Install accepted, отдельное окно, standalone и управление SW; это свидетельство Chrome на Ubuntu, не других платформ.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/index.md#L183-L190",
+          "version": "repo-lines-v1:sha256:02a11245e7a62261f23b4d457af8a2244e6e47834527cbe8d39390f0a0a047a6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU3MDBjMDM1MThiY2VmYjNiODUwY2NkMjk1ODNkYzQ2MjUwNGVhM2I2OTFjYTdiOTQ3ZmQyNDBhMTI3NWUyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU3NzdiZjZiODU3MjYyM2U2ZTRkNDllM2VjOGZlOWMzMDljYzMyOGNjOTE2MmQzNGI1N2ZhNjE0YzgyMGMyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ4Y2E0ZTliYjczMzczZWI5NjU1MjNlOGYwODZiZGFkYzliOWE0ZjJiYjNjODE2ZjAxZTkwYWUzMWQ3MGUwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY4YTk2MDQ2NGEzM2JhODUwNTZiZTE1M2Y1MWU5NmE4Yzk4ZDg4ZmU1MjZiYTQ5N2UxOWQ0YjkwNzIyN2NhNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ef0b5e0602e431c9857d09ecf579d00",
+      "statement": "В описанном офлайн-выпуске BFF публично отдаёт SW, offline.html и манифест перед персональным HTML; SW использует NetworkOnly для навигации с подстановкой только при сетевом отказе, а полученный HTTP 503 остаётся серверным ответом.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/index.md#L119-L139",
+          "version": "repo-lines-v1:sha256:1a6cff1ab9a77b93c7fd40ebc7020262e42a46b4b3cd023531359e40670bf2a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMzAxZTM2OTJiZTE0OWMwNzEzOWNkN2RmMzUyZDE2ODA2YjBjZjMwMDI5NWJhNTIxNzFiN2Y0MGI0MmRiNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NDY1M2ZmZDlhNTVjYzhlY2FhZDQyNjM4ZmM3NjZhM2RjMjU2MTM4NDhhNTdmNzQyMGVmNTgzNjQwOGI4Y2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNWE3NDFmMWYzOGY5NTIzOWZmOTM3YWRiNGM5NjViZmYwY2E1ZDQ2OTQyNGE3Y2FhM2MzYTUwNDFkMzIwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTYyYjNkNGYzNzQwNjYxYzFkNzEyOGNjYjk5MGRiMmJlNTEyMTEwYTVmN2IxYzM3MWFkOWQ3NmFkMDFjOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1989102c3ad456c93a26529cb095590",
+      "statement": "SW предварительно сохраняет только неперсональную офлайн-страницу и манифест: персональный HTML, RPC/API и ассеты SPA не сохраняются им; RPC не получает HTML-подстановку, личные данные и очередь действий офлайн недоступны.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/index.md#L129-L139",
+          "version": "repo-lines-v1:sha256:d4d559dac2ae71b127256a84db59ddd10e5f3a8296d4a5052fb737d5b4cc0bb6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNzI3NzJmNDU5OWRiZmIyODU4OWVjYTlhN2Q2MmNiNTAwMDk3YzNkZTMzMmU1NDczNzNlOTg3MzdmMTg1ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NDY1M2ZmZDlhNTVjYzhlY2FhZDQyNjM4ZmM3NjZhM2RjMjU2MTM4NDhhNTdmNzQyMGVmNTgzNjQwOGI4Y2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczYjExYzY3YWY4N2E2YzVlMGZmZjlkYTAwODM3NjBlZmZkNzkwNjcwMWFjZTY4NjdjYzY3Mzg4ZGEyZGU2ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTYyYjNkNGYzNzQwNjYxYzFkNzEyOGNjYjk5MGRiMmJlNTEyMTEwYTVmN2IxYzM3MWFkOWQ3NmFkMDFjOTkifQ"
+        },
+        {
+          "resource": "repo://site/documentation/offline/index.md#L188-L195",
+          "version": "repo-lines-v1:sha256:666b64510f13fc25e8f332ce8e409a1d56dfe0b6f272bb919fb5e78d4852e0aa:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY3Mjg2OWJlN2I0Y2Q0YjNmNWY5NzdjMTdkNTE0ZTZlMGNiZThlYjRmOWZmMWNiZDNjOGRiMjgwN2UxNzFhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JmYmJkOWJlZmU0MTUzNDdlZTBkZGYyZjhiYTAzOWE4ZGRhYzI2NzNkNDBkNGU1ZGU2ODU1ZjY5NjY2OGYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE2ODRlMGE1MzIzYTc1ZmJkYjdjOTc5N2NhZDEwN2JmYmY4NTdlNDNjODU4MmVkZmJmMzM5ZjUwMzJiMDJiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMxZjdiOTYyYmU1Mjc1YTE5MzBkYjk1ZWZmNDVjMjZhNTBlY2UzNjZjY2NlZjM0ZDEzM2UyNjQyZTFlZDMwNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_abdb20f0c0fa4c53a9bd55ed45d0f3bf",
+      "statement": "Каноническое описание различает HTTP-кеш, браузерное хранилище регистрации/кода SW и Cache Storage; Disable cache не удаляет SW или Cache Storage, а Unregister и очистка сохранённых ответов — отдельные операции.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/index.md#L16-L26",
+          "version": "repo-lines-v1:sha256:e75f098c65b99ae4954a54229eeae53ea1fedd48165c52d848d872175713e18e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MDUxNzVhYWMzNmY0ZDlhMmI3ZjE2ZDNjMWEzNzFiMWYwMjEyY2NlYzIzMmZkN2FjMzVmNzAzODZhOWNkODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTU3ODFiNDM3ZTE1OTE4MTJjMWYzYTUwOGE2NWZkZDgxZWM5ODcwNTFkYzg1ZTFhNDYyMTY0OTZmZDc5ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNWE3NDFmMWYzOGY5NTIzOWZmOTM3YWRiNGM5NjViZmYwY2E1ZDQ2OTQyNGE3Y2FhM2MzYTUwNDFkMzIwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTYyYjNkNGYzNzQwNjYxYzFkNzEyOGNjYjk5MGRiMmJlNTEyMTEwYTVmN2IxYzM3MWFkOWQ3NmFkMDFjOTkifQ"
+        },
+        {
+          "resource": "repo://site/documentation/offline/index.md#L55-L61",
+          "version": "repo-lines-v1:sha256:e40aa14c480ec99f333f24bfd3781d6f2285a36fcb525feb658d656fc981684a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJjODFlMDM5MjI2NmQ3NGUxMGFlMWQyNTJlYzUzYmViMzZmM2M3ODc1NDM0Mzg1NmUyMWJmODNiNTY0YjI0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZmOTFjNjE4N2EzNGZmMmMzM2QyNTYxZWQzYWEwNzU5MGQ5NjlhOWFmNzQ4MjM1ODU4OWMxNTZhYTY1MDM4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY1YTc0MWYxZjM4Zjk1MjM5ZmY5MzdhZGI0Yzk2NWJmZjBjYTVkNDY5NDI0YTdjYWEzYzNhNTA0MWQzMjAzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY1NjJiM2Q0ZjM3NDA2NjFjMWQ3MTI4Y2NiOTkwZGIyYmU1MTIxMTBhNWY3YjFjMzcxYWQ5ZDc2YWQwMWM5OSJ9"
+        },
+        {
+          "resource": "repo://site/documentation/offline/index.md#L90-L115",
+          "version": "repo-lines-v1:sha256:5fbea2f360865888644a3ed4fa9725f1737244a8953215116a0e7e50b6b8e66f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZjI5NWNlMGI1NmJiZDNiYWM5NzYxNmVhY2YzZDEzNmI5ZjhhODM1ZjM4NGVjNWUwMzcxYTAxNWVmZjc4MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlOTY2NjVmOWE2MDBiYWJjNTdlMzVkZWZlMjNjN2UyODIwNDEwYTdlNGI0M2Q0YWZkZjNhYjkwZDZmNjlkMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZGFkMTUxMDJjOGQ0MWRhYWY3ODRlMWVkY2YwODU4YzU0MDRiODYxOThmOTU1ZTM5MThiNTdlYzI1MjJhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNWE3NDFmMWYzOGY5NTIzOWZmOTM3YWRiNGM5NjViZmYwY2E1ZDQ2OTQyNGE3Y2FhM2MzYTUwNDFkMzIwMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_013aa282ef9d4cd5a74ed9b53a0deb2f",
+      "statement": "В описании frontend e3b327f58f8ef929afe0403ed7c7487abba2c48d vite-plugin-pwa/workbox-build генерируют SW, virtual:pwa-register создаёт клиентский регистратор с workbox-window; регистрация /sw.js не передаёт настройки Workbox и сама не доказывает успешный precache или управление страницей.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/build-and-registration.md#L151-L176",
+          "version": "repo-lines-v1:sha256:0ab1f0e1abda85db556898f8303ae8d6918134704ac6c6aab658cd2f5d163e6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4Mjc2NjE3ZDYwODE3NGJiZmRjNGViMWI3ZmFlYTkwNDg2MmI4YzhiYzU1MGI1MTQxOTUxYWY5ZTJmNThiNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljYjVlNjZjZTJhMDBlMGMyMjUyMjI4NDZkNTE1ZWZiYmFmYTA4MzFjNDgxY2MzMzQ0ZTQzODI4NzVmMWNhZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwOTMyMGY4MjFlYzcwZDA0OTdmZTMxOTA2MGViMGQ2ZGNjOWZkMDhkMjljN2YyNzYxOTQ4NjRkMGQ4MmY4ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4NmFmZmNhZTg3NjQwM2VmMWM5YThmZjhkMTQxYWQ3ZWMxMmMzYzcyODRjYmQ4YTFmZWI0YzkxNWE2YjUzYjkifQ"
+        },
+        {
+          "resource": "repo://site/documentation/offline/build-and-registration.md#L184-L217",
+          "version": "repo-lines-v1:sha256:1416c64725db7d82a0aceb1f0279c6eb560913497350d046cef72fc5d6897daa:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZTczNDE3NGY1N2YwNWE5ZjY0ZWI3YTkzMWI2YTk1NDYwODQwNjRmZTI0ZTIzM2EzNjUwMjUwOTc4NGI4ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YWQ5MDU3NjU3MjY1NjlhZmQ4NTdmZTk2NDg2YjM3MGQ2NGQzMTE2MzE5ZWNkOTQ1MzYyYmEzZDQzMzZmMmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNWE3NDFmMWYzOGY5NTIzOWZmOTM3YWRiNGM5NjViZmYwY2E1ZDQ2OTQyNGE3Y2FhM2MzYTUwNDFkMzIwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2MzYwMzE0NjU3YWFjN2E3ZjU0ZTJhYWFhZDczZWI5NTU2NDg4ODQ4MjI3MTdiZTljOTkyNGZiZWFjMTRhYWMifQ"
+        },
+        {
+          "resource": "repo://site/documentation/offline/build-and-registration.md#L90-L129",
+          "version": "repo-lines-v1:sha256:8e05f8b8a5d762a71a34aa1e779431811214fce0cc6c0c9eba8545ad44ae1b05:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZTdhZDEwMzc0MzJiMDg0ZWE3MDM2OWEwYjA1ZTViNzcwMDY0YzA0MDg1YzU3NDUyY2Y5MWE3MGFlMTUxYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYzZDIxZWM4YWRlZmYxMDMzZWNmZmM2MDYwMjZkMmQ5MmY1ZTRmNGY4MWE3MmFhNDhhNDQ3NzI1MzZlNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZGFkMTUxMDJjOGQ0MWRhYWY3ODRlMWVkY2YwODU4YzU0MDRiODYxOThmOTU1ZTM5MThiNTdlYzI1MjJhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTYyYjNkNGYzNzQwNjYxYzFkNzEyOGNjYjk5MGRiMmJlNTEyMTEwYTVmN2IxYzM3MWFkOWQ3NmFkMDFjOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3db7f2bff38a4438a60271f846b4b49f",
+      "statement": "Офлайн-прогон не подтверждает авторизованные операции, доступность Go API, обновление между двумя релизами и тост восстановления; первый визит без сети, удаление регистрации/кеша и незавершённая установка SW не гарантируют офлайн-показ.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/offline/index.md#L188-L195",
+          "version": "repo-lines-v1:sha256:666b64510f13fc25e8f332ce8e409a1d56dfe0b6f272bb919fb5e78d4852e0aa:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY3Mjg2OWJlN2I0Y2Q0YjNmNWY5NzdjMTdkNTE0ZTZlMGNiZThlYjRmOWZmMWNiZDNjOGRiMjgwN2UxNzFhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JmYmJkOWJlZmU0MTUzNDdlZTBkZGYyZjhiYTAzOWE4ZGRhYzI2NzNkNDBkNGU1ZGU2ODU1ZjY5NjY2OGYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE2ODRlMGE1MzIzYTc1ZmJkYjdjOTc5N2NhZDEwN2JmYmY4NTdlNDNjODU4MmVkZmJmMzM5ZjUwMzJiMDJiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMxZjdiOTYyYmU1Mjc1YTE5MzBkYjk1ZWZmNDVjMjZhNTBlY2UzNjZjY2NlZjM0ZDEzM2UyNjQyZTFlZDMwNCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-11-02T21:45:57.919Z"
+  }
+}
