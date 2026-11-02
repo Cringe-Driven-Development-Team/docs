@@ -8,6 +8,8 @@
 /* Mermaid строит SVG, общая рамка управляет его натуральным холстом. */
 .diagram[data-diagram-kind="mermaid"] div.language-mermaid { margin: 0; background: transparent; }
 .diagram[data-diagram-kind="mermaid"] .language-mermaid > :is(button.copy, span.lang) { display: none; }
+/* Определённая ширина не даёт max-height сужать высокий SVG через aspect-ratio. */
+.diagram[data-diagram-kind="mermaid"] .diagram__frame { width: 100%; }
 .vp-doc .mermaid svg {
   display: block;
   max-width: none;
@@ -114,6 +116,18 @@
   aspect-ratio: auto !important;
   max-height: none !important;
 }
+
+.diagram-section {
+  margin: 48px 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+/* Базисы и gap дают перенос при1040px ширины статьи без ограничения fixed fullscreen. */
+.diagram-section__layout { display: flex; flex-wrap: wrap; gap: 40px; }
+.diagram-section__text { flex: 1 1 349px; min-width: 0; }
+.diagram-section__diagram { flex: 1.35 1 651px; min-width: 0; }
+.diagram-section__text > :first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.diagram-section__diagram > .diagram { margin: 0; }
 
 /* Простые таблицы переносят текст, длинные значения прокручиваются только внутри таблицы. */
 .vp-doc table {

@@ -18,10 +18,14 @@
 
 «Анонимный» и «подписанный» — виды токена `__Host-csrf`. Под каждой схемой — как сценарий проверен.
 
+<DiagramSection>
+
 ## Первый заход в чистом браузере
 
 У гостя нет cookie. Стартовая проверка сессии — изменяющий запрос, поэтому получает `403`, но
 этот же ответ приносит анонимную `__Host-csrf`: к форме входа токен уже есть.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -36,9 +40,17 @@ sequenceDiagram
   Note over F: refresh не прошёл - гость, показать форму входа
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
 
+</DiagramSection>
+
+<DiagramSection>
+
 ## Регистрация
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -56,12 +68,20 @@ sequenceDiagram
   A-->>B: 200
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Вход
 
 Так же, как регистрация: Double Submit без подписи (пользователя ещё нет), в ответе — новые
 cookie и подписанный токен. Токен, выданный до входа, после входа не действует.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -75,11 +95,19 @@ sequenceDiagram
   B-->>F: 200, пользователь
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome и curl.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Вход с неверным паролем
 
 CSRF-проверка пройдена, отказывает обработчик: `401`, cookie не меняются.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -93,12 +121,20 @@ sequenceDiagram
   B-->>F: 401, сообщение на форме
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 curl.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Перезагрузка страницы со входом
 
 После F5 память фронта пуста, cookie остались. Refresh проверяет подпись токена для владельца
 refresh-сессии и выдаёт новую сессию.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -114,12 +150,20 @@ sequenceDiagram
   A-->>B: 200, пользователь
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Изменяющий запрос
 
 Создание блокнота, добавление и удаление ячеек. Токен тот же, что выдан при входе или последнем
 refresh: обычные запросы его не меняют.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -134,12 +178,20 @@ sequenceDiagram
   B-->>F: 201
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Выход и повторный вход без перезагрузки
 
 Выход стирает access и refresh и ставит новый анонимный токен. Фронт читает cookie перед каждым
 запросом, поэтому следующий вход сразу идёт с новым значением.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -155,12 +207,20 @@ sequenceDiagram
   A-->>B: 200, три новые cookie
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Чужой компьютер
 
 Алиса вышла, Боб вошёл на том же компьютере. Токен Алисы, сохранённый заранее, у Боба не
 проходит: подпись привязана к пользователю.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -177,12 +237,20 @@ sequenceDiagram
   A-->>B: 403 csrf_invalid
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 curl (два пользователя).*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Истёк access посреди работы
 
 Через 15 минут браузер сам удаляет `access_token`. Запрос получает `401`, фронт делает один
 refresh и повторяет запрос со свежим заголовком.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -202,7 +270,13 @@ sequenceDiagram
   A-->>B: 204
 ```
 
+</template>
+
 *Только по коду: `authMiddleware` фронта и `CSRF` бэка.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Атака с чужого сайта
 
@@ -210,6 +284,8 @@ sequenceDiagram
 `X-CSRF-Token`, а `fetch` с ним вызывает preflight, который CORS для чужого `Origin` не
 пропускает. С `SameSite=Lax` браузер и не приложит наши cookie к межсайтовому `POST`, но защита
 на это не рассчитывает.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -226,13 +302,21 @@ sequenceDiagram
   Note over B: основной запрос не отправлен
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 curl: `POST /auth/register` с `Origin: https://evil.example` —
 `403`. Поведение браузера с формой и preflight — по спецификации Fetch.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Токен другого пользователя
 
 Даже если злоумышленник подставит свой подписанный токен и в cookie, и в заголовок запроса
 жертвы, подпись не сойдётся для её `userID`.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -246,12 +330,20 @@ sequenceDiagram
   A-->>B: 403 csrf_invalid
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 curl.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Вход без `__Host-csrf`
 
 Cookie удалили в другой вкладке или в DevTools. Вход получает `403`, но ответ уже принёс новую
 cookie, и фронт один раз повторяет запрос.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -266,7 +358,13 @@ sequenceDiagram
   A-->>B: 200, три cookie
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Сессия есть, `__Host-csrf` нет
 
@@ -274,6 +372,8 @@ sequenceDiagram
 сразу выдаёт подписанный токен, но фронт повторяет только вход и регистрацию: стартовая проверка
 уводит на страницу входа, выход и изменения показывают ошибку. Перезагрузка или повтор действия
 проходит. Задача — [frontend#34](https://github.com/Cringe-Driven-Development-Team/frontend/issues/34).
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -290,7 +390,13 @@ sequenceDiagram
   A-->>B: 204
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 в Chrome.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Две вкладки обновляют сессию одновременно
 
@@ -298,6 +404,8 @@ Refresh удаляет старую сессию, поэтому из двух �
 только первый. Вторая вкладка показывает вход, хотя cookie уже обновлены. Бывает после
 перезапуска браузера с несколькими вкладками или когда access истёк во всех вкладках сразу.
 Задача — [backend#12](https://github.com/Cringe-Driven-Development-Team/backend/issues/12).
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -311,12 +419,20 @@ sequenceDiagram
   Note over T2: страница входа, перезагрузка возвращает пользователя
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 curl: два параллельных refresh — `204` и `401`.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## `http://` вместо `https://`
 
 `__Host-csrf` требует `Secure` и по `http://` не сохранится. Сайт отвечает `308` и переводит на
 `https://`, поэтому до API по `http://` браузер не доходит.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -327,4 +443,8 @@ sequenceDiagram
   B->>S: GET https://cellestial.ru/
 ```
 
+</template>
+
 *Проверено на проде 07.10.2026 curl.*
+
+</DiagramSection>

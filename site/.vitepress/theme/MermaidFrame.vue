@@ -19,7 +19,7 @@ async function rendered(event: Event): Promise<void> {
   if (disposed || current !== revision || !wrapper.isConnected) return;
   const svg = wrapper.querySelector('svg');
   const natural = svg && readMermaidSize(svg);
-  if (!natural) { size.value = null; error.value = 'Не удалось определить размер схемы'; return; }
+  if (!svg || !natural) { size.value = null; error.value = 'Не удалось определить размер схемы'; return; }
   svg.style.width = `${natural.width}px`;
   svg.style.height = `${natural.height}px`;
   size.value = natural;

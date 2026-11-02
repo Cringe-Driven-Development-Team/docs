@@ -58,16 +58,24 @@
 Поэтому к форме входа фронт уже держит токен: стартовая проверка сессии приносит его даже ответом
 `403`.
 
+<DiagramSection>
+
 ## Порядок middleware
+
+<template #diagram>
 
 ```mermaid
 flowchart LR
   ID[RequestID] --> Log[Logging] --> Rec[Recover] --> CORS --> CSRF[CSRF: выдача и Double Submit] --> Auth[Authenticate и подпись] --> Val[Validator] --> H[Обработчик]
 ```
 
+</template>
+
 [`router.go`](https://github.com/Cringe-Driven-Development-Team/backend/blob/409435082509e139417613487c47a91a9ad56f80/internal/app/router.go#L66):
 CSRF стоит раньше обработчика, поэтому отклонённый запрос ничего не меняет. CORS — раньше CSRF:
 ответ `403` тоже несёт CORS-заголовки, и фронт может прочитать его тело.
+
+</DiagramSection>
 
 ## Что проверяется на какой ручке
 

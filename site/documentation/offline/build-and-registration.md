@@ -28,6 +28,8 @@ title: Сборка и регистрация SW
 зависимостей не означает, что эти возможности включены в Cellestial.
 [Модули Workbox](https://developer.chrome.com/docs/workbox/modules/).
 
+<DiagramSection>
+
 ## Прямые и транзитивные зависимости
 
 В [package.json клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/apps/client/package.json#L13-L30)
@@ -41,6 +43,8 @@ title: Сборка и регистрация SW
 Ниже **упрощённый граф npm-зависимостей** для `vite-plugin-pwa@2.0.0` и Workbox `7.4.1`.
 Стрелка означает «зависит от пакета или указанной группы пакетов»; это не порядок выполнения.
 Пакеты без префикса Workbox и часть внутренних связей опущены.
+
+<template #diagram>
 
 ```mermaid
 %% Flowchart: дерево установки пакетов, не состав браузерного бандла.
@@ -66,6 +70,8 @@ flowchart TB
   class windowLibrary page
 ```
 
+</template>
+
 Связи подтверждены [bun.lock выпуска](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/bun.lock#L1184-L1226)
 и метаданными опубликованных пакетов:
 [vite-plugin-pwa](https://registry.npmjs.org/vite-plugin-pwa/2.0.0),
@@ -78,6 +84,8 @@ flowchart TB
 `workbox-build` выполняет сборочную работу; нужные модули Workbox включаются в полученный SW,
 а `workbox-window` — в клиентский JS. Прямая зависимость клиента явно обеспечивает импорт из
 виртуального модуля, не полагаясь на доступность чужих транзитивных пакетов.
+
+</DiagramSection>
 
 ## Что делает vite-plugin-pwa
 
@@ -113,10 +121,14 @@ import { registerSW } from 'virtual:pwa-register';
 [Регистратор плагина](https://github.com/vite-pwa/vite-plugin-pwa/blob/35bfa7df1eeda2f906084833a7ff0f95689f77b3/src/client/build/register.ts#L37-L48),
 [подстановка параметров](https://github.com/vite-pwa/vite-plugin-pwa/blob/35bfa7df1eeda2f906084833a7ff0f95689f77b3/src/modules.ts#L30-L41).
 
+<DiagramSection>
+
 ## Как связаны сборка и регистрация
 
 Один экземпляр плагина подготавливает два результата: скрипт воркера и клиентский регистратор.
 Они знают один публичный адрес `/sw.js`, но выполняются в разных контекстах.
+
+<template #diagram>
 
 ```mermaid
 %% Flowchart: одна конфигурация даёт два результата для разных контекстов.
@@ -134,8 +146,12 @@ flowchart TB
   class workerFile,registrationCode artifact
 ```
 
+</template>
+
 Объект `workbox` при вызове `registerSW` **не передаётся** в браузер. Правила уже находятся
 в коде `/sw.js`. Регистрация только связывает браузер с этим скриптом и его scope.
+
+</DiagramSection>
 
 ## Где настроен SW в Cellestial
 
@@ -163,11 +179,15 @@ flowchart TB
 JS/CSS SPA, поэтому смена его версии не требует перезагрузить редактор. Это описание реализации,
 а не готовый конфиг для копирования в другую архитектуру.
 
+<DiagramSection>
+
 ## Что выполняется в браузере
 
 Код SPA и `workbox-window` приходят с CDN и исполняются в контексте страницы Cellestial.
 Браузер получает **сам SW с origin приложения**, от BFF: `https://cellestial.ru/sw.js`.
 Scope равен `/`; CDN-префикс основного бандла этот адрес не меняет.
+
+<template #diagram>
 
 ```mermaid
 %% Sequence: регистрация и последующий install/precache — отдельные стадии.
@@ -191,6 +211,8 @@ sequenceDiagram
   Browser->>Browser: Активировать SW и получить управление
 ```
 
+</template>
+
 Объект регистрации ещё не доказывает успешного precache и управления текущей страницей.
 Эти факты проверяются отдельно. BFF отдаёт файлы, а регистрацию выполняют код страницы и браузер.
 
@@ -199,3 +221,5 @@ sequenceDiagram
 [инструкции frontend](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/docs/local-development.md#L93-L116).
 Реализованный офлайн-сценарий, проверенные наблюдения и ограничения — в
 [обзоре](/documentation/offline/); исходная учебная задача — в [модуле 2](/modules/2/tracks/offline).
+
+</DiagramSection>

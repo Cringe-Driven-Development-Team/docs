@@ -13,6 +13,7 @@ import '@tp-prepare/vitepress-module-graph/style.css';
 import { data } from '../../modules/modules.data.ts';
 import Diagram from './Diagram.vue';
 import MermaidFrame from './MermaidFrame.vue';
+import DiagramSection from './DiagramSection.vue';
 import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client';
 import {
   InjectionKey as ReadabilitiesKey, LayoutMode,
@@ -112,6 +113,7 @@ const theme: Theme = {
     app.provide(ReadabilitiesKey, readabilities);
     app.component('Diagram', Diagram);
     app.component('MermaidFrame', MermaidFrame);
+    app.component('DiagramSection', DiagramSection);
   },
   setup() {
     const route = useRoute();

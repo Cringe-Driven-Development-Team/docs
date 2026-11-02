@@ -43,7 +43,7 @@ TypeScript, Bun, существующий Puppeteer browser CLI. Node>=22.22, Bu
 - `site/.vitepress/theme/diagram-scale.ts` — существующие функции fit/step/widthChanged плюс тип размеров.
 - `site/.vitepress/theme/MermaidFrame.vue`, `mermaid-size.ts` — SVG lifecycle и натуральная геометрия.
 - `site/.vitepress/mermaid-fence.ts`, `config.mts` — обёртка каждого Mermaid fence, остальные fence delegates прежние.
-- `site/.vitepress/theme/DiagramSection.vue` — явная раскладка двух слотов по container query.
+- `site/.vitepress/theme/DiagramSection.vue` — явная раскладка двух слотов по ширине статьи.
 - `site/.vitepress/theme/index.ts`, `custom.css` — регистрация, static renderer, общие/renderer-specific стили.
 - `scripts/check-readability.ts` — реальные взаимодействия, lifecycle, все страницы/якоря; без второго browser runner.
 - `scripts/mermaid-size.test.ts`, `scripts/mermaid-fence.test.ts` — новые небольшие pure/Markdown проверки.
@@ -210,39 +210,40 @@ site/modules/2/tracks/offline/theory.md                        5
   Авторская запись: block `<DiagramSection>`, Markdown заголовка/текста, block
   `<template #diagram>` с исходным Mermaid fence, закрытие template, пояснение после
   схемы при необходимости, закрытие DiagramSection. Между HTML и Markdown пустые строки.
-- Container `.diagram-section` задаёт inline-size containment; дочерний layout при
-  доступных >=1040px имеет columns `minmax(280px,1fr) minmax(651px,1.35fr)`, gap40px;
-  иначе один столбец. Оба children min-width0. Не вводить viewport-only breakpoint/sticky.
+- Layout `.diagram-section__layout` использует flex-wrap и gap40px; text flex `1 1 349px`,
+  diagram flex `1.35 1 651px`. Сумма bases+gap1040px задаёт переход по ширине статьи;
+  при меньшей ширине оба элемента занимают собственную строку. Оба min-width0.
+  Без CSS containment, viewport-only breakpoint и sticky: fixed fullscreen fallback остаётся у viewport.
 
-- [ ] **1. Browser RED раскладки.** На caching-strategies/StaleWhileRevalidate в FullWidth
+- [x] **1. Browser RED раскладки.** На caching-strategies/StaleWhileRevalidate в FullWidth
   2560px проверить text.right<=diagram.left, общий верх; при frameWidth>=651 scale≈1,
   SVG651×1222 остаётся натуральным независимо от70vh clipping. На390px и сохранённом
   узком режиме3 текст выше схемы, `scrollWidth<=clientWidth+1`. Без DiagramSection
   двух колонок нет. До правок сохранить source blocks, текстовые heading IDs/links по базе
-  в ignored `.superpowers/mermaid-layout/` для последующего сравнения, без постоянных frozen hashes.
+  в ignored `.superpowers/sdd/2026-11-02-mermaid-layout/` для последующего сравнения, без постоянных frozen hashes.
 
-- [ ] **2. Добавить компонент и разметить14 страниц.** Зарегистрировать `DiagramSection`,
-  реализовать два слота/container query. Каждую из50 схем включить в явную пару с её
+- [x] **2. Добавить компонент и разметить14 страниц.** Зарегистрировать `DiagramSection`,
+  реализовать два слота/flex-wrap. Каждую из50 схем включить в явную пару с её
   пояснениями. В theory включить относящийся к схеме текст после SVG в default slot;
   в migration две отдельные пары под одним исходным heading, не дублировать заголовок.
   Сохранить literal Mermaid, формулировки, ссылки, frontmatter, levels/ID и исторические баннеры.
   Финальный следующий раздел расположен ниже всей пары. Непарный fence из Task3 продолжает работать.
 
-- [ ] **3. Актуализировать авторскую инструкцию.** Прочитать `superpowers:writing-skills`
+- [x] **3. Актуализировать авторскую инструкцию.** Прочитать `superpowers:writing-skills`
   перед правкой docs-site, выполнить его проверку на сценарии автора пары. README и guide:
   explicit slot пример, static SVG/shared Panzoom, wheel/keyboard, fit70vh/fullscreen,
   lazy ожидание и актуальные DOM/browser selectors. `bun run skills:sync`; установленную
   `/home/oleg/.codex/skills/docs-site/SKILL.md` обновить с сохранением параллельных изменений.
   Не править AGENTS/CLAUDE и не генерировать OpenWiki.
 
-- [ ] **4. Приёмка содержимого и якорей.** Сравнение с baseline подтверждает все50 исходников
+- [x] **4. Приёмка содержимого и якорей.** Сравнение с baseline подтверждает все50 исходников
   и ID/links. `pages` получает пути через `mermaidFiles()` и ожидает ровно50 SVG после lazy visit,
   без raw Mermaid pre/errors/overflow. Прямой hash, reload, SPA/Back и hash ниже высокой пары
   проверять ДО lazy traversal, обе темы, fresh/сохранённые режимы; действия читателя отменяют
   автокоррекцию. При регрессии scroll hook сначала записать отдельный RED/координаты/тайминг,
   затем минимально исправить `scrollToHashAfterMermaid`, иначе оставить его как есть.
 
-- [ ] **5. Итоговые root/nested проверки и commit.** Выполнить typecheck/test/modules:check,
+- [x] **5. Итоговые root/nested проверки и commit.** Выполнить typecheck/test/modules:check,
   root build с `CHROMIUM_PATH=/opt/google/chrome/chrome DIAGRAMS_NATIVE=1 bun run build`,
   затем `CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts mermaid pages scroll plugins hierarchy`.
   Повторить соответствующую nested сборку и CLI с `SITE_BASE=/branches/docs-mermaid-layout/`.
@@ -270,4 +271,4 @@ site/modules/2/tracks/offline/theory.md                        5
 2026-11-02: требования спеки распределены по Task1–4; пять Review Focus имеют regression
 assertions в соответствующих задачах. Проверены совпадение имени/detail события между
 репозиториями, DiagramSize/slots/selectors между задачами, все14 путей и сумма50 fences.
-Независимая реализация и проверки продукта ещё не начаты; следующий шаг — выбор исполнения владельцем.
+На момент самопроверки реализация ещё не началась. Затем владелец выбрал executing-plans; ход исполнения — в журнале плана.

@@ -126,6 +126,10 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   await page.keyboard.press('ArrowDown');
   await settle();
   assert.notEqual(await transform(), beforeKey, 'ArrowDown pans the focused diagram');
+  const remaining = await frame.evaluate(node => Math.max(0, node.querySelector('.diagram__canvas')!.getBoundingClientRect().bottom - node.getBoundingClientRect().bottom));
+  for (let distance = 0; distance < remaining; distance += 40) await page.keyboard.press('ArrowDown');
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert(await frame.evaluate(node => node.querySelector('.diagram__canvas')!.getBoundingClientRect().bottom <= node.getBoundingClientRect().bottom + 1), 'Keyboard reaches the bottom of a clipped diagram');
   assert(Math.abs(await page.evaluate(() => scrollY) - keyScroll) <= 1, 'Arrow pan does not scroll the page');
   await page.keyboard.press('Tab');
   assert(await frame.evaluate(node => document.activeElement !== node), 'Tab leaves the canvas');
@@ -179,6 +183,11 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     const state = await page.evaluate(() => ({ y: scrollY, overflow: document.body.style.overflow, settings: { ...localStorage } }));
     await page.keyboard.press('Space');
     await page.waitForFunction(() => !!document.fullscreenElement || !!document.querySelector('.diagram--overlay'));
+    await page.waitForFunction(node => {
+      const frame = node.querySelector<HTMLElement>('.diagram__frame')!;
+      const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!;
+      return Math.abs(new DOMMatrix(getComputedStyle(canvas).transform).a - Math.min(1, frame.clientWidth / canvas.offsetWidth, frame.clientHeight / canvas.offsetHeight)) < .01;
+    }, {}, diagram);
     const fullscreenGeometry: { x: number; y: number; width: number; height: number; viewportWidth: number; viewportHeight: number } = await diagram.evaluate(node => {
       const box = node.getBoundingClientRect();
       return { x: box.x, y: box.y, width: box.width, height: box.height, viewportWidth: innerWidth, viewportHeight: innerHeight };
@@ -667,7 +676,99 @@ async function checkOrdinaryLinks(browser: Browser, url: (path: string) => strin
   }
 }
 
+async function checkDiagramPairs(browser: Browser, url: (path: string) => string): Promise<void> {
+  for (const [width, mode] of [[2560, null], [390, null], [2560, 3]] as const) for (const dark of [false, true]) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage();
+      await observe(page);
+      await page.setViewport({ width, height: width === 390 ? 844 : 1440 });
+      await page.evaluateOnNewDocument(({ mode, dark }) => {
+        localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+        if (mode !== null) localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
+      }, { mode, dark });
+      await page.goto(url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'), { waitUntil: 'networkidle0' });
+      const section = await page.$('.diagram-section:has(#stalewhilerevalidate)');
+      assert(section, 'Each explicit prose/diagram pair needs a DiagramSection');
+      await page.waitForFunction(() => {
+        const top = document.getElementById('stalewhilerevalidate')!.getBoundingClientRect().top;
+        const nav = document.querySelector('.VPNav')!.getBoundingClientRect().bottom;
+        return top >= nav - 1 && top < innerHeight;
+      });
+      await section.scrollIntoView();
+      await section.waitForSelector('svg');
+      await page.waitForFunction(node => !!(node.querySelector('.diagram__canvas') as HTMLElement)?.style.transform, {}, section);
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const state = await section.evaluate(node => {
+        const text = node.querySelector('.diagram-section__text')!.getBoundingClientRect();
+        const drawing = node.querySelector('.diagram-section__diagram')!.getBoundingClientRect();
+        const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!;
+        const frame = node.querySelector<HTMLElement>('.diagram__frame')!;
+        const svg = node.querySelector('svg')!;
+        const viewBox = svg.getAttribute('viewBox')!.trim().split(/[\s,]+/).map(Number);
+        return { width: node.clientWidth, text: text.toJSON(), drawing: drawing.toJSON(), naturalWidth: viewBox[2]!, naturalHeight: viewBox[3]!,
+          canvasWidth: canvas.offsetWidth, canvasHeight: canvas.offsetHeight, frameWidth: frame.clientWidth,
+          scale: new DOMMatrix(getComputedStyle(canvas).transform).a, shownHeight: svg.getBoundingClientRect().height };
+      });
+      await Bun.write(join(artifacts, `${label}-pair-${width}-${mode ?? 'fresh'}-${dark ? 'dark' : 'light'}.json`), JSON.stringify(state, null, 2));
+      await page.screenshot({ path: join(artifacts, `${label}-pair-${width}-${mode ?? 'fresh'}-${dark ? 'dark' : 'light'}.png`) });
+      if (width === 2560 && mode === null) {
+        assert(state.width >= 1040 && state.text.right <= state.drawing.left && Math.abs(state.text.top - state.drawing.top) <= 1, 'Wide article places text left and diagram right');
+        assert(state.frameWidth >= state.naturalWidth, `Wide sequence has room for its natural width: ${JSON.stringify(state)}`);
+        assert(Math.abs(state.scale - 1) < .01, 'Tall sequence stays at natural scale regardless of frame height');
+      } else {
+        assert(state.width < 1040 && state.drawing.top >= state.text.bottom, 'Phone and saved narrow article stack the pair');
+      }
+      assert(Math.abs(state.canvasWidth - state.naturalWidth) <= 1 && Math.abs(state.canvasHeight - state.naturalHeight) <= 1);
+      assert(Math.abs(state.shownHeight - state.naturalHeight * state.scale) <= 1, 'SVG is not independently shrunk inside the canvas');
+      assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Pair does not widen the document');
+      await page.screenshot({ path: join(artifacts, `${label}-pair-${width}-${mode ?? 'fresh'}-${dark ? 'dark' : 'light'}.png`) });
+      if (width === 2560 && mode === null && !dark) {
+        await page.setViewport({ width: 2560, height: 900 });
+        await checkDiagramFrameInteraction(page, '.diagram-section:has(#stalewhilerevalidate) .diagram');
+        const card = await section.$('.diagram');
+        assert(card);
+        const full = await card.$('button[aria-label="На весь экран"]');
+        await full!.evaluate(node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+        await full!.click();
+        await page.waitForFunction(node => {
+          const frame = node.querySelector<HTMLElement>('.diagram__frame')!;
+          const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!;
+          const actual = new DOMMatrix(getComputedStyle(canvas).transform).a;
+          return !!document.fullscreenElement && actual < 1 && Math.abs(actual - frame.clientHeight / canvas.offsetHeight) < .01;
+        }, {}, card);
+        const view = await card.$eval('.diagram__canvas', node => getComputedStyle(node).transform);
+        for (let change = 0; change < 2; change++) {
+          const fill = await card.$eval('svg .actor', node => getComputedStyle(node).fill);
+          await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+          await page.waitForFunction((node, fill) => {
+            const actor = node.querySelector('svg .actor');
+            const rendered = actor?.closest<HTMLElement>('.mermaid');
+            return actor && getComputedStyle(actor).fill !== fill && rendered?.style.opacity === '1' && !rendered.classList.contains('mermaid-rendering');
+          }, {}, card, fill);
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          assert.equal(await card.$eval('.diagram__canvas', node => getComputedStyle(node).transform), view, 'Tall fullscreen sequence keeps its view across theme changes');
+        }
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.fullscreenElement);
+        await page.goto(url('modules/2/tracks/offline/theory'), { waitUntil: 'networkidle0' });
+        assert.match(await page.$eval('.diagram-section:has(#service-worker) .diagram-section__text', node => node.textContent || ''), /Для SW нужен безопасный контекст/);
+        await page.goto(url('modules/2/tracks/bff/migration'), { waitUntil: 'networkidle0' });
+        await visitMermaidDiagrams(page, 2);
+        assert.equal(await page.$$eval('#было-и-стало', nodes => nodes.length), 1, 'Common heading is not duplicated');
+        const text = await page.$$eval('.diagram-section__text', nodes => nodes.map(node => node.textContent));
+        assert.equal(text.length, 2);
+        assert.match(text[0] || '', /Сейчас токены/);
+        assert.match(text[1] || '', /После переезда/);
+        assert(await page.evaluate(() => document.getElementById('cookie-до-и-после')!.getBoundingClientRect().top >= Math.max(...[...document.querySelectorAll('.diagram-section')].map(node => node.getBoundingClientRect().bottom))));
+      }
+      console.log(`PASS explicit pairs ${width} ${mode ?? 'fresh'} ${dark ? 'dark' : 'light'}: layout and natural geometry`);
+    } finally { await context.close(); }
+  }
+}
+
 async function checkPages(browser: Browser, url: (path: string) => string) {
+  await checkDiagramPairs(browser, url);
   const page = await browser.newPage();
   await observe(page);
   const visibleHash = async () => {
