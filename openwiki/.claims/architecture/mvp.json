@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8ec2ace64f51803a66025ec237c94e61187981579d538ab69ae92c8f006efc30",
+  "pageVersion": "sha256:fee44d029eff0eacb13e0750ed092a46c033ec7c9d08a6e1f31d45787c61fe73",
   "claims": [
     {
       "id": "claim_a60c9e95d5cd4932be3ffbe810e713d6",
@@ -9,16 +9,6 @@
         {
           "resource": "repo://site/documentation/bff.md#L3-L19",
           "version": "repo-lines-v1:sha256:a5194cb8057f0779db70fa06073932870093860734507d3951b54efba8dec818:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2E2M2FmMzg1NjFkZTg0OGYwMmYwZGExNzkwOTVkMTU3OWY1ZmYzZjE0YmUwOWQ5OTY2MThmMWM2MzA1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ODlhOGE5NWRhYTYzOTgwZDNjYzU1YTcwZDQ3YThlMzk2NGEzYTU2MTlmMGNjNTYwZjI2YjFiNWM0YmJhMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNGFmMzBmZDllZDcxZmUwNmFiZjRmMDBjZjQ2MGIzOTMwNjI1YTVkN2Y1YjUzNWUwZmUxYTAzZmM4NzgyNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZTg0YmJkMDE1YmZhODM0NzFlMzYxYzhkZDNkMmM5YjQwZmVjZTZmY2RlMmYzZDY1OWQ1YmIyMmJjMGJlNDkifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_ac707a783d0943d5acb5d41db975e565",
-      "statement": "В момент проверки GitHub Deployments сообщает success для frontend dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64, backend 23d3dd9e955424a7634fb0dc49a38af6eb08792c и infra 14653763279dab055e3cea47a84a0c531bccf03f; эти SHA взяты из источника выкладки и не измеряют версию процесса.",
-      "evidence": [
-        {
-          "resource": "repo://site/documentation/bff.md#L25-L36",
-          "version": "repo-lines-v1:sha256:8ded0d55c8e561102b8775dd6dccbcfe3639c02bb972215bdac11a9345160b7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzZhY2FiYWQ5ZTdiYmYzMmU2MmY4MWNhZDI3NDA0ZjIyZDgwZjUyMTM0MzA3YWE3ZjM0NzllY2FkOTRmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YTQxMzRjYzhlN2VkODczNDU3ODIyYjBkOTA0YWRkZTFiNThhNDJmYWIzODdjZTdhOWNkZWVkOGExMDNhYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NmI1YmIzNzZjMzgxZjExMGZjYjgxZjdlNjYyZjVlNWFhMzZhZWRjNjBkODlmMjExMzliYTUxN2VlNmU4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMWQxNzAyZGNlMzczMTZiN2I4MDU3MjUzNTNmODA2Y2VlNGNhZDc5N2JmOTI1OGU2Mjg5NzRmNDYxYzhmYTcifQ"
         }
       ]
     },
@@ -33,18 +23,62 @@
       ]
     },
     {
-      "id": "claim_59e097e2e8c14c168b4b52b3558b4067",
-      "statement": "Страница архитектуры исключает deployment, cd, frontend и contract из текущей модели продового маршрута, а ci и infra целиком не сверены в проверке 31.10.2026.",
+      "id": "claim_47a9cc3524a443549f3fc71ccb528674",
+      "statement": "Срез 01.11.2026 фиксирует Caddy/BFF на gateway, Go/PostgreSQL 18/Redis 8 на VPS2 без host-портов БД и Redis и отдельные служебные интеграции на auxiliary; HTTP/SSH подтверждают healthy, pg_isready, Redis ping, Go /health 200 с gateway и гостевые ответы 200/403/401.",
       "evidence": [
         {
-          "resource": "repo://site/architecture/index.md#L7-L16",
-          "version": "repo-lines-v1:sha256:81c15c50a0fc97303ac64c0d590a112214017baba4eeb5c395ca458564a0767f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMjI0MzA3M2Q4ZmZkZDFkMTk1ZTNiN2JjYmU4NDhkZGU5YzNjMTczOTlmYzJlM2NiZmNjZjkwYjJhZGEyOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MDQyNzM2ZTE0MGNkNzVhOGJmMDljZDhlMDFkZDU3ZTU2YmE3NTQ0MzkwODMyNTdkYmY2ZjNlMmZiODI1MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NWU3YTg1MDQ5ZGRiM2ExYzNkYmUxMzUzYTYzZWYzYzFmNDU5YzExZWIwNWFkM2Y1MTViYzk3MjIzM2NkYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyYTY0YWQwZWNjOTc1MGEzMjlmMjM2M2NmZWRiMzViNjFlMTE2NzAzNDM4MWUxNDQxODA5NzU0Y2FkZmZiOWIifQ"
+          "resource": "repo://site/documentation/architecture/index.md#L7-L23",
+          "version": "repo-lines-v1:sha256:0bbe1841bf5bb9d6b1690b837e62dc90b467bed654d4e4717004ccc12e5b15eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhN2ZmNzQ0OWM2ZTQ2YjExYzNiMGEwOTZlZDA1Y2IwZjhjODhkNTI0NTVhNmI0MjA5ZDIzNGZhNzAyYjkyNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NzJkY2M4NGRjMWZjYTg4NzUwN2M3NmNiN2JmMjk1MzI3OGU5YWZmZWU2NWMxYzI5ZGU1NmMzMjBmYTM2NzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYjY2YTMzZWFkMDc0NmU3NTg3YmU5NTNiNzkxMTU5OTA0OTc0MjM0ZmM4N2MwNmEwNDNhNjE5OTM5N2QzMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1ZTI1OTA5ZTY3OTc3ZGQwYzA1M2ZhYjE4ZmY0ZDY1YjY2NWQxMDQ3MWE1OTRmMzBhZjZhNmMyYmRjYmQ3NjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e37dd4f470994aabba04aee749cac042",
+      "statement": "В свидетельстве 01.11.2026 версия живого BFF baf512e9a7bd7e5452554cdc89baa20e24aa7a32 установлена по revision/digest контейнера, а Go 6e1a0d81bc284e87aa4a9561d7b65eee835a26c3 — по выкладке, образу sha-6e1a0d8, healthy и HTTP 200 по SSH; это не проверка более свежего main.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L25-L42",
+          "version": "repo-lines-v1:sha256:7fd07a684ea166495f21dc927db465158cdf2057e22d39d43ee16b243a120359:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZGZjMTllMGQ5MmE3ZWVmMjc1ZTI1Y2JhNjA3ZjNiODA1M2VmMzU3YWM3Mjg1OWZjYTU0YjVhYThlM2RmYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NzhkOGEwM2E5ZjMzYjYzMzU3MWI3NTc0MDM1MjA0YmMxNzA0NTlkNjliOGI0ZDEyM2QzNzYyNjYxZTdhOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ODg0YzI0MjIzNWUzMDQwZTg5YWU3OTAyNWQ0NzgxYmM2MThkNzk3NWI3MzczZjljMmNiYTJkMjA2OGUyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZTViZmQxZjg3MTJiNDM4MzIyN2ZkOWQ2NzRjMTQzYzEwOGIxNmEzNGM1MDA3NjA4YmI1ZWM1NTlhNzhiODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f961b53f0b8341acaa5ad184318fbf65",
+      "statement": "По каноническому описанию браузер вызывает BFF через tRPC, BFF вызывает Go по HTTP OpenAPI snapshot из Apidog; oapi-codegen и Orval генерируют код из snapshot, backend drift сравнивает результат, отдельного frontend drift workflow в срезе нет.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L140-L153",
+          "version": "repo-lines-v1:sha256:98b5c7bbe2a21d2777047bf1898a6b390857621e72cd145d98cc9b3b38ba47ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMWE5Mjc0ZTY2ZmQ3YmY1NGE2MTFjNGQzYTVmYzViNzdkNDQyOTViNjI2MDhjZmU4YzEwMGNlZTZhYjdiMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNjNlOTU5YWM2ZTQ3NGY2OTg1MTJmZmExYmRiOTFhZGE3NjkwMDZhNDRhYWUxODU2MjBjYjAwMjAzODcwY2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDg1NDU3Y2MzYjJlZDA0MDNlNzkzODAxOTM5NjYxMjdiZTU3ODA1NzBkYjRkM2Q0YTI5Mzg5YmEyNzY4NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3OTU4YzFlNjBhYmY2NjVhNTc5ODA4ODEwZjgzYzE1M2IxOTUxMWVjOGYzOTViZDMxMmRhODdhZDZkODhmM2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_45741ff1feff4ac7a0f9c6be21f8fddd",
+      "statement": "Каноническая архитектура отделяет публикацию артефактов от production CD: frontend выкладывает выбранный выпуск вручную и откатывается без пересборки; backend CD после main CI при PRODUCTION_ENABLED обновляет Go на VPS2 через gateway, Go запускает миграции, откат BFF не откатывает БД.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L81-L119",
+          "version": "repo-lines-v1:sha256:394cacac64bab367d678d0873cb99dc74731d3ba345afe2ed88ff584b5aed145:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MDZmOTBmZDMwMmUzYTk1ZmY2MDU1YmE2YTkwMzhhYmY3NjNkYTk5NzUzNDg3YmJiNTk5ZmY0NGMxOGEyMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMDE2YWM2MDlhMjAzYzlkMzNkMWM2OTY3ODA0YWFmOGRlZjgwNjIyOTFiMjQ4ZTEwY2JkZDJiNjliZDQxMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlNTRmZjk1MDZhNjNjZTFhMDZhZmUzNDQ3NTc2M2YzNDEwYzJkNDY2MWVmM2MxZWUwY2M1OWQxNzBlMjQ1MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NzViOTFhYzZiNDVmZGQyNzk1MWEwMGNjOWY1NWNhMGY0YTA0YWY1OWI0NmRkMjJlMmIzNWRiNGFiM2Y4MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6fa44dfbac22450a84d828d1707b765a",
+      "statement": "Согласно архитектурному документу Pulumi управляет облачными ресурсами и отдельным проектом state, Ansible — серверами и Compose, auxiliary использует hooks SQLite/outbox, Telegram proxy и Restic; backup auxiliary не доказывает backup PostgreSQL, а runtime-VPS и восстановление продукта не испытаны срезом 01.11.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L157-L173",
+          "version": "repo-lines-v1:sha256:97f1ad7fd9777f8d089cf3957435321e3249463b9f75c6d1c446cdec0bcff226:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NWQ2ZmU1NzdlNzU3NTZkNzQxODg5YTA0NGVlOGJkMjI1OTkwNWJjMzkwMGFmY2I3ZjJhMjM0M2MzMDhlNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1Y2E5NzYzMjFhMmNhMjFmMGU4MmFmZTJlYzFkNzBlZTU5ZjcyZjg4OTc4OTUxMGRiZDQ1MDNlOTg1YWI5NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3OTU4YzFlNjBhYmY2NjVhNTc5ODA4ODEwZjgzYzE1M2IxOTUxMWVjOGYzOTViZDMxMmRhODdhZDZkODhmM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZjY0YzY0ZTQ4YTE1OTE3MjhlMmEzMzFmMzJmNzI3M2M5ZDJmMDk3ZDdiMmRkZGQxNzdjYjczNjNlY2U4NjgifQ"
+        },
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L36-L42",
+          "version": "repo-lines-v1:sha256:067d91767f8add88c5d28f2626c1f5ae84e89b35572462b2b3588a257788110a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY5Yzk1OTNiYTM3M2UxNjU0MWNjNWU4YTU1NjUwZTIzODQwMGY4ZjRhZjljNDc2MWI2YzcxZjQ0MDI4NDY5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk3OGQ4YTAzYTlmMzNiNjMzNTcxYjc1NzQwMzUyMDRiYzE3MDQ1OWQ2OWI4YjRkMTIzZDM3NjI2NjFlN2E4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM4NDlmYjI4N2RjODJhMDg0NTFmNTUxMjJmYTkyNzFiMTgzZjM0Zjg3MWQ3YmE2OGY3OTlkMTVkMGZmYmY1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBlNWJmZDFmODcxMmI0MzgzMjI3ZmQ5ZDY3NGMxNDNjMTA4YjE2YTM0YzUwMDc2MDhiYjVlYzU1OWE3OGI4MiJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-31T13:49:52.870Z"
+    "at": "2026-11-02T21:45:57.919Z"
   }
 }
