@@ -18,11 +18,15 @@ title: Сценарии авторизации BFF
 
 Участники: `F` — код фронта, `B` — браузер, `P` — BFF, `A` — Go API.
 
+<DiagramSection>
+
 ### Вход
 
 Фронт шлёт логин с заголовком `X-CSRF: 1`. BFF проверяет заголовок и `Origin`, вызывает Go и
 получает токены в JSON. Токены остаются в BFF: браузеру уходят `User` и новая cookie, а три старые
 cookie стираются.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -40,12 +44,20 @@ sequenceDiagram
   B-->>F: 200 User
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ### Запрос данных
 
 BFF расшифровывает cookie и подставляет access токен как `Authorization: Bearer`. Фронт про токены
 ничего не знает.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -62,12 +74,20 @@ sequenceDiagram
   B-->>F: 200
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ### Access истёк
 
 Если до `accessExp` меньше 30 с, BFF обновляет токены сам, а потом выполняет исходный запрос.
 Фронт делает один запрос и не замечает refresh; новая cookie приходит с обычным ответом.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -86,9 +106,15 @@ sequenceDiagram
   B-->>F: 200
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
 
 <a id="две-вкладки"></a>
+
+</DiagramSection>
+
+<DiagramSection>
 
 ### Параллельные RPC
 
@@ -96,6 +122,8 @@ sequenceDiagram
 у которой access почти истёк. Go получает один вызов refresh, а оба RPC используют новую пару.
 После refresh вызовы данных в Go независимы: они могут выполняться параллельно и завершаться
 в любом порядке.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -121,7 +149,13 @@ sequenceDiagram
   Note over P: успешный результат хранится ещё 10 с
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ### Выход
 
@@ -133,6 +167,8 @@ sequenceDiagram
 и отвечает успехом. Даже если Go вернул `401` (токен уже недействителен), клиент получает успех: сессии
 больше нет в любом случае. Без cookie сессии Go не вызывается, а ответ тот же; три старые cookie
 стираются всегда.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -158,13 +194,21 @@ sequenceDiagram
   B-->>F: успех
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ### Сессия кончилась
 
 Refresh-токен отозван или не принят Go. Go отвечает `401`, BFF стирает cookie и отвечает
 `UNAUTHORIZED`; фронт показывает форму входа. Если refresh просто истёк, браузер уже удалил
 cookie (`Max-Age` = `refresh_expires_in`), и `authedProcedure` отвечает `UNAUTHORIZED`, не обращаясь в Go.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -183,13 +227,21 @@ sequenceDiagram
   Note over F: гость - показать форму входа
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
+
+</DiagramSection>
+
+<DiagramSection>
 
 ### Первый вход после переезда
 
 У пользователя в браузере старые cookie `access_token`, `refresh_token` и `__Host-csrf`, а новой
 `__Host-Http-session` нет. HTML содержит `user: null` без вызова Go; клиент показывает форму входа.
 Пользователь входит заново, и ответ входа ставит новую cookie и стирает три старые.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -207,4 +259,8 @@ sequenceDiagram
   Note over P,B: тот же ответ стирает access_token, refresh_token и __Host-csrf
 ```
 
+</template>
+
 *Проект: проверить после внедрения.*
+
+</DiagramSection>

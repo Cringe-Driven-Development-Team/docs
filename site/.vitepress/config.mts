@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/node';
 import { SITE_BASE } from './site.ts';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
+import { mermaidFence } from './mermaid-fence.ts';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
@@ -52,6 +53,7 @@ export default defineConfig({
       config(md) {
         md.use(tabsMarkdownPlugin);
         md.use(groupIconMdPlugin);
+        md.use(mermaidFence);
       },
     },
     themeConfig: {

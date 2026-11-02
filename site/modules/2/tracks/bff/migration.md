@@ -6,9 +6,13 @@ title: Миграция на BFF
 Гостевой HTML и отказы tRPC частично проверены 31.10.2026 — [BFF сейчас](/documentation/bff).
 Вход, refresh и операции с данными остаются планом до проверки; канарейка — следующий этап.
 
+<DiagramSection>
+
 ## Было и стало
 
 Сейчас токены кладёт в cookie сам Go API, а браузер получает их напрямую:
+
+<template #diagram>
 
 ```mermaid
 flowchart LR
@@ -16,7 +20,15 @@ flowchart LR
     C -->|"/api/v1/*"| A["Go API"]
 ```
 
+</template>
+
+</DiagramSection>
+
+<DiagramSection>
+
 После переезда между Caddy и Go появляется BFF:
+
+<template #diagram>
 
 ```mermaid
 flowchart LR
@@ -28,12 +40,16 @@ flowchart LR
     P -->|"GO_API_URL; Authorization: Bearer"| A["Go API"]
 ```
 
+</template>
+
 Клиент вызывает процедуры tRPC на `/api/trpc`, данные те же; BFF ходит в Go по `GO_API_URL`
 (на одной VPS — `http://api:8080/api/v1`) с `Authorization: Bearer`. До infra PR #71
 маршрутизация была такой:
 [`Caddyfile.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/caddy/templates/Caddyfile.j2#L7)
 (`reverse_proxy api:8080`); на одной VPS `api` не публикует порты и виден только из сети `app` — см.
 [`compose.yml.j2`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/ansible/roles/app/templates/compose.yml.j2#L18).
+
+</DiagramSection>
 
 ## Cookie до и после
 

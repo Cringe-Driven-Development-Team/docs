@@ -5,11 +5,15 @@ title: Инфраструктура BFF
 Целевая инфраструктура двух VPS. Перенос Go/Postgres, S2S и следующий этап mTLS
 сохраняют проектный статус; наличие схемы не подтверждает выкладку.
 
+<DiagramSection>
+
 ## Две VPS
 
 Целевая схема для двух машин. Сейчас стек Pulumi — одна VPS, а двухсерверная схема (gateway и backend)
 заморожена в варианте `bff` документации
 ([`pulumi/README.md`](https://github.com/Cringe-Driven-Development-Team/infra/blob/2f97437/pulumi/README.md#L8)).
+
+<template #diagram>
 
 ```mermaid
 flowchart LR
@@ -22,6 +26,8 @@ flowchart LR
         A["Go API"] --> D[("Postgres")]
     end
 ```
+
+</template>
 
 - **VPS1:** Caddy и BFF, публичный (floating) IP, домен `cellestial.ru`. **VPS2:** Go API и Postgres, без
   публичного IP, доступна только через частную сеть Selectel.
@@ -38,6 +44,9 @@ flowchart LR
 - **Адрес Go** BFF берёт из переменной `GO_API_URL`: на одной VPS это `http://api:8080/api/v1`, на двух —
   `http://<приватный адрес VPS2>:8080/api/v1`. На VPS2 compose публикует порт API только на приватном
   интерфейсе.
+
+</DiagramSection>
+
 ### S2S-ключ
 
 - **Назначение.** На двух VPS BFF передаёт `X-BFF-Key: <BFF_API_KEY>`. Ключ подтверждает знание

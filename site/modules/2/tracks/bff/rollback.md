@@ -31,9 +31,13 @@ Workflow читает историю `production` Deployments через GitHub 
 останавливается до изменения VPS и показывает причину. Сообщение Telegram и `.env` не служат
 источником истории релизов.
 
+<DiagramSection>
+
 ## Проверка и переключение
 
 Схема показывает, когда workflow может выбрать цель и когда должен остановиться до изменения VPS.
+
+<template #diagram>
 
 ```mermaid
 flowchart TD
@@ -56,6 +60,8 @@ flowchart TD
     OK -- "Нет" --> FAILURE["Deployment failure; сообщить известное состояние"]
 ```
 
+</template>
+
 1. В общей с CD и retention группе `production` сверить целевой SHA и digest с успешным
    `release-artifacts` Deployment, проверить доступность digest в GHCR, совпадение
    `org.opencontainers.image.revision` с SHA и сохранность JS/CSS в CDN. Старый тег или S3-указатель
@@ -75,6 +81,8 @@ flowchart TD
 Откат не происходит автоматически. Кнопка «Откатить» в Telegram лишь открывает страницу ручного
 workflow. Провал проверки после переключения не превращается в успех из-за того, что команда Ansible
 завершилась без ошибки.
+
+</DiagramSection>
 
 ## Что остаётся доступным
 

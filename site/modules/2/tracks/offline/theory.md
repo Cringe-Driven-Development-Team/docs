@@ -14,12 +14,16 @@ title: Теория офлайн-режима
 Затем сравните [стратегии кеширования](./caching-strategies) и примените понятия
 в [архитектуре Cellestial](./architecture).
 
+<DiagramSection>
+
 ## Service Worker
 
 Service Worker (SW) — событийный JavaScript-контекст браузера, отдельный от страницы и без доступа
 к DOM. Он может перехватывать запросы контролируемой страницы и выбирать ответ. Браузер вправе
 остановить его между событиями: постоянно работающим сервером SW не является.
 [Устройство SW — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API).
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -29,10 +33,16 @@ flowchart TB
   SW -->|"выбранный ответ"| Page
 ```
 
+</template>
+
 Для SW нужен безопасный контекст: в приложении это HTTPS, а localhost допускается для разработки.
 Регистрация связана с origin, а scope ограничивает адреса управляемых страниц. Страница вне scope
 не становится контролируемой этим SW. URL внешнего ресурса и scope страницы — разные вещи.
 [Условия работы — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers).
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Жизненный цикл
 
@@ -41,6 +51,8 @@ flowchart TB
 страницей — отдельный факт: успешная регистрация сама по себе не доказывает ни контроль текущей
 страницы, ни наличие файлов для офлайн-показа.
 [Жизненный цикл — Chrome](https://developer.chrome.com/docs/workbox/service-worker-lifecycle).
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -52,10 +64,16 @@ flowchart TB
   C -->|"найдено обновление"| I
 ```
 
+</template>
+
 При первой установке прежнего SW нет, поэтому ждать его вкладки не требуется. Уже открытая
 страница при этом не обязательно сразу получает контроллер. При обновлении некоторое время
 сосуществуют работающая и ожидающая версии. Принудительная смена контроллера и перезагрузка
 могут прервать работу вкладки; политику обновления нужно обосновать отдельно.
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Где хранится кеш
 
@@ -63,6 +81,8 @@ HTTP-кеш браузера использует HTTP-правила свеже
 именованные наборы пар Request/Response, которыми приложение управляет через Cache API.
 [HTTP-кеш — MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching),
 [Cache API — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Cache).
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -72,16 +92,24 @@ flowchart TB
   API --> Storage["Cache Storage · явные записи"]
 ```
 
+</template>
+
 Заголовок `Cache-Control: no-store` не запрещает скрипту явно сохранить ответ через Cache API.
 Поэтому исключение личных данных должно быть частью политики SW. Cache Storage не обновляет
 записи автоматически; сохранность тоже не вечна: данные может удалить пользователь или браузер.
 Это локальное хранилище конкретного браузерного профиля, а не общий кеш сервера.
+
+</DiagramSection>
+
+<DiagramSection>
 
 ## Когда наполняется кеш
 
 **Precache** сохраняет заранее выбранный набор ресурсов, обычно при установке SW.
 **Runtime caching** пополняет кеш во время обработки реальных запросов.
 [Precache в Workbox](https://developer.chrome.com/docs/workbox/modules/workbox-precaching).
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -91,9 +119,13 @@ flowchart TB
   Policy -->|"runtime · если разрешено"| Cache
 ```
 
+</template>
+
 Это ответ на вопрос «когда появилась запись». Стратегия отвечает на другой вопрос — «откуда взять
 ответ сейчас». Наличие SW не означает, что он сохраняет все запросы. Precache тоже требует сети
 при первоначальном получении файлов и не помогает первому визиту сразу без сети.
+
+</DiagramSection>
 
 ## Стратегии кеширования {#стратегии-кеширования}
 
@@ -142,6 +174,8 @@ Workbox — семейство npm-пакетов поверх браузерн�
 
 Общая схема с плагином ниже отделяет подготовку файлов от их выполнения.
 
+<DiagramSection>
+
 ## vite-plugin-pwa
 
 Плагин связывает Vite с подготовкой веб-манифеста, SW, его регистрации и обновления.
@@ -149,6 +183,8 @@ Workbox — семейство npm-пакетов поверх браузерн�
 Манифест описывает приложение для браузера; возможность установки PWA и работа без сети —
 разные свойства. Сам факт установки не доказывает доступность нужного ресурса офлайн.
 [Возможности плагина — Vite PWA](https://vite-pwa-org.netlify.app/guide/).
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -166,6 +202,8 @@ flowchart TB
   Build -->|"публичная раздача файлов"| Browser
 ```
 
+</template>
+
 Два режима определяют, **кто пишет SW**:
 
 - [generateSW](https://vite-pwa-org.netlify.app/workbox/generate-sw.html): Workbox генерирует SW
@@ -176,6 +214,8 @@ flowchart TB
 Эти режимы не являются стратегиями CacheFirst или NetworkFirst. Выбор способа сборки не заменяет
 решений о запросах, приватности и ошибках. Связь инструмента и Workbox описана в
 [документации интеграции](https://vite-pwa-org.netlify.app/workbox/).
+
+</DiagramSection>
 
 ## Что проверить в понимании
 

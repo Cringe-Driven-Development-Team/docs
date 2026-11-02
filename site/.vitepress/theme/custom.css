@@ -5,11 +5,11 @@
   line-height: 1.2;
 }
 
-/* Renderer вписывает натуральный SVG в интерактивный viewport. */
-.vp-doc .mermaid-container .diagram-wrapper {
-  /* Панель остаётся вне области схемы, чтобы не перекрывать подписи на мобильном экране. */
-  bottom: 76px;
-}
+/* Mermaid строит SVG, общая рамка управляет его натуральным холстом. */
+.diagram[data-diagram-kind="mermaid"] div.language-mermaid { margin: 0; background: transparent; }
+.diagram[data-diagram-kind="mermaid"] .language-mermaid > :is(button.copy, span.lang) { display: none; }
+/* Определённая ширина не даёт max-height сужать высокий SVG через aspect-ratio. */
+.diagram[data-diagram-kind="mermaid"] .diagram__frame { width: 100%; }
 .vp-doc .mermaid svg {
   display: block;
   max-width: none;
@@ -54,15 +54,19 @@
 .diagram__toolbar button:hover {
   border-color: var(--vp-c-brand-1);
 }
-.diagram__toolbar button:focus-visible {
+.diagram__toolbar button:focus-visible,
+.diagram__frame:focus-visible {
   outline: 2px solid var(--vp-c-brand-1);
   outline-offset: 1px;
 }
 .diagram__frame {
   position: relative;
   overflow: hidden;
-  background: #fff;
+  background: var(--vp-c-bg-soft);
 }
+.diagram[data-diagram-kind="eraser"] .diagram__frame { background: #fff; }
+.diagram__canvas--pending { opacity: 0; min-height: 320px; pointer-events: none; }
+.diagram__status { position: absolute; inset: 0; padding: 24px 16px; }
 .diagram__canvas {
   position: relative;
 }
@@ -112,6 +116,18 @@
   aspect-ratio: auto !important;
   max-height: none !important;
 }
+
+.diagram-section {
+  margin: 48px 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+/* Базисы и gap дают перенос при1040px ширины статьи без ограничения fixed fullscreen. */
+.diagram-section__layout { display: flex; flex-wrap: wrap; gap: 40px; }
+.diagram-section__text { flex: 1 1 349px; min-width: 0; }
+.diagram-section__diagram { flex: 1.35 1 651px; min-width: 0; }
+.diagram-section__text > :first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.diagram-section__diagram > .diagram { margin: 0; }
 
 /* Простые таблицы переносят текст, длинные значения прокручиваются только внутри таблицы. */
 .vp-doc table {

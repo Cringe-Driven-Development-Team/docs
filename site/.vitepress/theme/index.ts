@@ -12,6 +12,8 @@ import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-gr
 import '@tp-prepare/vitepress-module-graph/style.css';
 import { data } from '../../modules/modules.data.ts';
 import Diagram from './Diagram.vue';
+import MermaidFrame from './MermaidFrame.vue';
+import DiagramSection from './DiagramSection.vue';
 import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client';
 import {
   InjectionKey as ReadabilitiesKey, LayoutMode,
@@ -110,39 +112,20 @@ const theme: Theme = {
     enhanceAppWithTabs(app);
     app.provide(ReadabilitiesKey, readabilities);
     app.component('Diagram', Diagram);
+    app.component('MermaidFrame', MermaidFrame);
+    app.component('DiagramSection', DiagramSection);
   },
   setup() {
     const route = useRoute();
     const { isDark } = useData();
-    const controls = {
-      zoomIn: 'enabled', zoomOut: 'enabled', resetView: 'enabled', toggleFullscreen: 'enabled',
-      copyCode: 'disabled', download: 'disabled', toggleToolbar: 'disabled',
-    } as const;
     onMounted(() => {
-      const renderer = createMermaidRenderer({
-        static: false, startOnLoad: false, securityLevel: 'strict',
+      createMermaidRenderer({
+        static: true, startOnLoad: false, securityLevel: 'strict',
         theme: isDark.value ? 'dark' : 'default',
         sequence: { wrap: true, useMaxWidth: false }, flowchart: { useMaxWidth: false },
       });
-      renderer.setToolbar({
-        showLanguageLabel: false, fullscreenMode: 'browser',
-        desktop: controls, mobile: controls, fullscreen: controls,
-        i18n: { tooltips: {
-          zoomIn: 'Увеличить', zoomOut: 'Уменьшить', resetView: 'Сбросить вид', toggleFullscreen: 'На весь экран',
-          renderErrorText: 'Не удалось отрисовать схему',
-          toggleErrorDetailsText: 'Показать подробности', toggleErrorDetailsHideText: 'Скрыть подробности',
-        } },
-      });
     });
     watch(isDark, dark => createMermaidRenderer({ theme: dark ? 'dark' : 'default' }));
-    const exitMermaidFullscreen = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && document.fullscreenElement?.matches('.mermaid-container')) {
-        event.preventDefault();
-        void document.exitFullscreen();
-      }
-    };
-    onMounted(() => document.addEventListener('keydown', exitMermaidFullscreen));
-    onBeforeUnmount(() => document.removeEventListener('keydown', exitMermaidFullscreen));
     let cancelScroll = () => {};
     const scroll = () => { cancelScroll(); cancelScroll = scrollToHashAfterMermaid(); };
     onBeforeUnmount(() => cancelScroll());

@@ -24,9 +24,13 @@ title: Стратегии кеширования
 [Определения стратегий — Workbox](https://developer.chrome.com/docs/workbox/modules/workbox-strategies/),
 [сценарии кеширования — web.dev](https://web.dev/articles/offline-cookbook).
 
+<DiagramSection>
+
 ## CacheOnly
 
 Источник — только кеш; отсутствующая запись означает отказ, даже при доступной сети.
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -35,10 +39,18 @@ flowchart TB
   C -->|"нет"| E["Отказ · сеть не используется"]
 ```
 
+</template>
+
+</DiagramSection>
+
+<DiagramSection>
+
 ## NetworkOnly
 
 Источник — только сеть; стратегия не записывает ответ в Cache Storage. Сетевой отказ передаётся
 дальше, если отдельно не предусмотрена подстановка. Обычный HTTP-кеш остаётся отдельным механизмом.
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -47,10 +59,18 @@ flowchart TB
   N -->|"нет"| E["Сетевой отказ · кеш не используется"]
 ```
 
+</template>
+
+</DiagramSection>
+
+<DiagramSection>
+
 ## CacheFirst
 
 Сначала кеш; при промахе — сетевой ответ независимо от разрешения кешировать. В кеш попадают
 только разрешённые политикой ответы. Найденная запись может устареть.
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -62,10 +82,18 @@ flowchart TB
   N -->|"нет"| E["Сетевой отказ"]
 ```
 
+</template>
+
+</DiagramSection>
+
+<DiagramSection>
+
 ## NetworkFirst
 
 Сначала сеть: полученный ответ возвращается, а сохранение разрешается отдельно. Только если сеть
 не вернула ответ, стратегия обращается к существующей записи кеша.
+
+<template #diagram>
 
 ```mermaid
 flowchart TB
@@ -77,12 +105,20 @@ flowchart TB
   C -->|"нет"| E["Отказ"]
 ```
 
+</template>
+
+</DiagramSection>
+
+<DiagramSection>
+
 ## StaleWhileRevalidate
 
 При попадании текущий запрос получает кеш, а сеть запрашивается в фоне. Запись обновляется, только
 если ответ разрешено кешировать; иначе прежняя остаётся. При промахе текущий запрос получает
 сетевой ответ независимо от разрешения кешировать. Новая запись сама по себе не меняет уже
 показанный экран.
+
+<template #diagram>
 
 ```mermaid
 sequenceDiagram
@@ -115,6 +151,10 @@ sequenceDiagram
     end
   end
 ```
+
+</template>
+
+</DiagramSection>
 
 ## Сравнение стратегий
 
