@@ -5,6 +5,7 @@ import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/n
 import { SITE_BASE } from './site.ts';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
 import { mermaidFence } from './mermaid-fence.ts';
+import { articleLoadingHeadScript } from './theme/article-loading.ts';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
@@ -35,7 +36,10 @@ export default defineConfig({
     base: SITE_BASE,
     cleanUrls: true,
     // Логотип cellestial.ru (src/assets/logo-mark.svg фронта). VitePress не добавляет base к ссылкам в head.
-    head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }]],
+    head: [
+      ['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }],
+      ['script', {}, articleLoadingHeadScript()],
+    ],
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
     vite: {
       plugins: [groupIconVitePlugin()],

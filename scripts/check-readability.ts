@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [mermaid|scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -87,6 +87,291 @@ async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
   return errors;
 }
 
+type LoadingSample = { ms: number; url: string; visible: boolean; loader: boolean; pending: boolean; y: number; top: number | null; height: number; frame: number; readyFrames: number; targetReady: boolean; fontsReady: boolean };
+
+async function traceArticleLoading(page: Page, mode: number | null = null, dark = false, hold = false): Promise<void> {
+  await page.evaluateOnNewDocument(({ mode, dark, hold }) => {
+    localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+    if (mode !== null) localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
+    if (mode === 4) {
+      localStorage.setItem('vitepress-nolebase-enhanced-readabilities-page-layout-max-width', '7500');
+      localStorage.setItem('vitepress-nolebase-enhanced-readabilities-content-layout-max-width', '6500');
+    }
+    const state = window as unknown as { loadingSamples: LoadingSample[]; releaseLoading: () => void; heldLoading: { target: Element; detail: unknown }[]; scrollCalls: number };
+    state.loadingSamples = []; state.heldLoading = []; state.scrollCalls = 0;
+    const original = window.scrollTo.bind(window);
+    window.scrollTo = ((...args: Parameters<typeof window.scrollTo>) => { state.scrollCalls++; original(...args); }) as typeof window.scrollTo;
+    let paused = hold;
+    document.addEventListener('vitepress-mermaid:render-complete', event => {
+      const target = event.target as Element;
+      if (!paused || !target.closest('.diagram-section')?.querySelector('#stalewhilerevalidate')) return;
+      event.stopImmediatePropagation();
+      state.heldLoading.push({ target, detail: (event as CustomEvent).detail });
+    }, true);
+    state.releaseLoading = () => {
+      paused = false;
+      for (const { target, detail } of state.heldLoading.splice(0)) target.dispatchEvent(new CustomEvent('vitepress-mermaid:render-complete', { bubbles: true, detail }));
+    };
+    const started = performance.now();
+    const sample = () => {
+      const article = document.querySelector<HTMLElement>('.VPDoc > .container');
+      const visible = (node: Element | null) => !!node && getComputedStyle(node).visibility === 'visible' && getComputedStyle(node).display !== 'none' && getComputedStyle(node).opacity !== '0';
+      if (article) {
+        const heading = document.getElementById('stalewhilerevalidate');
+        const section = heading?.closest('.diagram-section');
+        state.loadingSamples.push({ ms: performance.now(), url: location.href, visible: visible(article),
+          loader: visible(document.querySelector('.article-loading')), pending: document.documentElement.getAttribute('data-article-loading') === 'pending',
+          y: scrollY, top: heading?.getBoundingClientRect().top ?? null, height: document.documentElement.scrollHeight,
+          frame: section?.querySelector('.diagram__frame')?.getBoundingClientRect().height ?? 0,
+          targetReady: !!section?.querySelector('svg') && !!section?.querySelector<HTMLElement>('.diagram__canvas')?.style.transform,
+          fontsReady: document.fonts.status === 'loaded',
+          readyFrames: [...document.querySelectorAll<HTMLElement>('figure[data-diagram-kind="mermaid"] .diagram__canvas')].filter(node => !!node.style.transform).length });
+      }
+      if (performance.now() - started < 11000) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }, { mode, dark, hold });
+}
+
+async function checkArticleLoading(browser: Browser, url: (path: string) => string): Promise<void> {
+  const route = 'modules/2/tracks/offline/caching-strategies';
+  const target = `${route}#stalewhilerevalidate`;
+  const samples = (page: Page) => page.evaluate(() => (window as unknown as { loadingSamples: LoadingSample[] }).loadingSamples);
+  const ready = (page: Page) => page.waitForFunction(() => {
+    const article = document.querySelector('.VPDoc > .container');
+    return article && getComputedStyle(article).visibility === 'visible' && !document.documentElement.hasAttribute('data-article-loading');
+  });
+  const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const save = async (page: Page, name: string) => {
+    await Bun.write(join(artifacts, `${label}-loading-${name}.json`), JSON.stringify(await samples(page), null, 2));
+    await page.screenshot({ path: join(artifacts, `${label}-loading-${name}.png`) });
+  };
+  const stable = async (page: Page, name: string, first: boolean) => {
+    await ready(page);
+    await pause(1050);
+    await save(page, name);
+    const all = await samples(page);
+    if (first) {
+      assert.equal(all[0]?.visible, false, 'initialFrameMasked: first article frame must be hidden');
+      assert(all.some(row => row.pending && row.loader), 'initialFrameMasked: status is visible while preparing');
+    }
+    const shown = all.filter(row => row.visible && row.top !== null);
+    assert(shown.length > 2, 'stableReveal: capture revealed article');
+    if (first) assert(shown[0]!.ms < 4500 && shown[0]!.targetReady && shown[0]!.fontsReady, 'visibleOnly: ordinary loading finishes on readiness, before the watchdog');
+    assert(Math.max(...shown.map(row => row.top!)) - Math.min(...shown.map(row => row.top!)) <= 1, `stableReveal: heading moved after reveal (${name})`);
+    assert(Math.max(...shown.map(row => row.y)) - Math.min(...shown.map(row => row.y)) <= 1, `stableReveal: automatic scroll after reveal (${name})`);
+    assert(await page.evaluate(() => {
+      const top = document.getElementById('stalewhilerevalidate')!.getBoundingClientRect().top;
+      const bottom = (s: string) => document.querySelector(s)?.getBoundingClientRect().bottom ?? 0;
+      return top >= Math.max(0, bottom('.VPNav'), bottom('.VPLocalNav')) - 1 && top < innerHeight;
+    }), 'stableReveal: direct hash is visible below navigation');
+    assert(await page.$$eval('.mermaid svg', nodes => nodes.length < 5), 'visibleOnly: distant diagrams remain lazy');
+    assert(await page.$eval('.diagram-section:has(#stalewhilerevalidate) .diagram__frame', node => {
+      (node as HTMLElement).focus({ preventScroll: true }); return document.activeElement === node;
+    }), 'stableReveal: viewer focus is restored after loading');
+  };
+  for (const [width, mode] of [[2560, null], [390, null], [2560, 3], [2560, 4]] as const) for (const dark of [false, true]) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage(); await observe(page);
+      await page.setViewport({ width, height: width === 390 ? 844 : 1440 });
+      await traceArticleLoading(page, mode, dark);
+      if (mode === 4 && dark) {
+        await page.setRequestInterception(true);
+        page.on('request', request => { void (async () => {
+          if (request.resourceType() === 'font') await pause(600);
+          await request.continue();
+        })().catch(error => failures.push(String(error))); });
+      }
+      await page.goto(url(target), { waitUntil: 'networkidle0' });
+      await stable(page, `${width}-${mode ?? 'fresh'}-${dark ? 'dark' : 'light'}`, true);
+      await page.reload({ waitUntil: 'networkidle0' });
+      await stable(page, `${width}-${mode ?? 'fresh'}-${dark ? 'dark' : 'light'}-reload`, true);
+      console.log(`PASS loading fresh/reload ${width}/${mode ?? 'default'}/${dark ? 'dark' : 'light'}: first frame and stable reveal`);
+    } finally { await context.close(); }
+  }
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage(); await observe(page);
+    await page.setViewport({ width: 2560, height: 1440 });
+    await traceArticleLoading(page, null, false, true);
+    await page.goto(url(target), { waitUntil: 'networkidle0' });
+    assert.equal(await page.$eval('.VPDoc > .container', node => getComputedStyle(node).visibility), 'hidden', 'held result must keep article masked');
+    await page.evaluate(() => (window as unknown as { releaseLoading: () => void }).releaseLoading());
+    await stable(page, 'held-result', false);
+    await pause(4200);
+    await stable(page, 'past-old-hash-deadline', false);
+    for (const action of [() => page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click()),
+      () => page.$eval('a[href="#stalewhilerevalidate"]', node => (node as HTMLElement).click()),
+      () => page.$eval('.diagram-section:has(#stalewhilerevalidate) button[aria-label="Увеличить"]', node => (node as HTMLElement).click())]) {
+      await action(); await pause(100);
+      assert(!await page.evaluate(() => document.documentElement.hasAttribute('data-article-loading')), 'ordinaryActions: theme/hash/zoom do not restart loader');
+    }
+    await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
+    assert((await samples(page)).every(row => row.visible && !row.loader), 'ordinaryActions: plain article is never masked');
+    await page.goto(url(route), { waitUntil: 'networkidle0' }); await ready(page);
+    assert(await page.evaluate(() => scrollY < 10), 'visibleOnly: no-hash page opens at the start');
+    console.log('PASS loading held result, old deadline, plain/no-hash and ordinary actions');
+  } finally { await context.close(); }
+  for (const input of ['wheel', 'touch', 'key', 'spa', 'timeout'] as const) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage(); await observe(page);
+      await page.setViewport({ width: 1440, height: 1000 });
+      await traceArticleLoading(page, null, false, true);
+      await page.goto(url(target), { waitUntil: 'networkidle0' });
+      await page.mouse.move(700, 500);
+      const beforeInput = await page.evaluate(() => scrollY);
+      if (input === 'wheel') await page.mouse.wheel({ deltaY: 60 });
+      if (input === 'key') await page.keyboard.press('ArrowDown');
+      if (input === 'touch') assert(await page.evaluate(() => window.dispatchEvent(new Event('touchstart', { bubbles: true, cancelable: true }))), 'cancelAndSupersede: touch default is not prevented');
+      if (input === 'spa') {
+        await page.$eval('.VPNavBarTitle a', node => (node as HTMLElement).click());
+        await page.waitForFunction(path => location.pathname === path, {}, SITE_BASE);
+      }
+      if (input === 'spa') await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+      else await ready(page);
+      if (input === 'wheel' || input === 'key') {
+        await pause(200);
+        const afterInput = await page.evaluate(() => ({ y: scrollY, height: document.documentElement.scrollHeight, viewport: innerHeight }));
+        assert(afterInput.y > beforeInput, `cancelAndSupersede: native scrolling remains enabled (${input}, ${JSON.stringify({ beforeInput, ...afterInput })})`);
+      }
+      const calls = await page.evaluate(() => (window as unknown as { scrollCalls: number }).scrollCalls);
+      await page.evaluate(() => (window as unknown as { releaseLoading: () => void }).releaseLoading());
+      await pause(1000);
+      assert.equal(await page.evaluate(() => (window as unknown as { scrollCalls: number }).scrollCalls), calls, 'cancelAndSupersede: old work must not scroll the current page');
+      if (input === 'spa') {
+        await page.goBack({ waitUntil: 'networkidle0' });
+        await ready(page);
+        assert(new URL(page.url()).hash.includes('stalewhilerevalidate'), 'cancelAndSupersede: Back returns to the article hash');
+      }
+      if (input === 'timeout') {
+        const shown = (await samples(page)).find(row => row.visible);
+        assert(shown && shown.ms >= 4800 && shown.ms <= 5250, `errorAndTimeout: bounded preparation ${shown?.ms}`);
+      }
+      await save(page, input);
+      console.log(`PASS loading ${input}: preparation ends without stale scroll`);
+    } finally { await context.close(); }
+  }
+  const app = readFileSync(join('dist', `${route}.html`), 'utf8').match(/<script\b[^>]*type="module"[^>]*src="([^"]+)"/);
+  assert(app?.[1], 'App module must come from built HTML');
+  const blocked = await browser.createBrowserContext();
+  try {
+    const page = await blocked.newPage(); await observe(page); await traceArticleLoading(page);
+    const release = Promise.withResolvers<void>();
+    await page.setRequestInterception(true);
+    page.on('request', request => { void (async () => {
+      if (request.url() === new URL(app[1]!, url('')).href) await release.promise;
+      await request.continue();
+    })().catch(error => failures.push(String(error))); });
+    const navigation = page.goto(url(target), { waitUntil: 'networkidle0' });
+    await page.waitForSelector('.VPDoc > .container');
+    await ready(page);
+    const shown = (await samples(page)).find(row => row.visible);
+    assert(shown && shown.ms >= 4800 && shown.ms <= 5250, `failOpen: main app is not needed by watchdog (${shown?.ms})`);
+    await page.mouse.move(700, 500); await page.mouse.wheel({ deltaY: 60 });
+    await pause(100);
+    const readerCalls = await page.evaluate(() => (window as unknown as { scrollCalls: number }).scrollCalls);
+    release.resolve(); await navigation; await pause(1000);
+    assert(!(await samples(page)).some(row => row.ms > shown.ms && !row.visible), 'failOpen: late application does not hide article again');
+    assert.equal(await page.evaluate(() => (window as unknown as { scrollCalls: number }).scrollCalls), readerCalls, 'failOpen: late hydration respects pre-app reader input');
+    await save(page, 'blocked-app');
+    console.log('PASS loading failOpen: blocked app deadline and late mount');
+  } finally { await blocked.close(); }
+  const noJS = await browser.createBrowserContext();
+  try {
+    const page = await noJS.newPage(); await page.setJavaScriptEnabled(false);
+    await page.goto(url(target), { waitUntil: 'networkidle0' });
+    assert.equal(await page.$eval('.VPDoc > .container', node => getComputedStyle(node).visibility), 'visible', 'failOpen: no-JS text stays readable');
+    assert.equal(await page.$eval('.article-loading', node => getComputedStyle(node).display), 'none');
+  } finally { await noJS.close(); }
+  const mobile = await browser.createBrowserContext();
+  try {
+    const page = await mobile.newPage(); await observe(page);
+    await page.setViewport({ width: 390, height: 844, hasTouch: true, isMobile: true });
+    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await traceArticleLoading(page, null, true, true);
+    await page.goto(url(target), { waitUntil: 'networkidle0' });
+    await page.screenshot({ path: join(artifacts, `${label}-loading-mobile-pending.png`) });
+    const menu = '.VPLocalNav button.menu';
+    await page.click(menu);
+    await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'true', {}, menu);
+    await page.keyboard.press('Escape'); await ready(page);
+    assert(await page.$eval(menu, node => document.activeElement === node), 'cancelAndSupersede: mobile navigation keeps its focus behavior');
+    await page.evaluate(() => (window as unknown as { releaseLoading: () => void }).releaseLoading());
+    await page.waitForNetworkIdle();
+    console.log('PASS loading mobile: navigation works during the loader, Escape returns focus');
+  } finally { await mobile.close(); }
+  const broken = await browser.createBrowserContext();
+  try {
+    const page = await broken.newPage(); const expectedErrors = await observeMermaidErrors(page);
+    await page.setViewport({ width: 2560, height: 1440 });
+    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await traceArticleLoading(page, null, false, true);
+    await page.goto(url(target), { waitUntil: 'networkidle0' });
+    await page.screenshot({ path: join(artifacts, `${label}-loading-pending.png`) });
+    const blockedFocus = await page.evaluate(() => {
+      const svg = document.querySelector('.diagram-section:has(#stalewhilerevalidate) svg')!;
+      const link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
+      link.setAttribute('tabindex', '0'); link.setAttribute('href', '#stalewhilerevalidate');
+      link.style.visibility = 'visible';
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.textContent = 'loading focus fixture'; text.setAttribute('y', '20'); link.append(text); svg.append(link);
+      link.focus(); const blocked = document.activeElement !== link; link.remove(); return blocked;
+    });
+    assert(blockedFocus, 'initialFrameMasked: hidden SVG links cannot take focus behind the loader');
+    await page.evaluate(() => {
+      const state = window as unknown as { heldLoading: unknown[]; releaseLoading: () => void };
+      state.heldLoading.length = 0;
+      state.releaseLoading();
+      const source = document.querySelector('.diagram-section:has(#stalewhilerevalidate) .language-mermaid')!;
+      const pre = document.createElement('pre');
+      pre.className = 'language-mermaid';
+      pre.textContent = 'flowchart TB\nA[unterminated';
+      source.replaceChildren(pre);
+    });
+    await page.waitForSelector('.diagram-error', { visible: true }); await ready(page);
+    assert(expectedErrors.length > 0, 'errorAndTimeout: actual render error recorded');
+    assert.equal(await page.$eval('.article-loading__spinner', node => getComputedStyle(node).animationName), 'none');
+    await Bun.write(join(artifacts, `${label}-loading-expected-errors.json`), JSON.stringify(expectedErrors, null, 2));
+    console.log('PASS loading no-JS, real render error and reduced-motion');
+  } finally { await broken.close(); }
+  await checkArticleAnchorFocus(browser, url);
+}
+
+async function checkArticleAnchorFocus(browser: Browser, url: (path: string) => string): Promise<void> {
+  for (const kind of ['ready', 'reader', 'timeout'] as const) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage(); await observe(page);
+      await page.setViewport({ width: 1440, height: 1000 });
+      await traceArticleLoading(page, null, false, kind !== 'ready');
+      await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
+      await page.evaluate(href => {
+        (window as unknown as { loadingFocusSPA: boolean }).loadingFocusSPA = true;
+        const link = document.createElement('a'); link.href = href; link.textContent = 'Loading focus fixture';
+        document.querySelector('.VPNav')!.append(link); link.focus(); link.click();
+      }, url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'));
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies') && !!document.getElementById('stalewhilerevalidate'));
+      if (kind === 'reader') {
+        await page.focus('.VPNavBarSearch button');
+        await page.keyboard.press('ArrowDown');
+      }
+      await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+      assert(await page.evaluate(() => (window as unknown as { loadingFocusSPA: boolean }).loadingFocusSPA), 'anchorFocus: navigation is real SPA');
+      if (kind === 'reader') {
+        assert(await page.$eval('.VPNavBarSearch button', node => document.activeElement === node), 'anchorFocus: reader keeps focus on their chosen control');
+        await page.evaluate(() => (window as unknown as { releaseLoading: () => void }).releaseLoading());
+      } else {
+        assert(await page.$eval('#stalewhilerevalidate', node => document.activeElement === node), `anchorFocus: ${kind} SPA hash focuses its destination after reveal`);
+        await page.keyboard.press('Tab');
+        assert(await page.evaluate(() => document.activeElement?.closest('.header-anchor')?.closest('h2')?.id === 'stalewhilerevalidate'), 'anchorFocus: next Tab continues at the destination permalink');
+      }
+      console.log(`PASS loading anchor focus ${kind}: navigation and reader ownership`);
+    } finally { await context.close(); }
+  }
+}
+
 async function checkFullscreenUnmount(browser: Browser, url: (path: string) => string): Promise<void> {
   const context = await browser.createBrowserContext();
   try {
@@ -115,6 +400,7 @@ async function checkFullscreenUnmount(browser: Browser, url: (path: string) => s
 }
 
 async function checkDiagramFrameInteraction(page: Page, selector: string): Promise<void> {
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
   const diagram = await page.waitForSelector(selector);
   assert(diagram);
   const frame = await diagram.$('.diagram__frame');
@@ -323,6 +609,7 @@ async function checkMermaidTouchSamples(browser: Browser, url: (path: string) =>
 }
 
 async function visitMermaidDiagrams(page: Page, expected: number): Promise<void> {
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
   const blocks = await page.$$('.vp-doc div.language-mermaid');
   assert.equal(blocks.length, expected, 'All source Mermaid blocks are present');
   for (const block of blocks) {
@@ -594,10 +881,10 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
     for (const input of ['wheel', 'touchstart', 'keydown']) {
       await page.goto(url('modules/2/tracks/bff/contract#как-добавить-процедуру'), { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => !!(document.getElementById('app') as unknown as { __vue_app__?: unknown }).__vue_app__);
-      await page.evaluate(() => window.scrollTo(0, 0));
       if (input === 'wheel') await page.mouse.wheel({ deltaY: 200 });
       else if (input === 'keydown') await page.keyboard.press('ArrowDown');
       else await page.evaluate(() => window.dispatchEvent(new Event('touchstart', { bubbles: true })));
+      await page.evaluate(() => window.scrollTo(0, 0));
       await new Promise(resolve => setTimeout(resolve, 1800));
       assert(await page.evaluate(() => scrollY < 1000), `Pending correction respects reader ${input}`);
     }
@@ -800,6 +1087,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
   await observe(page);
   const visibleHash = async () => {
     await page.waitForFunction(() => {
+      if (document.documentElement.hasAttribute('data-article-loading')) return false;
       const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
       if (!target) return false;
       const top = target.getBoundingClientRect().top;
@@ -1210,6 +1498,7 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('loading')) await checkArticleLoading(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);

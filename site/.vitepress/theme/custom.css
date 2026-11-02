@@ -5,6 +5,38 @@
   line-height: 1.2;
 }
 
+.article-loading { display: none; }
+html[data-article-loading="pending"] .VPDoc:has([data-diagram-kind="mermaid"]) > .container {
+  visibility: hidden;
+}
+html[data-article-loading="pending"] .VPDoc:has([data-diagram-kind="mermaid"]) > .article-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: fixed;
+  inset: var(--vp-nav-height) 0 0;
+  z-index: 10;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+}
+@media (min-width: 960px) {
+  html[data-article-loading="pending"] .VPDoc.has-sidebar > .article-loading { left: var(--vp-sidebar-width); }
+}
+.article-loading__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--vp-c-divider);
+  border-top-color: var(--vp-c-brand-1);
+  border-radius: 50%;
+  animation: article-loading-spin .8s linear infinite;
+}
+@keyframes article-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .article-loading__spinner { animation: none; }
+}
+
 /* Mermaid строит SVG, общая рамка управляет его натуральным холстом. */
 .diagram[data-diagram-kind="mermaid"] div.language-mermaid { margin: 0; background: transparent; }
 .diagram[data-diagram-kind="mermaid"] .language-mermaid > :is(button.copy, span.lang) { display: none; }
