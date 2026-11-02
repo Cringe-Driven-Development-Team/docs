@@ -1,15 +1,17 @@
 /// <reference lib="dom" />
 
-type LoadingState = { deadline: number; finished: boolean; finish: () => void };
+type LoadingState = { deadline: number; finished: boolean; done: Promise<boolean>; finish: (interrupted?: boolean) => void };
 declare global { interface Window { __docsArticleLoading?: LoadingState } }
 
 // Serialized into head: keep this function independent of module bindings and Vue.
 function beginLoading(timeout: number): LoadingState {
-  window.__docsArticleLoading?.finish();
+  window.__docsArticleLoading?.finish(true);
   const root = document.documentElement;
   const events = ['wheel', 'touchstart', 'keydown'];
-  const state: LoadingState = { deadline: performance.now() + timeout, finished: false, finish };
-  const input = () => finish();
+  let resolveDone!: (automatic: boolean) => void;
+  const done = new Promise<boolean>(resolve => { resolveDone = resolve; });
+  const state: LoadingState = { deadline: performance.now() + timeout, finished: false, done, finish };
+  const input = () => finish(true);
   const timer = window.setTimeout(finish, timeout);
   function markBusy(): void {
     const article = document.querySelector('.VPDoc');
@@ -18,16 +20,18 @@ function beginLoading(timeout: number): LoadingState {
       article.querySelector(':scope > .container')?.setAttribute('inert', '');
     }
   }
-  function finish(): void {
+  function finish(interrupted = false): void {
     if (state.finished) return;
     state.finished = true;
     clearTimeout(timer);
     for (const event of events) window.removeEventListener(event, input);
     document.removeEventListener('DOMContentLoaded', markBusy);
-    if (window.__docsArticleLoading !== state) return;
-    root.removeAttribute('data-article-loading');
-    document.querySelector('.VPDoc')?.removeAttribute('aria-busy');
-    document.querySelector('.VPDoc > .container')?.removeAttribute('inert');
+    if (window.__docsArticleLoading === state) {
+      root.removeAttribute('data-article-loading');
+      document.querySelector('.VPDoc')?.removeAttribute('aria-busy');
+      document.querySelector('.VPDoc > .container')?.removeAttribute('inert');
+    }
+    resolveDone(!interrupted);
   }
   window.__docsArticleLoading = state;
   root.setAttribute('data-article-loading', 'pending');
@@ -73,8 +77,24 @@ export function prepareArticle({ initial, showLoader }: { initial: boolean; show
     stopped = true;
     cancelAnimationFrame(animation);
     for (const event of ['wheel', 'touchstart', 'keydown']) window.removeEventListener(event, input);
-    state?.finish();
+    state?.finish(true);
   }
+  function reveal(): void { state?.finish(); cancel(); }
+  const focusOwner = document.querySelector('.VPSkipLink')?.previousElementSibling;
+  if (state) void state.done.then(automatic => {
+    cancel();
+    if (!automatic || initial || !hash || history.state?.scrollPosition || window.__docsArticleLoading !== state || location.href !== href || document.activeElement !== focusOwner) return;
+    const target = document.getElementById(hash);
+    if (!target) return;
+    // Retry the router's heading focus only while navigation still owns it.
+    const temporary = !target.hasAttribute('tabindex');
+    if (temporary) target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
+    if (temporary) {
+      if (document.activeElement === target) target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
+      else target.removeAttribute('tabindex');
+    }
+  });
   for (const event of ['wheel', 'touchstart', 'keydown']) window.addEventListener(event, input, { passive: true });
   if (state) {
     article?.setAttribute('aria-busy', 'true');
@@ -83,7 +103,7 @@ export function prepareArticle({ initial, showLoader }: { initial: boolean; show
   }
   function tick(): void {
     if (stopped || location.href !== href || !article?.isConnected || state?.finished) { cancel(); return; }
-    if (performance.now() >= deadline) { cancel(); return; }
+    if (performance.now() >= deadline) { reveal(); return; }
     const target = hash ? document.getElementById(hash) : null;
     if (target) {
       const bottom = (s: string) => document.querySelector(s)?.getBoundingClientRect().bottom ?? 0;
@@ -95,7 +115,7 @@ export function prepareArticle({ initial, showLoader }: { initial: boolean; show
       const box = card.getBoundingClientRect();
       if (box.bottom >= -200 && box.top <= innerHeight + 200 || card.querySelector('.mermaid-rendering')) candidates.push(card);
     }
-    if ([...candidates].some(card => card.querySelector('.diagram-error'))) { cancel(); return; }
+    if ([...candidates].some(card => card.querySelector('.diagram-error'))) { reveal(); return; }
     const ready = document.fonts.status === 'loaded' && widthsReady() && [...candidates].every(card => {
       const canvas = card.querySelector<HTMLElement>('.diagram__canvas');
       const svg = card.querySelector('svg');
@@ -105,7 +125,7 @@ export function prepareArticle({ initial, showLoader }: { initial: boolean; show
       ...[...candidates].flatMap(card => { const box = card.getBoundingClientRect(); return [box.top, box.width, box.height]; })];
     stable = ready && previous?.length === geometry.length && geometry.every((value, index) => Math.abs(value - previous![index]!) <= 1) ? stable + 1 : 0;
     previous = geometry;
-    if (stable >= 2) { cancel(); return; }
+    if (stable >= 2) { reveal(); return; }
     animation = requestAnimationFrame(tick);
   }
   animation = requestAnimationFrame(tick);

@@ -336,6 +336,40 @@ async function checkArticleLoading(browser: Browser, url: (path: string) => stri
     await Bun.write(join(artifacts, `${label}-loading-expected-errors.json`), JSON.stringify(expectedErrors, null, 2));
     console.log('PASS loading no-JS, real render error and reduced-motion');
   } finally { await broken.close(); }
+  await checkArticleAnchorFocus(browser, url);
+}
+
+async function checkArticleAnchorFocus(browser: Browser, url: (path: string) => string): Promise<void> {
+  for (const kind of ['ready', 'reader', 'timeout'] as const) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage(); await observe(page);
+      await page.setViewport({ width: 1440, height: 1000 });
+      await traceArticleLoading(page, null, false, kind !== 'ready');
+      await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
+      await page.evaluate(href => {
+        (window as unknown as { loadingFocusSPA: boolean }).loadingFocusSPA = true;
+        const link = document.createElement('a'); link.href = href; link.textContent = 'Loading focus fixture';
+        document.querySelector('.VPNav')!.append(link); link.focus(); link.click();
+      }, url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'));
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies') && !!document.getElementById('stalewhilerevalidate'));
+      if (kind === 'reader') {
+        await page.focus('.VPNavBarSearch button');
+        await page.keyboard.press('ArrowDown');
+      }
+      await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+      assert(await page.evaluate(() => (window as unknown as { loadingFocusSPA: boolean }).loadingFocusSPA), 'anchorFocus: navigation is real SPA');
+      if (kind === 'reader') {
+        assert(await page.$eval('.VPNavBarSearch button', node => document.activeElement === node), 'anchorFocus: reader keeps focus on their chosen control');
+        await page.evaluate(() => (window as unknown as { releaseLoading: () => void }).releaseLoading());
+      } else {
+        assert(await page.$eval('#stalewhilerevalidate', node => document.activeElement === node), `anchorFocus: ${kind} SPA hash focuses its destination after reveal`);
+        await page.keyboard.press('Tab');
+        assert(await page.evaluate(() => document.activeElement?.closest('.header-anchor')?.closest('h2')?.id === 'stalewhilerevalidate'), 'anchorFocus: next Tab continues at the destination permalink');
+      }
+      console.log(`PASS loading anchor focus ${kind}: navigation and reader ownership`);
+    } finally { await context.close(); }
+  }
 }
 
 async function checkFullscreenUnmount(browser: Browser, url: (path: string) => string): Promise<void> {
