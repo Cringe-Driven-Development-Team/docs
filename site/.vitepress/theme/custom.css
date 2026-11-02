@@ -5,11 +5,9 @@
   line-height: 1.2;
 }
 
-/* Renderer вписывает натуральный SVG в интерактивный viewport. */
-.vp-doc .mermaid-container .diagram-wrapper {
-  /* Панель остаётся вне области схемы, чтобы не перекрывать подписи на мобильном экране. */
-  bottom: 76px;
-}
+/* Mermaid строит SVG, общая рамка управляет его натуральным холстом. */
+.diagram[data-diagram-kind="mermaid"] div.language-mermaid { margin: 0; background: transparent; }
+.diagram[data-diagram-kind="mermaid"] .language-mermaid > :is(button.copy, span.lang) { display: none; }
 .vp-doc .mermaid svg {
   display: block;
   max-width: none;

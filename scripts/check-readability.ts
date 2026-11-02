@@ -92,6 +92,8 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   assert(diagram);
   const frame = await diagram.$('.diagram__frame');
   assert(frame);
+  await page.waitForFunction(node => !!(node.querySelector('.diagram__canvas') as HTMLElement)?.style.transform, {}, diagram);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const transform = () => diagram.$eval('.diagram__canvas', node => {
     if (!node.isConnected) throw new Error(`Detached diagram at ${location.href}`);
     return getComputedStyle(node).transform;
@@ -164,7 +166,11 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   await page.keyboard.press('Enter');
   await settle();
   assert.notEqual(await transform(), initial, 'Enter activates zoom button');
+  const enlarged = await transform();
+  await click('Уменьшить');
+  assert.notEqual(await transform(), enlarged, 'Zoom out changes the diagram');
   await click('Вписать');
+  assert.equal(await transform(), initial, 'Fit restores the initial view');
   for (const exit of ['button', 'Escape', 'fallback']) {
     if (exit === 'fallback') await diagram.evaluate(node => {
       Object.defineProperty(node, 'requestFullscreen', { configurable: true, value: () => Promise.reject(new Error('test fallback')) });
@@ -173,6 +179,11 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     const state = await page.evaluate(() => ({ y: scrollY, overflow: document.body.style.overflow, settings: { ...localStorage } }));
     await page.keyboard.press('Space');
     await page.waitForFunction(() => !!document.fullscreenElement || !!document.querySelector('.diagram--overlay'));
+    const fullscreenGeometry: { x: number; y: number; width: number; height: number; viewportWidth: number; viewportHeight: number } = await diagram.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return { x: box.x, y: box.y, width: box.width, height: box.height, viewportWidth: innerWidth, viewportHeight: innerHeight };
+    });
+    assert(Math.abs(fullscreenGeometry.x) <= 1 && Math.abs(fullscreenGeometry.y) <= 1 && Math.abs(fullscreenGeometry.width - fullscreenGeometry.viewportWidth) <= 1 && Math.abs(fullscreenGeometry.height - fullscreenGeometry.viewportHeight) <= 1, 'Fullscreen and fallback occupy the viewport');
     if (exit === 'button') await click('На весь экран');
     else await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.fullscreenElement && !document.querySelector('.diagram--overlay'));
@@ -185,65 +196,94 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     await settle();
     await wheelZoom();
     await click('Вписать');
+    if (exit === 'fallback') await diagram.evaluate(node => { Reflect.deleteProperty(node, 'requestFullscreen'); });
   }
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Diagram frame has no page overflow');
 }
 
 async function checkMermaidInteraction(page: Page): Promise<void> {
-  const container = await page.$('.mermaid-container');
-  assert(container, 'interactiveFlowchartAndSequence: diagram needs interactive controls');
-  await container.scrollIntoView();
-  const mode = await page.evaluate(() => innerWidth <= 768 ? '.mobile-controls' : '.desktop-controls');
-  const button = (name: string) => `.mermaid-container ${mode} button[aria-label="${name}"]`;
-  const transform = () => container.$eval('.mermaid-viewport', node => (node as HTMLElement).style.transform);
-  const settled = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
-  await settled();
-  const initial = await transform();
-  const overlaps = await container.evaluate(node => {
-    const controls = [...node.querySelectorAll('.controls')].map(element => element.getBoundingClientRect()).filter(rect => rect.width && rect.height);
-    return [...node.querySelectorAll('.mermaid svg text, .mermaid svg foreignObject')].filter(element => {
-      const rect = element.getBoundingClientRect();
-      return controls.some(control => rect.left < control.right && rect.right > control.left && rect.top < control.bottom && rect.bottom > control.top);
-    }).map(element => element.textContent);
+  const selector = 'figure[data-diagram-kind="mermaid"]';
+  const diagram = await page.$(selector);
+  assert(diagram, 'Mermaid must use the shared diagram frame');
+  assert.equal(await diagram.$('.mermaid-container .controls'), null, 'Static SVG has no second toolbar');
+  assert.equal(await diagram.$$eval('.diagram__canvas', nodes => nodes.length), 1);
+  await page.waitForFunction(node => !!(node.querySelector('.diagram__canvas') as HTMLElement)?.style.transform, {}, diagram);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const geometry = await diagram.evaluate(node => {
+    const frame = node.querySelector<HTMLElement>('.diagram__frame')!;
+    const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!;
+    return { scale: new DOMMatrix(getComputedStyle(canvas).transform).a, width: frame.clientWidth, natural: canvas.offsetWidth,
+      toolbarBottom: node.querySelector('.diagram__toolbar')!.getBoundingClientRect().bottom, frameTop: frame.getBoundingClientRect().top };
   });
-  assert.deepEqual(overlaps, [], 'Toolbar must not cover diagram labels');
-  await page.focus(button('Увеличить'));
-  await page.keyboard.press('Tab');
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Уменьшить');
-  await page.keyboard.down('Shift'); await page.keyboard.press('Tab'); await page.keyboard.up('Shift');
-  await page.keyboard.press('Enter');
-  await settled();
-  assert.notEqual(await transform(), initial, 'Zoom changes the visible diagram');
-  const zoomed = await transform();
-  await page.click(button('Уменьшить'));
-  await settled();
-  assert.notEqual(await transform(), zoomed, 'Zoom out changes the visible diagram');
-  await page.click(button('Сбросить вид'));
-  await settled();
-  assert.equal(await transform(), initial, 'Reset restores the fitted diagram');
-  await page.click(button('Увеличить'));
-  const area = await container.$('.diagram-wrapper');
-  const rect = await area!.boundingBox();
-  assert(rect);
-  const beforeDrag = await transform();
-  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(rect.x + rect.width / 2 + 30, rect.y + rect.height / 2 + 20, { steps: 5 });
-  await page.mouse.up();
-  assert.notEqual(await transform(), beforeDrag, 'Drag moves the enlarged diagram');
-  await page.click(button('Сбросить вид'));
-  await settled();
-  const state = () => page.evaluate(() => ({ y: scrollY, settings: Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('vitepress-nolebase-'))) }));
-  const before = await state();
-  for (const exit of ['button', 'Escape']) {
-    await page.click(button('На весь экран'));
-    await page.waitForFunction(() => document.fullscreenElement?.matches('.mermaid-container'));
-    if (exit === 'button') await page.click(`.mermaid-container:fullscreen ${mode} button[aria-label="На весь экран"]`);
-    else await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.fullscreenElement);
-    assert.deepEqual(await state(), before, 'Fullscreen preserves scroll and reading settings');
+  assert(Math.abs(geometry.scale - Math.min(1, geometry.width / geometry.natural)) < .01, `Inline fit ignores the diagram height: ${JSON.stringify(geometry)}`);
+  assert(geometry.toolbarBottom <= geometry.frameTop + 1, 'Toolbar stays outside clipped content');
+  await checkDiagramFrameInteraction(page, selector);
+  const viewport = page.viewport()!;
+  const canvasTransform = () => diagram.$eval('.diagram__canvas', node => getComputedStyle(node).transform);
+  const beforeHeight = await canvasTransform();
+  await page.setViewport({ ...viewport, height: viewport.height - 20 });
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 100)));
+  assert.equal(await canvasTransform(), beforeHeight, 'Height-only resize preserves the view');
+  await page.setViewport(viewport);
+
+}
+
+async function checkMermaidTouch(page: Page, diagram: import('puppeteer').ElementHandle<Element>): Promise<void> {
+  if (page.viewport()!.width > 768) return;
+  const canvasTransform = () => diagram.$eval('.diagram__canvas', node => getComputedStyle(node).transform);
+  await page.waitForFunction(node => !!(node.querySelector('.diagram__canvas') as HTMLElement)?.style.transform, {}, diagram);
+  const client = await page.createCDPSession();
+  try {
+    const area = await diagram.$('.diagram__frame');
+    await area!.evaluate(node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const box = await area!.boundingBox();
+    assert(box);
+    const x = box.x + box.width / 2, y = box.y + box.height / 2;
+    const beforePinch = await canvasTransform();
+    const pageState = await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale }));
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 0, x: x - 20, y }, { id: 1, x: x + 20, y }] });
+    for (const distance of [24, 28, 32, 36, 40]) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 0, x: x - distance, y }, { id: 1, x: x + distance, y }] });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.notEqual(await canvasTransform(), beforePinch, 'Two-finger pinch zooms the diagram');
+    assert.deepEqual(await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale })), pageState, 'Pinch preserves page scroll and browser scale');
+    await page.$eval('.vp-doc h1', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const outside = await page.$eval('.vp-doc h1', node => { const rect = node.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }; });
+    const scrollBefore = await page.evaluate(() => scrollY);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 0, ...outside }] });
+    for (const dy of [15, 30, 45, 60]) {
+      await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 0, x: outside.x, y: outside.y - dy }] });
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+    }
+    // Cancel the gesture so its inertial scroll cannot overlap the keyboard test.
+    await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await page.waitForFunction(before => scrollY > before, {}, scrollBefore);
+  } finally {
+    await client.detach();
   }
-  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Interactive diagram must not expand the page');
+}
+
+async function checkMermaidTouchSamples(browser: Browser, url: (path: string) => string): Promise<void> {
+  for (const dark of [false, true]) for (const path of ['modules/2/tracks/offline/caching-strategies', 'modules/2/tracks/bff/auth-scenarios']) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage();
+      await observe(page);
+      await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+      await page.evaluateOnNewDocument(dark => localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light'), dark);
+      await page.goto(url(path), { waitUntil: 'networkidle0' });
+      const diagram = await page.waitForSelector('figure[data-diagram-kind="mermaid"]');
+      assert(diagram);
+      await diagram.scrollIntoView();
+      await page.waitForSelector('.mermaid svg');
+      await checkMermaidTouch(page, diagram);
+      console.log(`PASS mobile touch ${dark ? 'dark' : 'light'} ${path}: pinch and outside page scroll`);
+    } finally {
+      await context.close();
+    }
+  }
 }
 
 async function visitMermaidDiagrams(page: Page, expected: number): Promise<void> {
@@ -273,30 +313,61 @@ async function checkMermaidLifecycle(browser: Browser, url: (path: string) => st
       const { listeners } = await client.send('DOMDebugger.getEventListeners', { objectId: result.objectId! });
       await client.send('Runtime.releaseObject', { objectId: result.objectId! });
       return { config: listeners.filter(listener => listener.type === 'vitepress-mermaid:config-updated').length,
-        toolbar: listeners.filter(listener => listener.type === 'vitepress-mermaid:toolbar-updated').length };
+        toolbar: listeners.filter(listener => listener.type === 'vitepress-mermaid:toolbar-updated').length,
+        pointerMove: listeners.filter(listener => listener.type === 'pointermove').length };
     };
     await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
     await visitMermaidDiagrams(page, 5);
-    assert.deepEqual(await listeners(), { config: 10, toolbar: 5 });
+    assert.deepEqual(await listeners(), { config: 10, toolbar: 5, pointerMove: 5 });
     for (let visit = 0; visit < 3; visit++) {
       // Leave while mounted diagrams are re-rendering, including queued render work.
       await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
       await page.$eval('.vp-doc a[href="./theory"]', node => (node as HTMLElement).click());
       await page.waitForFunction(() => location.pathname.endsWith('/offline/theory') && document.querySelector('.vp-doc h1')?.textContent?.includes('Теория офлайн'));
       await visitMermaidDiagrams(page, 5);
-      assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Leaving a page releases its Mermaid components');
+      assert.deepEqual(await listeners(), { config: 10, toolbar: 5, pointerMove: 5 }, 'Leaving a page releases its Mermaid components');
       await page.$eval('.vp-doc a[href="./caching-strategies#networkonly"]', node => (node as HTMLElement).click());
       await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies') && document.querySelectorAll('div.language-mermaid').length === 5);
       await visitMermaidDiagrams(page, 5);
-      assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Repeated SPA visits do not accumulate Mermaid listeners');
+      assert.deepEqual(await listeners(), { config: 10, toolbar: 5, pointerMove: 5 }, 'Repeated SPA visits do not accumulate Mermaid listeners');
     }
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.mermaid-container');
     await page.$eval('.vp-doc a[href="./theory"]', node => (node as HTMLElement).click());
     await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Теория офлайн'));
     await visitMermaidDiagrams(page, 5);
-    assert.deepEqual(await listeners(), { config: 10, toolbar: 5 }, 'Leaving during initial/lazy rendering releases old components');
+    assert.deepEqual(await listeners(), { config: 10, toolbar: 5, pointerMove: 5 }, 'Leaving during initial/lazy rendering releases old components');
     console.log('PASS Mermaid lifecycle: repeated SPA, active rendering and bounded document listeners');
+  } finally {
+    await context.close();
+  }
+}
+
+async function checkMermaidErrorState(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    const errors = await observeMermaidErrors(page);
+    await page.setViewport({ width: 1200, height: 900 });
+    await page.goto(url('modules/2/tracks/bff/auth-scenarios'), { waitUntil: 'networkidle0' });
+    const diagrams = await page.$$('figure[data-diagram-kind="mermaid"]');
+    const diagram = diagrams.at(-1);
+    assert(diagram, 'Error fixture needs a real Mermaid frame');
+    await diagram.$eval('.language-mermaid pre', node => { node.textContent = 'flowchart TB\nA[unterminated'; });
+    await diagram.scrollIntoView();
+    await diagram.waitForSelector('[role="alert"]', { visible: true });
+    assert.match(await diagram.$eval('[role="alert"]', node => node.textContent || ''), /Не удалось отрисовать/);
+    assert(errors.some(error => error.message.includes('Не удалось отрисовать')), 'Observer records the real static-render error');
+    await diagram.$eval('.language-mermaid', node => {
+      const pre = document.createElement('pre');
+      pre.className = 'language-mermaid';
+      pre.textContent = 'flowchart TB\nA-->B';
+      node.replaceChildren(pre);
+    });
+    await diagram.waitForSelector('svg');
+    await page.waitForFunction(node => !node.querySelector('[role="alert"], [role="status"]') && !!node.querySelector('button[aria-label="Увеличить"]'), {}, diagram);
+    assert.equal(await diagram.$('.error-icon, .error-text, .diagram-error'), null);
+    console.log('PASS static Mermaid failure: visible error, then recovery from corrected lazy source');
   } finally {
     await context.close();
   }
@@ -338,17 +409,19 @@ async function checkMermaid(browser: Browser, url: (path: string) => string): Pr
     await fixture.close();
   }
 
+  await checkMermaidErrorState(browser, url);
+  await checkMermaidTouchSamples(browser, url);
   await checkMermaidLifecycle(browser, url);
 
   const errors: MermaidError[] = [];
   const states: unknown[] = [];
   try {
-    for (const width of [2560, 390]) for (const mode of [null, 3]) for (const dark of [false, true]) {
+    for (const width of [390, 2560]) for (const mode of [null, 3]) for (const dark of [false, true]) {
       const context = await browser.createBrowserContext();
       try {
         const page = await context.newPage();
         const observed = await observe(page);
-        await page.setViewport({ width, height: width === 390 ? 844 : 1440 });
+        await page.setViewport({ width, height: width === 390 ? 844 : 1440, hasTouch: width === 390, isMobile: width === 390 });
         await page.evaluateOnNewDocument(({ dark, mode }) => {
           if (window !== window.top) return;
           localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
@@ -381,6 +454,7 @@ async function checkMermaid(browser: Browser, url: (path: string) => string): Pr
         await checkMermaidInteraction(page);
         await page.screenshot({ path: join(artifacts, `${name}-flowchart.png`) });
         await page.goto(url('modules/2/tracks/bff/auth-scenarios'), { waitUntil: 'networkidle0' });
+        await page.$eval('figure[data-diagram-kind="mermaid"]', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
         await page.waitForSelector('.mermaid svg');
         await checkMermaidInteraction(page);
         await page.screenshot({ path: join(artifacts, `${name}-sequence.png`) });
@@ -391,10 +465,23 @@ async function checkMermaid(browser: Browser, url: (path: string) => string): Pr
           return document.documentElement.classList.contains('dark') === expectedDark && actor && getComputedStyle(actor).fill !== oldFill;
         }, {}, beforeTheme, !dark);
         // Reconfigure during rendering, then leave through a real VitePress link while fullscreen.
-        const controls = width === 390 ? '.mobile-controls' : '.desktop-controls';
-        await page.click(`.mermaid-container ${controls} button[aria-label="На весь экран"]`);
+        await page.click('figure[data-diagram-kind="mermaid"] button[aria-label="На весь экран"]');
         await page.waitForFunction(() => !!document.fullscreenElement);
+        await page.waitForFunction(() => {
+          const root = document.fullscreenElement!;
+          const frame = root.querySelector<HTMLElement>('.diagram__frame')!;
+          const canvas = root.querySelector<HTMLElement>('.diagram__canvas')!;
+          return Math.abs(new DOMMatrix(getComputedStyle(canvas).transform).a - Math.min(1, frame.clientWidth / canvas.offsetWidth, frame.clientHeight / canvas.offsetHeight)) < .001;
+        });
+        const fullscreenView = await page.$eval('figure[data-diagram-kind="mermaid"] .diagram__canvas', node => getComputedStyle(node).transform);
+        const fullscreenFill = await page.$eval('.mermaid svg .actor', node => getComputedStyle(node).fill);
         await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+        await page.waitForFunction(fill => {
+          const actor = document.querySelector('.mermaid svg .actor');
+          return actor && getComputedStyle(actor).fill !== fill && !actor.closest('.mermaid')?.classList.contains('mermaid-rendering');
+        }, {}, fullscreenFill);
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        assert.equal(await page.$eval('figure[data-diagram-kind="mermaid"] .diagram__canvas', node => getComputedStyle(node).transform), fullscreenView, 'Theme rerender preserves the fullscreen view');
         await page.$eval('.vp-doc a[href="./auth#cookie-сессии"]', node => (node as HTMLElement).click());
         await page.waitForFunction(() => location.pathname.endsWith('/bff/auth') && !document.fullscreenElement);
         await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());

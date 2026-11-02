@@ -41,7 +41,7 @@ function onWheel(event: WheelEvent): void {
   panzoom.zoomWithWheel(event);
 }
 function onArrow(event: KeyboardEvent): void {
-  if (event.target !== frame.value || !panzoom) return;
+  if (event.target !== frame.value || !panzoom || event.altKey || event.ctrlKey || event.metaKey) return;
   const directions: Record<string, [number, number]> = { ArrowDown: [0, -1], ArrowUp: [0, 1], ArrowLeft: [1, 0], ArrowRight: [-1, 0] };
   const direction = directions[event.key];
   if (!direction) return;
@@ -99,20 +99,23 @@ onMounted(() => {
   observer.observe(frame.value!);
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('keydown', onEscape);
-  watch(() => props.size, async size => {
+  watch(() => props.size, async (size, previous) => {
+    if (size && size.width === previous?.width && size.height === previous?.height) return;
     const version = ++generation;
     if (!size) { panzoom?.destroy(); panzoom = undefined; return; }
     await nextTick();
     if (version !== generation) return;
     if (panzoom) {
-      fit = fitScale(frame.value!.clientWidth, size.width);
+      const box = frame.value!;
+      const full = overlay.value || document.fullscreenElement === card.value;
+      fit = full ? fitScale(box.clientWidth, size.width, box.clientHeight, size.height) : fitScale(box.clientWidth, size.width);
       panzoom.setOptions({ minScale: fit });
       if (panzoom.getScale() < fit) panzoom.zoom(fit, { animate: false });
       return;
     }
     const { default: Panzoom } = await import('@panzoom/panzoom');
     if (version !== generation || !canvas.value || !frame.value) return;
-    panzoom = Panzoom(canvas.value, { cursor: 'grab', maxScale: MAX_SCALE, animate: false });
+    panzoom = Panzoom(canvas.value, { canvas: true, cursor: 'grab', maxScale: MAX_SCALE, animate: false });
     fitToFrame();
   }, { immediate: true, flush: 'post' });
 });
@@ -140,7 +143,7 @@ onBeforeUnmount(() => {
         <button type="button" aria-label="На весь экран" title="На весь экран" @click="toggleFullscreen">⛶</button>
       </template>
     </div>
-    <div ref="frame" class="diagram__frame" :style="frameCss" :tabindex="size ? 0 : -1" :aria-label="`Схема ${title}. Стрелки — перемещение`" @keydown="onArrow">
+    <div ref="frame" class="diagram__frame" role="group" :style="frameCss" :tabindex="size ? 0 : -1" :aria-label="`Схема ${title}. Стрелки — перемещение`" @keydown="onArrow">
       <div ref="canvas" class="diagram__canvas" :class="{ 'diagram__canvas--pending': !size }" :style="size ? { width: `${size.width}px`, height: `${size.height}px` } : undefined">
         <slot />
       </div>

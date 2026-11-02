@@ -132,7 +132,7 @@ TypeScript, Bun, существующий Puppeteer browser CLI. Node>=22.22, Bu
   Делегировать сохранённому `md.renderer.rules.fence`; только `token.info.trim()==='mermaid'`
   оборачивать в block `<MermaidFrame>…</MermaidFrame>` с переводами строк.
 
-- [ ] **1. Написать RED для размеров и wrapping.** В Bun pure tests:
+- [x] **1. Написать RED для размеров и wrapping.** В Bun pure tests:
   viewBox `0 0 651 1222` даёт `{width:651,height:1222}` независимо от CSS transform;
   fallback положительные absolute width/height attrs, отсутствующий/нулевой/NaN размер даёт null.
   Приоритет валидного viewBox над CSS/процентными attrs. DOM input задавать маленьким structural
@@ -141,20 +141,20 @@ TypeScript, Bun, существующий Puppeteer browser CLI. Node>=22.22, Bu
   TypeScript fence не изменён; Markdown внутри `template #diagram` компилируется, heading ID сохранён.
   `bun test scripts/mermaid-size.test.ts scripts/mermaid-fence.test.ts` падает на отсутствующих API.
 
-- [ ] **2. Добавить browser RED новой рамки Mermaid.** В секции mermaid использовать helper
+- [x] **2. Добавить browser RED новой рамки Mermaid.** В секции mermaid использовать helper
   Task2 для flowchart caching-strategies и sequence auth-scenarios; selector
   `figure[data-diagram-kind="mermaid"]`. Проверить отсутствие собственной панели renderer,
   один canvas/Panzoom на diagram, inline scale=`min(1,frameWidth/naturalWidth)` с tolerance0.01,
   без ограничения высотой. Старый DOM не удовлетворяет контракту; сохранить RED.
 
-- [ ] **3. Подключить подготовленный пакет.** В `package.json` установить Task1 полный SHA,
+- [x] **3. Подключить подготовленный пакет.** В `package.json` установить Task1 полный SHA,
   обновить lock через Bun; проверить frozen install из чистой копии.
   В `index.ts` зарегистрировать `MermaidFrame`, включить `static:true`, сохранить theme/strict/
   sequence/flowchart настройки. Удалить лишние native Mermaid toolbar/keydown handlers,
   сохраняя корректные русские ошибки нового адаптера и существующий theme watcher.
   В markdown.config подключить `mermaidFence` после текущих Tabs/Group Icons; не менять их renderer.
 
-- [ ] **4. Реализовать адаптер и размеры.** В `MermaidFrame.vue` status сначала
+- [x] **4. Реализовать адаптер и размеры.** В `MermaidFrame.vue` status сначала
   «Загрузка схемы…» (`role=status`), size=null; listener на собственном DOM ancestor установить
   до запуска factory. На success после nextTick найти SVG внутри target wrapper и измерить
   `readMermaidSize`; неверный размер показать как «Не удалось определить размер схемы».
@@ -165,7 +165,7 @@ TypeScript, Bun, существующий Puppeteer browser CLI. Node>=22.22, Bu
   theme rerender не создаёт новый Panzoom и не сбрасывает view при прежних размерах.
   Убрать Mermaid bottom76px и старое fit CSS; SVG занимает natural size, фон следует теме.
 
-- [ ] **5. Проверить ошибки и lifecycle в browser CLI.** Test-only DOM fixture со сломанным
+- [x] **5. Проверить ошибки и lifecycle в browser CLI.** Test-only DOM fixture со сломанным
   Mermaid source обязана получить видимый alert, а затем корректный source — живую схему;
   fixture errors хранить отдельно от product errors, не подавлять реальные события.
   Lazy offscreen source рисуется при посещении, начальный visible source не зависает.
@@ -177,7 +177,7 @@ TypeScript, Bun, существующий Puppeteer browser CLI. Node>=22.22, Bu
   counts соответствуют только текущим mounted components; callbacks detached frames не срабатывают.
   Сохранить document-start transient-error observer и его negative self-check без ослабления.
 
-- [ ] **6. GREEN и commit.** Новые Bun tests, `typecheck/test/modules:check/build` как Task2,
+- [x] **6. GREEN и commit.** Новые Bun tests, `typecheck/test/modules:check/build` как Task2,
   затем `CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts mermaid plugins`.
   В desktop2560×1440/mobile390×844 проверить light/dark, drag/pinch/keyboard/fullscreen/fallback,
   очистку overlay, page scroll, кнопки и геометрию flowchart/sequence. Коммит
