@@ -87,6 +87,108 @@ async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
   return errors;
 }
 
+async function checkDiagramFrameInteraction(page: Page, selector: string): Promise<void> {
+  const diagram = await page.waitForSelector(selector);
+  assert(diagram);
+  const frame = await diagram.$('.diagram__frame');
+  assert(frame);
+  const transform = () => diagram.$eval('.diagram__canvas', node => {
+    if (!node.isConnected) throw new Error(`Detached diagram at ${location.href}`);
+    return getComputedStyle(node).transform;
+  });
+  const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+  const point = async () => {
+    await frame.evaluate(node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const box = await frame.boundingBox();
+    assert(box);
+    assert(await frame.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+    }), 'Wheel target must be the diagram, below fixed navigation');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    return box;
+  };
+  const click = async (name: string) => {
+    const button = await diagram.$(`button[aria-label="${name}"]`);
+    assert(button);
+    await button.evaluate(node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await button.click();
+    await settle();
+  };
+  await point();
+  await frame.evaluate(node => (node as HTMLElement).focus({ preventScroll: true }));
+  assert(await frame.evaluate(node => document.activeElement === node), 'Diagram frame must receive keyboard focus');
+  const beforeKey = await transform();
+  const keyScroll = await page.evaluate(() => scrollY);
+  await page.keyboard.press('ArrowDown');
+  await settle();
+  assert.notEqual(await transform(), beforeKey, 'ArrowDown pans the focused diagram');
+  assert(Math.abs(await page.evaluate(() => scrollY) - keyScroll) <= 1, 'Arrow pan does not scroll the page');
+  await page.keyboard.press('Tab');
+  assert(await frame.evaluate(node => document.activeElement !== node), 'Tab leaves the canvas');
+  await click('Вписать');
+  for (const zoomed of [false, true]) {
+    if (zoomed) await click('Увеличить');
+    await point();
+    const beforeWheel = await transform();
+    const beforeY = await page.evaluate(() => scrollY);
+    await page.mouse.wheel({ deltaY: 100 });
+    await settle();
+    assert(await page.evaluate(() => scrollY) > beforeY, 'Ordinary wheel scrolls the page over the diagram');
+    assert.equal(await transform(), beforeWheel, 'Ordinary wheel leaves scale and pan unchanged');
+  }
+  const wheelZoom = async () => {
+    await point();
+    const beforeZoom = await transform();
+    const state = () => page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale, dpr: devicePixelRatio }));
+    const before = await state();
+    await page.keyboard.down('Control');
+    await page.mouse.wheel({ deltaY: -100 });
+    await settle();
+    await page.keyboard.up('Control');
+    assert.notEqual(await transform(), beforeZoom, 'Ctrl+wheel zooms the diagram');
+    assert.deepEqual(await state(), before, 'Ctrl+wheel preserves browser scale and scroll');
+  };
+  await wheelZoom();
+  const box = await point();
+  const beforeDrag = await transform();
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 20, { steps: 5 });
+  await page.mouse.up();
+  assert.notEqual(await transform(), beforeDrag, 'Drag pans the diagram');
+  await click('Вписать');
+  const initial = await transform();
+  const plus = await diagram.$('button[aria-label="Увеличить"]');
+  await plus!.focus();
+  await page.keyboard.press('Enter');
+  await settle();
+  assert.notEqual(await transform(), initial, 'Enter activates zoom button');
+  await click('Вписать');
+  for (const exit of ['button', 'Escape', 'fallback']) {
+    if (exit === 'fallback') await diagram.evaluate(node => {
+      Object.defineProperty(node, 'requestFullscreen', { configurable: true, value: () => Promise.reject(new Error('test fallback')) });
+    });
+    await diagram.evaluate(node => (node.querySelector('button[aria-label="На весь экран"]') as HTMLElement).focus({ preventScroll: true }));
+    const state = await page.evaluate(() => ({ y: scrollY, overflow: document.body.style.overflow, settings: { ...localStorage } }));
+    await page.keyboard.press('Space');
+    await page.waitForFunction(() => !!document.fullscreenElement || !!document.querySelector('.diagram--overlay'));
+    if (exit === 'button') await click('На весь экран');
+    else await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.fullscreenElement && !document.querySelector('.diagram--overlay'));
+    await settle();
+    assert.deepEqual(await page.evaluate(() => ({ y: scrollY, overflow: document.body.style.overflow, settings: { ...localStorage } })), state, 'Fullscreen preserves page position and reading state');
+    // Native fullscreen leaves stale input coordinates in Chrome's emulated viewport.
+    const viewport = page.viewport()!;
+    await page.setViewport({ ...viewport, width: viewport.width + 1 });
+    await page.setViewport(viewport);
+    await settle();
+    await wheelZoom();
+    await click('Вписать');
+  }
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Diagram frame has no page overflow');
+}
+
 async function checkMermaidInteraction(page: Page): Promise<void> {
   const container = await page.$('.mermaid-container');
   assert(container, 'interactiveFlowchartAndSequence: diagram needs interactive controls');
@@ -899,7 +1001,6 @@ try {
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('pages')) await checkPages(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('plugins')) {
-  await checkOrdinaryLinks(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   const context = await browser.createBrowserContext();
   let page = await context.newPage();
   const importRequested = page.waitForRequest(request => request.url().includes('/panzoom.es.'), { timeout: 10000 });
@@ -959,6 +1060,7 @@ try {
   assert(diagramDocument);
   await diagramDocument.waitForSelector('svg');
   assert(await diagramDocument.$$eval('svg', elements => elements.reduce((count, element) => count + element.querySelectorAll('*').length, 0) > 10));
+  await checkDiagramFrameInteraction(page, '.diagram');
   const scaleBefore = await page.$eval('.diagram__canvas', element => getComputedStyle(element).transform);
   await page.click('.diagram button[aria-label="Увеличить"]');
   await page.waitForFunction(before => getComputedStyle(document.querySelector('.diagram__canvas')!).transform !== before, {}, scaleBefore);
@@ -1074,7 +1176,12 @@ try {
   await page.screenshot({ path: join(artifacts, `${label}-mobile.png`), fullPage: true });
   console.log('PASS mobile 390px: no page overflow, Russian reading menu available');
   await page.setViewport({ width: 1440, height: 1000 });
-  await page.hover('.VPNolebaseEnhancedReadabilitiesMenuFlyout');
+  await page.waitForSelector('.VPNolebaseEnhancedReadabilitiesMenuFlyout', { visible: true });
+  const menu = await page.$eval('.VPNolebaseEnhancedReadabilitiesMenuFlyout', node => {
+    const box = node.getBoundingClientRect();
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  });
+  await page.mouse.move(menu.x, menu.y);
   await page.waitForFunction(() => {
     const choice = document.querySelector('label[aria-label="Развёрнутый"]');
     return choice && !choice.classList.contains('disabled');
@@ -1082,6 +1189,7 @@ try {
   await page.locator('label[aria-label="Развёрнутый"]').click();
   await page.waitForSelector(fullWidth);
   console.log('PASS mobile to desktop: saved width survives; desktop menu can expand again');
+  await checkOrdinaryLinks(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   }
   assert.deepEqual(mermaidErrors.flat(), [], 'No transient Mermaid errors in any observed document');
   assert.equal(failures.length, 0, failures.join('\n'));

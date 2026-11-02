@@ -1,4 +1,5 @@
 // Масштаб схемы в карточке: «вписать», высота рамки, шаг кнопок −/+.
+export type DiagramSize = { width: number; height: number };
 export const MAX_SCALE = 4;
 export const STEP = 1.25;
 
