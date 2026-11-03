@@ -48,7 +48,10 @@ export function articleLoadingHeadScript(): string {
 function widthsReady(): boolean {
   const adjustable = document.body.matches('.VPNolebaseEnhancedReadabilitiesLayoutSwitchSidebarWidthAdjustableOnly,.VPNolebaseEnhancedReadabilitiesLayoutSwitchBothWidthAdjustable');
   return !adjustable || (['page', 'content'] as const).every(kind => {
-    const saved = parseInt(localStorage.getItem(`vitepress-nolebase-enhanced-readabilities-${kind}-layout-max-width`) ?? String(kind === 'page' ? 10000 : 8000));
+    let raw: string | null;
+    try { raw = localStorage.getItem(`vitepress-nolebase-enhanced-readabilities-${kind}-layout-max-width`); }
+    catch { return true; } // Without storage, retain the applied layout and let geometry determine readiness.
+    const saved = parseInt(String(parseFloat(raw ?? String(kind === 'page' ? 10000 : 8000))));
     const percent = matchMedia('(min-width: 1440px)').matches
       ? Math.ceil((Number.isNaN(saved) ? 10000 : Math.min(10000, Math.max(6000, saved))) / 100) : 100;
     return document.body.style.getPropertyValue(`--vp-nolebase-enhanced-readabilities-${kind}-max-width`) === `${percent}%`;

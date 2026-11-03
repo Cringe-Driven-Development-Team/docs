@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [width|loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['width', 'loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -34,9 +34,10 @@ const server = Bun.serve({
     return new Response('Not found', { status: 404 });
   },
 });
-async function observe(page: Page): Promise<MermaidError[]> {
+async function observe(page: Page, expectedConsoleError?: string): Promise<MermaidError[]> {
   page.on('console', message => {
     if (message.type() !== 'error') return;
+    if (expectedConsoleError && message.text().includes(expectedConsoleError)) return;
     const detail = `console: ${message.text()} ${message.location().url ?? ''}`;
     if (legacyFaviconUrls.has(message.location().url ?? '') && message.text() === 'Failed to load resource: the server responded with a status of 404 (Not Found)') optionalFaviconFailures.push(detail);
     else failures.push(detail);
@@ -85,6 +86,203 @@ async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
     }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
   }, prefix);
   return errors;
+}
+
+type WidthSample = {
+  ms: number; visible: boolean; loader: boolean; body: string; page: string; content: string;
+  boxes: Record<string, { left: number; width: number }>;
+};
+
+async function checkReadingWidth(browser: Browser, url: (path: string) => string): Promise<void> {
+  const plain = 'documentation/project-context';
+  const app = readFileSync(join('dist', `${plain}.html`), 'utf8').match(/<script\b[^>]*type="module"[^>]*src="([^"]+)"/);
+  assert(app?.[1], 'Width fixture needs the app module from matching built HTML');
+  const issues: string[] = [];
+  const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  type Case = { name: string; mode: string | null; values?: [string, string]; want?: [string, string];
+    viewport?: number; dark?: boolean; delay?: boolean; blocked?: boolean; reload?: boolean };
+  const run = async (fixture: Case) => {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage();
+      await observe(page, fixture.blocked ? 'reading-width-storage-fixture' : undefined);
+      await page.setViewport({ width: fixture.viewport ?? 2560, height: 1280 });
+      await page.setCacheEnabled(false);
+      await page.evaluateOnNewDocument(({ mode, values, dark, blocked }) => {
+        if (window !== window.top) return;
+        // Seed once so reload checks the values actually retained by the application.
+        if (!sessionStorage.getItem('reading-width-seeded')) {
+          sessionStorage.setItem('reading-width-seeded', 'yes');
+          localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+          if (mode !== null) localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', mode);
+          if (values) for (const [index, kind] of ['page', 'content'].entries())
+            localStorage.setItem(`vitepress-nolebase-enhanced-readabilities-${kind}-layout-max-width`, values[index]!);
+        }
+        if (blocked) for (const method of ['getItem', 'setItem'] as const) {
+          const original = Storage.prototype[method];
+          Storage.prototype[method] = function(key: string, value?: string) {
+            if (key.startsWith('vitepress-nolebase-enhanced-readabilities-')) throw new DOMException('reading-width-storage-fixture', 'SecurityError');
+            return Reflect.apply(original, this, value === undefined ? [key] : [key, value]);
+          };
+        }
+        const state = window as unknown as { widthSamples: WidthSample[] };
+        state.widthSamples = [];
+        const sample = () => {
+          const article = document.querySelector<HTMLElement>('.VPDoc > .container');
+          if (article) {
+            const boxes: WidthSample['boxes'] = {};
+            for (const [name, selector] of Object.entries({ article: '.VPDoc > .container', text: '.content-container',
+              sidebar: '.VPSidebar', nav: '.VPNavBar .container' })) {
+              const rect = document.querySelector(selector)?.getBoundingClientRect();
+              if (rect) boxes[name] = { left: rect.left, width: rect.width };
+            }
+            const visible = (element: Element) => {
+              const css = getComputedStyle(element);
+              return css.visibility === 'visible' && css.display !== 'none' && css.opacity !== '0';
+            };
+            const loader = document.querySelector('.article-loading');
+            state.widthSamples.push({ ms: performance.now(), visible: visible(article), loader: !!loader && visible(loader),
+              body: document.body.className, page: document.body.style.getPropertyValue('--vp-nolebase-enhanced-readabilities-page-max-width'),
+              content: document.body.style.getPropertyValue('--vp-nolebase-enhanced-readabilities-content-max-width'), boxes });
+          }
+          if (performance.now() < 10000) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }, fixture);
+      let releasedAt = 0;
+      const release = Promise.withResolvers<void>();
+      if (fixture.delay) {
+        await page.setRequestInterception(true);
+        page.on('request', request => { void (async () => {
+          if (request.url() === new URL(app[1]!, url('')).href) await release.promise;
+          await request.continue();
+        })().catch(error => failures.push(`width intercept: ${String(error)}`)); });
+      }
+      const navigate = async (reload = false) => {
+        const navigation = reload ? page.reload({ waitUntil: 'networkidle0' }) : page.goto(url(plain), { waitUntil: 'networkidle0' });
+        if (fixture.delay) {
+          await page.waitForSelector('.VPDoc > .container');
+          await pause(2500);
+          releasedAt = await page.evaluate(() => performance.now());
+          await page.screenshot({ path: join(artifacts, `${label}-width-${fixture.name}-before-app.png`) });
+          release.resolve();
+        }
+        await navigation;
+        await pause(1700);
+      };
+      await navigate();
+      if (fixture.reload) await navigate(true);
+      const report = await page.evaluate(() => ({
+        samples: (window as unknown as { widthSamples: WidthSample[] }).widthSamples,
+        fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime,
+        stored: (() => { try { return localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode'); } catch { return null; } })(),
+        text: document.querySelector('.vp-doc')?.textContent?.trim().length ?? 0,
+        overflow: document.documentElement.scrollWidth > innerWidth + 1,
+        dark: document.documentElement.classList.contains('dark'),
+      }));
+      await Bun.write(join(artifacts, `${label}-width-${fixture.name}.json`), JSON.stringify({ fixture, releasedAt, ...report }, null, 2));
+      const problem = (message: string) => issues.push(`${fixture.name}: ${message}`);
+      if (report.fcp === undefined) problem('no first-contentful-paint');
+      const beforePaint = report.samples.findLastIndex(row => row.ms < (report.fcp ?? 0));
+      const painted = report.samples.slice(Math.max(0, beforePaint));
+      const end = painted.at(-1);
+      if (!end || painted.length < 2) { problem('missing visible frame measurements'); return; }
+      if (painted.some(row => !row.visible || row.loader)) problem('plain text hidden or masked');
+      if (report.text < 100 || report.overflow) problem('text missing or horizontal overflow');
+      if (fixture.delay && painted.filter(row => row.ms < releasedAt).length < 2) problem('no frames before delayed app release');
+      if (fixture.dark !== undefined && report.dark !== fixture.dark) problem('theme fixture not applied');
+      for (const [name, expected] of Object.entries(end.boxes)) {
+        const moved = painted.find(row => Math.abs((row.boxes[name]?.left ?? NaN) - expected.left) > 1 || Math.abs((row.boxes[name]?.width ?? NaN) - expected.width) > 1);
+        if (moved) problem(`${name} moved after first paint: ${JSON.stringify(moved.boxes[name])} → ${JSON.stringify(expected)} at ${Math.round(moved.ms)}ms`);
+      }
+      if (!fixture.blocked && report.stored !== (['1', '3', '4', '5'].includes(fixture.mode ?? '') ? fixture.mode : '1')) problem(`unexpected saved mode ${report.stored}`);
+      if (fixture.want && (end.page !== fixture.want[0] || end.content !== fixture.want[1])) problem(`percent ${end.page}/${end.content}, expected ${fixture.want}`);
+      console.log(`CHECK width ${fixture.name}: ${painted.length} frames, FCP ${Math.round(report.fcp ?? 0)}ms`);
+      await Bun.write(join(artifacts, `${label}-width-failures.json`), JSON.stringify(issues, null, 2));
+      assert.deepEqual(issues, [], 'Reading width must match from first paint through plugin mount');
+
+      if (fixture.name === 'controlsAndNavigation') {
+        await page.hover('.VPNolebaseEnhancedReadabilitiesMenu');
+        await page.locator('label[aria-label="Оригинальная ширина"]').click();
+        await page.waitForFunction(() => !document.body.classList.contains('VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth'));
+        await page.$eval('.VPSidebar a[href$="/documentation/"]', node => (node as HTMLElement).click());
+        await page.waitForFunction(path => location.pathname === path, {}, new URL(url('documentation/')).pathname);
+        await page.goBack({ waitUntil: 'networkidle0' });
+        await page.reload({ waitUntil: 'networkidle0' }); await pause(1700);
+        assert.equal(await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode')), '3');
+        assert.equal(await page.$eval('.content-container', node => node.getBoundingClientRect().width), 688);
+      }
+      if (fixture.name === 'responsiveResize') {
+        for (const width of [390, 2560]) {
+          await page.setViewport({ width, height: 1280 }); await pause(1700);
+          assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+          assert.equal(await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode')), '5');
+          assert.equal(await page.evaluate(() => document.body.style.getPropertyValue('--vp-nolebase-enhanced-readabilities-page-max-width')), width === 390 ? '100%' : '75%');
+        }
+        await page.reload({ waitUntil: 'networkidle0' }); await pause(1700);
+        const rows = await page.evaluate(() => (window as unknown as { widthSamples: WidthSample[] }).widthSamples);
+        assert(rows.every(row => Math.abs(row.boxes.text!.width - rows.at(-1)!.boxes.text!.width) <= 1), 'responsive reload changed text width');
+      }
+      if (fixture.blocked) {
+        await page.goto(url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'), { waitUntil: 'networkidle0' });
+        await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+        assert(await page.$eval('.VPDoc > .container', node => getComputedStyle(node).visibility === 'visible'));
+        assert(await page.$('.diagram-section:has(#stalewhilerevalidate) svg'));
+        const bootstrap = readFileSync(join('dist', `${plain}.html`), 'utf8').match(/<script id="reading-layout"[^>]*>([\s\S]*?)<\/script>/)?.[1];
+        assert(bootstrap, 'Built HTML must contain the early layout script');
+        await page.evaluate(code => {
+          const descriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
+          Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('blocked getter', 'SecurityError'); } });
+          try {
+            document.body.classList.remove('VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth');
+            (0, eval)(code);
+            if (!document.body.classList.contains('VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth')) throw new Error('Blocked getter lost FullWidth fallback');
+          } finally { Object.defineProperty(window, 'localStorage', descriptor); }
+        }, bootstrap);
+      }
+      if (fixture.name === 'revokedStorage') {
+        await page.evaluate(target => {
+          const original = Storage.prototype.getItem;
+          Storage.prototype.getItem = function(key: string) {
+            if (key.startsWith('vitepress-nolebase-enhanced-readabilities-')) throw new DOMException('reading-width-storage-fixture', 'SecurityError');
+            return original.call(this, key);
+          };
+          const link = document.createElement('a'); link.href = target; document.body.append(link); link.click(); link.remove();
+        }, url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'));
+        await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'), { timeout: 3000 });
+        assert(await page.$('.diagram-section:has(#stalewhilerevalidate) svg'));
+      }
+    } finally { await context.close(); }
+  };
+  for (const mode of [null, '1', '3', '4', '5']) for (const reload of [false, true]) {
+    await run({ name: `firstPaint-${mode ?? 'default'}-${reload ? 'reload' : 'fresh'}`, mode, reload,
+      ...(mode === '4' || mode === '5' ? { values: ['7500', '6500'] as [string, string], want: ['75%', '65%'] as [string, string] } : {}) });
+  }
+  for (const mode of [null, '5']) for (const dark of [false, true])
+    await run({ name: `delayedApp-${mode ?? 'default'}-${dark ? 'dark' : 'light'}`, mode, dark, delay: true,
+      ...(mode === '5' ? { values: ['7500', '6500'] as [string, string], want: ['75%', '65%'] as [string, string] } : {}) });
+  for (const mode of ['999', 'broken']) await run({ name: `invalidMode-${mode}`, mode });
+  for (const [name, values, want] of [
+    ['clamped', ['-1', '12000'], ['60%', '100%']],
+    ['rounded', ['6551', '6551'], ['66%', '66%']],
+    ['invalid', ['broken', 'broken'], ['100%', '100%']],
+    ['numericSyntax', ['6.551e3', '0xFF'], ['66%', '60%']],
+  ] as const) await run({ name: `invalidStorage-${name}`, mode: '5', values: [...values], want: [...want] });
+  await run({ name: 'blockedStorage', mode: null, blocked: true });
+  await run({ name: 'revokedStorage', mode: '5', values: ['7500', '6500'], want: ['75%', '65%'] });
+  await run({ name: 'controlsAndNavigation', mode: null });
+  await run({ name: 'responsiveResize', mode: '5', values: ['7500', '6500'], want: ['75%', '65%'] });
+  for (const viewport of [390, 1439, 1440]) await run({ name: `responsive-${viewport}`, mode: '5', viewport,
+    values: ['7500', '6500'], want: viewport < 1440 ? ['100%', '100%'] : ['75%', '65%'] });
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage(); await page.setJavaScriptEnabled(false);
+    await page.goto(url(plain), { waitUntil: 'networkidle0' });
+    assert(await page.$eval('.vp-doc', node => getComputedStyle(node).visibility === 'visible' && (node.textContent?.length ?? 0) > 100));
+  } finally { await context.close(); }
+  await Bun.write(join(artifacts, `${label}-width-failures.json`), JSON.stringify(issues, null, 2));
+  assert.deepEqual(issues, [], 'Reading width must match from first paint through plugin mount');
+  console.log('PASS width: first paint, hard reload, delayed app, storage, controls, resize and no JS');
 }
 
 type LoadingSample = { ms: number; url: string; visible: boolean; loader: boolean; pending: boolean; y: number; top: number | null; height: number; frame: number; readyFrames: number; targetReady: boolean; fontsReady: boolean };
@@ -1498,6 +1696,7 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('width')) await checkReadingWidth(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('loading')) await checkArticleLoading(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
