@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PanzoomObject } from '@panzoom/panzoom';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { fitOffset, fitScale, frameStyle, MAX_SCALE, stepScale, widthChanged, type DiagramSize } from './diagram-scale.ts';
+import { fitOffset, fitScale, frameStyle, MAX_SCALE, minimumScale, stepScale, widthChanged, type DiagramSize } from './diagram-scale.ts';
 
 const props = defineProps<{ title: string; size: DiagramSize | null }>();
 const card = ref<HTMLElement>();
@@ -12,28 +12,32 @@ const frameCss = computed(() => props.size ? frameStyle(props.size.width, props.
 let panzoom: PanzoomObject | undefined;
 let observer: ResizeObserver | undefined;
 let observedWidth: number | undefined;
-let fit = 1;
+let minimum = .1;
 let generation = 0;
 let animation = 0;
 let wasFullscreen = false;
 let saved: { y: number; overflow: string; focus: HTMLElement | null } | undefined;
 
-function fitToFrame(): void {
+function resetView(whole: boolean): void {
   const box = frame.value;
   const size = props.size;
   if (!box?.clientWidth || !size || !panzoom) return;
-  const full = overlay.value || document.fullscreenElement === card.value;
-  fit = full ? fitScale(box.clientWidth, size.width, box.clientHeight, size.height) : fitScale(box.clientWidth, size.width);
+  const fullFit = fitScale(box.clientWidth, size.width, box.clientHeight, size.height);
+  minimum = minimumScale(fullFit);
+  const fit = whole ? fullFit : fitScale(box.clientWidth, size.width);
   const offset = fitOffset(size.width, size.height, fit);
-  panzoom.setOptions({ minScale: fit, maxScale: MAX_SCALE, startScale: fit, startX: offset.x, startY: offset.y });
+  panzoom.setOptions({ minScale: minimum, maxScale: MAX_SCALE, startScale: fit, startX: offset.x, startY: offset.y });
   panzoom.reset({ animate: false });
+}
+function fitToFrame(): void {
+  resetView(true);
 }
 function scheduleFit(): void {
   cancelAnimationFrame(animation);
-  animation = requestAnimationFrame(fitToFrame);
+  animation = requestAnimationFrame(() => resetView(overlay.value || document.fullscreenElement === card.value));
 }
 function step(direction: 1 | -1): void {
-  if (panzoom) panzoom.zoom(stepScale(panzoom.getScale(), direction, fit), { animate: true });
+  if (panzoom) panzoom.zoom(stepScale(panzoom.getScale(), direction, minimum), { animate: true });
 }
 function onWheel(event: WheelEvent): void {
   if (!panzoom || !(event.ctrlKey || event.metaKey)) return;
@@ -95,7 +99,7 @@ onMounted(() => {
     const width = entry?.contentRect.width ?? 0;
     if (!widthChanged(observedWidth, width)) return;
     observedWidth = width;
-    fitToFrame();
+    resetView(overlay.value || document.fullscreenElement === card.value);
   });
   observer.observe(frame.value!);
   document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -108,16 +112,15 @@ onMounted(() => {
     if (version !== generation) return;
     if (panzoom) {
       const box = frame.value!;
-      const full = overlay.value || document.fullscreenElement === card.value;
-      fit = full ? fitScale(box.clientWidth, size.width, box.clientHeight, size.height) : fitScale(box.clientWidth, size.width);
-      panzoom.setOptions({ minScale: fit });
-      if (panzoom.getScale() < fit) panzoom.zoom(fit, { animate: false });
+      minimum = minimumScale(fitScale(box.clientWidth, size.width, box.clientHeight, size.height));
+      panzoom.setOptions({ minScale: minimum });
+      if (panzoom.getScale() < minimum) panzoom.zoom(minimum, { animate: false });
       return;
     }
     const { default: Panzoom } = await import('@panzoom/panzoom');
     if (version !== generation || !canvas.value || !frame.value) return;
     panzoom = Panzoom(canvas.value, { canvas: true, cursor: 'grab', maxScale: MAX_SCALE, animate: false });
-    fitToFrame();
+    resetView(overlay.value || document.fullscreenElement === card.value);
   }, { immediate: true, flush: 'post' });
 });
 onBeforeUnmount(() => {

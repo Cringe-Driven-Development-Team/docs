@@ -46,7 +46,7 @@
 - Produces: `minimumScale(fullFit: number): number`, возвращает `Math.min(0.1, fullFit)`; существующие сигнатуры сохраняются. Общая рамка задаёт этот минимум всем каналам зума.
 - Новых интерфейсов между задачами нет: одна задача включает полный пользовательский результат.
 
-- [ ] **1. Добавить unit-регрессии до реализации.**
+- [x] **1. Добавить unit-регрессии до реализации.**
 
 В `diagram-scale.test.ts`:
 
@@ -65,12 +65,12 @@ test('readable start, full fit and manual minimum are independent', () => {
 
 В `label-slack.test.ts` добавить async-тест `padHtmlOutputs resets margins without clipping the standalone document`: временный HTML с `<head>`, холстом 1376×852 и существующей подписью; вызвать реальный `padHtmlOutputs`, проверить CSS `html,body{margin:0;padding:0}`, неизменные размеры/содержимое холста, отсутствие добавленных `overflow:hidden`/scripts и сохранение запаса ширины подписи. Временный каталог удалять в `finally`.
 
-- [ ] **2. Запустить unit-тесты и зафиксировать RED.**
+- [x] **2. Запустить unit-тесты и зафиксировать RED.**
 
 Run: `bun test scripts/diagram-scale.test.ts scripts/label-slack.test.ts`.
 Expected: FAIL из-за отсутствия нового расчёта/обнуления отступов, остальные старые тесты не сломаны.
 
-- [ ] **3. Добавить браузерные регрессии контракта.**
+- [x] **3. Добавить браузерные регрессии контракта.**
 
 В `checkDiagramFrameInteraction(page, selector)` до первого нажатия fit проверить начальный масштаб `min(1, frameWidth/canvasWidth)`. После fit проверить масштаб по двум сторонам и все четыре края холста внутри рамки с допуском 1px. «−» и Ctrl+wheel вниз уменьшают ниже fit при сохранении scroll/browser scale; многократные «−» достигают `min(.1, fullFit)`; «+» снова увеличивает. В существующем touch-тесте проверить также pinch внутрь, с теми же границами.
 
@@ -78,14 +78,14 @@ Expected: FAIL из-за отсутствия нового расчёта/обн
 
 В проверке Eraser в секции `plugins` добавить после загрузки iframe: `scrollWidth <= innerWidth`, `scrollHeight <= innerHeight`, computed margin/padding `0px`; нижний/правый край root canvas доступен. Для отдельного HTML открыть новую страницу малого размера, дождаться шрифтов и проверить положительную доступную прокрутку и фактический сдвиг `scrollX/scrollY` после `scrollTo`. Не отключать наблюдатели ошибок и не расширять исключения favicon.
 
-- [ ] **4. Воспроизвести браузерный RED на исходной сборке.**
+- [x] **4. Воспроизвести браузерный RED на исходной сборке.**
 
 Подготовить подходящий исходный `dist` обычной native-сборкой этой ветки либо использовать исходную сборку того же SHA без подмены исходников.
 
 Run: `CHROMIUM_PATH=/usr/bin/google-chrome bun scripts/check-readability.ts mermaid plugins` с логом в workspace плана.
 Expected: FAIL нового утверждения полного обзора/уменьшения или документа Eraser. Читать первую причину падения, не менять старые проверки ради GREEN.
 
-- [ ] **5. Внести минимальную реализацию.**
+- [x] **5. Внести минимальную реализацию.**
 
 `diagram-scale.ts`: экспортировать `minimumScale(fullFit: number): number`; сохранять существующий расчёт `fitScale` с необязательной высотой и предел `MAX_SCALE = 4`.
 
@@ -95,12 +95,12 @@ Expected: FAIL нового утверждения полного обзора/�
 
 README: описать различие открытия, полного обзора и ручного масштаба.
 
-- [ ] **6. Проверить unit GREEN и типы.**
+- [x] **6. Проверить unit GREEN и типы.**
 
 Run: `bun test scripts/diagram-scale.test.ts scripts/label-slack.test.ts && bun run typecheck`.
 Expected: все выбранные тесты PASS, typecheck exit 0.
 
-- [ ] **7. Собрать и проверить итоговый продукт.**
+- [x] **7. Собрать и проверить итоговый продукт.**
 
 Run: `DIAGRAMS_NATIVE=1 CHROMIUM_PATH=/usr/bin/google-chrome bun run build`, затем `bun run modules:check && bun run test`.
 Expected: build/site:check, modules и полная unit suite PASS; built PNG/root-canvas тест не пропущен.
@@ -110,7 +110,7 @@ Expected: PASS на поддерживаемых этой проверкой п�
 
 Повторять широкую матрицу только при новых изменениях/падениях; исправления из финального ревью покрывать целевыми регрессиями плюс unit suite. Nested build не обязателен: URL/base-код не меняется; опубликованное превью проверяет реальную вложенную базу.
 
-- [ ] **8. Зафиксировать результат задачи.**
+- [x] **8. Зафиксировать результат задачи.**
 
 Run: `git diff --check`, затем commit изменённых продуктовых файлов/тестов/README: `fix(схемы): разрешить уменьшение и убрать внутренние скроллы`.
 Expected: чистый diff-check и успешный commit; журнал содержит RED→GREEN и фактические результаты команд.
