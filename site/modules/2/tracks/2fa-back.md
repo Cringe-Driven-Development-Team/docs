@@ -24,20 +24,76 @@ part_of: 2fa
 Выбор способа реализации остаётся работой студента. Согласованные
 требования и связь с работой фронта собраны в задаче
 [backend#23](https://github.com/Cringe-Driven-Development-Team/backend/issues/23).
-По уточнению от 04.11.2026 ограничения попыток ввода TOTP-кода и пароля не требуются;
-соответствующее требование backend#23 не применяется.
+Ограничения попыток ввода TOTP-кода и пароля не требуются.
 
 ## Операции API
 
 Операции и их результаты заданы в backend#23. Настройка, подтверждение и отключение
 относятся только к текущему авторизованному пользователю; вход не требует предварительной авторизации.
 
-| Операция | Авторизация | Входные данные | Успешный результат |
-| --- | --- | --- | --- |
-| `POST /auth/enable2fa` | Нужна | Без тела запроса | `200`, JSON с `qr_code` — строкой PNG data URI и `secret` — строкой Base32 без padding, пробелов и разделителей; защита ещё выключена |
-| `POST /auth/confirm2fa` | Нужна | `user_code` — строка ровно из шести ASCII-цифр, с сохранением ведущих нулей | `200`, защита включена |
-| `POST /auth/login` | Не нужна | `login`, `password`; `user_code` обязателен при подключённой 2FA и передаётся в том же строковом формате | `200`, пользователь с `has_2fa: false` без подключённой 2FA или `has_2fa: true` после успешной проверки второго фактора |
-| `POST /auth/disable2fa` | Нужна | `password` | `200`, защита выключена, секрет удалён |
+Все данные в примерах вымышленные. Строка PNG data URI сокращена многоточием;
+она показывает формат значения, а не готовый QR-код.
+
+<table class="twofa-api-table" tabindex="0" aria-label="Операции API 2FA">
+<thead>
+<tr><th scope="col">Операция</th><th scope="col">Авторизация</th><th scope="col">Входные данные</th><th scope="col">Успешный результат</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /auth/enable2fa</code></td>
+<td>Нужна</td>
+<td>Без тела запроса</td>
+<td><code>200 OK</code>, JSON с <code>qr_code</code> — строкой PNG data URI и <code>secret</code> — строкой Base32 без padding, пробелов и разделителей; защита ещё выключена.
+<pre v-pre><code>{
+  "qr_code": "data:image/png;base64,iVBORw0KGgo…",
+  "secret": "JBSWY3DPEHPK3PXP"
+}</code></pre>
+</td>
+</tr>
+<tr>
+<td><code>POST /auth/confirm2fa</code></td>
+<td>Нужна</td>
+<td><code>user_code</code> — строка ровно из шести ASCII-цифр, с сохранением ведущих нулей.
+<pre v-pre><code>{
+  "user_code": "012345"
+}</code></pre>
+</td>
+<td><code>200 OK</code>, защита включена. Тело ответа в контракте не задано.</td>
+</tr>
+<tr>
+<td><code>POST /auth/login</code></td>
+<td>Не нужна</td>
+<td><code>login</code>, <code>password</code>; <code>user_code</code> обязателен при подключённой 2FA и передаётся в том же строковом формате. Пример входа с включённой 2FA:
+<pre v-pre><code>{
+  "login": "demo-user",
+  "password": "demo-password",
+  "user_code": "012345"
+}</code></pre>
+</td>
+<td><code>200 OK</code>, пользователь с <code>has_2fa: false</code> без подключённой 2FA или <code>has_2fa: true</code> после успешной проверки второго фактора. Пример второго случая:
+<pre v-pre><code>{
+  "id": "123e4567-e89b-42d3-a456-426614174000",
+  "version": 1,
+  "login": "demo-user",
+  "avatar": "https://example.com/avatar.png",
+  "created_at": "2026-01-01T12:00:00Z",
+  "updated_at": "2026-01-02T12:00:00Z",
+  "has_2fa": true
+}</code></pre>
+</td>
+</tr>
+<tr>
+<td><code>POST /auth/disable2fa</code></td>
+<td>Нужна</td>
+<td><code>password</code>
+<pre v-pre><code>{
+  "password": "demo-password"
+}</code></pre>
+</td>
+<td><code>200 OK</code>, защита выключена, секрет удалён. Тело ответа в контракте не задано.</td>
+</tr>
+</tbody>
+</table>
 
 `qr_code` и `secret` относятся к одному секрету. Успешный вход сохраняет исходные поля
 пользователя: `id`, `version`, `login`, `avatar`, `created_at`, `updated_at`, `has_2fa`.
