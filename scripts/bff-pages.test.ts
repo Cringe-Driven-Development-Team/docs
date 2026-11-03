@@ -17,11 +17,8 @@ export const BOOTSTRAP = "site/modules/2/tracks/bff/bootstrap.md";
 export const RELEASE = "site/modules/2/tracks/bff/release.md";
 export const ROLLBACK = "site/modules/2/tracks/bff/rollback.md";
 export const BFF_PAGES = [TRACK, WORKSPACE, MIGRATION, INFRASTRUCTURE, CONTRACT, PROCEDURES, CLIENT, AUTH, AUTH_SCENARIOS, SERVICE, BUILD_AND_RUN, BOOTSTRAP, RELEASE, ROLLBACK];
-export const CSRF_PAGES = ["site/documentation/csrf/index.md", "site/documentation/csrf/scenarios.md", "site/documentation/csrf/checks.md"];
 export const TRPC_WARNING = "Решение по tRPC меняет участок клиент → BFF";
 export const OLD_WARNING = "Проект трека миграции на BFF, ещё не внедрено";
-export const TIP =
-  "История проверки 07.10.2026, до BFF. Это не описание текущей защиты. Проверенный гостевой маршрут — [BFF сейчас](/documentation/bff); целевые сценарии — [план трека](/modules/2/tracks/bff/auth-scenarios).";
 
 /** Первый блок `:::` страницы: после frontmatter и строки `# `, если она есть. */
 export function firstBlock(md: string): string {
@@ -91,14 +88,6 @@ test("старого раздела нет", () => {
 test("ссылок на /bff/ не осталось", () => {
   for (const file of new Bun.Glob("site/**/*.md").scanSync()) {
     expect(readFileSync(file, "utf8"), file).not.toContain("](/bff/");
-  }
-});
-
-test("страницы CSRF явно отделяют историю от текущего BFF", () => {
-  for (const file of CSRF_PAGES) {
-    const block = firstBlock(readFileSync(file, "utf8"));
-    expect(block.startsWith("::: warning"), file).toBe(true);
-    expect(block, file).toContain(TIP);
   }
 });
 

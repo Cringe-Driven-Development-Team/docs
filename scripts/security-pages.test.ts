@@ -9,6 +9,15 @@ const read = (page: string): string => {
   return readFileSync(file, 'utf8');
 };
 
+test('security: исторический CSRF удалён, страницы ссылаются на актуальный раздел', () => {
+  for (const page of ['index', 'scenarios', 'checks']) {
+    expect(existsSync(`site/documentation/csrf/${page}.md`)).toBe(false);
+  }
+  for (const file of new Bun.Glob('site/**/*.md').scanSync()) {
+    expect(readFileSync(file, 'utf8'), file).not.toContain('/documentation/csrf/');
+  }
+});
+
 test('security: обзор ведёт к трём существующим подразделам', () => {
   const overview = read('index');
   for (const page of pages.slice(1)) {
