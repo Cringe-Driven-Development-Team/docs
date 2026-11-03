@@ -1121,8 +1121,8 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
           await page.screenshot({ path: join(artifacts, `${label}-${path.replaceAll('/', '-')}-${width}-${dark ? 'dark' : 'light'}.png`) });
         }
       }
-      assert.equal(count, 50);
-      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 50 source Mermaid blocks rendered, no errors/overflow`);
+      assert.equal(count, 53);
+      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 53 source Mermaid blocks rendered, no errors/overflow`);
       await context.close();
     }
   }
