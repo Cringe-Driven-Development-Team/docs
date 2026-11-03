@@ -32,6 +32,14 @@ function resetView(whole: boolean): void {
 function fitToFrame(): void {
   resetView(true);
 }
+function updateMinimum(): void {
+  const box = frame.value;
+  const size = props.size;
+  if (!box?.clientWidth || !size || !panzoom) return;
+  minimum = minimumScale(fitScale(box.clientWidth, size.width, box.clientHeight, size.height));
+  panzoom.setOptions({ minScale: minimum });
+  if (panzoom.getScale() < minimum) panzoom.zoom(minimum, { animate: false });
+}
 function scheduleFit(): void {
   cancelAnimationFrame(animation);
   animation = requestAnimationFrame(() => resetView(overlay.value || document.fullscreenElement === card.value));
@@ -97,7 +105,7 @@ onMounted(() => {
   frame.value!.addEventListener('wheel', onWheel, { passive: false });
   observer = new ResizeObserver(([entry]) => {
     const width = entry?.contentRect.width ?? 0;
-    if (!widthChanged(observedWidth, width)) return;
+    if (!widthChanged(observedWidth, width)) { updateMinimum(); return; }
     observedWidth = width;
     resetView(overlay.value || document.fullscreenElement === card.value);
   });
@@ -111,10 +119,7 @@ onMounted(() => {
     await nextTick();
     if (version !== generation) return;
     if (panzoom) {
-      const box = frame.value!;
-      minimum = minimumScale(fitScale(box.clientWidth, size.width, box.clientHeight, size.height));
-      panzoom.setOptions({ minScale: minimum });
-      if (panzoom.getScale() < minimum) panzoom.zoom(minimum, { animate: false });
+      updateMinimum();
       return;
     }
     const { default: Panzoom } = await import('@panzoom/panzoom');

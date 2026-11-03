@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|zoom|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['loading', 'mermaid', 'zoom', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -557,6 +557,62 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     if (exit === 'fallback') await diagram.evaluate(node => { Reflect.deleteProperty(node, 'requestFullscreen'); });
   }
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Diagram frame has no page overflow');
+}
+
+async function checkHugeDiagramMinimum(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    await observe(page);
+    await page.setViewport({ width: 1440, height: 1000 });
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+    const diagram = await page.waitForSelector('figure[data-diagram-kind="mermaid"]');
+    assert(diagram);
+    await diagram.waitForSelector('svg');
+    await checkDiagramFrameInteraction(page, 'figure[data-diagram-kind="mermaid"]');
+    await diagram.evaluate(node => {
+      const svg = node.querySelector('svg')!;
+      svg.setAttribute('viewBox', '0 0 1000 10000');
+      svg.parentElement!.dispatchEvent(new CustomEvent('vitepress-mermaid:render-complete', { bubbles: true, detail: { success: true, id: 'huge-minimum-fixture' } }));
+    });
+    await page.waitForFunction(node => node.querySelector<HTMLElement>('.diagram__canvas')!.offsetHeight === 10000, {}, diagram);
+    const state = () => diagram.$eval('.diagram__canvas', node => {
+      const matrix = new DOMMatrix(getComputedStyle(node).transform);
+      return { scale: matrix.a, panX: matrix.e / matrix.a, panY: matrix.f / matrix.a };
+    });
+    const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+    const click = async (name: string) => { await diagram.$eval(`button[aria-label="${name}"]`, node => (node as HTMLElement).click()); await settle(); };
+    await click('Вписать');
+    assert(Math.abs((await state()).scale - .07) < .0001, 'Huge full overview initially uses 700/10000');
+    await diagram.$eval('.diagram__frame', node => (node as HTMLElement).focus({ preventScroll: true }));
+    await page.keyboard.press('ArrowDown');
+    await settle();
+    const beforeShrink = await state();
+    await page.setViewport({ width: 1440, height: 600 });
+    await settle();
+    assert.deepEqual(await state(), beforeShrink, 'Height shrink preserves admissible scale and pan');
+    await diagram.$eval('button[aria-label="Уменьшить"]', node => { for (let i = 0; i < 30; i++) (node as HTMLElement).click(); });
+    await settle();
+    const afterShrink = await state();
+    assert(Math.abs(afterShrink.scale - .042) < .0001, 'Height shrink updates manual minimum to 420/10000');
+    await page.setViewport({ width: 1440, height: 1000 });
+    await settle();
+    const afterGrowth = await state();
+    assert(Math.abs(afterGrowth.scale - .07) < .0001, 'Height growth clamps only a now-invalid scale');
+    assert(Math.abs(afterGrowth.panX - afterShrink.panX) < .1 && Math.abs(afterGrowth.panY - afterShrink.panY) < .1, 'Minimum correction preserves the existing pan');
+    await click('Увеличить');
+    const manual = await state();
+    await page.setViewport({ width: 1440, height: 600 });
+    await settle();
+    assert.deepEqual(await state(), manual, 'Another height change preserves the reader view');
+    await click('Вписать');
+    assert(await diagram.$eval('.diagram__frame', node => {
+      const frame = node.getBoundingClientRect(), canvas = node.querySelector('.diagram__canvas')!.getBoundingClientRect();
+      return canvas.left >= frame.left - 1 && canvas.top >= frame.top - 1 && canvas.right <= frame.right + 1 && canvas.bottom <= frame.bottom + 1;
+    }), 'Huge canvas remains fully accessible after height changes');
+    console.log('PASS huge diagram height-only: minimum updates below 10%, reader scale/pan preserved');
+  } finally { await context.close(); }
 }
 
 async function checkMermaidInteraction(page: Page): Promise<void> {
@@ -1558,6 +1614,7 @@ try {
     headless: true, args: ['--no-sandbox'],
   });
   if (check('loading')) await checkArticleLoading(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
+  if (check('mermaid') || sections.includes('zoom')) await checkHugeDiagramMinimum(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
