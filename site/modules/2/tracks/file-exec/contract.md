@@ -353,12 +353,15 @@ execution_id — строка 1–128 символов. JSON ниже содер
 Наш API принимает в If-Match только одну такую метку; списки, `*`, `W/` и пустое значение запрещены.
 Фронт передаёт обычное поле `hash` в tRPC — HTTP-заголовки для Go формирует BFF.
 
+Строки сгруппированы по tRPC-ручкам BFF. Внутри каждой группы указаны вызываемые HTTP-ручки бэка.
+
 <table class="notebook-api-table" tabindex="0" aria-label="Контракт BFF и backend">
-<thead><tr><th scope="col">HTTP-операция</th><th scope="col">Где используется в BFF</th><th scope="col">Параметры, заголовки и тело</th><th scope="col">HTTP-статус и результат</th></tr></thead>
+<thead><tr><th scope="col">HTTP-операция backend</th><th scope="col">Назначение / условие вызова</th><th scope="col">Параметры, заголовки и тело</th><th scope="col">HTTP-статус и результат</th></tr></thead>
 <tbody>
+<tr><th colspan="4" scope="rowgroup"><code>notebooks.get</code><br>Общий загрузчик также используется в server bootstrap; после bootstrap повторного запроса из браузера нет.</th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/43951862e0"><code>GET /notebooks/{id}</code></a></td>
-<td>Общий загрузчик: метаданные. cells этого ответа не заменяют content.</td>
+<td>Метаданные; cells этого ответа не заменяют content.</td>
 <td>Path: id блокнота. Без тела.</td>
 <td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/43951862e0">полная схема ответа</a>.<pre v-pre><code>{
   "id": 42,
@@ -369,7 +372,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814238e0"><code>GET /notebooks/{id}/content</code></a></td>
-<td>Общий загрузчик: hash и cells из одного ответа.</td>
+<td>Согласованные hash и cells из одного ответа.</td>
 <td>Path: id блокнота. Без тела.</td>
 <td>200 OK; HTTP-заголовок ответа <code>ETag: "h123"</code> содержит тот же hash, что и тело JSON.<pre v-pre><code>{
   "hash": "h123",
@@ -386,8 +389,34 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
+<td><a href="https://vb78fyael1.apidog.io/46351384e0"><code>GET /runtime-sessions/active</code></a></td>
+<td>Активная сессия пользователя. Ответ уже содержит полную сессию; не дублировать GET session.</td>
+<td>Без path/query/body. Единственная активная сессия пользователя.</td>
+<td>200 OK. Пример без сессии; иначе active_session содержит RuntimeSession.<pre v-pre><code>{
+  "active_session": null
+}</code></pre></td>
+</tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46495243e0"><code>GET /runtime-sessions/{id}/queue</code></a></td>
+<td>Очередь: только если активная сессия относится к открываемому блокноту.</td>
+<td>Path: id сессии. Без тела.</td>
+<td>200 OK. Только исполнения code-ячеек QUEUED/RUNNING, без инспекций; пустая очередь — items: [].<pre v-pre><code>{
+  "session_id": "123e4567-e89b-42d3-a456-426614174000",
+  "items": [
+    {
+      "execution_id": "123e4567-e89b-42d3-a456-426614174001",
+      "cell_id": "code-1",
+      "state": "QUEUED"
+    }
+  ]
+}</code></pre></td>
+</tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>cells.create</code></th></tr>
+<tr>
 <td><a href="https://vb78fyael1.apidog.io/45814239e0"><code>POST /notebooks/{id}/content/cells</code></a></td>
-<td>cells.create</td>
+<td>Добавление ячейки.</td>
 <td>Path: id блокнота. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index необязателен (0–1000), по умолчанию в конец; kind: code или markdown.<pre v-pre><code>{
   "kind": "code",
   "source": "print(1)",
@@ -402,9 +431,12 @@ execution_id — строка 1–128 символов. JSON ниже содер
   }
 }</code></pre></td>
 </tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>cells.update</code></th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814240e0"><code>PATCH /notebooks/{id}/content/cells/{cell_id}</code></a></td>
-<td>cells.update</td>
+<td>Изменение source ячейки.</td>
 <td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Меняет source выбранной ячейки.<pre v-pre><code>{
   "source": "print(1)"
 }</code></pre></td>
@@ -417,17 +449,23 @@ execution_id — строка 1–128 символов. JSON ниже содер
   }
 }</code></pre></td>
 </tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>cells.delete</code></th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814241e0"><code>DELETE /notebooks/{id}/content/cells/{cell_id}</code></a></td>
-<td>cells.delete</td>
+<td>Удаление ячейки.</td>
 <td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Без тела.</td>
 <td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456"
 }</code></pre></td>
 </tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>cells.move</code></th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814242e0"><code>POST /notebooks/{id}/content/cells/{cell_id}/move</code></a></td>
-<td>cells.move</td>
+<td>Перемещение ячейки.</td>
 <td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index 0–999 — итоговая позиция.<pre v-pre><code>{
   "index": 0
 }</code></pre></td>
@@ -435,9 +473,12 @@ execution_id — строка 1–128 символов. JSON ниже содер
   "hash": "h456"
 }</code></pre></td>
 </tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>runtime.start</code></th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/46351383e0"><code>POST /notebooks/{id}/runtime-sessions</code></a></td>
-<td>runtime.start</td>
+<td>Запуск окружения.</td>
 <td>Path: id блокнота. request_id 1–128 символов; language python или r, UI модуля использует python.<pre v-pre><code>{
   "request_id": "start-1",
   "language": "python"
@@ -449,28 +490,12 @@ execution_id — строка 1–128 символов. JSON ниже содер
   "stage": "queued"
 }</code></pre></td>
 </tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46351384e0"><code>GET /runtime-sessions/active</code></a></td>
-<td>Общий загрузчик. Уже содержит полную сессию; не дублировать GET session.</td>
-<td>Без path/query/body. Единственная активная сессия пользователя.</td>
-<td>200 OK. Пример без сессии; иначе active_session содержит RuntimeSession.<pre v-pre><code>{
-  "active_session": null
-}</code></pre></td>
-</tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46351385e0"><code>GET /runtime-sessions/{id}</code></a></td>
-<td>runtime.updates</td>
-<td>Path: id сессии. Без тела.</td>
-<td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351385e0">полная схема ответа</a>.<pre v-pre><code>{
-  "id": "123e4567-e89b-42d3-a456-426614174000",
-  "notebook_id": 42,
-  "state": "READY",
-  "stage": "ready"
-}</code></pre></td>
-</tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>runtime.execute</code></th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/46351386e0"><code>POST /runtime-sessions/{id}/executions</code></a></td>
-<td>runtime.execute</td>
+<td>Одиночный запуск.</td>
 <td>Path: id сессии. Без source. timeout_seconds необязателен (1–86400, default 300).<pre v-pre><code>{
   "execution_id": "123e4567-e89b-42d3-a456-426614174001",
   "cell_id": "code-1",
@@ -487,65 +512,12 @@ execution_id — строка 1–128 символов. JSON ниже содер
   "projection": "pending"
 }</code></pre></td>
 </tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46351387e0"><code>GET /runtime-sessions/{id}/executions/{execution_id}</code></a></td>
-<td>runtime.updates: только нужные IDs из событий и входа, не все ячейки.</td>
-<td>Path: id сессии, execution_id. Без тела.</td>
-<td>200 OK. Текущий snapshot, в том числе незавершённый. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351387e0">полная схема ответа</a>.<pre v-pre><code>{
-  "execution_id": "123e4567-e89b-42d3-a456-426614174001",
-  "session_id": "123e4567-e89b-42d3-a456-426614174000",
-  "cell_id": "code-1",
-  "state": "QUEUED",
-  "outputs": [],
-  "execution_count": null,
-  "output_truncated": false,
-  "projection": "pending"
-}</code></pre></td>
-</tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46351388e0"><code>GET /runtime-sessions/{id}/events</code></a></td>
-<td>runtime.updates: одна страница за вызов.</td>
-<td>Path: id сессии. Query: <code>after=0</code>, необязательный неотрицательный int64 (default 0); BFF ограничивает safe integer. Без тела.</td>
-<td>200 OK. До 100 событий; целевой лимит страницы 16 MiB, первое крупное событие не отбрасывается. next_cursor задаёт Go.<pre v-pre><code>{
-  "events": [],
-  "next_cursor": 0,
-  "has_more": false
-}</code></pre></td>
-</tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46351389e0"><code>POST /runtime-sessions/{id}/activity</code></a></td>
-<td>runtime.activity</td>
-<td>Path: id сессии. Без тела. Реальное редактирование в READY/RECONNECTING.</td>
-<td>200 OK.<pre v-pre><code>{
-  "accepted": true
-}</code></pre></td>
-</tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46351390e0"><code>POST /runtime-sessions/{id}/stop</code></a></td>
-<td>runtime.stop</td>
-<td>Path: id сессии. Без тела.</td>
-<td>202 Accepted. Очистка асинхронна; её завершение видно по session.<pre v-pre><code>{
-  "accepted": true
-}</code></pre></td>
-</tr>
-<tr>
-<td><a href="https://vb78fyael1.apidog.io/46495243e0"><code>GET /runtime-sessions/{id}/queue</code></a></td>
-<td>Общий загрузчик только для своей сессии; runtime.updates.</td>
-<td>Path: id сессии. Без тела.</td>
-<td>200 OK. Только исполнения code-ячеек QUEUED/RUNNING, без инспекций; пустая очередь — items: [].<pre v-pre><code>{
-  "session_id": "123e4567-e89b-42d3-a456-426614174000",
-  "items": [
-    {
-      "execution_id": "123e4567-e89b-42d3-a456-426614174001",
-      "cell_id": "code-1",
-      "state": "QUEUED"
-    }
-  ]
-}</code></pre></td>
-</tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>runtime.executeAll</code></th></tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/46495292e0"><code>POST /runtime-sessions/{id}/executions/batch</code></a></td>
-<td>runtime.executeAll: один массовый запрос.</td>
+<td>Один массовый запрос.</td>
 <td>Path: id сессии. request_id 1–128; 1–1000 ячеек, порядок зафиксирован. timeout_seconds необязателен, как у одиночного исполнения.<pre v-pre><code>{
   "request_id": "batch-1",
   "cells": [
@@ -566,6 +538,82 @@ execution_id — строка 1–128 символов. JSON ниже содер
     "123e4567-e89b-42d3-a456-426614174001",
     "123e4567-e89b-42d3-a456-426614174002"
   ]
+}</code></pre></td>
+</tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>runtime.stop</code></th></tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46351390e0"><code>POST /runtime-sessions/{id}/stop</code></a></td>
+<td>Завершение окружения.</td>
+<td>Path: id сессии. Без тела.</td>
+<td>202 Accepted. Очистка асинхронна; её завершение видно по session.<pre v-pre><code>{
+  "accepted": true
+}</code></pre></td>
+</tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>runtime.activity</code></th></tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46351389e0"><code>POST /runtime-sessions/{id}/activity</code></a></td>
+<td>Сигнал реального редактирования.</td>
+<td>Path: id сессии. Без тела. Реальное редактирование в READY/RECONNECTING.</td>
+<td>200 OK.<pre v-pre><code>{
+  "accepted": true
+}</code></pre></td>
+</tr>
+</tbody>
+<tbody>
+<tr><th colspan="4" scope="rowgroup"><code>runtime.updates</code><br>Один вызов tRPC каждые 2 секунды и после команд: session, queue и одна страница events читаются параллельно; затем — snapshots нужных исполнений.</th></tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46351385e0"><code>GET /runtime-sessions/{id}</code></a></td>
+<td>Состояние сессии; параллельно с queue и events.</td>
+<td>Path: id сессии. Без тела.</td>
+<td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351385e0">полная схема ответа</a>.<pre v-pre><code>{
+  "id": "123e4567-e89b-42d3-a456-426614174000",
+  "notebook_id": 42,
+  "state": "READY",
+  "stage": "ready"
+}</code></pre></td>
+</tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46495243e0"><code>GET /runtime-sessions/{id}/queue</code></a></td>
+<td>Очередь исполнения ячеек; параллельно с session и events.</td>
+<td>Path: id сессии. Без тела.</td>
+<td>200 OK. Только исполнения code-ячеек QUEUED/RUNNING, без инспекций; пустая очередь — items: [].<pre v-pre><code>{
+  "session_id": "123e4567-e89b-42d3-a456-426614174000",
+  "items": [
+    {
+      "execution_id": "123e4567-e89b-42d3-a456-426614174001",
+      "cell_id": "code-1",
+      "state": "QUEUED"
+    }
+  ]
+}</code></pre></td>
+</tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46351388e0"><code>GET /runtime-sessions/{id}/events</code></a></td>
+<td>Одна страница событий за вызов; параллельно с session и queue.</td>
+<td>Path: id сессии. Query: <code>after=0</code>, необязательный неотрицательный int64 (default 0); BFF ограничивает safe integer. Без тела.</td>
+<td>200 OK. До 100 событий; целевой лимит страницы 16 MiB, первое крупное событие не отбрасывается. next_cursor задаёт Go.<pre v-pre><code>{
+  "events": [],
+  "next_cursor": 0,
+  "has_more": false
+}</code></pre></td>
+</tr>
+<tr>
+<td><a href="https://vb78fyael1.apidog.io/46351387e0"><code>GET /runtime-sessions/{id}/executions/{execution_id}</code></a></td>
+<td>После events: по одному запросу на уникальный execution_id из событий и входного executionIds. Не все ячейки.</td>
+<td>Path: id сессии, execution_id. Без тела.</td>
+<td>200 OK. Текущий snapshot, в том числе незавершённый. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351387e0">полная схема ответа</a>.<pre v-pre><code>{
+  "execution_id": "123e4567-e89b-42d3-a456-426614174001",
+  "session_id": "123e4567-e89b-42d3-a456-426614174000",
+  "cell_id": "code-1",
+  "state": "QUEUED",
+  "outputs": [],
+  "execution_count": null,
+  "output_truncated": false,
+  "projection": "pending"
 }</code></pre></td>
 </tr>
 </tbody>
@@ -783,12 +831,27 @@ sequenceDiagram
         end
       end
     and Независимый polling открытого UI
-      loop Пока UI получает обновления
-        ExecutionUI->>BFF: runtime.updates
-        BFF->>Go: Получить состояние, очередь,<br/>события и результаты по execution_id
-        Go-->>BFF: Сохранённые данные
-        BFF-->>ExecutionUI: Агрегированный снимок
-        ExecutionUI->>ExecutionUI: Обновить экран из снимка
+      Note over ExecutionUI,BFF: Обновление также после команд<br/>Без перекрытия polling-запросов
+      loop Каждые 2 секунды, пока UI наблюдает за сессией
+        ExecutionUI->>BFF: runtime.updates<br/>sessionId, after, executionIds
+        Note over BFF,Go: HTTP-пути относительно /api/v1<br/>{id} — ID сессии
+        par Состояние сессии
+          BFF->>Go: GET /runtime-sessions/{id}
+          Go-->>BFF: session
+        and Очередь ячеек
+          BFF->>Go: GET /runtime-sessions/{id}/queue
+          Go-->>BFF: runtime_queue
+        and Одна страница событий
+          BFF->>Go: GET /runtime-sessions/{id}<br/>/events?after=cursor
+          Go-->>BFF: events, next_cursor, has_more
+        end
+        BFF->>BFF: Объединить уникальные execution_id<br/>из events и входного executionIds
+        loop Для каждого нужного execution_id
+          BFF->>Go: GET /runtime-sessions/{id}<br/>/executions/{execution_id}
+          Go-->>BFF: Snapshot исполнения: статус и outputs
+        end
+        BFF-->>ExecutionUI: session, runtime_queue, events,<br/>executions, next_cursor, has_more
+        ExecutionUI->>ExecutionUI: Обновить изменившиеся ячейки и курсор<br/>Без перечитывания всего блокнота
       end
     end
   end
