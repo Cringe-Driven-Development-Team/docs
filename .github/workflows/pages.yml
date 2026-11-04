@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages-${{ github.ref == 'refs/heads/main' && 'main' || github.run_id }}
-  cancel-in-progress: false
+  group: pages-${{ github.ref == 'refs/heads/main' && (github.event_name != 'delete' || github.event.ref_type == 'branch') && 'main' || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   dispatch:
