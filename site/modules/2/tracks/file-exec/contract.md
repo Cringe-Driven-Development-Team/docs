@@ -130,7 +130,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.create</code><br>mutation</td>
-<td>Добавление ячейки. index необязателен; без него — в конец. Прокси <a href="https://vb78fyael1.apidog.io/45814239e0">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Добавление ячейки. index необязателен; без него — в конец. Прокси <a href="https://vb78fyael1.apidog.io/45814239e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -149,7 +149,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.update</code><br>mutation</td>
-<td>Сохранение исходника. Прокси <a href="https://vb78fyael1.apidog.io/45814240e0">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Сохранение исходника. Прокси <a href="https://vb78fyael1.apidog.io/45814240e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -167,7 +167,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.move</code><br>mutation</td>
-<td>Перемещение: итоговый index с нуля. Прокси <a href="https://vb78fyael1.apidog.io/45814242e0">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Перемещение: итоговый index с нуля. Прокси <a href="https://vb78fyael1.apidog.io/45814242e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -180,7 +180,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.delete</code><br>mutation</td>
-<td>Удаление ячейки. Прокси <a href="https://vb78fyael1.apidog.io/45814241e0">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Удаление ячейки. Прокси <a href="https://vb78fyael1.apidog.io/45814241e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -337,6 +337,22 @@ ID блокнота — положительное целое, сессии — 
 execution_id — строка 1–128 символов. JSON ниже содержит только тело, path и query указаны отдельно.
 В CRUD `notebookId`, `cellId` и `hash` из tRPC не копируются в JSON Go.
 
+**Как связаны hash, ETag и If-Match.** `hash` — поле JSON с версией блокнота.
+`ETag` — HTTP-заголовок **ответа Go**: в нашем контракте он содержит тот же hash в двойных кавычках,
+например `ETag: "h123"`. `If-Match` — HTTP-заголовок **запроса BFF к Go** с ожидаемой версией:
+`If-Match: "h123"` означает «примени изменение, только если версия всё ещё h123».
+Назначение этих HTTP-заголовков описано в [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.1).
+
+Например, фронт получил `hash: "h123"` и передал его в `cells.update`. BFF поместил эту версию
+в заголовок `If-Match: "h123"`. Go сравнивает её с текущей версией атомарно с изменением:
+при совпадении сохраняет правку, при несовпадении по нашему API возвращает `409 notebook_conflict`
+и не применяет её. Ответ успешного изменения содержит подтверждённый hash в JSON и в заголовке ETag;
+следующая мутация использует эту версию.
+
+Термин «сильный ETag» обозначает метку без префикса `W/`, сравниваемую точно.
+Наш API принимает в If-Match только одну такую метку; списки, `*`, `W/` и пустое значение запрещены.
+Фронт передаёт обычное поле `hash` в tRPC — HTTP-заголовки для Go формирует BFF.
+
 <table class="notebook-api-table" tabindex="0" aria-label="Контракт BFF и backend">
 <thead><tr><th scope="col">HTTP-операция</th><th scope="col">Где используется в BFF</th><th scope="col">Параметры, заголовки и тело</th><th scope="col">HTTP-статус и результат</th></tr></thead>
 <tbody>
@@ -355,7 +371,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 <td><a href="https://vb78fyael1.apidog.io/45814238e0"><code>GET /notebooks/{id}/content</code></a></td>
 <td>Общий загрузчик: hash и cells из одного ответа.</td>
 <td>Path: id блокнота. Без тела.</td>
-<td>200 OK; <code>ETag: "h123"</code>.<pre v-pre><code>{
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h123"</code> содержит тот же hash, что и тело JSON.<pre v-pre><code>{
   "hash": "h123",
   "cells": [
     {
@@ -372,12 +388,12 @@ execution_id — строка 1–128 символов. JSON ниже содер
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814239e0"><code>POST /notebooks/{id}/content/cells</code></a></td>
 <td>cells.create</td>
-<td>Path: id блокнота. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. index необязателен (0–1000), по умолчанию в конец; kind: code или markdown.<pre v-pre><code>{
+<td>Path: id блокнота. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index необязателен (0–1000), по умолчанию в конец; kind: code или markdown.<pre v-pre><code>{
   "kind": "code",
   "source": "print(1)",
   "index": 0
 }</code></pre></td>
-<td>201 Created; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>201 Created; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456",
   "cell": {
     "id": "code-1",
@@ -389,10 +405,10 @@ execution_id — строка 1–128 символов. JSON ниже содер
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814240e0"><code>PATCH /notebooks/{id}/content/cells/{cell_id}</code></a></td>
 <td>cells.update</td>
-<td>Path: id блокнота, cell_id. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. Меняет source выбранной ячейки.<pre v-pre><code>{
+<td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Меняет source выбранной ячейки.<pre v-pre><code>{
   "source": "print(1)"
 }</code></pre></td>
-<td>200 OK; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456",
   "cell": {
     "id": "code-1",
@@ -404,18 +420,18 @@ execution_id — строка 1–128 символов. JSON ниже содер
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814241e0"><code>DELETE /notebooks/{id}/content/cells/{cell_id}</code></a></td>
 <td>cells.delete</td>
-<td>Path: id блокнота, cell_id. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. Без тела.</td>
-<td>200 OK; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Без тела.</td>
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456"
 }</code></pre></td>
 </tr>
 <tr>
 <td><a href="https://vb78fyael1.apidog.io/45814242e0"><code>POST /notebooks/{id}/content/cells/{cell_id}/move</code></a></td>
 <td>cells.move</td>
-<td>Path: id блокнота, cell_id. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. index 0–999 — итоговая позиция.<pre v-pre><code>{
+<td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index 0–999 — итоговая позиция.<pre v-pre><code>{
   "index": 0
 }</code></pre></td>
-<td>200 OK; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456"
 }</code></pre></td>
 </tr>
@@ -592,8 +608,11 @@ HTTP 400/401/403/404/409 переводятся в tRPC BAD_REQUEST/UNAUTHORIZED
 не сохраняют. Пока запрос выполняется, новый ввод остаётся черновиком: старый ответ его не перезаписывает.
 
 Мутации `cells.create/update/move/delete` проходят последовательно для одного блокнота с последним
-подтверждённым хэшем. BFF передаёт непрозрачный hash в единственном сильном `If-Match: "<hash>"`,
-без вычисления хэша на фронте и без помещения его в JSON Go. Используются маршруты `/content/cells`
+подтверждённым хэшем. Фронт передаёт поле `hash` в tRPC, а BFF помещает его в HTTP-заголовок
+запроса к Go — например, `If-Match: "h123"`. Это условие «сохранить, только если версия блокнота
+всё ещё h123». Тот же hash приходит от Go в JSON и в HTTP-заголовке ответа `ETag`.
+Фронт и BFF не вычисляют эту версию сами, а передают полученную от Go строку без изменения;
+в JSON запроса к Go hash не помещается. Используются маршруты `/content/cells`
 и стабильный `cell_id`; move задаёт итоговую позицию с нуля.
 Создание и изменение возвращают `{hash, cell}`, удаление и перемещение — `{hash}`.
 Отсутствие outputs в ответе редактирования не стирает результаты других ячеек; перемещение их сохраняет.
