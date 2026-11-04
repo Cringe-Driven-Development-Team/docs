@@ -93,8 +93,13 @@ sequenceDiagram
 </DiagramSection>
 
 <FigmaEmbed
-  url="https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027"
-  title="Подключение 2FA через QR-код"
+  :screens="[
+    { label: 'Профиль', title: 'Профиль: двухфакторная аутентификация выключена', url: 'https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52651' },
+    { label: 'QR-код', title: 'Подключение 2FA через QR-код', url: 'https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027' },
+    { label: 'Ввод кода', title: 'Подтверждение подключения: код введён', url: 'https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=513-23275' },
+    { label: '2FA подключена', title: 'Профиль: двухфакторная аутентификация подключена', url: 'https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16218' }
+  ]"
+  :initial-index="1"
 />
 
 <DiagramSection>
