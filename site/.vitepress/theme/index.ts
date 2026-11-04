@@ -16,6 +16,7 @@ import FigmaEmbed from './FigmaEmbed.vue';
 import MermaidFrame from './MermaidFrame.vue';
 import DiagramSection from './DiagramSection.vue';
 import ArticleLoading from './ArticleLoading.vue';
+import HeadingLinks from './HeadingLinks.vue';
 import { prepareArticle } from './article-loading.ts';
 import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client';
 import {
@@ -55,7 +56,7 @@ const theme: Theme = {
       onBeforeUnmount(() => stop?.());
       // 2.21.1 disables desktop controls on mobile; remount restores them without resetting storage.
       return () => h(DefaultTheme.Layout, null, {
-        'doc-top': () => h(ArticleLoading),
+        'doc-top': () => [h(ArticleLoading), h(HeadingLinks)],
         'doc-before': trackHeader,
         'nav-bar-content-after': () => h(NolebaseEnhancedReadabilitiesMenu, { key: desktop.value ? 'desktop' : 'mobile' }),
         'nav-screen-content-after': () => h(NolebaseEnhancedReadabilitiesScreenMenu, { key: desktop.value ? 'desktop' : 'mobile' }),
