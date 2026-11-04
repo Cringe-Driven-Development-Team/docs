@@ -16,20 +16,29 @@ test("контракт содержит обе границы и весь сог
   const procedures = ["notebooks.get", "cells.create", "cells.update", "cells.move", "cells.delete",
     "runtime.start", "runtime.execute", "runtime.executeAll", "runtime.stop", "runtime.activity", "runtime.updates"];
   expect([...front.matchAll(/<tr>\s*<td><code>([^<]+)<\/code>/g)].map((match) => match[1])).toEqual(procedures);
-  const operations = [
-    "GET /notebooks/{id}", "GET /notebooks/{id}/content", "POST /notebooks/{id}/content/cells",
-    "PATCH /notebooks/{id}/content/cells/{cell_id}", "DELETE /notebooks/{id}/content/cells/{cell_id}",
-    "POST /notebooks/{id}/content/cells/{cell_id}/move", "POST /notebooks/{id}/runtime-sessions",
-    "GET /runtime-sessions/active", "GET /runtime-sessions/{id}", "POST /runtime-sessions/{id}/executions",
-    "GET /runtime-sessions/{id}/executions/{execution_id}", "GET /runtime-sessions/{id}/events",
-    "POST /runtime-sessions/{id}/activity", "POST /runtime-sessions/{id}/stop",
-    "GET /runtime-sessions/{id}/queue", "POST /runtime-sessions/{id}/executions/batch",
-  ];
-  expect([...back.matchAll(/<tr>\s*<td><a[^>]+><code>([^<]+)<\/code>/g)].map((match) => match[1])).toEqual(operations);
-  for (const [section, label, count] of [[front, "Контракт фронта и BFF", 11], [back, "Контракт BFF и backend", 16]] as const) {
+  const groups = Object.fromEntries([...back.matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)].map((match) => [
+    match[1]!.match(/scope="rowgroup"><code>([^<]+)/)?.[1],
+    [...match[1]!.matchAll(/<tr>\s*<td><a[^>]+><code>([^<]+)<\/code>/g)].map((row) => row[1]),
+  ]));
+  expect(groups).toEqual({
+    "notebooks.get": ["GET /notebooks/{id}", "GET /notebooks/{id}/content",
+      "GET /runtime-sessions/active", "GET /runtime-sessions/{id}/queue"],
+    "cells.create": ["POST /notebooks/{id}/content/cells"],
+    "cells.update": ["PATCH /notebooks/{id}/content/cells/{cell_id}"],
+    "cells.delete": ["DELETE /notebooks/{id}/content/cells/{cell_id}"],
+    "cells.move": ["POST /notebooks/{id}/content/cells/{cell_id}/move"],
+    "runtime.start": ["POST /notebooks/{id}/runtime-sessions"],
+    "runtime.execute": ["POST /runtime-sessions/{id}/executions"],
+    "runtime.executeAll": ["POST /runtime-sessions/{id}/executions/batch"],
+    "runtime.stop": ["POST /runtime-sessions/{id}/stop"],
+    "runtime.activity": ["POST /runtime-sessions/{id}/activity"],
+    "runtime.updates": ["GET /runtime-sessions/{id}", "GET /runtime-sessions/{id}/queue",
+      "GET /runtime-sessions/{id}/events", "GET /runtime-sessions/{id}/executions/{execution_id}"],
+  });
+  for (const [section, label, count] of [[front, "Контракт фронта и BFF", 11], [back, "Контракт BFF и backend", 17]] as const) {
     expect(section).toContain(`class="notebook-api-table" tabindex="0" aria-label="${label}"`);
     expect(section.match(/<th scope="col">/g)).toHaveLength(4);
-    expect(section.match(/<tr>/g)).toHaveLength(count + 1);
+    expect(section.match(/<tr>\s*<td>/g)).toHaveLength(count);
     expect(section).toContain("https://vb78fyael1.apidog.io/");
   }
 });
