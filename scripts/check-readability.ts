@@ -1984,8 +1984,12 @@ async function checkTitle(browser: Browser, url: (path: string) => string): Prom
 }
 
 async function checkFigma(browser: Browser, url: (path: string) => string): Promise<void> {
-  const source = 'https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027';
-  const embed = 'https://embed.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027&embed-host=docs.cellestial.ru';
+  const nodes = ['398-52651', '496-16027', '513-23275', '496-16218'];
+  const labels = ['Профиль', 'QR-код', 'Ввод кода', '2FA подключена'];
+  const titles = ['Профиль: двухфакторная аутентификация выключена', 'Подключение 2FA через QR-код',
+    'Подтверждение подключения: код введён', 'Профиль: двухфакторная аутентификация подключена'];
+  const sources = nodes.map(node => `https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=${node}`);
+  const embeds = nodes.map(node => `https://embed.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=${node}&embed-host=docs.cellestial.ru`);
   for (const [width, mode] of [[1440, 1], [390, 1], [1440, 3]] as const) for (const dark of [false, true]) {
     const context = await browser.createBrowserContext();
     try {
@@ -2000,7 +2004,7 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
       // Test the host page even when Figma requires login; live canvas checks are separate.
       await page.setRequestInterception(true);
       page.on('request', request => {
-        if (request.isNavigationRequest() && request.url() === embed) {
+        if (request.isNavigationRequest() && embeds.includes(request.url())) {
           void request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="ru"><title>Figma fixture</title><body>Требуется вход в Figma</body></html>' });
         } else void request.continue();
       });
@@ -2028,22 +2032,75 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
         };
       });
       assert.equal(state.count, 1, 'One Figma widget on the 2FA page');
-      assert.equal(state.src, embed);
-      assert.equal(state.title, 'Подключение 2FA через QR-код');
+      assert.equal(state.src, embeds[1]);
+      assert.equal(state.title, titles[1]);
       assert.equal(state.loading, 'lazy');
       assert.equal(state.fullscreen, true);
-      assert.equal(state.link, source);
+      assert.equal(state.link, sources[1]);
       assert.equal(state.height, 600);
       assert(state.width! > 0 && state.width! <= state.articleWidth && state.inside, JSON.stringify(state));
       assert(state.afterDiagram && state.beforeLogin, 'Widget follows the connection diagram, before login');
       assert.equal(state.overflow, false);
+      assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), dark, 'Requested theme is applied');
+      if (mode === 3) assert(await page.$eval('.VPDoc .content-container', node => node.getBoundingClientRect().width <= 688), 'Saved narrow reading width');
       await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
       await page.waitForNetworkIdle();
+      const tabs = await page.$$('.figma-embed [role=tab]');
+      assert.equal(tabs.length, 4);
+      const checkSelected = async (index: number, focused = false) => {
+        await page.waitForFunction(src => document.querySelector<HTMLIFrameElement>('.figma-embed iframe')?.src === src, {}, embeds[index]);
+        const selected = await page.$eval('.figma-embed', widget => {
+          const tabs = [...widget.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+          const panel = widget.querySelector<HTMLElement>('[role=tabpanel]')!;
+          const frame = widget.querySelector('iframe')!;
+          const link = widget.querySelector('a')!;
+          return {
+            tabs: tabs.map(tab => ({ label: tab.textContent?.slice(tab.querySelector('.number')!.textContent!.length).trim(), selected: tab.getAttribute('aria-selected'), tabindex: tab.tabIndex,
+              linked: tab.getAttribute('aria-controls') === panel.id && document.querySelectorAll(`[id="${tab.id}"]`).length === 1,
+              visible: tab.scrollWidth <= tab.clientWidth + 1 && tab.getBoundingClientRect().width > 0 })),
+            panel: panel.getAttribute('aria-labelledby') === tabs.find(tab => tab.getAttribute('aria-selected') === 'true')?.id,
+            panelIdUnique: document.querySelectorAll(`[id="${panel.id}"]`).length === 1,
+            count: widget.querySelectorAll('iframe').length, src: frame.src, title: frame.title, link: link.href,
+            linkText: link.textContent, target: link.target, rel: link.rel,
+            focused: document.activeElement === tabs.find(tab => tab.getAttribute('aria-selected') === 'true'),
+          };
+        });
+        assert.equal(selected.count, 1);
+        assert.equal(selected.src, embeds[index]);
+        assert.equal(selected.title, titles[index]);
+        assert.equal(selected.link, sources[index]);
+        assert.equal(selected.linkText, 'Открыть этот экран в Figma');
+        assert.equal(selected.target, '_blank');
+        assert.match(selected.rel, /noopener/);
+        assert.match(selected.rel, /noreferrer/);
+        assert(selected.panel && selected.panelIdUnique, 'Panel is uniquely linked to the selected tab');
+        selected.tabs.forEach((tab, i) => {
+          assert.equal(tab.label, labels[i]);
+          assert.equal(tab.selected, String(i === index));
+          assert.equal(tab.tabindex, i === index ? 0 : -1);
+          assert(tab.linked && tab.visible, 'Each readable tab controls the panel with a unique ID');
+        });
+        if (focused) assert(selected.focused, 'Keyboard selection moves focus');
+      };
+      await checkSelected(1);
+      for (const index of [0, 1, 2, 3]) {
+        await tabs[index]!.click();
+        await checkSelected(index);
+        await page.waitForNetworkIdle();
+      }
+      for (const [key, index] of [['ArrowRight', 0], ['ArrowLeft', 3], ['Home', 0], ['End', 3], ['ArrowLeft', 2], ['ArrowRight', 3]] as const) {
+        await page.keyboard.press(key);
+        await checkSelected(index, true);
+        await page.waitForNetworkIdle();
+      }
+      await page.keyboard.press('Tab');
+      assert(await page.$eval('.figma-embed [role=tabpanel]', node => node === document.activeElement), 'Tab exits tablist to the panel');
       await page.focus('.figma-embed iframe');
       await page.keyboard.press('Tab');
       assert(await page.$eval('.figma-embed a', node => node === document.activeElement), 'Tab exits iframe to the Figma link');
+      await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
       await page.screenshot({ path: join(artifacts, `${label}-figma-${width}-${mode}-${dark ? 'dark' : 'light'}.png`) });
-      console.log(`PASS Figma host ${width}px mode=${mode} ${dark ? 'dark' : 'light'}: placement, hash, frame, link and keyboard (external content stubbed)`);
+      console.log(`PASS Figma host ${width}px mode=${mode} ${dark ? 'dark' : 'light'}: four tabs, frame/link/title, ARIA, click, arrows/wrap/Home/End/Tab, placement and hash (external content stubbed)`);
     } finally {
       await context.close();
     }
