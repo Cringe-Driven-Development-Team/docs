@@ -71,7 +71,13 @@ test("Orval stays in module 2, Zod and React Hook Form move to module 3", () => 
   expect(third?.title).toBe("Модуль №3");
   expect(third?.sprints).toEqual(["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"]);
   const tracks = new Map(third!.tracks.map((t) => [t.id, t]));
-  expect([...tracks.keys()].sort()).toEqual(["react-hook-form", "trpc", "zod"]);
+  expect([...tracks.keys()].sort()).toEqual(["react-hook-form", "seo", "trpc", "variable-inspection", "zod"]);
+  expect(tracks.get("variable-inspection")?.title).toBe("Инспекция переменных ячейки блокнота");
+  expect(tracks.get("variable-inspection")?.do).toEqual([{ login: "ManInTheCoat", side: "front" }]);
+  expect(tracks.get("seo")?.title).toBe("SEO");
+  expect(tracks.get("seo")?.do).toEqual([{ login: "iRedTea", side: "front" }]);
+  expect(tracks.get("seo")?.subtasks.map((s) => s.title)).toEqual(["Open graph"]);
+  for (const id of ["variable-inspection", "seo"]) expect(tracks.get(id)?.area).toBe("front");
   expect(tracks.get("zod")?.do.map((d) => d.login)).toEqual(["iRedTea"]);
   expect(tracks.get("react-hook-form")?.do.map((d) => d.login)).toEqual(["ManInTheCoat"]);
   for (const t of tracks.values()) expect(t.mentors, t.id).toEqual(["YarikMix"]);
@@ -122,7 +128,7 @@ test("tRPC: official client stays in module 2, own client and server are in modu
   expect(readFileSync("site/modules/2/tracks/trpc-client.md", "utf8")).toContain("frontend/issues/46");
 
   const third = modules.find((m) => m.id === "3")!;
-  expect(third.tracks).toHaveLength(3);
+  expect(third.tracks).toHaveLength(5);
   const trpc = third.tracks.find((t) => t.id === "trpc")!;
   expect(trpc).toBeDefined();
   expect(trpc.title).toBe("Свой tRPC: клиент и сервер");
@@ -135,7 +141,7 @@ test("tRPC: official client stays in module 2, own client and server are in modu
   expect(trpc.related[0]?.why).toMatch(/Standard Schema/);
   expect(trpc.subtasks.flatMap((s) => s.issues)).not.toContain("frontend#46");
   const load = Object.fromEntries(personLoad(third, people).map((l) => [l.login, [l.doing, l.mentoring]]));
-  expect(load).toEqual({ YarikMix: [0, 3], blackHATred: [0, 0], ManInTheCoat: [1, 0], iRedTea: [2, 0], GrayMouse9: [0, 0], MrDuckVC: [0, 0] });
+  expect(load).toEqual({ YarikMix: [0, 5], blackHATred: [0, 0], ManInTheCoat: [2, 0], iRedTea: [3, 0], GrayMouse9: [0, 0], MrDuckVC: [0, 0] });
   const md = readFileSync("site/modules/3/tracks/trpc.md", "utf8");
   for (const needle of ["## Клиент", "## Сервер", "## Интеграция", "query/mutation", "батчинг", "middleware", "Hono/Bun", "bootstrap", "CSRF", "сессии", "frontend-packages", "отдельного дизайна"]) expect(md, needle).toContain(needle);
   expect(md).not.toContain("#46");
