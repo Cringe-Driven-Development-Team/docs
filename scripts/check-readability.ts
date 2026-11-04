@@ -1430,12 +1430,11 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
         assert.equal(await page.$('.mermaid .error-icon, .mermaid .error-text'), null, file);
         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${file} ${width}: overflow`);
         count += expected;
-        if (/auth-scenarios|offline\/deployment|documentation\/csrf\/scenarios/.test(path)) {
+        if (/auth-scenarios|offline\/deployment|documentation\/security\/(csrf|xss)/.test(path)) {
           await page.screenshot({ path: join(artifacts, `${label}-${path.replaceAll('/', '-')}-${width}-${dark ? 'dark' : 'light'}.png`) });
         }
       }
-      assert.equal(count, 50);
-      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 50 source Mermaid blocks rendered, no errors/overflow`);
+      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all ${count} source Mermaid blocks rendered, no errors/overflow`);
       await context.close();
     }
   }
@@ -1557,10 +1556,10 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   await observe(page);
-  const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/csrf/',
-    'documentation/csrf/scenarios', 'documentation/csrf/checks', 'documentation/project-context'];
-  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', routes[2], routes[3], routes[4], routes[5], routes[6]].map(path => `${SITE_BASE}${path}`);
-  const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/csrf/"])`;
+  const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
+    'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
+  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
+  const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
   const menu = '.VPLocalNav button.menu';
@@ -1580,8 +1579,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     if (mobile) await openMenu();
     await page.locator(sidebarLink(path)).click();
     await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}${path}`);
-    const headings: Record<string, string> = { 'documentation/csrf/': 'csrf-как-устроено', 'documentation/csrf/scenarios': 'csrf-сценарии',
-      'documentation/csrf/checks': 'csrf-проверка-и-ограничения' };
+    const headings: Record<string, string> = { 'documentation/security/': 'безопасность', 'documentation/security/csrf': 'csrf',
+      'documentation/security/xss': 'xss', 'documentation/security/csp': 'csp' };
     await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
     if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
     await tree();
@@ -1594,9 +1593,9 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       const response = await page.goto(url(route), { waitUntil: 'networkidle0' });
       assert(response?.ok(), `${route}: canonical page must exist`);
       await tree();
-      await expanded(route.startsWith('documentation/csrf/'));
+      await expanded(route.startsWith('documentation/security/'));
       assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
-      if (route !== 'documentation/architecture/') assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
+      if (!['documentation/architecture/', 'documentation/security/csp'].includes(route)) assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
     }
     await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
     if (mobile) await openMenu();
@@ -1606,15 +1605,18 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.keyboard.press('Space'); await expanded(false);
     await page.keyboard.press('Enter'); await expanded(true);
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
-    await click('documentation/csrf/', mobile);
+    await click('documentation/security/', mobile);
     await expanded(true);
-    await click('documentation/csrf/scenarios', mobile);
+    await click('documentation/security/csrf', mobile);
     await page.reload({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
-    await click('documentation/csrf/checks', mobile); await expanded(true);
+    await click('documentation/security/xss', mobile); await expanded(true);
+    await click('documentation/security/csp', mobile); await expanded(true);
+    assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /TODO/);
+    assert.equal(await page.$('.VPDocOutlineItem a'), null, 'CSP TODO has no sections');
     await page.goBack({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
-    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/csrf/scenarios`);
-    assert.equal(await page.$eval(sidebarLink('documentation/csrf/scenarios'), el => el.getAttribute('aria-current')), 'page');
+    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/security/xss`);
+    assert.equal(await page.$eval(sidebarLink('documentation/security/xss'), el => el.getAttribute('aria-current')), 'page');
     if (mobile) {
       await openMenu(); await page.keyboard.press('Escape');
       await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
@@ -1639,9 +1641,6 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const moves = [
     ['architecture/', 'documentation/architecture/', 'архитектура-mvp'],
     ['project-context', 'documentation/project-context', 'владельцы-командных-пакетов'],
-    ['security/csrf/', 'documentation/csrf/', 'три-cookie'],
-    ['security/csrf/scenarios', 'documentation/csrf/scenarios', 'первыи-заход-в-чистом-браузере'],
-    ['security/csrf/checks', 'documentation/csrf/checks', 'известные-ограничения'],
   ];
   for (const [old, canonical, heading] of moves) {
     await page.goto(url(old!), { waitUntil: 'networkidle0' });
@@ -1651,6 +1650,15 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       assert.equal(new URL(page.url()).pathname, `${SITE_BASE}${canonical}`);
       assert.equal(new URL(page.url()).hash, `#${encodeURI(heading!)}`);
       await visibleHash();
+    }
+  }
+  for (const old of ['security/csrf/', 'security/csrf/scenarios', 'security/csrf/checks',
+    'documentation/csrf/', 'documentation/csrf/scenarios', 'documentation/csrf/checks']) {
+    for (const hash of ['', '#три-cookie', '#%D1%82%D1%80%D0%B8-cookie']) {
+      await page.goto(url(old + hash), { waitUntil: 'networkidle0' });
+      assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/security/csrf`);
+      assert.equal(new URL(page.url()).hash, new URL(old + hash, url('')).hash);
+      assert.equal(await page.$eval('.vp-doc h1', el => el.id), 'csrf');
     }
   }
   for (const [source, target] of [['#contract', 'documentation/architecture/#contract'],
@@ -1675,7 +1683,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   assert(await page.$(`.diagram__canvas iframe[src="${SITE_BASE}contract.html"]`));
   assert(await page.$(`.diagram__links a[href="${SITE_BASE}contract.html"]`));
   for (const file of ['contract.html', 'contract.png']) assert.equal((await fetch(url(file))).status, 200);
-  console.log('PASS five old routes with raw/encoded hashes, diagram landings and root HTML/PNG');
+  console.log('PASS architecture/context anchors, six removed CSRF routes, diagram landings and root HTML/PNG');
   await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
   await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
   await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('.vp-doc a[href$="openwiki/"]')]);
@@ -1686,10 +1694,12 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
   await page.click('button[aria-label="Найти в документации"]');
   await page.waitForSelector('#localsearch-input', { visible: true });
-  await page.type('#localsearch-input', 'CSRF: сценарии');
-  const result = `.VPLocalSearchBox a.result[href^="${SITE_BASE}documentation/csrf/scenarios"]`;
-  await page.waitForSelector(result, { visible: true }); await page.click(result);
-  await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/csrf/scenarios`);
+  await page.type('#localsearch-input', 'CSRF');
+  const result = `.VPLocalSearchBox a.result[href^="${SITE_BASE}documentation/security/csrf"]`;
+  await page.waitForSelector(result, { visible: true });
+  assert.equal(await page.$(`.VPLocalSearchBox a.result[href*="documentation/csrf/"]`), null, 'Search excludes deleted pages');
+  await page.click(result);
+  await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/security/csrf`);
   await expanded(true); await tree();
   console.log('PASS static OpenWiki navigation and canonical local search');
   await context.close();
@@ -1772,7 +1782,7 @@ async function checkTitle(browser: Browser, url: (path: string) => string): Prom
         path: join(artifacts, `${label}-title-${route.replaceAll('/', '-') || 'home'}-${viewport}-${dark ? 'dark' : 'light'}-${mode ?? 'fresh'}.png`),
       });
     };
-    for (const route of ['', 'documentation/', 'documentation/csrf/scenarios', 'modules/2/tracks/bff']) {
+    for (const route of ['', 'documentation/', 'documentation/security/csrf', 'modules/2/tracks/bff']) {
       for (const viewport of [320, 390, 768, 960, 1280, 1440]) {
         await page.setViewport({ width: viewport, height: 1000 });
         await page.goto(url(route), { waitUntil: 'networkidle0' });

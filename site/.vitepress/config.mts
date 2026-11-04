@@ -21,9 +21,10 @@ const documentationSidebar = [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },
       ] },
       { text: 'Архитектура', link: '/documentation/architecture/' },
-      { text: 'CSRF: историческая проверка', link: '/documentation/csrf/', collapsed: true, items: [
-        { text: 'Сценарии', link: '/documentation/csrf/scenarios' },
-        { text: 'Проверка и ограничения', link: '/documentation/csrf/checks' },
+      { text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [
+        { text: 'CSRF', link: '/documentation/security/csrf' },
+        { text: 'XSS', link: '/documentation/security/xss' },
+        { text: 'CSP', link: '/documentation/security/csp' },
       ] },
       { text: 'Владельцы сведений', link: '/documentation/project-context' },
     ],

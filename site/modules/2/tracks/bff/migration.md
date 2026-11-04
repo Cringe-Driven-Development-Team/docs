@@ -60,7 +60,7 @@ flowchart LR
 | `__Host-csrf` (сейчас) | `/` | **нет** | `Lax` | фронт читает из `document.cookie`, Go сверяет |
 | `__Host-Http-session` (после) | `/` | да | `Lax` | только BFF; в браузере JavaScript её не видит |
 
-Подробности про нынешние cookie — в разделе [CSRF](/documentation/csrf/). `__Host-Http-session` —
+Подробности про нынешние cookie — в разделе [CSRF](/documentation/security/csrf). `__Host-Http-session` —
 `Secure`, без `Domain`, срок `Max-Age` равен `refresh_expires_in`.
 
 ## Почему BFF

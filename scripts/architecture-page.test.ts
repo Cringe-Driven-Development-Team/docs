@@ -29,9 +29,10 @@ test("documentation sidebar is a linked collapsed tree", () => {
       {text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration'},
     ]},
     {text: 'Архитектура', link: '/documentation/architecture/'},
-    {text: 'CSRF: историческая проверка', link: '/documentation/csrf/', collapsed: true, items: [
-      {text: 'Сценарии', link: '/documentation/csrf/scenarios'},
-      {text: 'Проверка и ограничения', link: '/documentation/csrf/checks'},
+    {text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [
+      {text: 'CSRF', link: '/documentation/security/csrf'},
+      {text: 'XSS', link: '/documentation/security/xss'},
+      {text: 'CSP', link: '/documentation/security/csp'},
     ]},
     {text: 'Владельцы сведений', link: '/documentation/project-context'},
   ]}]);
@@ -76,7 +77,7 @@ test("config: three entrances keep architecture in documentation, no branch prev
   expect(home).not.toContain("/diagrams/");
   expect(home).toContain("/documentation/");
   const documentation = readFileSync("site/documentation/index.md", "utf8");
-  for (const link of ["/documentation/bff", "/documentation/architecture/", "/documentation/csrf/", "/documentation/project-context", "/modules/"]) {
+  for (const link of ["/documentation/bff", "/documentation/architecture/", "/documentation/security/", "/documentation/project-context", "/modules/"]) {
     expect(documentation).toContain(`](${link})`);
   }
   expect(documentation).toContain('href="../openwiki/" target="_self"');
@@ -112,7 +113,7 @@ test("page has no links to removed diagram folders", () => {
   expect(page).not.toContain("../frozen-k3s/");
 });
 
-test("current behavior points to documentation and the CSRF sidebar names history", () => {
+test("current behavior points to documentation", () => {
   const modules = readFileSync("site/modules/index.md", "utf8");
   expect(modules).toContain("](/documentation/)");
   expect(modules).not.toContain("](/documentation/csrf/)");
