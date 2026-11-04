@@ -44,7 +44,7 @@
 - Test entry: `checkHeadingLinks(browser: Browser, url: (path: string) => string): Promise<void>` в существующем harness; секция `anchors` доступна отдельно и в полном прогоне.
 - Межзадачных интерфейсов нет: задача одна, включает полный пользовательский результат.
 
-- [ ] **1. Написать браузерные регрессии до реализации.**
+- [x] **1. Написать браузерные регрессии до реализации.**
 
 Включить `anchors` в allowlist/dispatch harness, используя существующий `observe` с начала загрузки. Тестовые страницы — `modules/2/tracks/offline/caching-strategies` (DiagramSection) и `modules/2/tracks/offline/theory` (обычный h2); эти страницы не требуют загрузки внешнего Figma iframe.
 
@@ -64,7 +64,7 @@ assert.equal(await page.$eval('.heading-link-feedback', node => node.textContent
 
 `feedbackLifecycle`: одна подсказка, исчезает после 2 секунд, повторный клик обновляет срок; сообщение/tooltip не меняют размеры заголовка и текст оглавления. Прямоугольник подсказки внутри viewport; semantic live status присутствует, tooltip не забирает фокус. Для denied/missing API и отложенных/out-of-order результатов подменять только эту внешнюю границу: запрет записи сохраняет hash/scroll и показывает ошибку, поздний результат прошлого клика/страницы не возвращает старое сообщение. Не ослаблять глобальные error-наблюдатели.
 
-- [ ] **2. Получить исходный браузерный RED.**
+- [x] **2. Получить исходный браузерный RED.**
 
 После настройки существующих зависимостей собрать только VitePress для исходного состояния; выбранным страницам не нужны raw-HTML Eraser. Это диагностическая сборка, не итоговая проверка всего dist.
 
@@ -74,7 +74,7 @@ Expected: успешная сборка страниц без продуктов
 Run: `CHROMIUM_PATH=/usr/bin/google-chrome bun scripts/check-readability.ts anchors` с логом в workspace плана.
 Expected: FAIL нового требования выравнивания/копирования, по реальной причине. Не заменять проверку буфера имитацией успешного Clipboard API.
 
-- [ ] **3. Реализовать `HeadingLinks.vue` и подключить его.**
+- [x] **3. Реализовать `HeadingLinks.vue` и подключить его.**
 
 На mounted добавить один делегированный обработчик click; до unmount удалить его, таймер и слушатели scroll/resize. Фильтровать только штатные якоря внутри `.vp-doc`, левую кнопку без Ctrl/Meta/Shift/Alt; Enter/касание используют обычный click. Не проверять `defaultPrevented` как запрет копирования: VitePress router уже выставляет его на window capture. Не вызывать собственные preventDefault/stopPropagation/router.go.
 
@@ -84,7 +84,7 @@ Expected: FAIL нового требования выравнивания/коп
 
 В `index.ts` slot `doc-top` возвращает оба компонента, сохраняя ArticleLoading. В CSS добавить правило для `.diagram-section__text > h2:first-child .header-anchor` с `top: 0`; не переопределять все h2 глобально. README обновить по итоговому поведению.
 
-- [ ] **4. Проверить GREEN, типы и сборку.**
+- [x] **4. Проверить GREEN, типы и сборку.**
 
 Run: `bun run typecheck && bun run modules:check && bun run test`.
 Expected: PASS всего существующего набора. Отдельных unit-тестов на текст CSS/шаблона или DOM-моков не добавлять: новый контракт проверяется реальным браузером.
@@ -95,7 +95,7 @@ Expected: build/site:check PASS, без потери существующих с
 Run: `CHROMIUM_PATH=/usr/bin/google-chrome bun scripts/check-readability.ts anchors scroll loading`.
 Expected: PASS нового контракта, существующих hash/history/focus и готовности статьи. Осмотреть скриншоты выравнивания и успеха/ошибки на широком/узком экранах.
 
-- [ ] **5. Проверить вложенный base без повторного рендера неизменённых схем.**
+- [x] **5. Проверить вложенный base без повторного рендера неизменённых схем.**
 
 После корневого full build сохранить root-артефакты; переcобрать страницы для вложенной базы, используя уже отрисованные HTML/PNG:
 
@@ -105,7 +105,7 @@ Expected: PASS; `build-vitepress.ts` перезаписывает только �
 Run: `SITE_BASE=/branches/heading-links/ CHROMIUM_PATH=/usr/bin/google-chrome bun scripts/check-readability.ts anchors`.
 Expected: PASS с настоящими скопированными URL, начинающимися с origin + `/branches/heading-links/`, русским hash и query; прямой переход/SPA/история сохраняются. Не запускать несвязанный полный Mermaid/Figma обход.
 
-- [ ] **6. Зафиксировать результат задачи.**
+- [x] **6. Зафиксировать результат задачи.**
 
 Run: `git diff --check`, затем `git add site/.vitepress/theme/HeadingLinks.vue site/.vitepress/theme/index.ts site/.vitepress/theme/custom.css scripts/check-readability.ts README.md` и commit `feat(якоря): выровнять ссылки и добавить копирование`.
 Expected: diff-check чистый, commit успешен; журнал содержит фактический RED→GREEN и результаты проверок. Финальный task-done запускает полную `bun run test`.
@@ -118,4 +118,4 @@ Expected: diff-check чистый, commit успешен; журнал соде�
 - [ ] Дождаться обязательных CI и реальной Pages-публикации; сверить SHA и проверить на превью выравнивание, реальный clipboard, hash/scroll и подсказку.
 - [ ] Передать PR/превью и ограничения платформенных проверок.
 
-Самопроверка: вся утверждённая спека покрыта задачей 1; сигнатуры и селекторы согласованы; каждый Review Focus имеет регрессию. Реализация ещё не начата.
+Самопроверка: вся утверждённая спека покрыта задачей 1; сигнатуры и селекторы согласованы; каждый Review Focus имеет регрессию. Реализация проверена: исходный RED 24px; корневые anchors/scroll/loading и вложенные anchors прошли без ошибок браузера.

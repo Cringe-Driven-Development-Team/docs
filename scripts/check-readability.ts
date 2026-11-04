@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [width|loading|mermaid|zoom|scroll|pages|plugins|hierarchy|title|figma ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [anchors|width|loading|mermaid|zoom|scroll|pages|plugins|hierarchy|title|figma ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['width', 'loading', 'mermaid', 'zoom', 'scroll', 'pages', 'plugins', 'hierarchy', 'title', 'figma'].includes(section)));
+assert(sections.every(section => ['anchors', 'width', 'loading', 'mermaid', 'zoom', 'scroll', 'pages', 'plugins', 'hierarchy', 'title', 'figma'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -92,6 +92,174 @@ type WidthSample = {
   ms: number; visible: boolean; loader: boolean; body: string; page: string; content: string;
   boxes: Record<string, { left: number; width: number }>;
 };
+
+type AnchorProbeWindow = Window & {
+  anchorWrites: number;
+  anchorOriginalWrite: (text: string) => Promise<void>;
+  anchorPending: { resolve: () => void; reject: (error: Error) => void }[];
+  anchorSPA: boolean;
+};
+
+async function checkHeadingLinks(browser: Browser, url: (path: string) => string): Promise<void> {
+  const makePage = async (width = 2560, dark = false) => {
+    const context = await browser.createBrowserContext();
+    await context.overridePermissions(new URL(url('')).origin, ['clipboard-read', 'clipboard-sanitized-write']);
+    const page = await context.newPage();
+    await observe(page);
+    await page.setViewport({ width, height: width === 390 ? 844 : 1200 });
+    await page.evaluateOnNewDocument(dark => {
+      localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+      if (window !== window.top) return;
+      const state = window as unknown as AnchorProbeWindow;
+      state.anchorWrites = 0;
+      const write = navigator.clipboard.writeText.bind(navigator.clipboard);
+      state.anchorOriginalWrite = text => { state.anchorWrites++; return write(text); };
+      navigator.clipboard.writeText = state.anchorOriginalWrite;
+      state.anchorSPA = true;
+    }, dark);
+    return { context, page };
+  };
+  const ready = (page: Page) => page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading') && document.fonts.status === 'loaded' && !!document.querySelector('.vp-doc h2'));
+  const settle = (page: Page) => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const feedback = (page: Page) => page.$eval('.heading-link-feedback', node => node.textContent);
+  const writes = (page: Page) => page.evaluate(() => (window as unknown as AnchorProbeWindow).anchorWrites);
+  const h2 = '.diagram-section__text > h2:first-child';
+  for (const width of [2560, 390]) for (const dark of [false, true]) {
+    const { context, page } = await makePage(width, dark);
+    try {
+      for (const [path, selector] of [
+        ['modules/2/tracks/offline/caching-strategies', h2],
+        ['modules/2/tracks/offline/theory', '#что-проверить-в-понимании'],
+      ]) {
+        await page.goto(url(`${path}?anchor-copy=1`), { waitUntil: 'networkidle0' });
+        await ready(page); await page.bringToFront();
+        assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), dark);
+        const heading = await page.waitForSelector(selector!); assert(heading);
+        await heading.hover(); await settle(page);
+        const geometry = await heading.evaluate(node => {
+          const box = node.getBoundingClientRect(), anchor = node.querySelector('.header-anchor')!.getBoundingClientRect(), css = getComputedStyle(node);
+          return { delta: anchor.top - box.top - parseFloat(css.borderTopWidth) - parseFloat(css.paddingTop), width: box.width, height: box.height, text: node.textContent };
+        });
+        assert(Math.abs(geometry.delta) <= 1, `${path}: heading and anchor share their first line: ${JSON.stringify(geometry)}`);
+        const outline = await page.$$eval('.VPDocAsideOutline a', nodes => nodes.map(node => node.textContent));
+        const expected = await heading.$eval('.header-anchor', node => (node as HTMLAnchorElement).href);
+        await page.evaluate(() => navigator.clipboard.writeText('heading-link-sentinel'));
+        const beforeWrites = await writes(page);
+        await heading.$eval('.header-anchor', node => (node as HTMLElement).focus());
+        if (path!.endsWith('theory')) await page.keyboard.press('Enter');
+        else await (await heading.$('.header-anchor'))!.click();
+        await page.waitForFunction(() => document.querySelector('.heading-link-feedback')?.textContent === 'Ссылка скопирована');
+        assert.equal(await page.evaluate(() => navigator.clipboard.readText()), expected, 'Real clipboard contains exact absolute heading href');
+        assert(expected.startsWith(url(path!)) && expected.includes('?anchor-copy=1#'), 'Copied link retains route, base and query');
+        await page.waitForFunction(hash => decodeURIComponent(location.hash) === decodeURIComponent(hash), {}, new URL(expected).hash);
+        await page.waitForFunction(node => document.activeElement === node, {}, heading);
+        assert.equal(await writes(page), beforeWrites + 1, 'One clipboard write per activation');
+        assert(await heading.evaluate(node => { const box = node.getBoundingClientRect(); return box.top >= 0 && box.top < innerHeight; }), 'Native hash navigation exposes the heading');
+        const after = await heading.evaluate(node => { const box = node.getBoundingClientRect(); return { width: box.width, height: box.height, text: node.textContent }; });
+        assert.deepEqual(after, { width: geometry.width, height: geometry.height, text: geometry.text }, 'Feedback leaves heading text and geometry unchanged');
+        assert.deepEqual(await page.$$eval('.VPDocAsideOutline a', nodes => nodes.map(node => node.textContent)), outline);
+        assert.equal(await page.$eval('.heading-link-status', node => node.getAttribute('role')), 'status');
+        assert.equal(await page.$eval('.heading-link-status', node => node.getAttribute('aria-live')), 'polite');
+        assert(await page.$eval('.heading-link-feedback', node => { const r = node.getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }), 'Tooltip remains within viewport');
+        await page.screenshot({ path: join(artifacts, `${label}-anchors-${width}-${dark ? 'dark' : 'light'}-${path!.endsWith('theory') ? 'ordinary' : 'pair'}.png`) });
+        await page.goBack({ waitUntil: 'networkidle0' }); await ready(page);
+        assert.equal(new URL(page.url()).hash, '', 'Back restores original hash instead of an extra custom history entry');
+        assert.equal(await writes(page), beforeWrites + 1, 'History traversal does not copy');
+      }
+      await page.goto(url('modules/2/tracks/offline/theory'), { waitUntil: 'networkidle0' }); await ready(page);
+      const wrapped = await page.waitForSelector(h2); assert(wrapped);
+      await wrapped.evaluate(node => (node as HTMLElement).style.width = '100px');
+      const alignment = await wrapped.evaluate(node => {
+        const r = node.getBoundingClientRect(), a = node.querySelector('.header-anchor')!.getBoundingClientRect();
+        return { height: r.height, lineHeight: parseFloat(getComputedStyle(node).lineHeight), delta: a.top - r.top };
+      });
+      assert(alignment.height > alignment.lineHeight * 1.5 && Math.abs(alignment.delta) <= 1, 'Wrapped heading anchor stays at first line');
+      console.log(`PASS anchors ${width}/${dark ? 'dark' : 'light'}: first line, real clipboard click/Enter, URL/Back/focus, tooltip geometry`);
+    } finally { await context.close(); }
+  }
+  const { context, page } = await makePage();
+  const pairLink = `${h2} .header-anchor`;
+  try {
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' }); await ready(page);
+    const click = async (selector = pairLink) => { await page.$eval(selector, node => (node as HTMLElement).click()); await settle(page); };
+    await click(); await page.waitForFunction(() => document.querySelector('.heading-link-feedback')?.textContent === 'Ссылка скопирована');
+    await new Promise(resolve => setTimeout(resolve, 1100)); await click();
+    await new Promise(resolve => setTimeout(resolve, 1200)); assert.equal(await feedback(page), 'Ссылка скопирована', 'Repeated activation restarts the two-second timeout');
+    await page.waitForSelector('.heading-link-feedback', { hidden: true, timeout: 3000 });
+    const before = await writes(page);
+    await page.$eval(h2, node => node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    for (const modifier of ['ctrlKey', 'metaKey', 'shiftKey', 'altKey']) {
+      assert(await page.$eval(pairLink, (node, key) => {
+        const event = new MouseEvent('click', { bubbles: true, cancelable: true, [key]: true });
+        node.dispatchEvent(event); return !event.defaultPrevented;
+      }, modifier), 'Modified activation stays native');
+    }
+    await page.$eval(pairLink, node => node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 1 })));
+    // Native modified activations can leave this page in the background (and pause rAF).
+    for (const popup of await context.pages()) if (popup !== page) await popup.close();
+    await page.bringToFront();
+    await click('.VPDocAsideOutline a');
+    assert.equal(await writes(page), before, 'Heading text, modified/middle clicks and TOC do not copy');
+    const target = await page.$(pairLink); assert(target);
+    await target.evaluate(node => node.parentElement!.scrollIntoView({ block: 'center' })); await settle(page);
+    const expectedPopup = await target.evaluate(node => (node as HTMLAnchorElement).href);
+    // Browser-created Ctrl-click tabs have no JavaScript opener.
+    const popup = context.waitForTarget(target => target.type() === 'page' && target.url() === expectedPopup);
+    await page.keyboard.down('Control');
+    try { await target.click(); } finally { await page.keyboard.up('Control'); }
+    const popupPage = await (await popup).page(); assert(popupPage); await popupPage.close(); await page.bringToFront();
+    assert.equal(await writes(page), before, 'Real Ctrl-click opens a tab without copying');
+    for (let visit = 0; visit < 2; visit++) {
+      await click('.vp-doc a[href="./theory"]');
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/theory')); await ready(page);
+      await click('.vp-doc a[href="./caching-strategies"]');
+      await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies')); await ready(page);
+      const prior = await writes(page); await click();
+      await page.waitForFunction(() => document.querySelector('.heading-link-feedback')?.textContent === 'Ссылка скопирована');
+      assert.equal(await writes(page), prior + 1, 'SPA remounts retain exactly one copy handler');
+    }
+    assert(await page.evaluate(() => (window as unknown as AnchorProbeWindow).anchorSPA), 'Navigation remains actual SPA');
+    await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new DOMException('Denied fixture', 'NotAllowedError')); });
+    await click(); await page.waitForFunction(() => document.querySelector('.heading-link-feedback')?.textContent === 'Не удалось скопировать ссылку');
+    assert.equal(new URL(page.url()).hash, '#cacheonly', 'Denied clipboard retains native hash');
+    await page.screenshot({ path: join(artifacts, `${label}-anchors-denied.png`) });
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined }));
+    await click('.diagram-section__text h2#networkonly .header-anchor');
+    await page.waitForFunction(() => document.querySelector('.heading-link-feedback')?.textContent === 'Не удалось скопировать ссылку');
+    assert.equal(new URL(page.url()).hash, '#networkonly', 'Missing Clipboard API retains native hash');
+    await page.evaluate(() => {
+      delete (navigator as unknown as { clipboard?: Clipboard }).clipboard;
+      const state = window as unknown as AnchorProbeWindow;
+      state.anchorPending = [];
+      navigator.clipboard.writeText = () => new Promise<void>((resolve, reject) => state.anchorPending.push({ resolve, reject }));
+    });
+    await click();
+    await click('#networkonly .header-anchor');
+    await page.waitForFunction(() => (window as unknown as AnchorProbeWindow).anchorPending.length === 2);
+    await page.evaluate(() => (window as unknown as AnchorProbeWindow).anchorPending[1]!.resolve());
+    await page.waitForFunction(() => document.querySelector('.heading-link-feedback')?.textContent === 'Ссылка скопирована');
+    await page.evaluate(() => (window as unknown as AnchorProbeWindow).anchorPending[0]!.reject(new Error('Late failure fixture')));
+    await settle(page); assert.equal(await feedback(page), 'Ссылка скопирована', 'Older rejection cannot replace latest success');
+    await click('.vp-doc a[href="./theory"]');
+    await page.waitForFunction(() => location.pathname.endsWith('/offline/theory')); await ready(page);
+    assert(await page.$eval('.heading-link-status', node => !node.textContent), 'SPA clears an existing confirmation');
+    await click();
+    await page.waitForFunction(() => (window as unknown as AnchorProbeWindow).anchorPending.length === 3);
+    await click('.vp-doc a[href="./caching-strategies"]');
+    await page.waitForFunction(() => location.pathname.endsWith('/offline/caching-strategies')); await ready(page);
+    await page.evaluate(() => (window as unknown as AnchorProbeWindow).anchorPending[2]!.resolve());
+    await settle(page); assert(await page.$eval('.heading-link-status', node => !node.textContent), 'Late completion cannot reappear on another page');
+    await click();
+    await page.waitForFunction(() => (window as unknown as AnchorProbeWindow).anchorPending.length === 4);
+    await page.evaluate(() => {
+      const a = document.createElement('a'); a.id = 'anchor-query-fixture'; a.href = location.pathname + '?anchor-copy=changed'; a.textContent = 'Query fixture'; document.querySelector('.vp-doc')!.append(a); a.click();
+    });
+    await page.waitForFunction(() => location.search === '?anchor-copy=changed');
+    await page.evaluate(() => (window as unknown as AnchorProbeWindow).anchorPending[3]!.resolve());
+    await settle(page); assert(await page.$eval('.heading-link-status', node => !node.textContent), 'Late completion cannot reappear after query navigation');
+    console.log('PASS anchors lifecycle: timer restart, native modifiers, real Ctrl-tab, SPA/one handler, denied/missing API and stale promises');
+  } finally { await context.close(); }
+}
 
 async function checkReadingWidth(browser: Browser, url: (path: string) => string): Promise<void> {
   const plain = 'documentation/project-context';
@@ -1888,6 +2056,7 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('anchors')) await checkHeadingLinks(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('width')) await checkReadingWidth(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('loading')) await checkArticleLoading(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('mermaid') || sections.includes('zoom')) await checkHugeDiagramMinimum(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
