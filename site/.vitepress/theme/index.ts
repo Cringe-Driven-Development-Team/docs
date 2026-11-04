@@ -12,6 +12,7 @@ import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-gr
 import '@tp-prepare/vitepress-module-graph/style.css';
 import { data } from '../../modules/modules.data.ts';
 import Diagram from './Diagram.vue';
+import FigmaEmbed from './FigmaEmbed.vue';
 import MermaidFrame from './MermaidFrame.vue';
 import DiagramSection from './DiagramSection.vue';
 import ArticleLoading from './ArticleLoading.vue';
@@ -66,6 +67,7 @@ const theme: Theme = {
     enhanceAppWithTabs(app);
     app.provide(ReadabilitiesKey, readabilities);
     app.component('Diagram', Diagram);
+    app.component('FigmaEmbed', FigmaEmbed);
     app.component('MermaidFrame', MermaidFrame);
     app.component('DiagramSection', DiagramSection);
   },

@@ -92,6 +92,11 @@ sequenceDiagram
 
 </DiagramSection>
 
+<FigmaEmbed
+  url="https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027"
+  title="Подключение 2FA через QR-код"
+/>
+
 <DiagramSection>
 
 ## Вход
