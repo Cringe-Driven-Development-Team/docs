@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
-import { LABEL_SLACK_PX, htmlOutputs, isHtmlRender, padLabelWidths } from "./label-slack.ts";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { LABEL_SLACK_PX, htmlOutputs, isHtmlRender, padHtmlOutputs, padLabelWidths } from "./label-slack.ts";
 
 const label = (style: string, text = "ssh Ansible через VPS 1 (ProxyCommand)") =>
   `<span data-role="external-text" data-text-grow-policy="balanced" class="er-rel__label er-md" data-part="label" data-if="label" style="${style}">${text}</span>`;
@@ -46,4 +49,20 @@ test("htmlOutputs: dist/<name>.html for each diagram of a batch", () => {
     "dist/frozen-k3s/cd.html",
     "dist/frozen-k3s/ci.html",
   ]);
+});
+
+test("padHtmlOutputs resets margins without clipping the standalone document", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "diagram-document-"));
+  const canvas = '<div id="eraser-scene" style="position: relative; width: 1376px; height: 852px;">';
+  try {
+    writeFileSync(join(dir, "diagram.html"), `<!doctype html><html><head><title>Eraser diagram</title></head><body>${canvas}${label("width: 80px; left: 100px;", "Крайняя подпись")}</div></body></html>`);
+    await padHtmlOutputs({ outDir: dir, files: ["diagrams/diagram.json"] });
+    const result = readFileSync(join(dir, "diagram.html"), "utf8");
+    expect(result).toContain("html,body{margin:0;padding:0}");
+    expect(result).toContain(canvas);
+    expect(result).toContain(label("width: 82px; left: 99px;", "Крайняя подпись"));
+    expect(result).not.toMatch(/overflow\s*:\s*hidden|<script\b/i);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
