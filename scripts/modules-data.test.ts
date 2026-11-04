@@ -28,9 +28,21 @@ test("real site/modules is valid", () => {
 
 test("Monaco: subtasks are linked to their frontend issues", () => {
   const monaco = october?.tracks.find((t) => t.id === "monaco");
+  expect(monaco?.title).toBe("Редактор блокнота");
+  expect(monaco?.partOf).toBe("file-exec");
+  expect(monaco?.do).toEqual([{ login: "ManInTheCoat", side: "front" }]);
+  expect(monaco?.mentors).toEqual(["blackHATred"]);
+  const notebooks = october?.tracks.find((t) => t.id === "file-exec");
+  expect(notebooks?.title).toBe("Блокноты: редактор и исполнение");
+  expect(notebooks?.label).toBe("Блокноты");
+  expect(notebooks?.pages.map((p) => p.title)).toEqual(["Сохранение и исполнение"]);
+  expect(notebooks?.do).toEqual([{ login: "iRedTea", side: "front" }, { login: "GrayMouse9", side: "back" }]);
+  expect(notebooks?.subtasks.map((s) => [s.title, s.issues])).toEqual([
+    ["Исполнение на экране блокнота", ["frontend#51"]],
+  ]);
   expect(monaco?.subtasks.map((s) => [s.title, s.issues])).toEqual([
-    ["Просмотр кода, только чтение", ["frontend#37"]],
-    ["Ячейки code и text", ["frontend#38"]],
+    ["Редактирование и сохранение ячеек", ["frontend#37"]],
+    ["Подсветка кода и просмотр Markdown", ["frontend#38"]],
   ]);
 });
 
