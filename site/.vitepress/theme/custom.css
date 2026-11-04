@@ -1,3 +1,7 @@
+.VPNavBar:not(.home) {
+  background-color: var(--vp-nav-bg-color);
+}
+
 .VPNavBarTitle .title > span {
   white-space: normal;
   overflow: visible;
