@@ -355,11 +355,11 @@ execution_id — строка 1–128 символов. JSON ниже содер
 
 Строки сгруппированы по tRPC-ручкам BFF. Внутри каждой группы указаны вызываемые HTTP-ручки бэка.
 
-<table class="notebook-api-table" tabindex="0" aria-label="Контракт BFF и backend">
-<thead><tr><th scope="col">HTTP-операция backend</th><th scope="col">Назначение / условие вызова</th><th scope="col">Параметры, заголовки и тело</th><th scope="col">HTTP-статус и результат</th></tr></thead>
+<table class="notebook-api-table" tabindex="0" aria-label="Контракт BFF и backend" data-bff-groups>
+<thead><tr><th scope="col">tRPC-ручка BFF</th><th scope="col">HTTP-операция backend</th><th scope="col">Назначение / условие вызова</th><th scope="col">Параметры, заголовки и тело</th><th scope="col">HTTP-статус и результат</th></tr></thead>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>notebooks.get</code><br>Общий загрузчик также используется в server bootstrap; после bootstrap повторного запроса из браузера нет.</th></tr>
 <tr>
+<th rowspan="4" scope="rowgroup"><code>notebooks.get</code><br>Общий загрузчик также используется в server bootstrap; после bootstrap повторного запроса из браузера нет.</th>
 <td><a href="https://vb78fyael1.apidog.io/43951862e0"><code>GET /notebooks/{id}</code></a></td>
 <td>Метаданные; cells этого ответа не заменяют content.</td>
 <td>Path: id блокнота. Без тела.</td>
@@ -413,8 +413,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>cells.create</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>cells.create</code></th>
 <td><a href="https://vb78fyael1.apidog.io/45814239e0"><code>POST /notebooks/{id}/content/cells</code></a></td>
 <td>Добавление ячейки.</td>
 <td>Path: id блокнота. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index необязателен (0–1000), по умолчанию в конец; kind: code или markdown.<pre v-pre><code>{
@@ -433,8 +433,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>cells.update</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>cells.update</code></th>
 <td><a href="https://vb78fyael1.apidog.io/45814240e0"><code>PATCH /notebooks/{id}/content/cells/{cell_id}</code></a></td>
 <td>Изменение source ячейки.</td>
 <td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Меняет source выбранной ячейки.<pre v-pre><code>{
@@ -451,8 +451,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>cells.delete</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>cells.delete</code></th>
 <td><a href="https://vb78fyael1.apidog.io/45814241e0"><code>DELETE /notebooks/{id}/content/cells/{cell_id}</code></a></td>
 <td>Удаление ячейки.</td>
 <td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Без тела.</td>
@@ -462,8 +462,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>cells.move</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>cells.move</code></th>
 <td><a href="https://vb78fyael1.apidog.io/45814242e0"><code>POST /notebooks/{id}/content/cells/{cell_id}/move</code></a></td>
 <td>Перемещение ячейки.</td>
 <td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index 0–999 — итоговая позиция.<pre v-pre><code>{
@@ -475,8 +475,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>runtime.start</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>runtime.start</code></th>
 <td><a href="https://vb78fyael1.apidog.io/46351383e0"><code>POST /notebooks/{id}/runtime-sessions</code></a></td>
 <td>Запуск окружения.</td>
 <td>Path: id блокнота. request_id 1–128 символов; language python или r, UI модуля использует python.<pre v-pre><code>{
@@ -492,8 +492,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>runtime.execute</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>runtime.execute</code></th>
 <td><a href="https://vb78fyael1.apidog.io/46351386e0"><code>POST /runtime-sessions/{id}/executions</code></a></td>
 <td>Одиночный запуск.</td>
 <td>Path: id сессии. Без source. timeout_seconds необязателен (1–86400, default 300).<pre v-pre><code>{
@@ -514,8 +514,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>runtime.executeAll</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>runtime.executeAll</code></th>
 <td><a href="https://vb78fyael1.apidog.io/46495292e0"><code>POST /runtime-sessions/{id}/executions/batch</code></a></td>
 <td>Один массовый запрос.</td>
 <td>Path: id сессии. request_id 1–128; 1–1000 ячеек, порядок зафиксирован. timeout_seconds необязателен, как у одиночного исполнения.<pre v-pre><code>{
@@ -542,8 +542,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>runtime.stop</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>runtime.stop</code></th>
 <td><a href="https://vb78fyael1.apidog.io/46351390e0"><code>POST /runtime-sessions/{id}/stop</code></a></td>
 <td>Завершение окружения.</td>
 <td>Path: id сессии. Без тела.</td>
@@ -553,8 +553,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>runtime.activity</code></th></tr>
 <tr>
+<th rowspan="1" scope="rowgroup"><code>runtime.activity</code></th>
 <td><a href="https://vb78fyael1.apidog.io/46351389e0"><code>POST /runtime-sessions/{id}/activity</code></a></td>
 <td>Сигнал реального редактирования.</td>
 <td>Path: id сессии. Без тела. Реальное редактирование в READY/RECONNECTING.</td>
@@ -564,8 +564,8 @@ execution_id — строка 1–128 символов. JSON ниже содер
 </tr>
 </tbody>
 <tbody>
-<tr><th colspan="4" scope="rowgroup"><code>runtime.updates</code><br>Один вызов tRPC каждые 2 секунды и после команд: session, queue и одна страница events читаются параллельно; затем — snapshots нужных исполнений.</th></tr>
 <tr>
+<th rowspan="4" scope="rowgroup"><code>runtime.updates</code><br>Один вызов tRPC каждые 2 секунды и после команд: session, queue и одна страница events читаются параллельно; затем — snapshots нужных исполнений.</th>
 <td><a href="https://vb78fyael1.apidog.io/46351385e0"><code>GET /runtime-sessions/{id}</code></a></td>
 <td>Состояние сессии; параллельно с queue и events.</td>
 <td>Path: id сессии. Без тела.</td>

@@ -18,7 +18,7 @@ test("контракт содержит обе границы и весь сог
   expect([...front.matchAll(/<tr>\s*<td><code>([^<]+)<\/code>/g)].map((match) => match[1])).toEqual(procedures);
   const groups = Object.fromEntries([...back.matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)].map((match) => [
     match[1]!.match(/scope="rowgroup"><code>([^<]+)/)?.[1],
-    [...match[1]!.matchAll(/<tr>\s*<td><a[^>]+><code>([^<]+)<\/code>/g)].map((row) => row[1]),
+    [...match[1]!.matchAll(/<td><a[^>]+><code>([^<]+)<\/code>/g)].map((row) => row[1]),
   ]));
   expect(groups).toEqual({
     "notebooks.get": ["GET /notebooks/{id}", "GET /notebooks/{id}/content",
@@ -35,10 +35,15 @@ test("контракт содержит обе границы и весь сог
     "runtime.updates": ["GET /runtime-sessions/{id}", "GET /runtime-sessions/{id}/queue",
       "GET /runtime-sessions/{id}/events", "GET /runtime-sessions/{id}/executions/{execution_id}"],
   });
+  expect(back).not.toContain("colspan=");
+  for (const group of back.matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)) {
+    const rows = group[1]!.match(/<tr>/g)!.length;
+    expect(group[1]).toContain(`<th rowspan="${rows}" scope="rowgroup">`);
+  }
   for (const [section, label, count] of [[front, "Контракт фронта и BFF", 11], [back, "Контракт BFF и backend", 17]] as const) {
     expect(section).toContain(`class="notebook-api-table" tabindex="0" aria-label="${label}"`);
-    expect(section.match(/<th scope="col">/g)).toHaveLength(4);
-    expect(section.match(/<tr>\s*<td>/g)).toHaveLength(count);
+    expect(section.match(/<th scope="col">/g)).toHaveLength(section === back ? 5 : 4);
+    expect(section.match(/<tr>/g)).toHaveLength(count + 1);
     expect(section).toContain("https://vb78fyael1.apidog.io/");
   }
 });
