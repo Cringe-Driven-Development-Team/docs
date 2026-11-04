@@ -10,7 +10,7 @@
 
 Закрытый корпус: `site/index.md`, `site/documentation/**`,
 `site/project-context.md`, `site/architecture/**`, `site/security/**`, действующие
-корневые `diagrams/*.json`, `AGENTS.md`, `.openwikiignore`,
+корневые `diagrams/*.json` и тематические `diagrams/security/*.json`, `AGENTS.md`, `.openwikiignore`,
 `scripts/openwiki-source-path.ts` и эти инструкции.
 Отбор исходных путей для свежести задаёт `scripts/openwiki-source-path.ts`;
 `.openwikiignore` ограничивает чтение тем же корпусом. Доступ к `openwiki/**`

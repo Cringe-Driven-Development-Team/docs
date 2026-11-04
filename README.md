@@ -207,6 +207,24 @@ Actions только проверяет PR с изменениями `openwiki/*
 | [contract](https://docs.cellestial.ru/contract.html) | tRPC браузер/BFF и OpenAPI BFF/Go, Apidog, Orval/Zod, oapi-codegen и drift |
 | [infra](https://docs.cellestial.ru/infra.html) | Три VPS, Pulumi state/Ansible, auxiliary integrations/backup и границы runtime |
 
+**Сценарии безопасности** (`diagrams/security/`) объясняют фактическую реализацию
+из [раздела CSRF](https://docs.cellestial.ru/documentation/security/csrf), с теми же
+источниками и границами проверки. Встраиваются через `<Diagram name="security/<имя>" />`.
+Папка в `HIDDEN_FOLDERS` исключает их из обзорного индекса архитектуры, но входит
+в корпус OpenWiki через `.openwikiignore` и `scripts/openwiki-source-path.ts`.
+Новая схема этого каталога добавляется сюда и в соответствующий сценарий;
+`ROOT_NAMES` не меняется. Генерация wiki запускается владельцем отдельно.
+
+| Схема | Что показывает |
+| --- | --- |
+| [csrf-client](https://docs.cellestial.ru/security/csrf-client.html) | Наш клиент: браузерная cookie, проверки CSRF/сессии и HTTP-вызов Go |
+| [csrf-form](https://docs.cellestial.ru/security/csrf-form.html) | Форма чужого сайта: отказ 415 в адаптере или 403 в CSRF до Go |
+| [csrf-fetch](https://docs.cellestial.ru/security/csrf-fetch.html) | Простой GET отправляется, а preflight останавливает основной запрос |
+| [csrf-subdomain](https://docs.cellestial.ru/security/csrf-subdomain.html) | Same-site поддомен: cookie приложения, CORS и отдельные проверки origin |
+| [csrf-navigation](https://docs.cellestial.ru/security/csrf-navigation.html) | Внешний GET HTML: Lax-cookie, гостевая ветвь, bootstrap и refresh |
+| [csrf-login](https://docs.cellestial.ru/security/csrf-login.html) | Login CSRF: привязка к аккаунту атакующего и фактические отказы входа |
+| [csrf-xss](https://docs.cellestial.ru/security/csrf-xss.html) | XSS внутри origin: запрос с HttpOnly-cookie проходит CSRF, авторизация сохраняется |
+
 Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
 (`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через
 `<Diagram name="modules/2/<имя>" />`:

@@ -24,6 +24,10 @@ test("indexNames drops diagrams of modules/2", () => {
   expect(indexNames(["ci", "modules/2/bff-contract", "other/ci"])).toEqual(["ci", "other/ci"]);
 });
 
+test('тематические схемы security не дублируются в архитектурном индексе', () => {
+  expect(indexNames(['ci', 'security/csrf-client', 'modules/2/bff-contract'])).toEqual(['ci']);
+});
+
 test("indexNames: drops configured module plans, keeps other folders", () => {
   expect(indexNames(["cd", "modules/2/x", "bff-next/ci", "other/ci"])).toEqual(["cd", "bff-next/ci", "other/ci"]);
 });

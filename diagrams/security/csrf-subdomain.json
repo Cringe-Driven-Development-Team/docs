@@ -1,0 +1,222 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "foreign",
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 260,
+      "isContainer": true,
+      "color": "green",
+      "title": {
+        "text": "Захваченный поддомен"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 840,
+      "y": 0,
+      "width": 900,
+      "height": 820,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "BFF приложения"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "attack-code",
+      "x": 100,
+      "y": 140,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Чужой JavaScript / форма"
+        }
+      ],
+      "containerId": "foreign"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 400,
+      "y": 140,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "trpc-adapter",
+      "x": 980,
+      "y": 140,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Адаптер tRPC"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "form-415",
+      "x": 1340,
+      "y": 140,
+      "width": 340,
+      "text": "**415 UNSUPPORTED_MEDIA_TYPE**\n\n`application/x-www-form-urlencoded`\nили `text/plain`\n\nGo не вызывается.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "csrf-check",
+      "x": 980,
+      "y": 400,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "CSRF"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "csrf-403",
+      "x": 1340,
+      "y": 400,
+      "width": 340,
+      "text": "**403 csrf_invalid**\n\nНет `X-CSRF`.\nGo не вызывается.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "preflight-response",
+      "x": 980,
+      "y": 680,
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Ответ на OPTIONS"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "preflight-policy",
+      "x": 1280,
+      "y": 660,
+      "width": 400,
+      "text": "**Fetch с X-CSRF или JSON**\n\nCORS-разрешения нет.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "browser-blocked",
+      "x": 400,
+      "y": 740,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "Основной запрос\nне отправлен"
+        }
+      ]
+    },
+    {
+      "tag": "Textbox",
+      "id": "cookie-policy",
+      "x": 0,
+      "y": 340,
+      "width": 700,
+      "text": "**HTTPS: same-site, но cross-origin**\n\nCookie адресована приложению; серверу поддомена не передаётся.\n\nФорма к приложению может нести cookie.\nДля fetch к приложению нужен `credentials: include`;\n`same-origin` cookie не приложит."
+    },
+    {
+      "tag": "Textbox",
+      "id": "fallback-policy",
+      "x": 0,
+      "y": 920,
+      "width": 1660,
+      "text": "**Если бы CORS ошибочно разрешил поддомен:** POST всё равно встретит проверки BFF.\n\nЧужой `Origin` не равен `APP_ORIGIN`; `Sec-Fetch-Site: same-site` не равен `same-origin`.\nЭто резервная проверка, а не продолжение уже остановленного fetch."
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1780,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "attack-code",
+      "to": "client",
+      "label": "Запустить запрос"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "trpc-adapter",
+      "label": "POST формы к приложению",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "form-415",
+      "label": "urlencoded / plain"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "csrf-check",
+      "label": "multipart/form-data"
+    },
+    {
+      "tag": "Relationship",
+      "from": "csrf-check",
+      "to": "csrf-403",
+      "label": "Нет заголовка"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "preflight-response",
+      "label": "OPTIONS · без cookie",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "preflight-response",
+      "to": "browser-blocked",
+      "label": "Нет разрешения CORS"
+    }
+  ]
+}

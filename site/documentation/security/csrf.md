@@ -95,6 +95,8 @@ BFF не открывает CORS-доступ чужим origin. Для POST д�
 имеющуюся cookie сессии. Для POST браузер указывает наш `Origin` и, если поддерживает
 Fetch Metadata, `Sec-Fetch-Site: same-origin`.
 
+<Diagram name="security/csrf-client" />
+
 Такой запрос проходит CSRF-проверки BFF. Дальше проверяются входные данные и сессия:
 защищённая процедура без неё остановится с `401`, а корректный разрешённый вызов
 дойдёт до Go. Для входа прежняя сессия не требуется.
@@ -107,6 +109,8 @@ Fetch Metadata, `Sec-Fetch-Site: same-origin`.
 и `enctype`. Браузер может отправить её POST в `/api/trpc` без preflight.
 При отправке с другого site cookie с явным `SameSite=Lax` не прикладывается.
 Форма также не умеет установить обязательный `X-CSRF`.
+
+<Diagram name="security/csrf-form" />
 
 Место отказа зависит от формата тела. В локальной проверке `auth.login`
 и `notebooks.create` дали одинаковые результаты:
@@ -129,6 +133,8 @@ Fetch Metadata, `Sec-Fetch-Site: same-origin`.
 По умолчанию `fetch` использует `credentials: 'same-origin'` и не прикладывает cookie
 к чужому origin. Даже `credentials: 'include'` не отменяет запрет `SameSite=Lax`
 на cookie в cross-site `fetch`.
+
+<Diagram name="security/csrf-fetch" />
 
 Отсутствие CORS-разрешения не мешает отправке такого простого запроса: оно запрещает
 скрипту читать ответ. Поэтому серверу всё равно нужна защита. GET `/api/trpc/users.me`
@@ -157,6 +163,8 @@ CORS-заголовков: браузер не отправляет основн
 Определения: [site](https://developer.mozilla.org/en-US/docs/Glossary/Site)
 и [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin).
 
+<Diagram name="security/csrf-subdomain" />
+
 Отсутствие `Domain` не позволяет отправить cookie приложения серверу поддомена.
 Однако запрос **с поддомена к самому приложению** может нести эту cookie:
 он остаётся same-site. Для cross-origin `fetch` дополнительно нужен
@@ -178,6 +186,8 @@ CORS-заголовков: браузер не отправляет основн
 [правило Lax](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#samesitesamesite-value),
 а не обход защиты.
 
+<Diagram name="security/csrf-navigation" />
+
 GET HTML-страницы обрабатывается отдельно от `/api/trpc` и не требует `X-CSRF`.
 При наличии сессии BFF может обратиться к Go за пользователем, данными блокнота
 или обновлением токенов; для гостя без сессии эти вызовы не нужны.
@@ -197,6 +207,8 @@ GET HTML-страницы обрабатывается отдельно от `/a
 данные, доступные атакующему. Это модель
 [login CSRF из OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#possible-csrf-vulnerabilities-in-login-forms).
 
+<Diagram name="security/csrf-login" />
+
 `auth.login` — публичная процедура, но CSRF проверяется до её выполнения.
 Форма с чужого сайта отправится без Lax-cookie и остановится на `415` или `403`
 в зависимости от формата; JSON `fetch` с чужого origin не пройдёт preflight.
@@ -213,6 +225,8 @@ Go не получит запрос входа, новая сессия не б�
 Он может вызвать наш `/api/trpc`, добавить `X-CSRF: 1` и использовать
 `credentials: 'same-origin'`. Браузер приложит доступную cookie, а `Origin`
 и `Sec-Fetch-Site` будут соответствовать приложению. CSRF-проверки пройдут.
+
+<Diagram name="security/csrf-xss" />
 
 `HttpOnly` не даст прочитать cookie из JavaScript, но не запретит такой запрос
 и чтение его ответа. При действующей сессии, корректных данных и достаточных

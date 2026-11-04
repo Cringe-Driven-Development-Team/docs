@@ -1,0 +1,222 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "foreign",
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 260,
+      "isContainer": true,
+      "color": "green",
+      "title": {
+        "text": "Чужой сайт"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 840,
+      "y": 0,
+      "width": 900,
+      "height": 840,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "BFF · действующая защита"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "attack-code",
+      "x": 100,
+      "y": 140,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Форма / fetch"
+        }
+      ],
+      "containerId": "foreign"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 400,
+      "y": 140,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер жертвы"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "trpc-adapter",
+      "x": 980,
+      "y": 140,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Адаптер tRPC"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "form-415",
+      "x": 1340,
+      "y": 140,
+      "width": 340,
+      "text": "**415 UNSUPPORTED_MEDIA_TYPE**\n\nurlencoded / plain\nДо createContext; вход не выполнен.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "csrf-check",
+      "x": 980,
+      "y": 400,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "CSRF"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "csrf-403",
+      "x": 1340,
+      "y": 400,
+      "width": 340,
+      "text": "**403 csrf_invalid**\n\nMultipart без X-CSRF.\nGo не вызывается; сессия не создаётся.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "preflight-response",
+      "x": 980,
+      "y": 680,
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Ответ на OPTIONS"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "preflight-policy",
+      "x": 1280,
+      "y": 660,
+      "width": 400,
+      "text": "**JSON fetch с чужого origin**\n\nCORS-разрешения нет.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "browser-blocked",
+      "x": 400,
+      "y": 760,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "Основной запрос\nне отправлен"
+        }
+      ]
+    },
+    {
+      "tag": "Textbox",
+      "id": "attacker-policy",
+      "x": 0,
+      "y": 340,
+      "width": 700,
+      "text": "**Цель атакующего**\n\nПередать свои логин и пароль в браузере жертвы.\nПрежняя сессия жертвы не нужна."
+    },
+    {
+      "tag": "Textbox",
+      "id": "unprotected-case",
+      "x": 0,
+      "y": 520,
+      "width": 700,
+      "text": "**Если бы вход не защищался**\n\nБраузер получил бы сессию атакующего.\nЖертва могла бы сохранить данные в его аккаунте.\nЭто гипотеза, а не результат текущего запроса."
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1780,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "attack-code",
+      "to": "client",
+      "label": "Чужие учётные данные"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "trpc-adapter",
+      "label": "POST /api/trpc/auth.login",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "form-415",
+      "label": "urlencoded / plain"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "csrf-check",
+      "label": "multipart/form-data"
+    },
+    {
+      "tag": "Relationship",
+      "from": "csrf-check",
+      "to": "csrf-403",
+      "label": "Нет заголовка"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "preflight-response",
+      "label": "OPTIONS · без cookie",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "preflight-response",
+      "to": "browser-blocked",
+      "label": "Нет разрешения CORS"
+    }
+  ]
+}

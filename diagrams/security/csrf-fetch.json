@@ -1,0 +1,180 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "foreign",
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 260,
+      "isContainer": true,
+      "color": "green",
+      "title": {
+        "text": "Чужой сайт"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 840,
+      "y": 0,
+      "width": 900,
+      "height": 780,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "BFF"
+      }
+    },
+    {
+      "tag": "Icon",
+      "id": "attack-code",
+      "x": 100,
+      "y": 160,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Чужой JavaScript"
+        }
+      ],
+      "containerId": "foreign"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 400,
+      "y": 160,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "csrf-check",
+      "x": 980,
+      "y": 160,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "CSRF"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "simple-403",
+      "x": 1340,
+      "y": 160,
+      "width": 340,
+      "text": "**403 csrf_invalid**\n\nНет `X-CSRF`; Go не вызывается.\nЧужой JS не читает ответ: нет CORS.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "preflight-response",
+      "x": 980,
+      "y": 560,
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Ответ на OPTIONS"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "preflight-policy",
+      "x": 1260,
+      "y": 540,
+      "width": 420,
+      "text": "**JSON или X-CSRF: 1**\n\nВ ответе нет разрешающих CORS-заголовков.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "browser-blocked",
+      "x": 400,
+      "y": 680,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "Основной запрос\nне отправлен"
+        }
+      ]
+    },
+    {
+      "tag": "Textbox",
+      "id": "cookie-policy",
+      "x": 0,
+      "y": 340,
+      "width": 680,
+      "text": "**Cookie в cross-site fetch**\n\n`same-origin` не прикладывает cookie.\n`include` не отменяет `SameSite=Lax`."
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1780,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "attack-code",
+      "to": "client",
+      "label": "Вызвать fetch"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "csrf-check",
+      "label": "Простой GET /api/trpc/users.me",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "csrf-check",
+      "to": "simple-403",
+      "label": "Без X-CSRF"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "preflight-response",
+      "label": "OPTIONS · без cookie",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "preflight-response",
+      "to": "browser-blocked",
+      "label": "Нет разрешения CORS"
+    }
+  ]
+}

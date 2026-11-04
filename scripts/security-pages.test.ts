@@ -52,8 +52,20 @@ test('security: ровно по одной встроенной Mermaid в CSRF 
     expect(md.match(/^```mermaid$/gm)).toHaveLength(1);
     expect(md).toContain('<DiagramSection>');
     expect(md).toContain('<template #diagram>');
-    expect(md).not.toContain('<Diagram name=');
+    if (page === 'xss') expect(md).not.toContain('<Diagram name=');
   }
+});
+
+test('security: сценарии встраивают свою Eraser после вводного абзаца', () => {
+  const md = read('csrf');
+  for (const [anchor, name] of [['наш-клиент', 'client'], ['чужая-форма', 'form'],
+    ['чужой-fetch', 'fetch'], ['захваченный-поддомен', 'subdomain'], ['внешняя-ссылка', 'navigation'],
+    ['login-csrf', 'login'], ['xss-внутри-origin', 'xss']]) {
+    const section = md.split(`{#${anchor}}`)[1]!.split('\n### ')[0]!;
+    const paragraphs = section.trim().split(/\n\s*\n/);
+    expect(paragraphs[1]).toBe(`<Diagram name="security/csrf-${name}" />`);
+  }
+  expect(md.match(/<Diagram name="security\/csrf-/g)).toHaveLength(7);
 });
 
 test('security: источники закреплены на SHA, примеры не содержат инфраструктурных секретов', () => {
