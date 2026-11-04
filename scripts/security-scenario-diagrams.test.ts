@@ -83,3 +83,42 @@ test('поддомен: cookie адресована приложению; рез
   for (const value of ['Origin', 'APP_ORIGIN', 'Sec-Fetch-Site', 'same-site', 'CORS']) expect(fallback).toContain(value);
   expect(doc.connections.some(edge => edge.from === 'fallback-policy' || edge.to === 'fallback-policy')).toBe(false);
 });
+
+test('внешний GET: HTML обрабатывается отдельно, гость не идёт в Go, bootstrap допускает блокнот', () => {
+  const doc = read('navigation');
+  for (const pair of ['client>caddy', 'caddy>html-handler', 'html-handler>session', 'session>go-api',
+    'go-api>session', 'session>html-handler', 'session>guest', 'guest>html-handler', 'html-handler>caddy', 'caddy>client']) expect(pairs(doc)).toContain(pair);
+  expect(pairs(doc)).not.toContain('guest>go-api');
+  expect(edgeText(doc, 'client', 'caddy')).toContain('GET HTML');
+  expect(nodeText(doc, 'html-policy')).toContain('Lax');
+  expect(nodeText(doc, 'html-policy')).toMatch(/без X-CSRF/i);
+  expect(nodeText(doc, 'bootstrap-policy')).toContain('notebook');
+  expect(nodeText(doc, 'session-policy')).toContain('refresh');
+  expect(nodeText(doc, 'guest')).toMatch(/Go не вызывается/);
+  expect(nodeText(doc, 'bootstrap-policy')).not.toMatch(/только.*user/);
+});
+
+test('login CSRF: гипотеза изолирована от реальных отказов, старая сессия не требуется', () => {
+  const doc = read('login');
+  for (const pair of ['client>trpc-adapter', 'trpc-adapter>form-415', 'trpc-adapter>csrf-check',
+    'csrf-check>csrf-403', 'client>preflight-response', 'preflight-response>browser-blocked']) expect(pairs(doc)).toContain(pair);
+  expect(nodeText(doc, 'unprotected-case')).toMatch(/Если бы/);
+  expect(nodeText(doc, 'unprotected-case')).toMatch(/сесси[яю] атакующего/);
+  expect(nodeText(doc, 'attacker-policy')).toMatch(/сесси.*не нужна/i);
+  expect(doc.connections.some(edge => edge.from === 'unprotected-case' || edge.to === 'unprotected-case')).toBe(false);
+  expect(doc.connections.filter(edge => ['form-415', 'csrf-403', 'browser-blocked'].includes(edge.from))).toEqual([]);
+  expect(doc.entities.some(node => node.id === 'go-api')).toBe(false);
+  expect(edgeText(doc, 'client', 'trpc-adapter')).toContain('/api/trpc/auth.login');
+});
+
+test('XSS: CSRF проходит без чтения HttpOnly-cookie, сессия остаётся обязательной', () => {
+  const doc = read('xss');
+  for (const pair of ['attack-code>client', 'client>trpc-adapter', 'trpc-adapter>csrf-check',
+    'csrf-check>session', 'session>go-api', 'session>unauthorized', 'go-api>session', 'session>client', 'client>attack-code']) expect(pairs(doc)).toContain(pair);
+  expect(nodeText(doc, 'xss-policy')).toMatch(/Если.*JavaScript/s);
+  for (const value of ['X-CSRF: 1', 'same-origin', 'HttpOnly', 'cookie']) expect(nodeText(doc, 'browser-policy')).toContain(value);
+  expect(nodeText(doc, 'unauthorized')).toContain('401');
+  expect(doc.connections.filter(edge => edge.from === 'unauthorized')).toEqual([]);
+  expect(edgeText(doc, 'session', 'go-api')).toContain('HTTP');
+  expect(pairs(doc)).not.toContain('client>go-api');
+});

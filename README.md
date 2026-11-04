@@ -213,6 +213,9 @@ Actions только проверяет PR с изменениями `openwiki/*
 | [csrf-form](https://docs.cellestial.ru/security/csrf-form.html) | Форма чужого сайта: отказ 415 в адаптере или 403 в CSRF до Go |
 | [csrf-fetch](https://docs.cellestial.ru/security/csrf-fetch.html) | Простой GET отправляется, а preflight останавливает основной запрос |
 | [csrf-subdomain](https://docs.cellestial.ru/security/csrf-subdomain.html) | Same-site поддомен: cookie приложения, CORS и отдельные проверки origin |
+| [csrf-navigation](https://docs.cellestial.ru/security/csrf-navigation.html) | Внешний GET HTML: Lax-cookie, гостевая ветвь, bootstrap и refresh |
+| [csrf-login](https://docs.cellestial.ru/security/csrf-login.html) | Login CSRF: привязка к аккаунту атакующего и фактические отказы входа |
+| [csrf-xss](https://docs.cellestial.ru/security/csrf-xss.html) | XSS внутри origin: запрос с HttpOnly-cookie проходит CSRF, авторизация сохраняется |
 
 Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
 (`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через

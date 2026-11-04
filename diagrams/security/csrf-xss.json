@@ -1,0 +1,232 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "vps",
+      "x": 620,
+      "y": 0,
+      "width": 1000,
+      "height": 820,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "Наше приложение"
+      }
+    },
+    {
+      "tag": "Group",
+      "id": "bff",
+      "x": 660,
+      "y": 60,
+      "width": 620,
+      "height": 700,
+      "isContainer": true,
+      "color": "blue",
+      "title": {
+        "text": "BFF"
+      },
+      "containerId": "vps",
+      "styleMode": "plain"
+    },
+    {
+      "tag": "Icon",
+      "id": "attack-code",
+      "x": 80,
+      "y": 160,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "JS атакующего в нашем origin"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 360,
+      "y": 160,
+      "icon": "globe",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "trpc-adapter",
+      "x": 740,
+      "y": 160,
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Адаптер tRPC"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "csrf-check",
+      "x": 1080,
+      "y": 160,
+      "icon": "shield",
+      "texts": [
+        {
+          "text": "CSRF"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "session",
+      "x": 1080,
+      "y": 420,
+      "icon": "user",
+      "texts": [
+        {
+          "text": "Сессия и входные данные"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Icon",
+      "id": "go-api",
+      "x": 1460,
+      "y": 420,
+      "icon": "go",
+      "texts": [
+        {
+          "text": "Go API"
+        }
+      ],
+      "containerId": "vps"
+    },
+    {
+      "tag": "Textbox",
+      "id": "unauthorized",
+      "x": 980,
+      "y": 660,
+      "width": 260,
+      "text": "**401 UNAUTHORIZED**\n\nНет сессии → Go не вызывается.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "xss-policy",
+      "x": 0,
+      "y": 360,
+      "width": 540,
+      "text": "**Условие сценария**\n\nЕсли JavaScript уже исполняется в нашем origin,\nон действует как код приложения."
+    },
+    {
+      "tag": "Textbox",
+      "id": "browser-policy",
+      "x": 0,
+      "y": 540,
+      "width": 540,
+      "text": "**Запрос без чтения cookie**\n\nJS ставит `X-CSRF: 1`, `credentials: same-origin`.\nБраузер добавляет HttpOnly-cookie.\nOrigin и Fetch Metadata соответствуют приложению."
+    },
+    {
+      "tag": "Textbox",
+      "id": "csrf-policy",
+      "x": 700,
+      "y": 580,
+      "width": 250,
+      "text": "CSRF проходит.\n\nНужна отдельная защита от XSS: bootstrap и вывод текста.",
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "go-policy",
+      "x": 1340,
+      "y": 620,
+      "width": 240,
+      "text": "Go проверяет токены и права на операцию.",
+      "containerId": "vps"
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1660,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "attack-code",
+      "to": "client",
+      "label": "Отправить запрос"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "trpc-adapter",
+      "label": "POST /api/trpc/notebooks.create",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "trpc-adapter",
+      "to": "csrf-check",
+      "label": "JSON принят"
+    },
+    {
+      "tag": "Relationship",
+      "from": "csrf-check",
+      "to": "session",
+      "label": "Проверки пройдены"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "go-api",
+      "label": "HTTP · сессия и вход допустимы"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "session",
+      "label": "Ответ Go"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "client",
+      "label": "Ответ через BFF"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "attack-code",
+      "label": "JS читает ответ",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "unauthorized",
+      "label": "Нет сессии"
+    }
+  ]
+}
