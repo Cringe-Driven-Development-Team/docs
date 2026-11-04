@@ -831,12 +831,27 @@ sequenceDiagram
         end
       end
     and Независимый polling открытого UI
-      loop Пока UI получает обновления
-        ExecutionUI->>BFF: runtime.updates
-        BFF->>Go: Получить состояние, очередь,<br/>события и результаты по execution_id
-        Go-->>BFF: Сохранённые данные
-        BFF-->>ExecutionUI: Агрегированный снимок
-        ExecutionUI->>ExecutionUI: Обновить экран из снимка
+      Note over ExecutionUI,BFF: Обновление также после команд<br/>Без перекрытия polling-запросов
+      loop Каждые 2 секунды, пока UI наблюдает за сессией
+        ExecutionUI->>BFF: runtime.updates<br/>sessionId, after, executionIds
+        Note over BFF,Go: HTTP-пути относительно /api/v1<br/>{id} — ID сессии
+        par Состояние сессии
+          BFF->>Go: GET /runtime-sessions/{id}
+          Go-->>BFF: session
+        and Очередь ячеек
+          BFF->>Go: GET /runtime-sessions/{id}/queue
+          Go-->>BFF: runtime_queue
+        and Одна страница событий
+          BFF->>Go: GET /runtime-sessions/{id}<br/>/events?after=cursor
+          Go-->>BFF: events, next_cursor, has_more
+        end
+        BFF->>BFF: Объединить уникальные execution_id<br/>из events и входного executionIds
+        loop Для каждого нужного execution_id
+          BFF->>Go: GET /runtime-sessions/{id}<br/>/executions/{execution_id}
+          Go-->>BFF: Snapshot исполнения: статус и outputs
+        end
+        BFF-->>ExecutionUI: session, runtime_queue, events,<br/>executions, next_cursor, has_more
+        ExecutionUI->>ExecutionUI: Обновить изменившиеся ячейки и курсор<br/>Без перечитывания всего блокнота
       end
     end
   end
