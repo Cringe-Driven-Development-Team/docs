@@ -34,6 +34,7 @@ test("offline runtime: явно задана граница персональн
     /\| Персональный HTML BFF \| Нет \|/,
     /\| RPC \/ API \| Нет \|/,
     /\| `offline\.html` \| Да \|/,
+    /\| `offline\.css` \| Да \|/,
     /\| `manifest\.webmanifest` \| Да \|/,
     /\| JS\/CSS и остальные ассеты SPA \| Нет \|/,
   ]) expect(policy).toMatch(pattern);

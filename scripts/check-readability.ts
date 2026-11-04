@@ -1726,7 +1726,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await observe(page);
   const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
     'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
-  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
+  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;

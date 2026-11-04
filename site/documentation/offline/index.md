@@ -6,6 +6,8 @@ title: Офлайн-режим
 
 Как получаются файлы и подключается SW, разобрано на странице
 [Сборка и регистрация SW](/documentation/offline/build-and-registration).
+Размещение, HTTP-раздача и выпуск описаны в
+[инфраструктуре PWA](/documentation/offline/infrastructure).
 
 При повторном открытии Cellestial без сети браузер показывает заранее сохранённую неперсональную
 офлайн-страницу. Личные данные и редактор без сервера недоступны. Здесь объясняется, где хранится
@@ -118,25 +120,31 @@ DevTools. Он **не удаляет** установленный SW и запи
 
 ## Как работает Cellestial
 
+**Актуализация комплекта 04.11.2026:** состав публичных файлов и precache ниже описан по коду
+`007d8d4de7fa964947ffe1316c31726bbd386903`. Прежний браузерный прогон 02.11.2026 на другом SHA
+сохранён отдельно в разделе проверки; эта редактура не означает его повторения.
+
 Клиент остаётся SPA с server bootstrap: BFF формирует HTML с начальными данными до первого рендера,
 а JS/CSS приходят с CDN. Полный запуск редактора офлайн здесь не обещается. В коде проверенного
 выпуска выбрана отдельная страница, которой не нужны сессия, bootstrap и файлы SPA.
 
-BFF публично отдаёт `/sw.js`, `/offline.html` и манифест перед обработчиком персонального HTML:
-[список файлов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/apps/bff/src/public.ts#L7-L15),
-[порядок маршрутов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/apps/bff/src/app.ts#L47-L55).
+BFF публично отдаёт `/sw.js`, `/offline.html`, `/offline.css` и манифест перед обработчиком
+персонального HTML:
+[список файлов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/src/public.ts#L7-L16),
+[порядок маршрутов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/src/app.ts#L47-L56).
 
 | Ресурс | В Cache Storage | Поведение реализованного SW |
 | --- | --- | --- |
 | Персональный HTML BFF | Нет | Навигация через сеть; при сетевом отказе — неперсональная подстановка |
 | RPC / API | Нет | Ответы не сохраняются, HTML офлайн-страницы вместо RPC не возвращается |
 | `offline.html` | Да | Заранее сохраняется при установке SW |
+| `offline.css` | Да | Стили офлайн-страницы сохраняются вместе с ней |
 | `manifest.webmanifest` | Да | Плагин добавляет публичный манифест в precache |
 | JS/CSS и остальные ассеты SPA | Нет | Обычная загрузка с CDN; HTTP-кеш рассматривается отдельно |
 
 Для навигации используется **NetworkOnly** с офлайн-подстановкой при отказе сети. Полученный
 HTTP-ответ, включая `503`, остаётся ответом сервера: статус ошибки и сетевой отказ различаются.
-Правила заданы в [конфигурации сборки SW](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/apps/client/vite/plugins.ts#L43-L62).
+Правила заданы в [конфигурации сборки SW](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/client/vite/plugins.ts#L43-L62).
 
 <template #diagram>
 
