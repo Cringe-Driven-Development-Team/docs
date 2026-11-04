@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
 import { join } from 'node:path';
 import puppeteer from 'puppeteer';
-import type { Browser, Page } from 'puppeteer';
+import type { Browser, Page, ElementHandle, Frame, HTTPRequest } from 'puppeteer';
 import { SITE_BASE } from '../site/.vitepress/site';
 
 const artifacts = process.env.READABILITY_ARTIFACTS_DIR || '.superpowers/readability';
@@ -1992,6 +1992,7 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
   const embeds = nodes.map(node => `https://embed.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=${node}&embed-host=docs.cellestial.ru`);
   for (const [width, mode] of [[1440, 1], [390, 1], [1440, 3]] as const) for (const dark of [false, true]) {
     const context = await browser.createBrowserContext();
+    const handles: ElementHandle[] = [];
     try {
       const page = await context.newPage();
       await observe(page);
@@ -2003,9 +2004,11 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
       }, { mode, dark });
       // Test the host page even when Figma requires login; live canvas checks are separate.
       await page.setRequestInterception(true);
+      const requests = new Map<string, number>();
       page.on('request', request => {
         if (request.isNavigationRequest() && embeds.includes(request.url())) {
-          void request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="ru"><title>Figma fixture</title><body>Требуется вход в Figma</body></html>' });
+          requests.set(request.url(), (requests.get(request.url()) ?? 0) + 1);
+          void request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: `<!doctype html><html lang="ru"><title>Figma fixture</title><body><input aria-label="Экран ${embeds.indexOf(request.url())}" value="initial"></body></html>` });
         } else void request.continue();
       });
       await page.goto(url('modules/2/tracks/2fa-front#подключение'), { waitUntil: 'networkidle0' });
@@ -2046,13 +2049,31 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
       await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
       await page.waitForNetworkIdle();
       const tabs = await page.$$('.figma-embed [role=tab]');
+      handles.push(...tabs);
       assert.equal(tabs.length, 4);
+      assert.equal(await page.$$eval('.figma-embed iframe', frames => frames.length), 1, 'Only the initial QR iframe exists');
+      assert.deepEqual([...requests], [[embeds[1], 1]], 'Only QR loads before another screen is visited');
+      const qrElement = (await page.$(`.figma-embed iframe[src="${embeds[1]}"]`))!;
+      try {
+        const qrFrame = (await qrElement.contentFrame())!;
+        await qrFrame.$eval('input', node => { node.value = 'retained QR state'; });
+        await tabs[0]!.click();
+        await page.waitForNetworkIdle();
+        await tabs[1]!.click();
+        await page.waitForNetworkIdle();
+        assert.strictEqual(await qrElement.contentFrame(), qrFrame, 'QR retains its browsing context');
+        assert.equal(await qrFrame.$eval('input', node => node.value), 'retained QR state', 'QR retains its document');
+        assert.deepEqual([...requests].sort(), [[embeds[0], 1], [embeds[1], 1]].sort(), 'Visited screens navigate once');
+      } finally {
+        await qrElement.dispose();
+      }
       const checkSelected = async (index: number, focused = false) => {
-        await page.waitForFunction(src => document.querySelector<HTMLIFrameElement>('.figma-embed iframe')?.src === src, {}, embeds[index]);
+        await page.waitForFunction(src => [...document.querySelectorAll<HTMLIFrameElement>('.figma-embed iframe')].find(frame => frame.getBoundingClientRect().width > 0)?.src === src, {}, embeds[index]);
         const selected = await page.$eval('.figma-embed', widget => {
           const tabs = [...widget.querySelectorAll<HTMLButtonElement>('[role=tab]')];
           const panel = widget.querySelector<HTMLElement>('[role=tabpanel]')!;
-          const frame = widget.querySelector('iframe')!;
+          const frames = [...widget.querySelectorAll('iframe')];
+          const frame = frames.find(frame => frame.getBoundingClientRect().width > 0)!;
           const link = widget.querySelector('a')!;
           return {
             tabs: tabs.map(tab => ({ label: tab.textContent?.slice(tab.querySelector('.number')!.textContent!.length).trim(), selected: tab.getAttribute('aria-selected'), tabindex: tab.tabIndex,
@@ -2060,12 +2081,13 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
               visible: tab.scrollWidth <= tab.clientWidth + 1 && tab.getBoundingClientRect().width > 0 })),
             panel: panel.getAttribute('aria-labelledby') === tabs.find(tab => tab.getAttribute('aria-selected') === 'true')?.id,
             panelIdUnique: document.querySelectorAll(`[id="${panel.id}"]`).length === 1,
-            count: widget.querySelectorAll('iframe').length, src: frame.src, title: frame.title, link: link.href,
+            count: frames.length, visible: frames.filter(frame => frame.getBoundingClientRect().width > 0).length, src: frame.src, title: frame.title, link: link.href,
             linkText: link.textContent, target: link.target, rel: link.rel,
             focused: document.activeElement === tabs.find(tab => tab.getAttribute('aria-selected') === 'true'),
           };
         });
-        assert.equal(selected.count, 1);
+        assert(selected.count >= 1 && selected.count <= 4);
+        assert.equal(selected.visible, 1);
         assert.equal(selected.src, embeds[index]);
         assert.equal(selected.title, titles[index]);
         assert.equal(selected.link, sources[index]);
@@ -2083,6 +2105,10 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
         if (focused) assert(selected.focused, 'Keyboard selection moves focus');
       };
       await checkSelected(1);
+      await page.keyboard.press('End');
+      await checkSelected(3, true);
+      await page.keyboard.press('Home');
+      await checkSelected(0, true);
       for (const index of [0, 1, 2, 3]) {
         await tabs[index]!.click();
         await checkSelected(index);
@@ -2095,15 +2121,125 @@ async function checkFigma(browser: Browser, url: (path: string) => string): Prom
       }
       await page.keyboard.press('Tab');
       assert(await page.$eval('.figma-embed [role=tabpanel]', node => node === document.activeElement), 'Tab exits tablist to the panel');
-      await page.focus('.figma-embed iframe');
+      await page.keyboard.press('Tab');
+      const activeFrame = page.frames().find(frame => frame.url() === embeds[3])!;
+      assert.equal(await activeFrame.$eval('input', node => node === document.activeElement), true, 'Tab enters only the visible screen');
       await page.keyboard.press('Tab');
       assert(await page.$eval('.figma-embed a', node => node === document.activeElement), 'Tab exits iframe to the Figma link');
       await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
       await page.screenshot({ path: join(artifacts, `${label}-figma-${width}-${mode}-${dark ? 'dark' : 'light'}.png`) });
+      const accessibility = await page.accessibility.snapshot({ interestingOnly: false, includeIframes: true });
+      const accessibleInputs: string[] = [];
+      const visitAX = (node: NonNullable<typeof accessibility>) => {
+        if (node.role === 'textbox') accessibleInputs.push(node.name!);
+        node.children?.forEach(visitAX);
+      };
+      visitAX(accessibility!);
+      assert.deepEqual(accessibleInputs, ['Экран 3'], 'Hidden iframe documents are excluded from the accessibility tree');
+      assert.deepEqual(embeds.map(src => requests.get(src)), [1, 1, 1, 1], 'Each visited screen loads once');
+      assert.equal(await page.$$eval('.figma-embed iframe', frames => frames.length), 4);
+      if (width === 1440 && mode === 1 && !dark) {
+        const retained: { element: ElementHandle; frame: Frame; marker: string }[] = [];
+        for (const [index, src] of embeds.entries()) {
+          const element = (await page.$(`.figma-embed iframe[src="${src}"]`))!;
+          handles.push(element);
+          const frame = (await element.contentFrame())!;
+          const marker = `retained screen ${index}`;
+          await frame.$eval('input', (node, marker) => { node.value = marker; }, marker);
+          retained.push({ element, frame, marker });
+        }
+        const checkRetained = async () => {
+          for (const [index, { element, frame, marker }] of retained.entries()) {
+            assert(await element.evaluate((node, src) => node.isConnected && node === document.querySelector(`.figma-embed iframe[src="${src}"]`), embeds[index]), 'Same DOM node in its original screen slot');
+            assert.strictEqual(await element.contentFrame(), frame, 'Same browsing context');
+            assert.equal(await frame.$eval('input', node => node.value), marker, 'Same loaded document');
+          }
+          assert.deepEqual(embeds.map(src => requests.get(src)), [1, 1, 1, 1]);
+          assert.equal(await page.$$eval('.figma-embed iframe', frames => frames.length), 4);
+        };
+        for (let cycle = 0; cycle < 20; cycle++) {
+          for (const index of [0, 1, 2, 3]) {
+            await tabs[index]!.click();
+            await checkSelected(index);
+          }
+          await checkRetained();
+        }
+        await page.$eval('a.header-anchor[href="#вход"]', node => (node as HTMLElement).click());
+        await page.waitForFunction(() => decodeURIComponent(location.hash) === '#вход');
+        await checkRetained();
+        await page.evaluate(() => { (window as Window & { figmaSPA?: boolean }).figmaSPA = true; });
+        let oldFrames = retained.map(({ frame }) => frame);
+        for (let cycle = 0; cycle < 3; cycle++) {
+          await page.click(`.vp-doc a[href="${SITE_BASE}modules/2/tracks/2fa"]`);
+          await page.waitForFunction(path => location.pathname === path && !document.querySelector('.figma-embed'), {}, `${SITE_BASE}modules/2/tracks/2fa`);
+          assert(oldFrames.every(frame => frame.detached), 'SPA leave detaches all Figma browsing contexts');
+          assert.equal(page.frames().filter(frame => embeds.includes(frame.url())).length, 0);
+          await page.click(`.vp-doc a[href="${SITE_BASE}modules/2/tracks/2fa-front"]`);
+          await page.waitForSelector('.figma-embed iframe');
+          await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+          await page.waitForNetworkIdle();
+          assert.equal(await page.$$eval('.figma-embed iframe', frames => frames.length), 1, 'SPA return starts with QR only');
+          const current = page.frames().filter(frame => embeds.includes(frame.url()));
+          assert.equal(current.length, 1, 'Repeated SPA visits do not accumulate Figma contexts');
+          assert.equal(current[0]!.url(), embeds[1]);
+          assert(!oldFrames.includes(current[0]!), 'SPA return creates a new context');
+          assert.equal(await current[0]!.$eval('input', node => node.value), 'initial');
+          assert.equal(await page.evaluate(() => (window as Window & { figmaSPA?: boolean }).figmaSPA), true, 'Internal links use SPA navigation');
+          oldFrames = current;
+        }
+        console.log('PASS Figma lifecycle: 20 complete switching cycles preserve DOM/Frame/document/requests; same-page anchor and three SPA leave/return cycles clean up contexts');
+      }
       console.log(`PASS Figma host ${width}px mode=${mode} ${dark ? 'dark' : 'light'}: four tabs, frame/link/title, ARIA, click, arrows/wrap/Home/End/Tab, placement and hash (external content stubbed)`);
     } finally {
+      for (const handle of handles) await handle.dispose();
       await context.close();
     }
+  }
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
+  let held: HTTPRequest | undefined;
+  let element: ElementHandle | null = null;
+  const requests = new Map<string, number>();
+  const respond = (request: HTTPRequest) => request.respond({ status: 200, contentType: 'text/html', body: '<input aria-label="Delayed screen" value="first reply">' });
+  const intercept = (request: HTTPRequest) => {
+    if (request.isNavigationRequest() && embeds.includes(request.url())) {
+      requests.set(request.url(), (requests.get(request.url()) ?? 0) + 1);
+      if (request.url() === embeds[0]) held = request;
+      else void respond(request);
+    } else void request.continue();
+  };
+  try {
+    await observe(page);
+    await page.setViewport({ width: 1440, height: 1000 });
+    await page.setRequestInterception(true);
+    page.on('request', intercept);
+    await page.goto(url('modules/2/tracks/2fa-front#подключение'), { waitUntil: 'networkidle0' });
+    await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.waitForNetworkIdle();
+    const waiting = page.waitForRequest(request => request.url() === embeds[0]);
+    await page.click('.figma-embed [role=tab]:nth-child(1)');
+    await waiting;
+    element = await page.$(`.figma-embed iframe[src="${embeds[0]}"]`);
+    const frame = (await element!.contentFrame())!;
+    for (const index of [1, 0, 1, 0]) await page.click(`.figma-embed [role=tab]:nth-child(${index + 1})`);
+    assert.equal(requests.get(embeds[0]!), 1, 'Switching before the response does not restart navigation');
+    assert(await element!.evaluate(node => node.isConnected), 'Pending screen retains its DOM node');
+    assert.strictEqual(await element!.contentFrame(), frame, 'Pending screen retains its context');
+    assert(held, 'First new screen response is held');
+    await respond(held);
+    held = undefined;
+    await frame.waitForSelector('input');
+    assert.equal(await frame.$eval('input', node => node.value), 'first reply');
+    assert(await element!.evaluate(node => node.getBoundingClientRect().width > 0), 'Resolved screen is visible after return');
+    assert.strictEqual(await element!.contentFrame(), frame);
+    assert.deepEqual(embeds.map(src => requests.get(src) ?? 0), [1, 1, 0, 0]);
+    console.log('PASS Figma pending response: rapid leave/return retains one request, DOM node, Frame and eventual document');
+  } finally {
+    if (held) await respond(held);
+    page.off('request', intercept);
+    await page.setRequestInterception(false);
+    await element?.dispose();
+    await context.close();
   }
 }
 
