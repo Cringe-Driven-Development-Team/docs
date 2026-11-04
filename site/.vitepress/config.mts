@@ -1,10 +1,10 @@
 // Конфиг сайта документации. Спека: docs/superpowers/specs/2026-10-07-vitepress-csrf-docs-design.md §4.
 import { defineConfig } from 'vitepress';
 import { fileURLToPath } from 'node:url';
-import { moduleSidebar, readModules } from '@tp-prepare/vitepress-module-graph/node';
+import { moduleSidebar, readModules } from '@wely6743/vitepress-module-graph/node';
 import { SITE_BASE } from './site.ts';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
-import { mermaidFence } from './mermaid-fence.ts';
+import { mermaidFence } from '@wely6743/vitepress-diagram-viewer/node';
 import { articleLoadingHeadScript } from './theme/article-loading.ts';
 import { readingLayoutHeadScript } from './theme/reading-layout.ts';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
@@ -47,7 +47,7 @@ export default defineConfig({
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.
     vite: {
       plugins: [groupIconVitePlugin()],
-      ssr: { noExternal: ['@tp-prepare/vitepress-module-graph', /^@nolebase\//] },
+      ssr: { noExternal: ['@wely6743/vitepress-module-graph', '@wely6743/vitepress-diagram-viewer', /^@nolebase\//] },
       // CommonJS-хелперы нужны до гидратации темы.
       optimizeDeps: {
         include: ['fastdom', 'fastdom/extensions/fastdom-promised.js'],

@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
-const cli = resolve(root, "node_modules/@tp-prepare/vitepress-module-graph/dist/cli.mjs");
+const cli = resolve(root, "node_modules/@wely6743/vitepress-module-graph/dist/cli.mjs");
 
 if (existsSync(cli)) {
   try {

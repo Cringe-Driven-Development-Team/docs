@@ -421,6 +421,13 @@ A[Запрос]-->B[Ответ]
 чтения. Каждый Mermaid fence получает просмотрщик автоматически; `DiagramSection`
 задаёт связь с пояснением. Подробности и проверки — в [docs-site](.agents/skills/docs-site/SKILL.md#схема-на-странице).
 
+Три npm-пакета версии `0.1.0` выпускаются из [YarikMix/vitepress-plugins](https://github.com/YarikMix/vitepress-plugins):
+`@wely6743/vitepress-module-graph` — данные, CLI и тема модулей;
+`@wely6743/vitepress-mermaid-renderer` — SVG Mermaid;
+`@wely6743/vitepress-diagram-viewer` — рамки Mermaid/Eraser, `DiagramSection`, CSS и fence-плагин `/node`.
+В сайте остаются адаптер `Diagram.vue` с URL/размерами Eraser, генерация HTML/PNG,
+loader статьи, ссылки заголовков и Figma.
+
 ### Модули
 
 План учебного модуля (месяц разработки) — граф «люди — треки — подзадачи» на
@@ -436,7 +443,7 @@ A[Запрос]-->B[Ответ]
 - **`site/modules/people.yaml`** — люди: GitHub-логин, имя, роль, направление
   (`front`, `back`, `devops`, `fullstack`, `team`), `mentor: true` у менторов.
 - **`site/modules/module-graph.yaml`** — настройки графа и доски (организация, проект, поля). Формат и CLI —
-  [README пакета](https://github.com/TP-Prepare/frontend-packages/blob/main/packages/vitepress-module-graph/README.md).
+  [README пакета](https://github.com/YarikMix/vitepress-plugins/blob/main/packages/vitepress-module-graph/README.md).
 - **Модуль** — каталог `site/modules/<номер>/` (`2`, `3`, …) с `index.md`: во frontmatter `title`,
   необязательный `period` и `aside: false`, в тексте `<ModuleGraph />`.
 - **Трек** — файл `site/modules/<номер>/tracks/<id>.md`, `id` — строчная латиница, цифры и дефис:
@@ -476,7 +483,7 @@ A[Запрос]-->B[Ответ]
   `pages` или запись без файла роняют сборку.
 
 В `vitepress dev` новый трек появится на графе сразу, а в меню — после перезапуска
-dev-сервера. Формат и проверки — [README пакета](https://github.com/TP-Prepare/frontend-packages/blob/main/packages/vitepress-module-graph/README.md) и `docs/superpowers/specs/2026-10-09-vitepress-module-graph-design.md` §4.
+dev-сервера. Формат и проверки — [README пакета](https://github.com/YarikMix/vitepress-plugins/blob/main/packages/vitepress-module-graph/README.md) и `docs/superpowers/specs/2026-10-09-vitepress-module-graph-design.md` §4.
 
 #### Задачи с доски
 

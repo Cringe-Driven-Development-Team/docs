@@ -159,6 +159,12 @@ Enhanced Readabilities настроен в `site/.vitepress/theme/index.ts`: `La
 
 ## Схема на странице
 
+Пакеты `@wely6743/vitepress-module-graph`, `@wely6743/vitepress-mermaid-renderer` и
+`@wely6743/vitepress-diagram-viewer` выпускаются из [vitepress-plugins](https://github.com/YarikMix/vitepress-plugins).
+Viewer владеет рамками Mermaid/Eraser, `DiagramSection`, CSS и fence-плагином `/node`.
+Сайт сохраняет адаптер `Diagram.vue` (имя → URL с `withBase` и размер), данные и рендер Eraser,
+loader статьи, ссылки заголовков и Figma. Локальные копии viewer не добавляй.
+
 - `<Diagram name="<имя>" />`, `<имя>` — путь JSON от `diagrams/` без `.json`: `deployment`,
   `modules/2/bff-contract`. Компонент встраивает `<имя>.html` с масштабом.
 - Схема плана модуля — `diagrams/modules/<N>/`; папка должна быть в `HIDDEN_FOLDERS`
@@ -166,7 +172,7 @@ Enhanced Readabilities настроен в `site/.vitepress/theme/index.ts`: `La
 - Схема корня (прод) — имя в `ROOT_NAMES` и раздел с `<Diagram>` на `site/documentation/architecture/index.md`
   (тесты `scripts/build-index.test.ts`, `scripts/architecture-page.test.ts`).
 - Mermaid — блок ` ```mermaid `; синтаксис проверяет `bun run mermaid` в сборке.
-  `vitepress-mermaid-renderer` строит SVG в режиме `static:true`; управление принадлежит
+  `@wely6743/vitepress-mermaid-renderer` строит SVG в режиме `static:true`; управление принадлежит
   общей с Eraser рамке `DiagramFrame`. Каждый fence автоматически получает одну рамку
   `MermaidFrame`, включая схемы без пояснения рядом.
 - Пару пояснения и схемы задаёт автор через `DiagramSection`: default slot содержит текст,

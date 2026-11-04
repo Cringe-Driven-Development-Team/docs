@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import matter from "gray-matter";
-import { DEFAULT_CONFIG, parseTrack, personLoad } from "@tp-prepare/vitepress-module-graph";
-import { loadModuleDir } from "@tp-prepare/vitepress-module-graph/node";
+import { DEFAULT_CONFIG, parseTrack, personLoad } from "@wely6743/vitepress-module-graph";
+import { loadModuleDir } from "@wely6743/vitepress-module-graph/node";
 
-// Реальные данные сайта (site/modules) через пакет @tp-prepare/vitepress-module-graph.
+// Реальные данные сайта (site/modules) через пакет @wely6743/vitepress-module-graph.
 const { config, people, modules } = loadModuleDir("site/modules");
 const october = modules.find((m) => m.id === "2");
 
