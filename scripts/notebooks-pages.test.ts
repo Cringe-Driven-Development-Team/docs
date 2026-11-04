@@ -32,6 +32,7 @@ test("редактор сохраняет якоря из прежнего HTML"
 
 test("ссылка на статус хэша ведёт к существующему заголовку", () => {
   expect(read(TRACK)).toContain("](./file-exec/contract#статус-хэша)");
+  expect(read(CONTRACT)).toContain("](#статус-хэша)");
   expect(read(CONTRACT)).toContain("## Статус хэша {#статус-хэша}");
 });
 
@@ -69,4 +70,16 @@ test("обзор блокнотов сохраняет границы компо
   expect(diagram.connections.some((edge) => edge.from === "runtime-agent" && edge.to === "s3")).toBe(false);
   expect(diagram.connections.some((edge) => edge.from === "go-api" && edge.to === "runtime-sessions")).toBe(true);
   expect(indexNames([name])).toEqual([]);
+});
+
+
+test("последовательности сохранения и исполнения находятся в своих разделах", () => {
+  const contract = read(CONTRACT);
+  const saving = contract.split("## Сохранение и конфликты")[1]!.split("## Перед запуском")[0]!;
+  const execution = contract.split("## Перед запуском")[1]!.split("## Статус хэша")[0]!;
+  for (const section of [saving, execution]) {
+    expect(section).toContain("<template #diagram>");
+    expect(section).toContain("sequenceDiagram");
+  }
+  expect(contract.match(/sequenceDiagram/g)).toHaveLength(2);
 });
