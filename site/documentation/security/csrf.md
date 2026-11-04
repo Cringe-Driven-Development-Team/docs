@@ -110,6 +110,8 @@ Fetch Metadata, `Sec-Fetch-Site: same-origin`.
 При отправке с другого site cookie с явным `SameSite=Lax` не прикладывается.
 Форма также не умеет установить обязательный `X-CSRF`.
 
+<Diagram name="security/csrf-form" />
+
 Место отказа зависит от формата тела. В локальной проверке `auth.login`
 и `notebooks.create` дали одинаковые результаты:
 
@@ -131,6 +133,8 @@ Fetch Metadata, `Sec-Fetch-Site: same-origin`.
 По умолчанию `fetch` использует `credentials: 'same-origin'` и не прикладывает cookie
 к чужому origin. Даже `credentials: 'include'` не отменяет запрет `SameSite=Lax`
 на cookie в cross-site `fetch`.
+
+<Diagram name="security/csrf-fetch" />
 
 Отсутствие CORS-разрешения не мешает отправке такого простого запроса: оно запрещает
 скрипту читать ответ. Поэтому серверу всё равно нужна защита. GET `/api/trpc/users.me`
@@ -158,6 +162,8 @@ CORS-заголовков: браузер не отправляет основн
 схема и регистрируемый домен, для same-origin должны совпасть схема, хост и порт.
 Определения: [site](https://developer.mozilla.org/en-US/docs/Glossary/Site)
 и [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin).
+
+<Diagram name="security/csrf-subdomain" />
 
 Отсутствие `Domain` не позволяет отправить cookie приложения серверу поддомена.
 Однако запрос **с поддомена к самому приложению** может нести эту cookie:
