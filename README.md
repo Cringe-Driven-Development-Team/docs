@@ -199,6 +199,18 @@ Actions только проверяет PR с изменениями `openwiki/*
 | [contract](https://docs.cellestial.ru/contract.html) | tRPC браузер/BFF и OpenAPI BFF/Go, Apidog, Orval/Zod, oapi-codegen и drift |
 | [infra](https://docs.cellestial.ru/infra.html) | Три VPS, Pulumi state/Ansible, auxiliary integrations/backup и границы runtime |
 
+**Сценарии безопасности** (`diagrams/security/`) объясняют фактическую реализацию
+из [раздела CSRF](https://docs.cellestial.ru/documentation/security/csrf), с теми же
+источниками и границами проверки. Встраиваются через `<Diagram name="security/<имя>" />`.
+Папка в `HIDDEN_FOLDERS` исключает их из обзорного индекса архитектуры, но входит
+в корпус OpenWiki через `.openwikiignore` и `scripts/openwiki-source-path.ts`.
+Новая схема этого каталога добавляется сюда и в соответствующий сценарий;
+`ROOT_NAMES` не меняется. Генерация wiki запускается владельцем отдельно.
+
+| Схема | Что показывает |
+| --- | --- |
+| [csrf-client](https://docs.cellestial.ru/security/csrf-client.html) | Наш клиент: браузерная cookie, проверки CSRF/сессии и HTTP-вызов Go |
+
 Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
 (`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через
 `<Diagram name="modules/2/<имя>" />`:

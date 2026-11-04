@@ -1,6 +1,6 @@
 # Диаграммы сценариев CSRF — план реализации
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Добавить семь Eraser-схем к фактическим сценариям CSRF, сохранив точность объяснений и доступность источников для OpenWiki.
 
@@ -50,9 +50,9 @@
 - Produces: тематическая папка с работающими HTML/PNG; неизменённый контракт `isWikiSourcePath` с включением непосредственных JSON в `diagrams/security/`. В новом test-файле локальные `read(name: string): DiagramDoc`, `nodeText(doc, id): string`, `edgeText(doc, from, to): string`, `pairs(doc): string[]` по образцу `scripts/bff-csrf-diagrams.test.ts`, без нового общего пакета/экспортов.
 - Идентификаторы значимых узлов первой схемы: `app-code`, `client`, `trpc-adapter`, `csrf-check`, `session`, `go-api`, `unauthorized`. `session` обозначает проверку сессии/входа/прав; группы и вспомогательные подписи выбирает исполнитель.
 
-- [ ] **Шаг 1. Зафиксировать источники.** Прочитать локальные инструкции и eraser-diagrams. На SHA, указанных в CSRF-странице, проверить контекст, роутеры, HTML, cookie и транспорт BFF; tRPC Content-Type/порядок отказов; публичный маршрут infra. Использовать GitHub permalink/исходники выбранного SHA, не планы модуля как доказательство. Записать в `<workspace>/evidence.md` соответствие будущих семи схем фактам, версиям и ограничениям. Expected: все значимые подписи из таблицы спеки имеют источник; изменения версии/непроверенное отмечены, новых атак на проде нет.
+- [x] **Шаг 1. Зафиксировать источники.** Прочитать локальные инструкции и eraser-diagrams. На SHA, указанных в CSRF-странице, проверить контекст, роутеры, HTML, cookie и транспорт BFF; tRPC Content-Type/порядок отказов; публичный маршрут infra. Использовать GitHub permalink/исходники выбранного SHA, не планы модуля как доказательство. Записать в `<workspace>/evidence.md` соответствие будущих семи схем фактам, версиям и ограничениям. Expected: все значимые подписи из таблицы спеки имеют источник; изменения версии/непроверенное отмечены, новых атак на проде нет.
 
-- [ ] **Шаг 2. Написать RED-тесты каталога и клиента.** Добавить следующие проверки в соответствующие существующие test-файлы; для `checkOpenWiki` использовать имеющуюся fixture/commit, для ignore — `OpenWikiIgnore.parse`:
+- [x] **Шаг 2. Написать RED-тесты каталога и клиента.** Добавить следующие проверки в соответствующие существующие test-файлы; для `checkOpenWiki` использовать имеющуюся fixture/commit, для ignore — `OpenWikiIgnore.parse`:
 
 ```ts
 expect(indexNames(['ci', 'security/csrf-client', 'modules/2/bff-contract'])).toEqual(['ci']);
@@ -70,13 +70,13 @@ for (const path of ['diagrams/security/csrf-client.json', 'diagrams/security/csr
 
 В новом test-файле проверить связи клиента `app-code>client`, `client>trpc-adapter`, `trpc-adapter>csrf-check`, `csrf-check>session`, `session>go-api`, `session>unauthorized`; отсутствие прямого `client>go-api`. Терминальный `unauthorized` содержит `401` и не имеет исходящих связей. Существенные условия диаграммы: JSON POST `/api/trpc/notebooks.create`, `X-CSRF: 1`, `same-origin`, Origin/Fetch Metadata, доступная cookie; серверная связь помечена HTTP. Не закреплять весь текст/координаты. В `security-pages.test.ts` снять общий запрет `<Diagram>` только для CSRF; заменить его проверкой компонента после первого абзаца H3 `наш-клиент`, сохранив одну Mermaid на каждой странице и отсутствие Eraser в XSS.
 
-- [ ] **Шаг 3. Запустить RED.** `bun test scripts/security-scenario-diagrams.test.ts scripts/security-pages.test.ts scripts/build-index.test.ts scripts/site-base.test.ts scripts/openwiki-check.test.ts`. Expected: отказы именно из-за отсутствия новой схемы/включения каталога, не синтаксиса теста.
+- [x] **Шаг 3. Запустить RED.** `bun test scripts/security-scenario-diagrams.test.ts scripts/security-pages.test.ts scripts/build-index.test.ts scripts/site-base.test.ts scripts/openwiki-check.test.ts`. Expected: отказы именно из-за отсутствия новой схемы/включения каталога, не синтаксиса теста.
 
-- [ ] **Шаг 4. Реализовать каталог и первую схему.** Добавить `security` в `HIDDEN_FOLDERS` и уточнить комментарий про тематические папки. Включить только непосредственные `diagrams/security/*.json` в classifier, ignore (разрешить также родительскую папку) и INSTRUCTIONS. Создать схему по спеке с `client` как id браузера, едиными зонами и легендой. Вставить компонент после вводного абзаца сценария, добавить в README описание каталога и первую строку таблицы. Expected: текущий запрос и ветвь `401` объяснимы, не появляется новый раздел архитектуры или генерация wiki.
+- [x] **Шаг 4. Реализовать каталог и первую схему.** Добавить `security` в `HIDDEN_FOLDERS` и уточнить комментарий про тематические папки. Включить только непосредственные `diagrams/security/*.json` в classifier, ignore (разрешить также родительскую папку) и INSTRUCTIONS. Создать схему по спеке с `client` как id браузера, едиными зонами и легендой. Вставить компонент после вводного абзаца сценария, добавить в README описание каталога и первую строку таблицы. Expected: текущий запрос и ветвь `401` объяснимы, не появляется новый раздел архитектуры или генерация wiki.
 
-- [ ] **Шаг 5. Проверить GREEN и рендер.** Повторить команду шага 3; выполнить общие проверки выше. Открыть `dist/security/csrf-client.png`: короткие читаемые подписи, место отказа и серверный вызов различимы. Expected: все команды успешны, ROOT_NAMES/старые схемы не изменены. При необходимости поправить раскладку и повторить цикл.
+- [x] **Шаг 5. Проверить GREEN и рендер.** Повторить команду шага 3; выполнить общие проверки выше. Открыть `dist/security/csrf-client.png`: короткие читаемые подписи, место отказа и серверный вызов различимы. Expected: все команды успешны, ROOT_NAMES/старые схемы не изменены. При необходимости поправить раскладку и повторить цикл.
 
-- [ ] **Шаг 6. Коммит.** Добавить только перечисленные файлы и согласованный план; `git commit -m 'docs(security): добавить каталог схем и путь запроса клиента'`. Expected: рабочий продукт содержит одну схему нового каталога и достаточную поддержку остальных, без лишних заготовок.
+- [x] **Шаг 6. Коммит.** Добавить только перечисленные файлы и согласованный план; `git commit -m 'docs(security): добавить каталог схем и путь запроса клиента'`. Expected: рабочий продукт содержит одну схему нового каталога и достаточную поддержку остальных, без лишних заготовок.
 
 ### Task 2: Форма, fetch и захваченный поддомен
 

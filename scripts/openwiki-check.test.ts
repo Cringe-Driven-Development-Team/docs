@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { checkOpenWiki } from "./openwiki-check.ts";
+import { isWikiSourcePath } from './openwiki-source-path.ts';
 
 const roots: string[] = [];
 const script = resolve(import.meta.dir, "openwiki-check.ts");
@@ -55,6 +56,31 @@ function cli(root: string, ...args: string[]) {
 test("complete ancestor checkpoint stays fresh after a wiki-only commit", async () => {
   const { root, sourceSha, targetSha } = fixture();
   expect(await checkOpenWiki(root, targetSha)).toEqual({ sourceSha, targetSha, changedPaths: [], fresh: true });
+});
+
+test('security JSON входит в чтение wiki и проверку свежести, вложенные планы и прочие файлы исключены', async () => {
+  const { OpenWikiIgnore } = await import('../node_modules/openwiki/dist/agent/openwiki-ignore.js');
+  const rules = OpenWikiIgnore.parse(readFileSync(resolve(import.meta.dir, '../.openwikiignore'), 'utf8'));
+  for (const path of ['diagrams/security/csrf-client.json', 'diagrams/security/csrf-xss.json']) {
+    expect(isWikiSourcePath(path), path).toBe(true);
+    expect(rules.ignores(path), path).toBe(false);
+  }
+  for (const path of ['diagrams/modules/2/bff-csrf-client.json', 'diagrams/security/readme.md', 'diagrams/security/nested/example.json']) {
+    expect(isWikiSourcePath(path), path).toBe(false);
+    expect(rules.ignores(path), path).toBe(true);
+  }
+});
+
+test('добавление, изменение и удаление схемы security делают wiki устаревшей', async () => {
+  const { root } = fixture();
+  const path = 'diagrams/security/csrf-client.json';
+  for (const contents of ['first', 'changed', null]) {
+    const sourceSha = git(root, 'rev-parse', 'HEAD');
+    checkpoint(root, { gitHead: sourceSha, status: 'complete', updatedAt: '2026-11-04T00:00:00Z' });
+    if (contents === null) rmSync(join(root, path)); else write(root, path, contents);
+    const targetSha = commit(root);
+    expect(await checkOpenWiki(root, targetSha)).toEqual({ sourceSha, targetSha, changedPaths: [path], fresh: false });
+  }
 });
 
 test("checkpoint at the target commit is fresh regardless of its age", async () => {

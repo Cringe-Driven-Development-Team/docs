@@ -4,6 +4,11 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { diagramTarget } from "../site/.vitepress/site.ts";
 
+test('якорь тематической схемы ведёт к её HTML, а не к обзору архитектуры', () => {
+  expect(diagramTarget('#security/csrf-client', ROOT_NAMES, [...HIDDEN_FOLDERS, ...LEGACY_FOLDERS]))
+    .toBe('security/csrf-client.html');
+});
+
 test("diagramTarget uses documentation namespace", () => {
   expect(diagramTarget("#ci", ["ci"], ["bff"])).toBe("documentation/architecture/#ci");
   expect(diagramTarget("#bff/ci", ["ci"], ["bff"])).toBe("bff/ci.html");

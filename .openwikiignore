@@ -20,6 +20,9 @@
 !/diagrams
 /diagrams/**
 !diagrams/*.json
+!diagrams/security
+/diagrams/security/**
+!diagrams/security/*.json
 # Lifecycle must read/write its output; only INSTRUCTIONS.md is source evidence.
 !/openwiki
 !openwiki/**
