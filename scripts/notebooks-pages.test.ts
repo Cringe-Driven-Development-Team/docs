@@ -40,3 +40,15 @@ test("страницы блокнотов безопасны для публич
     expect(text, file).not.toContain("{{");
   }
 });
+
+
+test("XSS: план редактора и исполнения отделён от проверенного прода", () => {
+  const xss = read("site/modules/2/tracks/xss.md");
+  expect(xss).toContain("](/documentation/security/xss)");
+  for (const rule of ["текстовыми узлами", "Исходный HTML в Markdown показывается текстом",
+    "опасные ссылки и исполняемый HTML не допускаются", "изолированном `<iframe sandbox>`",
+    "SVG — через `<img>`", "X-Content-Type-Options: nosniff", "Content-Security-Policy-Report-Only"]) {
+    expect(xss, rule).toContain(rule);
+  }
+  expect(xss).not.toMatch(/только просмотр|следующий модуль|Рендера markdown в HTML во втором модуле нет/);
+});
