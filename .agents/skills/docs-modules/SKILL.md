@@ -12,9 +12,10 @@ description: Правка данных модулей и треков в site/mo
 используй `docs-site`. Если меняются и текст, и данные (например, `pages` при добавлении подстраницы),
 применяй оба скилла к соответствующим частям.
 
-Формат задаёт пакет `@tp-prepare/vitepress-module-graph`: описание —
-`node_modules/@tp-prepare/vitepress-module-graph/README.md`, проверки —
-`node_modules/@tp-prepare/vitepress-module-graph/dist/model/modules.mjs`. Поля, которых там нет, не
+Формат задаёт пакет `@wely6743/vitepress-module-graph` из
+[YarikMix/vitepress-plugins](https://github.com/YarikMix/vitepress-plugins): описание —
+`node_modules/@wely6743/vitepress-module-graph/README.md`, проверки —
+`node_modules/@wely6743/vitepress-module-graph/dist/model/modules.mjs`. Поля, которых там нет, не
 выдумывай: **неизвестный ключ во frontmatter трека пакет молча пропускает** — `check` зелёный, а на графе
 ничего не появилось.
 
@@ -156,7 +157,7 @@ description: Правка данных модулей и треков в site/mo
    остальных агентах — pre-commit `lefthook`; прогони сам всё равно.
 2. `bun test scripts/modules-data.test.ts`.
 3. Убедись, что разобралось то, что ты задумал, а не пропущено молча:
-   `bun -e 'import {loadModuleDir} from "@tp-prepare/vitepress-module-graph/node"; const m = loadModuleDir("site/modules").modules.find(m => m.id === "<N>"); console.log(JSON.stringify(m.tracks.find(t => t.id === "<id>"), null, 2))'`.
+   `bun -e 'import {loadModuleDir} from "@wely6743/vitepress-module-graph/node"; const m = loadModuleDir("site/modules").modules.find(m => m.id === "<N>"); console.log(JSON.stringify(m.tracks.find(t => t.id === "<id>"), null, 2))'`.
 4. Перед коммитом (`AGENTS.md`, «Сборка»): `bun run typecheck && bun run test && bun run build`.
 
 ## Ошибки `check` и что делать

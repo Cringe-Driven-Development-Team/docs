@@ -8,16 +8,16 @@
         "@eraserlabs/diagrams-cli": "0.1.0",
         "@mermaid-js/mermaid-cli": "11.17.0",
         "@nolebase/vitepress-plugin-enhanced-readabilities": "2.21.1",
-        "@panzoom/panzoom": "4.6.2",
-        "@tp-prepare/vitepress-module-graph": "1.0.0",
         "@types/bun": "1.4.2",
+        "@wely6743/vitepress-diagram-viewer": "0.1.0",
+        "@wely6743/vitepress-mermaid-renderer": "0.1.0",
+        "@wely6743/vitepress-module-graph": "0.1.0",
         "gray-matter": "4.0.3",
         "lefthook": "2.1.14",
         "mermaid": "^11",
         "openwiki": "0.7.2",
         "typescript": "7.0.2",
         "vitepress": "2.0.0-alpha.21",
-        "vitepress-mermaid-renderer": "github:YarikMix/vitepress-mermaid-renderer#a9e25dca6d94710074b20e59e432de7882059ec6",
         "vitepress-plugin-group-icons": "1.8.1",
         "vitepress-plugin-tabs": "0.9.1",
       },
@@ -334,8 +334,6 @@
 
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.17.11", "", {}, "sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g=="],
 
-    "@tp-prepare/vitepress-module-graph": ["@tp-prepare/vitepress-module-graph@1.0.0", "", { "dependencies": { "force-graph": "^1.51.4", "gray-matter": "^4.0.3", "js-yaml": "^5.4.2" }, "peerDependencies": { "vitepress": "2.0.0-alpha.21", "vue": "^3.5" }, "bin": { "module-graph": "dist/cli.mjs" } }, "sha512-qaD2zb/i4b2czFLD3kUxjB+DhvRs4N5X/OxOhpgK2NDnIY1LRedaIx/b5klIORTIVTIWAesbeCdFBebbnuZuDg=="],
-
     "@tweenjs/tween.js": ["@tweenjs/tween.js@25.0.0", "", {}, "sha512-XKLA6syeBUaPzx4j3qwMqzzq+V4uo72BnlbOjmuljLrRqdsd3qnzvZZoxvMHZ23ndsRS4aufU6JOZYpCbU6T1A=="],
 
     "@types/bun": ["@types/bun@1.4.2", "", { "dependencies": { "bun-types": "1.4.2" } }, "sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ=="],
@@ -503,6 +501,12 @@
     "@vueuse/metadata": ["@vueuse/metadata@15.0.0", "", {}, "sha512-sfWE5LADAKJ0KnjtGliMdSN8Ij/L7uP6rXIZlgPloAI4zvvefbw6H5Lt7KJA6RqQOYgVqWF5Guj50HHMIzygBg=="],
 
     "@vueuse/shared": ["@vueuse/shared@15.0.0", "", { "peerDependencies": { "vue": "^3.5.0" } }, "sha512-vbNXhGrbV53xPOMSyOzMHQRvhMgZf7oNDw2RChUetVxwTIEkInQ1joZ9JbT0G3z2n2AJNjvmCWeM9ySYrnvogA=="],
+
+    "@wely6743/vitepress-diagram-viewer": ["@wely6743/vitepress-diagram-viewer@0.1.0", "", { "dependencies": { "@panzoom/panzoom": "4.6.2" }, "peerDependencies": { "vitepress": "2.0.0-alpha.21", "vue": "^3.5" } }, "sha512-TJOECxV/k4dCUcjV1FD3q+8m5ylEtj+RQJttOsCPs0OPBqmKIMpIxd7Y/+q1ICj00vGCts6EPtxAqG+t5T0M9g=="],
+
+    "@wely6743/vitepress-mermaid-renderer": ["@wely6743/vitepress-mermaid-renderer@0.1.0", "", { "peerDependencies": { "@mermaid-js/mermaid-zenuml": "^1.0.0", "mermaid": "^11.0.0 || ^12.0.0", "vue": "^3.0.0" }, "optionalPeers": ["@mermaid-js/mermaid-zenuml"] }, "sha512-UmgsIMxQbEz6Y2D4/4zdR8LnxjYMcaNMuaqERcvwgGoWxDsh285XKPVhGbSxnGT2MAgsVqr5wpDun2bbVi8i1Q=="],
+
+    "@wely6743/vitepress-module-graph": ["@wely6743/vitepress-module-graph@0.1.0", "", { "dependencies": { "force-graph": "^1.51.4", "gray-matter": "^4.0.3", "js-yaml": "^5.4.2" }, "peerDependencies": { "vitepress": "2.0.0-alpha.21", "vue": "^3.5" }, "bin": { "module-graph": "dist/cli.mjs" } }, "sha512-OBbTIqAG7sR6W6wbSl5C4vJl/f7iBOglAiwepi2/TXUaQVDlo4k0uSIo3HC5CVY12zt93gIFw6h7HmcGdvTH9Q=="],
 
     "@zenuml/core": ["@zenuml/core@3.50.1", "", { "dependencies": { "@floating-ui/react": "^0.27.16", "@headlessui/react": "^2.2.9", "@headlessui/tailwindcss": "^0.2.2", "antlr4": "~4.11.0", "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "color-string": "^2.1.4", "dompurify": "^3.3.1", "highlight.js": "^11.10.0", "html-to-image": "^1.11.13", "jotai": "^2.16.1", "marked": "^4.3.0", "react": "^19.2.3", "react-dom": "^19.2.3", "tailwind-merge": "^3.4.0" }, "optionalDependencies": { "@napi-rs/canvas": "^0.1.97" }, "peerDependencies": { "playwright-core": "1.57.0" }, "optionalPeers": ["playwright-core"], "bin": { "zenuml": "dist/cli/zenuml.mjs" } }, "sha512-Q18BXvIfhRuGw0JfO4e+pltG04Phhv2E7n35EWTNSZKKH/HEkyE4Sh7KERb9dqaOfjOdRdKvLG0YekjK3fcDXw=="],
 
@@ -1407,8 +1411,6 @@
     "vite": ["vite@8.3.5", "", { "dependencies": { "lightningcss": "^1.33.0", "picomatch": "^4.0.7", "postcss": "^8.5.30", "rolldown": "~1.2.14", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.7.1 || ^0.8.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-z1YpjieJ9g0ebTmQpLBv/oq9E3F9EIlOe+7LahW8SrE3LTiG3udBRUXQOlYXP9b+IC2q2phHeVxj9xGlw34OEQ=="],
 
     "vitepress": ["vitepress@2.0.0-alpha.21", "", { "dependencies": { "@docsearch/css": "^4.7.1", "@docsearch/js": "^4.7.1", "@docsearch/sidepanel-js": "^4.7.1", "@iconify-json/simple-icons": "^1.2.99", "@shikijs/transformers": "^4.5.0", "@types/markdown-it": "^14.2.0", "@vitejs/plugin-vue": "^6.0.9", "@vue/devtools-api": "^8.2.1", "@vue/shared": "^3.5.43", "@vueuse/core": "^15.0.0", "@vueuse/integrations": "^15.0.0", "focus-trap": "^8.2.3", "mark.js": "8.11.1", "minisearch": "^7.2.0", "shiki": "^4.5.0", "vite": "^8.3.4", "vue": "^3.5.43" }, "peerDependencies": { "markdown-it-mathjax3": "^4", "postcss": "^8" }, "optionalPeers": ["markdown-it-mathjax3", "postcss"], "bin": { "vitepress": "bin/vitepress.js" } }, "sha512-b2PFPIw2mVfxDi490FhSq4AlkFi17b9lofLCqWfH4uPKz/dF4oy2C9vBpP2r7l7hl2hc5BG7OTRPvRFfRzF7MA=="],
-
-    "vitepress-mermaid-renderer": ["vitepress-mermaid-renderer@github:YarikMix/vitepress-mermaid-renderer#a9e25dc", { "peerDependencies": { "@mermaid-js/mermaid-zenuml": "^1.0.0", "mermaid": "^11.0.0 || ^12.0.0", "vue": "^3.0.0" }, "optionalPeers": ["@mermaid-js/mermaid-zenuml"] }, "YarikMix-vitepress-mermaid-renderer-a9e25dc", "sha512-bu6exKSNq8jYNcWyLgpnwyoCzaOgqnGmR2J8zn+qUTirQjUrcHs0sR/uL4np3zy68C+CGFAC7fHKzS+1MhFrew=="],
 
     "vitepress-plugin-group-icons": ["vitepress-plugin-group-icons@1.8.1", "", { "dependencies": { "@iconify-json/logos": "^1.2.11", "@iconify-json/vscode-icons": "^1.2.67", "@iconify/utils": "^3.1.4" }, "peerDependencies": { "vite": ">=3" }, "optionalPeers": ["vite"] }, "sha512-9TY8xunZDX+a+k4GZu+2rJftBsZXCEMsFXLj3p2JTM/NCTRGvIemx+iBhvauyCbOFcIEYTsRVswWF1TeMS89Ew=="],
 

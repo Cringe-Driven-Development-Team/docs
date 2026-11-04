@@ -23,7 +23,14 @@ function fixture(withPackage = true): string {
   mkdirSync(join(root, "scripts"));
   const script = join(project, "scripts/codex-modules-hook.ts");
   if (existsSync(script)) copyFileSync(script, join(root, "scripts/codex-modules-hook.ts"));
-  if (withPackage) symlinkSync(join(project, "node_modules"), join(root, "node_modules"), "junction");
+  if (withPackage) {
+    const packageRoot = process.env.HOOK_PACKAGE_ROOT ?? project;
+    const packagePath = "node_modules/@wely6743/vitepress-module-graph";
+    mkdirSync(join(root, "node_modules/@wely6743"), { recursive: true });
+    symlinkSync(join(packageRoot, packagePath), join(root, packagePath), "junction");
+    expect(existsSync(join(root, packagePath, "dist/cli.mjs"))).toBe(true);
+    expect(existsSync(join(root, "node_modules/@tp-prepare/vitepress-module-graph"))).toBe(false);
+  }
   mkdirSync(join(root, "site/modules/2/tracks"), { recursive: true });
   writeFileSync(join(root, "site/modules/people.yaml"), "- login: student\n  name: Студент\n  role: фронт\n  area: front\n");
   writeFileSync(join(root, "site/modules/2/index.md"), "---\ntitle: Модуль\n---\n");
@@ -103,3 +110,29 @@ test("старая ветка без скрипта хука: молча про�
   expect(results[0]!.stdout.toString()).toBe("");
   expect(results[0]!.stderr.toString()).toBe("");
 });
+
+const claudeGroups: HookGroup[] = JSON.parse(readFileSync(join(project, ".claude/settings.json"), "utf8")).hooks.PostToolUse;
+
+for (const invalid of [false, true]) {
+  test(`Claude: ${invalid ? "ошибка передаётся с кодом 2" : "корректные модули молчат"} из worktree с пробелами`, () => {
+    const root = fixture();
+    const admin = join(root, "git-admin");
+    renameSync(join(root, ".git"), admin);
+    writeFileSync(join(root, ".git"), `gitdir: ${admin}\n`);
+    const file = join(root, "site/modules/2/tracks/example.md");
+    if (invalid) writeFileSync(file, "---\ntitle: Трек\narea: unknown\ndo:\n  student: front\n---\n");
+    const commands = claudeGroups.filter(group => new RegExp(group.matcher).test("Edit")).flatMap(group => group.hooks);
+    expect(commands).toHaveLength(1);
+    const result = Bun.spawnSync(["bash", "-c", commands[0]!.command], {
+      cwd: join(root, "site/modules/2"),
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+      stdin: Buffer.from(JSON.stringify({ tool_input: { file_path: file } })),
+    });
+    expect(result.exitCode).toBe(invalid ? 2 : 0);
+    expect(result.stdout.toString()).toBe("");
+    if (invalid) {
+      expect(result.stderr.toString()).toContain("example.md");
+      expect(result.stderr.toString()).toContain("area");
+    } else expect(result.stderr.toString()).toBe("");
+  });
+}

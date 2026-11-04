@@ -1,20 +1,20 @@
 // Тема по умолчанию; на главной старый якорь индекса схем (#contract) переводит на «Архитектуру».
-// Модули: граф, архив и шапка трека — из пакета @tp-prepare/vitepress-module-graph (шапка — в слоте doc-before).
+// Модули: граф, архив и шапка трека — из пакета @wely6743/vitepress-module-graph (шапка — в слоте doc-before).
 import DefaultTheme from 'vitepress/theme';
 import { useData, useRoute } from 'vitepress';
-import { createMermaidRenderer } from 'vitepress-mermaid-renderer';
-import 'vitepress-mermaid-renderer/css';
+import { createMermaidRenderer } from '@wely6743/vitepress-mermaid-renderer';
+import '@wely6743/vitepress-mermaid-renderer/css';
 import type { Theme } from 'vitepress';
 import { defineComponent, h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { HIDDEN_FOLDERS, LEGACY_FOLDERS, ROOT_NAMES } from '../diagram-names.ts';
 import { diagramTarget } from '../site.ts';
-import { installModuleGraph, trackHeader } from '@tp-prepare/vitepress-module-graph/theme';
-import '@tp-prepare/vitepress-module-graph/style.css';
+import { installModuleGraph, trackHeader } from '@wely6743/vitepress-module-graph/theme';
+import '@wely6743/vitepress-module-graph/style.css';
 import { data } from '../../modules/modules.data.ts';
 import Diagram from './Diagram.vue';
 import FigmaEmbed from './FigmaEmbed.vue';
-import MermaidFrame from './MermaidFrame.vue';
-import DiagramSection from './DiagramSection.vue';
+import { MermaidFrame, DiagramSection } from '@wely6743/vitepress-diagram-viewer';
+import '@wely6743/vitepress-diagram-viewer/style.css';
 import ArticleLoading from './ArticleLoading.vue';
 import HeadingLinks from './HeadingLinks.vue';
 import { prepareArticle } from './article-loading.ts';

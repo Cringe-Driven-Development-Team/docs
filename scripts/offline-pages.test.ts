@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { loadModuleDir } from "@tp-prepare/vitepress-module-graph/node";
+import { loadModuleDir } from "@wely6743/vitepress-module-graph/node";
 
 const TRACK = "site/modules/2/tracks/offline.md";
 const THEORY = "site/modules/2/tracks/offline/theory.md";

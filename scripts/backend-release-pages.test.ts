@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { loadModuleDir } from "@tp-prepare/vitepress-module-graph/node";
+import { loadModuleDir } from "@wely6743/vitepress-module-graph/node";
 
 const track = loadModuleDir("site/modules")
   .modules.find((module) => module.id === "2")
