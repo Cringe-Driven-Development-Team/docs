@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { indexNames } from "./build-index.ts";
+import type { DiagramDoc } from "./diagram.ts";
 
 const TRACK = "site/modules/2/tracks/file-exec.md";
 const EDITOR = "site/modules/2/tracks/monaco.md";
@@ -51,4 +53,20 @@ test("XSS: план редактора и исполнения отделён о
     expect(xss, rule).toContain(rule);
   }
   expect(xss).not.toMatch(/только просмотр|следующий модуль|Рендера markdown в HTML во втором модуле нет/);
+});
+
+test("обзор блокнотов сохраняет границы компонентов и остаётся планом модуля", () => {
+  const name = "modules/2/notebooks-components";
+  expect(read(TRACK)).toContain(`<Diagram name="${name}" />`);
+  const diagram = JSON.parse(read(`diagrams/${name}.json`)) as DiagramDoc;
+  const entities = Object.fromEntries(diagram.entities.map((entity) => [entity.id, entity]));
+  for (const id of ["runtime-sessions", "environment-service"]) {
+    expect(entities[id]?.containerId, id).toBe("go-backend");
+  }
+  expect(entities["kernel-container"]?.containerId).toBe("runtime-vps");
+  expect(diagram.connections.filter((edge) => edge.from === "client")
+    .map((edge) => edge.to)).toEqual(["bff"]);
+  expect(diagram.connections.some((edge) => edge.from === "runtime-agent" && edge.to === "s3")).toBe(false);
+  expect(diagram.connections.some((edge) => edge.from === "go-api" && edge.to === "runtime-sessions")).toBe(true);
+  expect(indexNames([name])).toEqual([]);
 });

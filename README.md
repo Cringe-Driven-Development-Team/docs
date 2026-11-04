@@ -207,6 +207,7 @@ Actions только проверяет PR с изменениями `openwiki/*
 | --- | --- |
 | [bff-contract](https://docs.cellestial.ru/modules/2/bff-contract.html) | Контракт BFF: официальный tRPC модуля №2, генерация Go-клиента и схем, HTML bootstrap из локального шаблона |
 | [2fa-deployment](https://docs.cellestial.ru/modules/2/2fa-deployment.html) | 2FA: целевое размещение Caddy/BFF на VPS1 и Go/PostgreSQL на VPS2, локальный аутентификатор пользователя |
+| [notebooks-components](https://docs.cellestial.ru/modules/2/notebooks-components.html) | Блокноты: целевые границы браузера, BFF, Go, runtime-VPS и постоянного хранения |
 | [bff-bootstrap](https://docs.cellestial.ru/modules/2/bff-bootstrap.html) | Первый HTML: общая с RPC сессия, пользователь или гость, безопасный JSON в локальном шаблоне и HTML 503 |
 | [bff-release](https://docs.cellestial.ru/modules/2/bff-release.html) | Выпуск BFF: SHA, образ GHCR по digest, ассеты CDN, GitHub Deployments и Ansible на VPS |
 | [bff-csrf-client](https://docs.cellestial.ru/modules/2/bff-csrf-client.html) | CSRF своего клиента: статический заголовок, cookie браузера, проверки до сессии и вызова Go |
