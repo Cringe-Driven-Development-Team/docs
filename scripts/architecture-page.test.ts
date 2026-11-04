@@ -27,6 +27,7 @@ test("documentation sidebar is a linked collapsed tree", () => {
     {text: 'BFF: проверенная часть', link: '/documentation/bff'},
     {text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
       {text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration'},
+      {text: 'Инфраструктура PWA', link: '/documentation/offline/infrastructure'},
     ]},
     {text: 'Архитектура', link: '/documentation/architecture/'},
     {text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [

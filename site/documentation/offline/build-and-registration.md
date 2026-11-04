@@ -5,9 +5,14 @@ title: Сборка и регистрация SW
 # Сборка и регистрация SW
 
 Настройки сборки создают код Service Worker, а код страницы сообщает браузеру, где этот SW взять.
-В Cellestial обе части связывает адрес `/sw.js`. Ниже — пакеты и путь от настройки до выполнения
-по frontend `e3b327f58f8ef929afe0403ed7c7487abba2c48d`; наблюдения на проде и границы режима —
+В Cellestial обе части связывает адрес `/sw.js`. Пакетный срез ниже разобран по frontend
+`e3b327f58f8ef929afe0403ed7c7487abba2c48d`; наблюдения на проде и границы режима —
 в [обзоре офлайн-режима](/documentation/offline/).
+
+**Дополнение 04.11.2026:** в выпуске `007d8d4de7fa964947ffe1316c31726bbd386903` к офлайн-HTML
+добавлен отдельный `offline.css`. Состав precache в таблице настроек и последовательности ниже
+уточнён по [этому коду](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/client/vite/plugins.ts#L43-L62).
+Размещение файлов и путь выпуска описаны в [инфраструктуре PWA](/documentation/offline/infrastructure).
 
 ## Семейство Workbox
 
@@ -166,7 +171,7 @@ flowchart TB
 
 | Настройка | Где используется | Какую задачу решает |
 | --- | --- | --- |
-| `workbox.globPatterns` | Сборка SW | Выбирает офлайн-страницу для precache; плагин также добавляет публичный манифест |
+| `workbox.globPatterns` | Сборка SW | В уточнённом комплекте выбирает `offline.html` и `offline.css`; плагин также добавляет публичный манифест |
 | `workbox.runtimeCaching` | Генерирует правила SW | Навигация — `NetworkOnly`, при сетевом отказе — сохранённая офлайн-страница |
 | `workbox.inlineWorkboxRuntime` | Сборка SW | Включает используемый runtime Workbox в сам `sw.js`; это не отменяет отдельную библиотеку страницы |
 | `workbox.skipWaiting` и `workbox.clientsClaim` | Установка и активация SW | Новая версия не остаётся ждать закрытия всех вкладок и получает управление страницами |
@@ -205,7 +210,7 @@ sequenceDiagram
   Browser->>Browser: Сохранить регистрацию и начать install
   Browser-->>Helper: Объект регистрации
   Note over Browser: SW выполняет install и precache
-  Browser->>Public: GET /offline.html и манифест
+  Browser->>Public: GET /offline.html, /offline.css и манифест
   Public-->>Browser: Неперсональные публичные файлы
   Browser->>Cache: Сохранить ответы с ревизиями
   Browser->>Browser: Активировать SW и получить управление
