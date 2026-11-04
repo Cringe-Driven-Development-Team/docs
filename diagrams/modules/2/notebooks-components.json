@@ -1,0 +1,31 @@
+{
+  "entities": [
+    {"tag": "Icon", "id": "client", "icon": "monitor", "texts": [{"text": "Браузер"}], "x": 0, "y": 100},
+    {"tag": "Textbox", "id": "browser-tasks", "x": 0, "y": 260, "width": 240, "text": "#37 — редактор, сохранение\n\n#38 — подсветка, Markdown\n\n#51 — исполнение"},
+    {"tag": "Icon", "id": "bff", "icon": "server", "texts": [{"text": "tRPC BFF"}], "x": 320, "y": 100},
+    {"tag": "Group", "id": "go-backend", "title": {"text": "Go backend: внутренние модули"}, "x": 640, "y": 0, "width": 600, "height": 820, "color": "blue", "isContainer": true},
+    {"tag": "Icon", "id": "go-api", "icon": "go", "texts": [{"text": "Go API: блокнот и результаты"}], "x": 720, "y": 100, "containerId": "go-backend"},
+    {"tag": "Icon", "id": "runtime-sessions", "icon": "server", "texts": [{"text": "Модуль сессий"}], "x": 1080, "y": 380, "containerId": "go-backend"},
+    {"tag": "Icon", "id": "environment-service", "icon": "server", "texts": [{"text": "EnvironmentService / provisioning"}], "x": 720, "y": 620, "containerId": "go-backend"},
+    {"tag": "Group", "id": "runtime-vps", "title": {"text": "VPS сессии"}, "x": 1580, "y": 320, "width": 340, "height": 660, "color": "blue", "isContainer": true},
+    {"tag": "Icon", "id": "runtime-agent", "icon": "server", "texts": [{"text": "Runtime-агент"}], "x": 1800, "y": 420, "containerId": "runtime-vps"},
+    {"tag": "Group", "id": "kernel-container", "title": {"text": "Docker-контейнер"}, "x": 1620, "y": 700, "width": 260, "height": 240, "color": "blue", "isContainer": true, "containerId": "runtime-vps", "styleMode": "plain"},
+    {"tag": "Icon", "id": "kernel", "icon": "code", "texts": [{"text": "Jupyter / kernel"}], "x": 1800, "y": 780, "containerId": "kernel-container"},
+    {"tag": "Icon", "id": "postgresql", "icon": "database", "texts": [{"text": "PostgreSQL"}], "x": 0, "y": 680},
+    {"tag": "Icon", "id": "s3", "icon": "database", "texts": [{"text": "S3: ipynb"}], "x": 320, "y": 680},
+    {"tag": "Icon", "id": "selectel-api", "icon": "cloud", "texts": [{"text": "Selectel API"}], "x": 1200, "y": 1080},
+    {"tag": "Legend", "id": "legend", "x": 2000, "y": 0, "width": 340, "entries": [{"text": "Наша инфраструктура", "color": "#2866c4"}, {"text": "Пользовательский трафик", "color": "#c38424"}, {"text": "Прочие связи", "color": "#1c1c1c"}]}
+  ],
+  "connections": [
+    {"tag": "Relationship", "from": "client", "to": "bff", "label": "`notebooks.get`, `cells.*`, `runtime.*`", "color": "orange", "lineStyle": "solid"},
+    {"tag": "Relationship", "from": "bff", "to": "go-api", "label": "Блокнот и команды runtime"},
+    {"tag": "Relationship", "from": "go-api", "to": "runtime-sessions", "label": "Команды runtime"},
+    {"tag": "Relationship", "from": "go-api", "to": "postgresql", "label": "Редакция, сессии, события и курсоры"},
+    {"tag": "Relationship", "from": "go-api", "to": "s3", "label": "Исходники и сохранённые outputs"},
+    {"tag": "Relationship", "from": "runtime-sessions", "to": "environment-service", "label": "RequestCreate / Get / RequestDelete"},
+    {"tag": "Relationship", "from": "environment-service", "to": "selectel-api", "label": "Создать / настроить / удалить"},
+    {"tag": "Relationship", "from": "environment-service", "to": "runtime-vps", "label": "Подготовка и удаление окружения"},
+    {"tag": "Relationship", "from": "runtime-sessions", "to": "runtime-agent", "label": "Команды и получение событий / результатов"},
+    {"tag": "Relationship", "from": "runtime-agent", "to": "kernel", "label": "Выполнение кода"}
+  ]
+}
