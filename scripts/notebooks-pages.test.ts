@@ -9,6 +9,31 @@ const CONTRACT = "site/modules/2/tracks/file-exec/contract.md";
 const ENVIRONMENTS = "site/modules/2/tracks/notebook-vps.md";
 const read = (file: string) => readFileSync(file, "utf8");
 
+test("контракт содержит обе границы и весь согласованный набор операций", () => {
+  const contract = read(CONTRACT);
+  const front = contract.split("## Фронт → BFF")[1]?.split("## BFF → backend")[0] ?? "";
+  const back = contract.split("## BFF → backend")[1]?.split("## Ошибки")[0] ?? "";
+  const procedures = ["notebooks.get", "cells.create", "cells.update", "cells.move", "cells.delete",
+    "runtime.start", "runtime.execute", "runtime.executeAll", "runtime.stop", "runtime.activity", "runtime.updates"];
+  expect([...front.matchAll(/<tr>\s*<td><code>([^<]+)<\/code>/g)].map((match) => match[1])).toEqual(procedures);
+  const operations = [
+    "GET /notebooks/{id}", "GET /notebooks/{id}/content", "POST /notebooks/{id}/content/cells",
+    "PATCH /notebooks/{id}/content/cells/{cell_id}", "DELETE /notebooks/{id}/content/cells/{cell_id}",
+    "POST /notebooks/{id}/content/cells/{cell_id}/move", "POST /notebooks/{id}/runtime-sessions",
+    "GET /runtime-sessions/active", "GET /runtime-sessions/{id}", "POST /runtime-sessions/{id}/executions",
+    "GET /runtime-sessions/{id}/executions/{execution_id}", "GET /runtime-sessions/{id}/events",
+    "POST /runtime-sessions/{id}/activity", "POST /runtime-sessions/{id}/stop",
+    "GET /runtime-sessions/{id}/queue", "POST /runtime-sessions/{id}/executions/batch",
+  ];
+  expect([...back.matchAll(/<tr>\s*<td><a[^>]+><code>([^<]+)<\/code>/g)].map((match) => match[1])).toEqual(operations);
+  for (const [section, label, count] of [[front, "Контракт фронта и BFF", 11], [back, "Контракт BFF и backend", 16]] as const) {
+    expect(section).toContain(`class="notebook-api-table" tabindex="0" aria-label="${label}"`);
+    expect(section.match(/<th scope="col">/g)).toHaveLength(4);
+    expect(section.match(/<tr>/g)).toHaveLength(count + 1);
+    expect(section).toContain("https://vb78fyael1.apidog.io/");
+  }
+});
+
 test("блокноты: общие правила доступны из обоих треков и ведут обратно", () => {
   for (const file of [TRACK, EDITOR]) {
     expect(read(file), file).toContain("](./file-exec/contract)");
