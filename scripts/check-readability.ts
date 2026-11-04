@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [width|loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [width|loading|mermaid|zoom|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['width', 'loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['width', 'loading', 'mermaid', 'zoom', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -610,6 +610,12 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     return getComputedStyle(node).transform;
   });
   const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+  const scale = () => diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
+  const dimensions = await frame.evaluate(node => {
+    const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!;
+    return { width: node.clientWidth, height: node.clientHeight, canvasWidth: canvas.offsetWidth, canvasHeight: canvas.offsetHeight };
+  });
+  assert(Math.abs(await scale() - Math.min(1, dimensions.width / dimensions.canvasWidth)) < .001, 'Opening preserves the readable width-based view');
   const point = async () => {
     await frame.evaluate(node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -644,6 +650,32 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   assert(Math.abs(await page.evaluate(() => scrollY) - keyScroll) <= 1, 'Arrow pan does not scroll the page');
   await page.keyboard.press('Tab');
   assert(await frame.evaluate(node => document.activeElement !== node), 'Tab leaves the canvas');
+  await click('Вписать');
+  const fit = await scale();
+  const fullFit = Math.min(1, dimensions.width / dimensions.canvasWidth, dimensions.height / dimensions.canvasHeight);
+  assert(Math.abs(fit - fullFit) < .001, 'Fit accounts for both frame width and capped height');
+  assert(await frame.evaluate(node => {
+    const box = node.getBoundingClientRect(), canvas = node.querySelector('.diagram__canvas')!.getBoundingClientRect();
+    return canvas.left >= box.left - 1 && canvas.top >= box.top - 1 && canvas.right <= box.right + 1 && canvas.bottom <= box.bottom + 1;
+  }), 'Fit shows all four canvas edges');
+  await page.screenshot({ path: join(artifacts, `${label}-${await diagram.evaluate(node => node.getAttribute('data-diagram-kind'))}-${page.viewport()!.width}-fit.png`) });
+  await click('Уменьшить');
+  assert(await scale() < fit, 'Minus zooms below the full overview');
+  await click('Вписать');
+  await point();
+  const beforeOut = await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale, dpr: devicePixelRatio }));
+  await page.keyboard.down('Control');
+  await page.mouse.wheel({ deltaY: 100 });
+  await settle();
+  await page.keyboard.up('Control');
+  assert(await scale() < fit, 'Ctrl+wheel zooms below fit');
+  assert.deepEqual(await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale, dpr: devicePixelRatio })), beforeOut, 'Zoom out preserves browser scale and page scroll');
+  await diagram.$eval('button[aria-label="Уменьшить"]', node => { for (let i = 0; i < 30; i++) (node as HTMLElement).click(); });
+  await settle();
+  const minimum = Math.min(.1, fullFit);
+  assert(Math.abs(await scale() - minimum) < .001, 'Manual zoom reaches 10% or a smaller full fit');
+  await click('Увеличить');
+  assert(await scale() > minimum, 'Plus zooms back from the manual minimum');
   await click('Вписать');
   for (const zoomed of [false, true]) {
     if (zoomed) await click('Увеличить');
@@ -685,7 +717,7 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   await click('Уменьшить');
   assert.notEqual(await transform(), enlarged, 'Zoom out changes the diagram');
   await click('Вписать');
-  assert.equal(await transform(), initial, 'Fit restores the initial view');
+  assert.equal(await transform(), initial, 'Fit restores the full overview');
   for (const exit of ['button', 'Escape', 'fallback']) {
     if (exit === 'fallback') await diagram.evaluate(node => {
       Object.defineProperty(node, 'requestFullscreen', { configurable: true, value: () => Promise.reject(new Error('test fallback')) });
@@ -716,9 +748,69 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     await settle();
     await wheelZoom();
     await click('Вписать');
+    const afterExitFit = await scale();
+    await click('Уменьшить');
+    assert(await scale() < afterExitFit, 'Zoom out stays available after leaving fullscreen');
+    await click('Вписать');
     if (exit === 'fallback') await diagram.evaluate(node => { Reflect.deleteProperty(node, 'requestFullscreen'); });
   }
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Diagram frame has no page overflow');
+}
+
+async function checkHugeDiagramMinimum(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    await observe(page);
+    await page.setViewport({ width: 1440, height: 1000 });
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+    const diagram = await page.waitForSelector('figure[data-diagram-kind="mermaid"]');
+    assert(diagram);
+    await diagram.waitForSelector('svg');
+    await checkDiagramFrameInteraction(page, 'figure[data-diagram-kind="mermaid"]');
+    await diagram.evaluate(node => {
+      const svg = node.querySelector('svg')!;
+      svg.setAttribute('viewBox', '0 0 1000 10000');
+      svg.parentElement!.dispatchEvent(new CustomEvent('vitepress-mermaid:render-complete', { bubbles: true, detail: { success: true, id: 'huge-minimum-fixture' } }));
+    });
+    await page.waitForFunction(node => node.querySelector<HTMLElement>('.diagram__canvas')!.offsetHeight === 10000, {}, diagram);
+    const state = () => diagram.$eval('.diagram__canvas', node => {
+      const matrix = new DOMMatrix(getComputedStyle(node).transform);
+      return { scale: matrix.a, panX: matrix.e / matrix.a, panY: matrix.f / matrix.a };
+    });
+    const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+    const click = async (name: string) => { await diagram.$eval(`button[aria-label="${name}"]`, node => (node as HTMLElement).click()); await settle(); };
+    await click('Вписать');
+    assert(Math.abs((await state()).scale - .07) < .0001, 'Huge full overview initially uses 700/10000');
+    await diagram.$eval('.diagram__frame', node => (node as HTMLElement).focus({ preventScroll: true }));
+    await page.keyboard.press('ArrowDown');
+    await settle();
+    const beforeShrink = await state();
+    await page.setViewport({ width: 1440, height: 600 });
+    await settle();
+    assert.deepEqual(await state(), beforeShrink, 'Height shrink preserves admissible scale and pan');
+    await diagram.$eval('button[aria-label="Уменьшить"]', node => { for (let i = 0; i < 30; i++) (node as HTMLElement).click(); });
+    await settle();
+    const afterShrink = await state();
+    assert(Math.abs(afterShrink.scale - .042) < .0001, 'Height shrink updates manual minimum to 420/10000');
+    await page.setViewport({ width: 1440, height: 1000 });
+    await settle();
+    const afterGrowth = await state();
+    assert(Math.abs(afterGrowth.scale - .07) < .0001, 'Height growth clamps only a now-invalid scale');
+    assert(Math.abs(afterGrowth.panX - afterShrink.panX) < .1 && Math.abs(afterGrowth.panY - afterShrink.panY) < .1, 'Minimum correction preserves the existing pan');
+    await click('Увеличить');
+    const manual = await state();
+    await page.setViewport({ width: 1440, height: 600 });
+    await settle();
+    assert.deepEqual(await state(), manual, 'Another height change preserves the reader view');
+    await click('Вписать');
+    assert(await diagram.$eval('.diagram__frame', node => {
+      const frame = node.getBoundingClientRect(), canvas = node.querySelector('.diagram__canvas')!.getBoundingClientRect();
+      return canvas.left >= frame.left - 1 && canvas.top >= frame.top - 1 && canvas.right <= frame.right + 1 && canvas.bottom <= frame.bottom + 1;
+    }), 'Huge canvas remains fully accessible after height changes');
+    console.log('PASS huge diagram height-only: minimum updates below 10%, reader scale/pan preserved');
+  } finally { await context.close(); }
 }
 
 async function checkMermaidInteraction(page: Page): Promise<void> {
@@ -740,12 +832,24 @@ async function checkMermaidInteraction(page: Page): Promise<void> {
   await checkDiagramFrameInteraction(page, selector);
   const viewport = page.viewport()!;
   const canvasTransform = () => diagram.$eval('.diagram__canvas', node => getComputedStyle(node).transform);
+  await diagram.$eval('button[aria-label="Уменьшить"]', node => (node as HTMLElement).click());
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+  const manualView = await canvasTransform();
+  const previousSvg = await diagram.$('svg');
+  await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+  await page.waitForFunction((node, old) => !!node.querySelector('svg') && node.querySelector('svg') !== old, {}, diagram, previousSvg);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await canvasTransform(), manualView, 'Theme rerender preserves the manually reduced view');
   const beforeHeight = await canvasTransform();
   await page.setViewport({ ...viewport, height: viewport.height - 20 });
   await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 100)));
   assert.equal(await canvasTransform(), beforeHeight, 'Height-only resize preserves the view');
   await page.setViewport(viewport);
-
+  const changedSvg = await diagram.$('svg');
+  await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+  await page.waitForFunction((node, old) => !!node.querySelector('svg') && node.querySelector('svg') !== old, {}, diagram, changedSvg);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await canvasTransform(), manualView, 'Restoring the theme keeps the manually reduced view');
 }
 
 async function checkMermaidTouch(page: Page, diagram: import('puppeteer').ElementHandle<Element>): Promise<void> {
@@ -761,12 +865,23 @@ async function checkMermaidTouch(page: Page, diagram: import('puppeteer').Elemen
     assert(box);
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
     const beforePinch = await canvasTransform();
+    const startingScale = await diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
     const pageState = await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale }));
     await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 0, x: x - 20, y }, { id: 1, x: x + 20, y }] });
     for (const distance of [24, 28, 32, 36, 40]) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 0, x: x - distance, y }, { id: 1, x: x + distance, y }] });
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     assert.notEqual(await canvasTransform(), beforePinch, 'Two-finger pinch zooms the diagram');
+    const enlargedScale = await diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 0, x: x - 60, y }, { id: 1, x: x + 60, y }] });
+    for (const distance of [48, 36, 24, 12, 6]) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 0, x: x - distance, y }, { id: 1, x: x + distance, y }] });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const reducedScale = await diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
+    assert(reducedScale < enlargedScale, 'Pinch inward reduces the diagram');
+    assert(reducedScale < startingScale, 'Pinch inward zooms below the opening scale');
+    const minimum = await diagram.$eval('.diagram__frame', node => { const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!; return Math.min(.1, node.clientWidth / canvas.offsetWidth, node.clientHeight / canvas.offsetHeight); });
+    assert(reducedScale >= minimum - .001, 'Pinch respects the common manual minimum');
     assert.deepEqual(await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale })), pageState, 'Pinch preserves page scroll and browser scale');
     await page.$eval('.vp-doc h1', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -1698,6 +1813,7 @@ try {
   });
   if (check('width')) await checkReadingWidth(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('loading')) await checkArticleLoading(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
+  if (check('mermaid') || sections.includes('zoom')) await checkHugeDiagramMinimum(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
@@ -1764,6 +1880,28 @@ try {
   assert(diagramDocument);
   await diagramDocument.waitForSelector('svg');
   assert(await diagramDocument.$$eval('svg', elements => elements.reduce((count, element) => count + element.querySelectorAll('*').length, 0) > 10));
+  const eraserDocument = await diagramDocument.evaluate(async () => {
+    await document.fonts.ready;
+    const root = document.getElementById('eraser-scene')!.getBoundingClientRect();
+    return { viewport: [innerWidth, innerHeight], scroll: [document.documentElement.scrollWidth, document.documentElement.scrollHeight],
+      margin: getComputedStyle(document.body).margin, padding: getComputedStyle(document.body).padding,
+      root: { left: root.left, top: root.top, right: root.right, bottom: root.bottom } };
+  });
+  assert.equal(eraserDocument.margin, '0px', 'Eraser iframe has no body margins');
+  assert.equal(eraserDocument.padding, '0px');
+  assert(eraserDocument.scroll.every((value, i) => value <= eraserDocument.viewport[i]!), 'Eraser document has no internal overflow');
+  assert(eraserDocument.root.left >= 0 && eraserDocument.root.top >= 0 && eraserDocument.root.right <= eraserDocument.viewport[0]! && eraserDocument.root.bottom <= eraserDocument.viewport[1]!, 'All Eraser root edges fit inside its iframe');
+  const standalone = await context.newPage();
+  try {
+    await observe(standalone);
+    await standalone.setViewport({ width: 390, height: 300 });
+    const html = await page.evaluate(async href => (await fetch(href)).text(), diagramDocument.url());
+    await standalone.setContent(html, { waitUntil: 'load' });
+    await standalone.evaluate(async () => { await document.fonts.ready; window.scrollTo(100, 100); });
+    await standalone.waitForFunction(() => scrollX > 0 && scrollY > 0);
+    assert(await standalone.evaluate(() => document.documentElement.scrollWidth > innerWidth && document.documentElement.scrollHeight > innerHeight), 'Standalone HTML remains scrollable in a small window');
+  } finally { await standalone.close(); }
+  console.log('PASS Eraser document: no iframe overflow, all root edges, standalone HTML scrolls');
   await checkDiagramFrameInteraction(page, '.diagram');
   const scaleBefore = await page.$eval('.diagram__canvas', element => getComputedStyle(element).transform);
   await page.click('.diagram button[aria-label="Увеличить"]');
