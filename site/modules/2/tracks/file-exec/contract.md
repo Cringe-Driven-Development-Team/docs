@@ -60,7 +60,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 <tbody>
 <tr>
 <td><code>notebooks.get</code><br>query</td>
-<td>SPA-переход без подходящего bootstrap или явное перечитывание при конфликте. Общий загрузчик: <a href="https://vb78fyael1.apidog.io/43951862e">metadata</a> + <a href="https://vb78fyael1.apidog.io/45814238e">content</a> + <a href="https://vb78fyael1.apidog.io/46351384e">active</a>; затем <a href="https://vb78fyael1.apidog.io/46495243e">queue</a> своей сессии.</td>
+<td>SPA-переход без подходящего bootstrap или явное перечитывание при конфликте. Общий загрузчик: <a href="https://vb78fyael1.apidog.io/43951862e0">metadata</a> + <a href="https://vb78fyael1.apidog.io/45814238e0">content</a> + <a href="https://vb78fyael1.apidog.io/46351384e0">active</a>; затем <a href="https://vb78fyael1.apidog.io/46495243e0">queue</a> своей сессии.</td>
 <td><pre v-pre><code>{
   "id": 42
 }</code></pre></td>
@@ -84,11 +84,53 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
   },
   "active_session": null,
   "runtime_queue": null
+}</code></pre><p>Пример с активной сессией этого блокнота и выполняющейся code-ячейкой. Состояние сессии <code>READY</code> означает готовность окружения; состояние конкретного исполнения — <code>RUNNING</code>.</p><pre v-pre><code>{
+  "notebook": {
+    "id": 42,
+    "name": "Пример",
+    "created_at": "2026-11-04T10:00:00Z",
+    "updated_at": "2026-11-04T10:00:00Z",
+    "hash": "h123",
+    "cells": [
+      {
+        "id": "code-1",
+        "kind": "code",
+        "source": "print(1)",
+        "outputs": [],
+        "execution_count": null,
+        "output_truncated": false
+      }
+    ]
+  },
+  "active_session": {
+    "id": "123e4567-e89b-42d3-a456-426614174000",
+    "notebook_id": 42,
+    "language": "python",
+    "state": "READY",
+    "stage": "ready",
+    "reason": null,
+    "generation": "123e4567-e89b-42d3-a456-426614174003",
+    "created_at": "2026-11-04T10:01:00Z",
+    "last_activity_at": "2026-11-04T10:02:00Z",
+    "public_seq": 7,
+    "journal_incomplete": false,
+    "cleanup_error": null
+  },
+  "runtime_queue": {
+    "session_id": "123e4567-e89b-42d3-a456-426614174000",
+    "items": [
+      {
+        "execution_id": "123e4567-e89b-42d3-a456-426614174001",
+        "cell_id": "code-1",
+        "state": "RUNNING"
+      }
+    ]
+  }
 }</code></pre></td>
 </tr>
 <tr>
 <td><code>cells.create</code><br>mutation</td>
-<td>Добавление ячейки. index необязателен; без него — в конец. Прокси <a href="https://vb78fyael1.apidog.io/45814239e">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Добавление ячейки. index необязателен; без него — в конец. Прокси <a href="https://vb78fyael1.apidog.io/45814239e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -107,7 +149,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.update</code><br>mutation</td>
-<td>Сохранение исходника. Прокси <a href="https://vb78fyael1.apidog.io/45814240e">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Сохранение исходника. Прокси <a href="https://vb78fyael1.apidog.io/45814240e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -125,7 +167,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.move</code><br>mutation</td>
-<td>Перемещение: итоговый index с нуля. Прокси <a href="https://vb78fyael1.apidog.io/45814242e">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Перемещение: итоговый index с нуля. Прокси <a href="https://vb78fyael1.apidog.io/45814242e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -138,7 +180,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>cells.delete</code><br>mutation</td>
-<td>Удаление ячейки. Прокси <a href="https://vb78fyael1.apidog.io/45814241e">Контракт Go</a>. BFF переносит hash в If-Match.</td>
+<td>Удаление ячейки. Прокси <a href="https://vb78fyael1.apidog.io/45814241e0">Контракт Go</a>. BFF передаёт hash в HTTP-заголовке запроса If-Match.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "hash": "h123",
@@ -150,13 +192,13 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>runtime.start</code><br>mutation</td>
-<td>«Запустить окружение». Прокси <a href="https://vb78fyael1.apidog.io/46351383e">Контракт Go</a>. Один request_id на намерение; повтор — с тем же телом.</td>
+<td>«Запустить окружение». Прокси <a href="https://vb78fyael1.apidog.io/46351383e0">Контракт Go</a>. Один request_id на намерение; повтор — с тем же телом.</td>
 <td><pre v-pre><code>{
   "notebookId": 42,
   "request_id": "start-1",
   "language": "python"
 }</code></pre></td>
-<td>Команда принята; готовность определяется состоянием сессии. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351383e">полная схема ответа</a>.<pre v-pre><code>{
+<td>Команда принята; готовность определяется состоянием сессии. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351383e0">полная схема ответа</a>.<pre v-pre><code>{
   "id": "123e4567-e89b-42d3-a456-426614174000",
   "notebook_id": 42,
   "state": "PROVISIONING",
@@ -165,14 +207,14 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>runtime.execute</code><br>mutation</td>
-<td>Одна сохранённая code-ячейка. Прокси <a href="https://vb78fyael1.apidog.io/46351386e">Контракт Go</a>. source не передаётся; source_hash — SHA-256 точного UTF-8 source. timeout_seconds необязателен (1–86400, по умолчанию 300).</td>
+<td>Одна сохранённая code-ячейка. Прокси <a href="https://vb78fyael1.apidog.io/46351386e0">Контракт Go</a>. source не передаётся; source_hash — SHA-256 точного UTF-8 source. timeout_seconds необязателен (1–86400, по умолчанию 300).</td>
 <td><pre v-pre><code>{
   "sessionId": "123e4567-e89b-42d3-a456-426614174000",
   "execution_id": "123e4567-e89b-42d3-a456-426614174001",
   "cell_id": "code-1",
   "source_hash": "d287bb7f9d15abdc5b6e98536263815744b6ef21c8f3c839fc434ca70d8efe99"
 }</code></pre></td>
-<td>Принятое исполнение, ещё не результат кода. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351386e">полная схема ответа</a>.<pre v-pre><code>{
+<td>Принятое исполнение, ещё не результат кода. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351386e0">полная схема ответа</a>.<pre v-pre><code>{
   "execution_id": "123e4567-e89b-42d3-a456-426614174001",
   "session_id": "123e4567-e89b-42d3-a456-426614174000",
   "cell_id": "code-1",
@@ -185,7 +227,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>runtime.executeAll</code><br>mutation</td>
-<td>«Выполнить всё»: один <a href="https://vb78fyael1.apidog.io/46495292e">batch</a>, фиксированный полный порядок 1–1000 сохранённых code-ячеек. timeout_seconds — как у execute. BFF не делает цикл единичных запусков.</td>
+<td>«Выполнить всё»: один <a href="https://vb78fyael1.apidog.io/46495292e0">batch</a>, фиксированный полный порядок 1–1000 сохранённых code-ячеек. timeout_seconds — как у execute. BFF не делает цикл единичных запусков.</td>
 <td><pre v-pre><code>{
   "sessionId": "123e4567-e89b-42d3-a456-426614174000",
   "request_id": "batch-1",
@@ -211,7 +253,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>runtime.stop</code><br>mutation</td>
-<td>«Завершить окружение». Прокси <a href="https://vb78fyael1.apidog.io/46351390e">Контракт Go</a>. Принятие не означает завершения очистки; слот занят до её окончания.</td>
+<td>«Завершить окружение». Прокси <a href="https://vb78fyael1.apidog.io/46351390e0">Контракт Go</a>. Принятие не означает завершения очистки; слот занят до её окончания.</td>
 <td><pre v-pre><code>{
   "sessionId": "123e4567-e89b-42d3-a456-426614174000"
 }</code></pre></td>
@@ -221,7 +263,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>runtime.activity</code><br>mutation</td>
-<td>После реального изменения source, не чаще раза в 30 секунд; в READY/RECONNECTING. Прокси <a href="https://vb78fyael1.apidog.io/46351389e">Контракт Go</a>. Polling и preview не считаются активностью.</td>
+<td>После реального изменения source, не чаще раза в 30 секунд; в READY/RECONNECTING. Прокси <a href="https://vb78fyael1.apidog.io/46351389e0">Контракт Go</a>. Polling и preview не считаются активностью.</td>
 <td><pre v-pre><code>{
   "sessionId": "123e4567-e89b-42d3-a456-426614174000"
 }</code></pre></td>
@@ -231,7 +273,7 @@ Markdown хранится как `id`, `kind: markdown` и исходный `sou
 </tr>
 <tr>
 <td><code>runtime.updates</code><br>query</td>
-<td>Наблюдение каждые 2 секунды и после команд: параллельно <a href="https://vb78fyael1.apidog.io/46351385e">session</a>, <a href="https://vb78fyael1.apidog.io/46495243e">queue</a>, <a href="https://vb78fyael1.apidog.io/46351388e">одна страница events</a>; затем <a href="https://vb78fyael1.apidog.io/46351387e">snapshots executions</a> по объединению уникальных IDs из событий и executionIds.</td>
+<td>Наблюдение каждые 2 секунды и после команд: параллельно <a href="https://vb78fyael1.apidog.io/46351385e0">session</a>, <a href="https://vb78fyael1.apidog.io/46495243e0">queue</a>, <a href="https://vb78fyael1.apidog.io/46351388e0">одна страница events</a>; затем <a href="https://vb78fyael1.apidog.io/46351387e0">snapshots executions</a> по объединению уникальных IDs из событий и executionIds.</td>
 <td><pre v-pre><code>{
   "sessionId": "123e4567-e89b-42d3-a456-426614174000",
   "after": 0,
@@ -295,14 +337,30 @@ ID блокнота — положительное целое, сессии — 
 execution_id — строка 1–128 символов. JSON ниже содержит только тело, path и query указаны отдельно.
 В CRUD `notebookId`, `cellId` и `hash` из tRPC не копируются в JSON Go.
 
+**Как связаны hash, ETag и If-Match.** `hash` — поле JSON с версией блокнота.
+`ETag` — HTTP-заголовок **ответа Go**: в нашем контракте он содержит тот же hash в двойных кавычках,
+например `ETag: "h123"`. `If-Match` — HTTP-заголовок **запроса BFF к Go** с ожидаемой версией:
+`If-Match: "h123"` означает «примени изменение, только если версия всё ещё h123».
+Назначение этих HTTP-заголовков описано в [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.1).
+
+Например, фронт получил `hash: "h123"` и передал его в `cells.update`. BFF поместил эту версию
+в заголовок `If-Match: "h123"`. Go сравнивает её с текущей версией атомарно с изменением:
+при совпадении сохраняет правку, при несовпадении по нашему API возвращает `409 notebook_conflict`
+и не применяет её. Ответ успешного изменения содержит подтверждённый hash в JSON и в заголовке ETag;
+следующая мутация использует эту версию.
+
+Термин «сильный ETag» обозначает метку без префикса `W/`, сравниваемую точно.
+Наш API принимает в If-Match только одну такую метку; списки, `*`, `W/` и пустое значение запрещены.
+Фронт передаёт обычное поле `hash` в tRPC — HTTP-заголовки для Go формирует BFF.
+
 <table class="notebook-api-table" tabindex="0" aria-label="Контракт BFF и backend">
 <thead><tr><th scope="col">HTTP-операция</th><th scope="col">Где используется в BFF</th><th scope="col">Параметры, заголовки и тело</th><th scope="col">HTTP-статус и результат</th></tr></thead>
 <tbody>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/43951862e"><code>GET /notebooks/{id}</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/43951862e0"><code>GET /notebooks/{id}</code></a></td>
 <td>Общий загрузчик: метаданные. cells этого ответа не заменяют content.</td>
 <td>Path: id блокнота. Без тела.</td>
-<td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/43951862e">полная схема ответа</a>.<pre v-pre><code>{
+<td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/43951862e0">полная схема ответа</a>.<pre v-pre><code>{
   "id": 42,
   "name": "Пример",
   "created_at": "2026-11-04T10:00:00Z",
@@ -310,10 +368,10 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/45814238e"><code>GET /notebooks/{id}/content</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/45814238e0"><code>GET /notebooks/{id}/content</code></a></td>
 <td>Общий загрузчик: hash и cells из одного ответа.</td>
 <td>Path: id блокнота. Без тела.</td>
-<td>200 OK; <code>ETag: "h123"</code>.<pre v-pre><code>{
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h123"</code> содержит тот же hash, что и тело JSON.<pre v-pre><code>{
   "hash": "h123",
   "cells": [
     {
@@ -328,14 +386,14 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/45814239e"><code>POST /notebooks/{id}/content/cells</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/45814239e0"><code>POST /notebooks/{id}/content/cells</code></a></td>
 <td>cells.create</td>
-<td>Path: id блокнота. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. index необязателен (0–1000), по умолчанию в конец; kind: code или markdown.<pre v-pre><code>{
+<td>Path: id блокнота. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index необязателен (0–1000), по умолчанию в конец; kind: code или markdown.<pre v-pre><code>{
   "kind": "code",
   "source": "print(1)",
   "index": 0
 }</code></pre></td>
-<td>201 Created; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>201 Created; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456",
   "cell": {
     "id": "code-1",
@@ -345,12 +403,12 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/45814240e"><code>PATCH /notebooks/{id}/content/cells/{cell_id}</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/45814240e0"><code>PATCH /notebooks/{id}/content/cells/{cell_id}</code></a></td>
 <td>cells.update</td>
-<td>Path: id блокнота, cell_id. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. Меняет source выбранной ячейки.<pre v-pre><code>{
+<td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Меняет source выбранной ячейки.<pre v-pre><code>{
   "source": "print(1)"
 }</code></pre></td>
-<td>200 OK; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456",
   "cell": {
     "id": "code-1",
@@ -360,31 +418,31 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/45814241e"><code>DELETE /notebooks/{id}/content/cells/{cell_id}</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/45814241e0"><code>DELETE /notebooks/{id}/content/cells/{cell_id}</code></a></td>
 <td>cells.delete</td>
-<td>Path: id блокнота, cell_id. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. Без тела.</td>
-<td>200 OK; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. Без тела.</td>
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456"
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/45814242e"><code>POST /notebooks/{id}/content/cells/{cell_id}/move</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/45814242e0"><code>POST /notebooks/{id}/content/cells/{cell_id}/move</code></a></td>
 <td>cells.move</td>
-<td>Path: id блокнота, cell_id. <code>If-Match: "h123"</code>: ровно один сильный ETag; без списка, *, W/ и пустого значения. index 0–999 — итоговая позиция.<pre v-pre><code>{
+<td>Path: id блокнота, cell_id. HTTP-заголовок запроса: <code>If-Match: "h123"</code> — сохранить только при текущем hash=h123. По нашему контракту допустим один hash в двойных кавычках; список, *, префикс W/ и пустое значение отклоняются. index 0–999 — итоговая позиция.<pre v-pre><code>{
   "index": 0
 }</code></pre></td>
-<td>200 OK; <code>ETag: "h456"</code>.<pre v-pre><code>{
+<td>200 OK; HTTP-заголовок ответа <code>ETag: "h456"</code> содержит подтверждённый hash из тела JSON.<pre v-pre><code>{
   "hash": "h456"
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351383e"><code>POST /notebooks/{id}/runtime-sessions</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351383e0"><code>POST /notebooks/{id}/runtime-sessions</code></a></td>
 <td>runtime.start</td>
 <td>Path: id блокнота. request_id 1–128 символов; language python или r, UI модуля использует python.<pre v-pre><code>{
   "request_id": "start-1",
   "language": "python"
 }</code></pre></td>
-<td>202 Accepted. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351383e">полная схема ответа</a>.<pre v-pre><code>{
+<td>202 Accepted. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351383e0">полная схема ответа</a>.<pre v-pre><code>{
   "id": "123e4567-e89b-42d3-a456-426614174000",
   "notebook_id": 42,
   "state": "PROVISIONING",
@@ -392,7 +450,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351384e"><code>GET /runtime-sessions/active</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351384e0"><code>GET /runtime-sessions/active</code></a></td>
 <td>Общий загрузчик. Уже содержит полную сессию; не дублировать GET session.</td>
 <td>Без path/query/body. Единственная активная сессия пользователя.</td>
 <td>200 OK. Пример без сессии; иначе active_session содержит RuntimeSession.<pre v-pre><code>{
@@ -400,10 +458,10 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351385e"><code>GET /runtime-sessions/{id}</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351385e0"><code>GET /runtime-sessions/{id}</code></a></td>
 <td>runtime.updates</td>
 <td>Path: id сессии. Без тела.</td>
-<td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351385e">полная схема ответа</a>.<pre v-pre><code>{
+<td>200 OK. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351385e0">полная схема ответа</a>.<pre v-pre><code>{
   "id": "123e4567-e89b-42d3-a456-426614174000",
   "notebook_id": 42,
   "state": "READY",
@@ -411,14 +469,14 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351386e"><code>POST /runtime-sessions/{id}/executions</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351386e0"><code>POST /runtime-sessions/{id}/executions</code></a></td>
 <td>runtime.execute</td>
 <td>Path: id сессии. Без source. timeout_seconds необязателен (1–86400, default 300).<pre v-pre><code>{
   "execution_id": "123e4567-e89b-42d3-a456-426614174001",
   "cell_id": "code-1",
   "source_hash": "d287bb7f9d15abdc5b6e98536263815744b6ef21c8f3c839fc434ca70d8efe99"
 }</code></pre></td>
-<td>202 Accepted. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351386e">полная схема ответа</a>.<pre v-pre><code>{
+<td>202 Accepted. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351386e0">полная схема ответа</a>.<pre v-pre><code>{
   "execution_id": "123e4567-e89b-42d3-a456-426614174001",
   "session_id": "123e4567-e89b-42d3-a456-426614174000",
   "cell_id": "code-1",
@@ -430,10 +488,10 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351387e"><code>GET /runtime-sessions/{id}/executions/{execution_id}</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351387e0"><code>GET /runtime-sessions/{id}/executions/{execution_id}</code></a></td>
 <td>runtime.updates: только нужные IDs из событий и входа, не все ячейки.</td>
 <td>Path: id сессии, execution_id. Без тела.</td>
-<td>200 OK. Текущий snapshot, в том числе незавершённый. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351387e">полная схема ответа</a>.<pre v-pre><code>{
+<td>200 OK. Текущий snapshot, в том числе незавершённый. Сокращённый пример; <a href="https://vb78fyael1.apidog.io/46351387e0">полная схема ответа</a>.<pre v-pre><code>{
   "execution_id": "123e4567-e89b-42d3-a456-426614174001",
   "session_id": "123e4567-e89b-42d3-a456-426614174000",
   "cell_id": "code-1",
@@ -445,7 +503,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351388e"><code>GET /runtime-sessions/{id}/events</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351388e0"><code>GET /runtime-sessions/{id}/events</code></a></td>
 <td>runtime.updates: одна страница за вызов.</td>
 <td>Path: id сессии. Query: <code>after=0</code>, необязательный неотрицательный int64 (default 0); BFF ограничивает safe integer. Без тела.</td>
 <td>200 OK. До 100 событий; целевой лимит страницы 16 MiB, первое крупное событие не отбрасывается. next_cursor задаёт Go.<pre v-pre><code>{
@@ -455,7 +513,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351389e"><code>POST /runtime-sessions/{id}/activity</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351389e0"><code>POST /runtime-sessions/{id}/activity</code></a></td>
 <td>runtime.activity</td>
 <td>Path: id сессии. Без тела. Реальное редактирование в READY/RECONNECTING.</td>
 <td>200 OK.<pre v-pre><code>{
@@ -463,7 +521,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46351390e"><code>POST /runtime-sessions/{id}/stop</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46351390e0"><code>POST /runtime-sessions/{id}/stop</code></a></td>
 <td>runtime.stop</td>
 <td>Path: id сессии. Без тела.</td>
 <td>202 Accepted. Очистка асинхронна; её завершение видно по session.<pre v-pre><code>{
@@ -471,7 +529,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46495243e"><code>GET /runtime-sessions/{id}/queue</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46495243e0"><code>GET /runtime-sessions/{id}/queue</code></a></td>
 <td>Общий загрузчик только для своей сессии; runtime.updates.</td>
 <td>Path: id сессии. Без тела.</td>
 <td>200 OK. Только исполнения code-ячеек QUEUED/RUNNING, без инспекций; пустая очередь — items: [].<pre v-pre><code>{
@@ -486,7 +544,7 @@ execution_id — строка 1–128 символов. JSON ниже содер
 }</code></pre></td>
 </tr>
 <tr>
-<td><a href="https://vb78fyael1.apidog.io/46495292e"><code>POST /runtime-sessions/{id}/executions/batch</code></a></td>
+<td><a href="https://vb78fyael1.apidog.io/46495292e0"><code>POST /runtime-sessions/{id}/executions/batch</code></a></td>
 <td>runtime.executeAll: один массовый запрос.</td>
 <td>Path: id сессии. request_id 1–128; 1–1000 ячеек, порядок зафиксирован. timeout_seconds необязателен, как у одиночного исполнения.<pre v-pre><code>{
   "request_id": "batch-1",
@@ -550,16 +608,23 @@ HTTP 400/401/403/404/409 переводятся в tRPC BAD_REQUEST/UNAUTHORIZED
 не сохраняют. Пока запрос выполняется, новый ввод остаётся черновиком: старый ответ его не перезаписывает.
 
 Мутации `cells.create/update/move/delete` проходят последовательно для одного блокнота с последним
-подтверждённым хэшем. BFF передаёт непрозрачный hash в единственном сильном `If-Match: "<hash>"`,
-без вычисления хэша на фронте и без помещения его в JSON Go. Используются маршруты `/content/cells`
+подтверждённым хэшем. Фронт передаёт поле `hash` в tRPC, а BFF помещает его в HTTP-заголовок
+запроса к Go — например, `If-Match: "h123"`. Это условие «сохранить, только если версия блокнота
+всё ещё h123». Тот же hash приходит от Go в JSON и в HTTP-заголовке ответа `ETag`.
+Фронт и BFF не вычисляют эту версию сами, а передают полученную от Go строку без изменения;
+в JSON запроса к Go hash не помещается. Используются маршруты `/content/cells`
 и стабильный `cell_id`; move задаёт итоговую позицию с нуля.
 Создание и изменение возвращают `{hash, cell}`, удаление и перемещение — `{hash}`.
 Отсутствие outputs в ответе редактирования не стирает результаты других ячеек; перемещение их сохраняет.
 Подтверждённое изменение code-source очищает показ прежнего результата, его счётчик и признак усечения.
 
-При `409 notebook_conflict` очередь со старым хэшем останавливается, `notebooks.get` перечитывает серверную
-версию, а локальный текст остаётся отдельно. Пользователь явно принимает серверную версию либо сохраняет
-свой текст поверх показанной актуальной. Удалённая на сервере ячейка автоматически не воссоздаётся;
+При `409 notebook_conflict` фронтовая очередь сохранения со старым хэшем приостанавливается.
+`notebooks.get` перечитывает серверную версию, а несохранённые черновики остаются отдельно в состоянии
+редактора на фронте и не затираются ответом. Пользователь явно принимает серверную версию либо сохраняет
+свой текст поверх показанной актуальной. Во втором случае фронт отправляет черновик с новым `hash`,
+полученным при перечитывании; BFF снова передаёт его в `If-Match`. Это обычная проверяемая мутация,
+без режима force: если версия успела измениться ещё раз, backend снова вернёт `409`.
+Удалённая на сервере ячейка автоматически не воссоздаётся;
 её черновик доступен для копирования. После сетевой ошибки или 500 запись может уже состояться:
 перед повтором нужно перечитать и сопоставить состояние, а не повторять мутацию вслепую.
 
@@ -576,7 +641,7 @@ sequenceDiagram
   participant Editor as Редактор (№37)
   participant BFF
   participant Go as Go API
-  Editor->>Editor: Черновик → общая очередь
+  Editor->>Editor: Черновик → фронтовая<br/>очередь сохранения
   Editor->>BFF: cells.update, source и подтверждённый hash
   BFF->>Go: PATCH /notebooks/{id}/content/cells/{cell_id}<br/>If-Match
   alt Изменение подтверждено
@@ -586,7 +651,7 @@ sequenceDiagram
   else 409 notebook_conflict
     Go-->>BFF: 409 notebook_conflict
     BFF-->>Editor: Конфликт
-    Editor->>Editor: Остановить старую очередь<br/>Сохранить локальный текст
+    Editor->>Editor: Приостановить фронтовую<br/>очередь сохранения<br/>Оставить несохранённые черновики<br/>в состоянии редактора
     Editor->>BFF: notebooks.get
     BFF->>Go: Прочитать серверную версию
     Go-->>BFF: Актуальные hash и cells
@@ -696,7 +761,7 @@ Polling не запускает исполнение и не продлевае�
 Сохранение только `outputs`, `execution_count`, `output_truncated` его не меняет.
 Неизменяющая операция может сохранить прежний hash.
 
-**Проверено 04.11.2026:** [Apidog main — GET content](https://vb78fyael1.apidog.io/45814238e)
+**Проверено 04.11.2026:** [Apidog main — GET content](https://vb78fyael1.apidog.io/45814238e0)
 всё ещё говорит «Сохранение результата меняет редакцию», а backend#13 — «Запись output меняет хеш ipynb».
 Это расходится с целевым правилом #37/#51. Изменение семантики ещё нужно согласованно отразить в backend
 и опубликованном контракте до общей интеграционной приёмки. Эта страница не меняет API и не подтверждает
@@ -705,8 +770,8 @@ Polling не запускает исполнение и не продлевае�
 ## Источники для интеграции
 
 HTTP-схемы и ошибки: [Apidog main](https://vb78fyael1.apidog.io/),
-[изменение ячейки](https://vb78fyael1.apidog.io/45814240e),
-[очередь](https://vb78fyael1.apidog.io/46495243e).
+[изменение ячейки](https://vb78fyael1.apidog.io/45814240e0),
+[очередь](https://vb78fyael1.apidog.io/46495243e0).
 Визуальные состояния: [сохранение](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=586-19974),
 [конфликт](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=586-20145),
 [выполнение с несохранёнными правками](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=586-20316).

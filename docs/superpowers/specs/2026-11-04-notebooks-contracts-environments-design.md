@@ -106,7 +106,7 @@
 | GET /runtime-sessions/{id}/queue | 46495243 |
 | POST /runtime-sessions/{id}/executions/batch | 46495292 |
 
-Для каждой строки дать точный статус, query/path/body и ссылку `https://vb78fyael1.apidog.io/<ID>e`. Внутренние GET session/queue/events/execution остаются методами Go-клиента; не добавлять браузерные tRPC runtime.get/queue/events/execution. `/active` уже содержит session: не читать session повторно только ради её полей при открытии.
+Для каждой строки дать точный статус, query/path/body и ссылку `https://vb78fyael1.apidog.io/<ID>e0`. Внутренние GET session/queue/events/execution остаются методами Go-клиента; не добавлять браузерные tRPC runtime.get/queue/events/execution. `/active` уже содержит session: не читать session повторно только ради её полей при открытии.
 
 Использовать конкретные короткие примеры. Большие сущности (RuntimeSession, RuntimeExecution, NotebookContent) показывать осмысленным фрагментом с явной подписью «Сокращённый пример» и ссылкой на полную схему; фрагмент не объявлять полной валидной моделью. Все показанные JSON-блоки синтаксически валидны — без многоточий как JSON-токенов и комментариев. Не переносить все определения Apidog в docs.
 
