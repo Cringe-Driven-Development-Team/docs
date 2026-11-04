@@ -18,9 +18,15 @@ if (!Number.isInteger(props.initialIndex) || props.initialIndex < 0 || props.ini
   throw new Error('Figma: initialIndex должен указывать на экран из screens');
 }
 const selectedIndex = ref(props.initialIndex);
+const visited = ref(new Set([props.initialIndex]));
 const selected = computed(() => screens.value[selectedIndex.value]!);
 const id = useId();
 const tablist = ref<HTMLElement>();
+
+function selectScreen(index: number): void {
+  visited.value.add(index);
+  selectedIndex.value = index;
+}
 
 function onKeydown(event: KeyboardEvent, index: number) {
   let next: number;
@@ -32,7 +38,7 @@ function onKeydown(event: KeyboardEvent, index: number) {
     default: return;
   }
   event.preventDefault();
-  selectedIndex.value = next;
+  selectScreen(next);
   tablist.value?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
 }
 </script>
@@ -44,11 +50,13 @@ function onKeydown(event: KeyboardEvent, index: number) {
         v-for="(screen, index) in screens" :id="`${id}-tab-${index}`" :key="index"
         type="button" role="tab" :aria-controls="`${id}-panel`"
         :aria-selected="selectedIndex === index" :tabindex="selectedIndex === index ? 0 : -1"
-        @click="selectedIndex = index" @keydown="onKeydown($event, index)"
+        @click="selectScreen(index)" @keydown="onKeydown($event, index)"
       ><span class="number" aria-hidden="true">{{ index + 1 }}</span>{{ screen.label }}</button>
     </div>
     <div :id="`${id}-panel`" role="tabpanel" :aria-labelledby="`${id}-tab-${selectedIndex}`" tabindex="0">
-      <iframe :src="selected.embed" :title="selected.title" loading="lazy" allowfullscreen></iframe>
+      <div v-for="(screen, index) in screens" v-show="selectedIndex === index" :key="index">
+        <iframe v-if="visited.has(index)" :src="screen.embed" :title="screen.title" loading="lazy" allowfullscreen></iframe>
+      </div>
     </div>
     <figcaption>
       <span>Шаг {{ selectedIndex + 1 }} из {{ screens.length }} · {{ selected.title }}</span>
