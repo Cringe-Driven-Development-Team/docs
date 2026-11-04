@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|scroll|pages|plugins|hierarchy|title|figma ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title', 'figma'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -1492,6 +1492,73 @@ async function checkTitle(browser: Browser, url: (path: string) => string): Prom
   console.log(`PASS title: ${measurements.length} glyph geometry samples, both themes, fresh/saved mode, Tab/Enter and resize`);
 }
 
+async function checkFigma(browser: Browser, url: (path: string) => string): Promise<void> {
+  const source = 'https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027';
+  const embed = 'https://embed.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027&embed-host=docs.cellestial.ru';
+  for (const [width, mode] of [[1440, 1], [390, 1], [1440, 3]] as const) for (const dark of [false, true]) {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage();
+      await observe(page);
+      await page.setViewport({ width, height: 1000 });
+      await page.evaluateOnNewDocument(({ mode, dark }) => {
+        if (window !== window.top) return;
+        localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
+        localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+      }, { mode, dark });
+      // Test the host page even when Figma requires login; live canvas checks are separate.
+      await page.setRequestInterception(true);
+      page.on('request', request => {
+        if (request.isNavigationRequest() && request.url() === embed) {
+          void request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><html lang="ru"><title>Figma fixture</title><body>Требуется вход в Figma</body></html>' });
+        } else void request.continue();
+      });
+      await page.goto(url('modules/2/tracks/2fa-front#подключение'), { waitUntil: 'networkidle0' });
+      await page.waitForFunction(() => {
+        const heading = document.getElementById('подключение')!;
+        const top = heading.getBoundingClientRect().top;
+        const bottom = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().bottom ?? 0;
+        return top >= Math.max(0, bottom('.VPNav'), bottom('.VPLocalNav')) - 1 && top < innerHeight && getComputedStyle(heading).visibility === 'visible';
+      });
+      const state = await page.evaluate(() => {
+        const widget = document.querySelector<HTMLElement>('.figma-embed');
+        const iframe = widget?.querySelector('iframe');
+        const article = document.querySelector('.vp-doc')!.getBoundingClientRect();
+        const rect = iframe?.getBoundingClientRect();
+        return {
+          count: document.querySelectorAll('.figma-embed').length,
+          src: iframe?.src, title: iframe?.title, loading: iframe?.loading, fullscreen: iframe?.allowFullscreen,
+          link: widget?.querySelector('a')?.href,
+          height: rect?.height, width: rect?.width, articleWidth: article.width,
+          inside: !!rect && rect.left >= article.left - 1 && rect.right <= article.right + 1,
+          afterDiagram: widget?.previousElementSibling === document.getElementById('подключение')?.closest('.diagram-section'),
+          beforeLogin: widget?.nextElementSibling?.contains(document.getElementById('вход')),
+          overflow: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      assert.equal(state.count, 1, 'One Figma widget on the 2FA page');
+      assert.equal(state.src, embed);
+      assert.equal(state.title, 'Подключение 2FA через QR-код');
+      assert.equal(state.loading, 'lazy');
+      assert.equal(state.fullscreen, true);
+      assert.equal(state.link, source);
+      assert.equal(state.height, 600);
+      assert(state.width! > 0 && state.width! <= state.articleWidth && state.inside, JSON.stringify(state));
+      assert(state.afterDiagram && state.beforeLogin, 'Widget follows the connection diagram, before login');
+      assert.equal(state.overflow, false);
+      await page.$eval('.figma-embed', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await page.waitForNetworkIdle();
+      await page.focus('.figma-embed iframe');
+      await page.keyboard.press('Tab');
+      assert(await page.$eval('.figma-embed a', node => node === document.activeElement), 'Tab exits iframe to the Figma link');
+      await page.screenshot({ path: join(artifacts, `${label}-figma-${width}-${mode}-${dark ? 'dark' : 'light'}.png`) });
+      console.log(`PASS Figma host ${width}px mode=${mode} ${dark ? 'dark' : 'light'}: placement, hash, frame, link and keyboard (external content stubbed)`);
+    } finally {
+      await context.close();
+    }
+  }
+}
+
 let browser: Browser | undefined;
 try {
   browser = await puppeteer.launch({
@@ -1504,6 +1571,7 @@ try {
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('scroll')) await checkHashScrolling(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('pages')) await checkPages(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
+  if (check('figma')) await checkFigma(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('plugins')) {
   const context = await browser.createBrowserContext();
   let page = await context.newPage();
