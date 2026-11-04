@@ -46,6 +46,22 @@ test("Monaco: subtasks are linked to their frontend issues", () => {
   ]);
 });
 
+test("окружения — подтрек блокнотов с прежними исполнителями", () => {
+  const env = october?.tracks.find(t => t.id === "notebook-vps");
+  expect(env?.title).toBe("Окружения исполнения");
+  expect(env?.label).toBe("Окружения");
+  expect(env?.partOf).toBe("file-exec");
+  expect(env?.do).toEqual([
+    { login: "MrDuckVC", side: "back" },
+    { login: "iRedTea", side: "devops" },
+  ]);
+  expect(env?.subtasks.map(s => s.title)).toEqual([
+    "Окружения через API облака, без Pulumi",
+    "Подготовка, контроль состояния и очистка окружений",
+  ]);
+  expect(october?.tracks.find(t => t.id === "runtime-grooming")?.related.map(r => r.track)).toContain("notebook-vps");
+});
+
 test("Денис: devops and BFF subtasks are linked to their issues", () => {
   const issues = (track: string, title: string) => october?.tracks.find((t) => t.id === track)?.subtasks.find((s) => s.title === title)?.issues;
   expect(issues("bff", "Turborepo + bun workspaces")).toEqual(["frontend#44"]);
