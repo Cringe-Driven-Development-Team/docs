@@ -362,7 +362,7 @@ test("procedure flow uses AppRouter without SDK generation", () => {
   for (const needle of ["имя", "query/mutation", "вход", "результат", "ошибки", "авторизац", "Apidog", "bun run sync", "Orval", "Zod", "Hono", "адаптер", "AppRouter", "TypeScript", "Кодогенерации клиента", "typecheck"]) expect(flow, needle).toContain(needle);
   for (const needle of ["get: authedProcedure", "ctx.go.getNotebook(input.id)", "api.notebooks.get.query({ id: 1 })", "inferRouterInputs", "inferRouterOutputs"]) expect(flow, needle).toContain(needle);
   const views = section(md, "Процедуры экранов");
-  for (const needle of ["views.notebook", "Promise.all", "getRuntime", "будущая ручка", "поэтому процедур экранов пока нет", "344ad0b"]) expect(views, needle).toContain(needle);
+  for (const needle of ["views.notebook", "Promise.all", "getRuntime", "../file-exec/contract", "поэтому процедур экранов пока нет", "344ad0b"]) expect(views, needle).toContain(needle);
 });
 
 test("карта задач BFF сохраняет последовательность и границы", () => {

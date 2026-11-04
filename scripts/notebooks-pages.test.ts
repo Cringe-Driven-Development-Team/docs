@@ -6,6 +6,7 @@ import type { DiagramDoc } from "./diagram.ts";
 const TRACK = "site/modules/2/tracks/file-exec.md";
 const EDITOR = "site/modules/2/tracks/monaco.md";
 const CONTRACT = "site/modules/2/tracks/file-exec/contract.md";
+const ENVIRONMENTS = "site/modules/2/tracks/notebook-vps.md";
 const read = (file: string) => readFileSync(file, "utf8");
 
 test("блокноты: общие правила доступны из обоих треков и ведут обратно", () => {
@@ -16,6 +17,13 @@ test("блокноты: общие правила доступны из обои
   expect(read(EDITOR)).toContain("](./file-exec)");
   expect(read(CONTRACT)).toContain("](../file-exec)");
   expect(read(CONTRACT)).toContain("](../monaco)");
+  expect(read(TRACK)).toContain("](./notebook-vps)");
+  expect(read(ENVIRONMENTS)).toContain("](./file-exec)");
+  expect(read(ENVIRONMENTS)).toContain("](./file-exec/contract)");
+  expect(read("site/modules/2/tracks/bff/procedures.md")).toContain("](../file-exec/contract)");
+  for (const title of ["Роли", "Договорились", "Открытые вопросы"]) {
+    expect(read(ENVIRONMENTS)).toContain(`## ${title}`);
+  }
   for (const issue of [37, 38, 51]) {
     expect(read(TRACK), `frontend#${issue}`).toContain(`https://github.com/Cringe-Driven-Development-Team/frontend/issues/${issue}`);
   }
@@ -37,7 +45,7 @@ test("ссылка на статус хэша ведёт к существующ
 });
 
 test("страницы блокнотов безопасны для публичной документации", () => {
-  for (const file of [TRACK, EDITOR, CONTRACT]) {
+  for (const file of [TRACK, EDITOR, CONTRACT, ENVIRONMENTS]) {
     const text = read(file);
     expect(text, file).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b/);
     expect(text, file).not.toContain("{{");
