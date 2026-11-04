@@ -1,0 +1,24 @@
+{
+  "entities": [
+    { "tag": "Icon", "id": "client", "icon": "monitor", "texts": [{ "text": "Браузер" }], "x": 0, "y": 100 },
+    { "tag": "Icon", "id": "authenticator", "icon": "smartphone", "texts": [{ "text": "Аутентификатор: локальные коды" }], "x": 0, "y": 480 },
+    { "tag": "Textbox", "id": "user-transfer", "text": "QR/ключ и код переносит пользователь. Сетевого вызова аутентификатора нет.", "x": 0, "y": 660, "width": 220 },
+    { "tag": "Group", "id": "vps1", "title": { "text": "VPS1: вход в сервис" }, "x": 260, "y": 0, "width": 240, "height": 540, "color": "blue", "isContainer": true },
+    { "tag": "Icon", "id": "caddy", "icon": "shield", "texts": [{ "text": "Caddy" }], "x": 340, "y": 100, "containerId": "vps1" },
+    { "tag": "Icon", "id": "bff", "icon": "server", "texts": [{ "text": "BFF" }], "x": 340, "y": 380, "containerId": "vps1" },
+    { "tag": "Group", "id": "vps2", "title": { "text": "VPS2: сервер и данные" }, "x": 680, "y": 280, "width": 240, "height": 540, "color": "blue", "isContainer": true },
+    { "tag": "Icon", "id": "go-api", "icon": "go", "texts": [{ "text": "Go API" }], "x": 760, "y": 380, "containerId": "vps2" },
+    { "tag": "Icon", "id": "postgresql", "icon": "database", "texts": [{ "text": "PostgreSQL" }], "x": 760, "y": 660, "containerId": "vps2" },
+    { "tag": "Legend", "id": "legend", "x": 1000, "y": 0, "width": 340, "entries": [
+      { "text": "Наша инфраструктура", "color": "#2866c4" },
+      { "text": "Пользовательский трафик", "color": "#c38424" },
+      { "text": "Прочие связи", "color": "#1c1c1c" }
+    ] }
+  ],
+  "connections": [
+    { "tag": "Relationship", "from": "client", "to": "caddy", "label": "Действия пользователя", "color": "orange", "lineStyle": "solid" },
+    { "tag": "Relationship", "from": "caddy", "to": "bff", "label": "Запросы приложения" },
+    { "tag": "Relationship", "from": "bff", "to": "go-api", "label": "Операции 2FA и входа" },
+    { "tag": "Relationship", "from": "go-api", "to": "postgresql", "label": "Работа с данными" }
+  ]
+}
