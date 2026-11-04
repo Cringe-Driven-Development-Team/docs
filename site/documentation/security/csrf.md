@@ -35,7 +35,7 @@ JavaScript страницы не получает открытые токены 
 ```mermaid
 %% Flowchart: обязательный заголовок, дополнительные проверки POST и общий отказ до Go.
 flowchart TD
-    rpc["RPC в BFF"] --> header{"X-CSRF равен 1?"}
+    rpc["Запрос браузера к BFF: /api/trpc"] --> header{"X-CSRF равен 1?"}
     header -->|Нет| reject["403 csrf_invalid: Go не вызывается"]
     header -->|Да| method{"POST?"}
     method -->|Нет| session["Чтение сессии и обработка процедуры"]
