@@ -3,11 +3,15 @@ export type DiagramSize = { width: number; height: number };
 export const MAX_SCALE = 4;
 export const STEP = 1.25;
 
-// Масштаб «вписать»: по ширине рамки; с высотой рамки (полный экран) — по более тесной стороне.
+// Начальный масштаб — по ширине; полный обзор — по более тесной стороне.
 // Крупнее натуральной величины не увеличиваем.
 export function fitScale(frameWidth: number, canvasWidth: number, frameHeight?: number, canvasHeight?: number): number {
   const byHeight = frameHeight !== undefined && canvasHeight ? frameHeight / canvasHeight : Infinity;
   return Math.min(1, frameWidth / canvasWidth, byHeight);
+}
+
+export function minimumScale(fullFit: number): number {
+  return Math.min(.1, fullFit);
 }
 
 // Высота рамки задаётся в CSS пропорцией холста (не выше 70% окна): она известна ещё до JS,

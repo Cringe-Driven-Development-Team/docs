@@ -6,6 +6,7 @@ import { SITE_BASE } from './site.ts';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
 import { mermaidFence } from './mermaid-fence.ts';
 import { articleLoadingHeadScript } from './theme/article-loading.ts';
+import { readingLayoutHeadScript } from './theme/reading-layout.ts';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 
 // Меню модулей строится из файлов при запуске: новый трек в dev-сервере появится в меню после перезапуска.
@@ -20,9 +21,10 @@ const documentationSidebar = [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },
       ] },
       { text: 'Архитектура', link: '/documentation/architecture/' },
-      { text: 'CSRF: историческая проверка', link: '/documentation/csrf/', collapsed: true, items: [
-        { text: 'Сценарии', link: '/documentation/csrf/scenarios' },
-        { text: 'Проверка и ограничения', link: '/documentation/csrf/checks' },
+      { text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [
+        { text: 'CSRF', link: '/documentation/security/csrf' },
+        { text: 'XSS', link: '/documentation/security/xss' },
+        { text: 'CSP', link: '/documentation/security/csp' },
       ] },
       { text: 'Владельцы сведений', link: '/documentation/project-context' },
     ],
@@ -38,6 +40,7 @@ export default defineConfig({
     // Логотип cellestial.ru (src/assets/logo-mark.svg фронта). VitePress не добавляет base к ссылкам в head.
     head: [
       ['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }],
+      ['script', { id: 'reading-layout' }, readingLayoutHeadScript()],
       ['script', {}, articleLoadingHeadScript()],
     ],
     // Пакет отдаёт .vue как есть: Vite должен собрать его и для SSR.

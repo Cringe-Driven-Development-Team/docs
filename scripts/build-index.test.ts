@@ -98,9 +98,12 @@ test("PAGE_REDIRECTS: old BFF pages to the track, removed bff diagrams to the cu
   expect(PAGE_REDIRECTS).toEqual([
     { file: "architecture/index.html", target: "../documentation/architecture/" },
     { file: "project-context.html", target: "documentation/project-context" },
-    { file: "security/csrf/index.html", target: "../../documentation/csrf/" },
-    { file: "security/csrf/scenarios.html", target: "../../documentation/csrf/scenarios" },
-    { file: "security/csrf/checks.html", target: "../../documentation/csrf/checks" },
+    { file: "security/csrf/index.html", target: "../../documentation/security/csrf" },
+    { file: "security/csrf/scenarios.html", target: "../../documentation/security/csrf" },
+    { file: "security/csrf/checks.html", target: "../../documentation/security/csrf" },
+    { file: "documentation/csrf/index.html", target: "../security/csrf" },
+    { file: "documentation/csrf/scenarios.html", target: "../security/csrf" },
+    { file: "documentation/csrf/checks.html", target: "../security/csrf" },
     { file: "bff/index.html", target: "../modules/2/tracks/bff" },
     { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
     { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
@@ -214,9 +217,12 @@ test('documentation redirects preserve base and hashes', () => {
   const moves = [
     ['architecture/index.html', '../documentation/architecture/', 'documentation/architecture/'],
     ['project-context.html', 'documentation/project-context', 'documentation/project-context'],
-    ['security/csrf/index.html', '../../documentation/csrf/', 'documentation/csrf/'],
-    ['security/csrf/scenarios.html', '../../documentation/csrf/scenarios', 'documentation/csrf/scenarios'],
-    ['security/csrf/checks.html', '../../documentation/csrf/checks', 'documentation/csrf/checks'],
+    ['security/csrf/index.html', '../../documentation/security/csrf', 'documentation/security/csrf'],
+    ['security/csrf/scenarios.html', '../../documentation/security/csrf', 'documentation/security/csrf'],
+    ['security/csrf/checks.html', '../../documentation/security/csrf', 'documentation/security/csrf'],
+    ['documentation/csrf/index.html', '../security/csrf', 'documentation/security/csrf'],
+    ['documentation/csrf/scenarios.html', '../security/csrf', 'documentation/security/csrf'],
+    ['documentation/csrf/checks.html', '../security/csrf', 'documentation/security/csrf'],
   ] as const;
   for (const [file, target, canonical] of moves) {
     expect(PAGE_REDIRECTS).toContainEqual({file, target});

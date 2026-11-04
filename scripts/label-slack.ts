@@ -1,4 +1,4 @@
-// Запас ширины подписям стрелок в HTML-рендере.
+// Постобработка HTML: отступы документа и запас ширины подписям стрелок.
 // CLI пишет подписи ширину текста, измеренную при сборке, без запаса. В браузере зрителя
 // текст меряется иначе (Linux в CI против Chrome на Windows — сотые доли пикселя), подпись
 // переносится на вторую строку, а вырез под подпись в линии остаётся шириной в одну строку:
@@ -36,6 +36,6 @@ export function htmlOutputs(batch: RenderBatch): string[] {
 export async function padHtmlOutputs(batch: RenderBatch): Promise<void> {
   for (const path of htmlOutputs(batch)) {
     const file = Bun.file(path);
-    if (await file.exists()) await Bun.write(path, padLabelWidths(await file.text()));
+    if (await file.exists()) await Bun.write(path, padLabelWidths(await file.text()).replace('</head>', '<style>html,body{margin:0;padding:0}</style></head>'));
   }
 }

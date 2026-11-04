@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 // Run after build, also with SITE_BASE=/branches/readability/ and a matching build.
-// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [loading|mermaid|scroll|pages|plugins|hierarchy|title ...]
+// CHROMIUM_PATH=/opt/google/chrome/chrome bun scripts/check-readability.ts [width|loading|mermaid|zoom|scroll|pages|plugins|hierarchy|title ...]
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { mermaidFiles } from './check-mermaid';
@@ -18,7 +18,7 @@ const optionalFaviconFailures: string[] = [];
 const legacyFaviconUrls = new Set<string>();
 let checkingLegacyDiagram = false;
 const sections = process.argv.slice(2);
-assert(sections.every(section => ['loading', 'mermaid', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
+assert(sections.every(section => ['width', 'loading', 'mermaid', 'zoom', 'scroll', 'pages', 'plugins', 'hierarchy', 'title'].includes(section)));
 const check = (section: string) => sections.length === 0 || sections.includes(section);
 const server = Bun.serve({
   hostname: '127.0.0.1', port: 0,
@@ -34,9 +34,10 @@ const server = Bun.serve({
     return new Response('Not found', { status: 404 });
   },
 });
-async function observe(page: Page): Promise<MermaidError[]> {
+async function observe(page: Page, expectedConsoleError?: string): Promise<MermaidError[]> {
   page.on('console', message => {
     if (message.type() !== 'error') return;
+    if (expectedConsoleError && message.text().includes(expectedConsoleError)) return;
     const detail = `console: ${message.text()} ${message.location().url ?? ''}`;
     if (legacyFaviconUrls.has(message.location().url ?? '') && message.text() === 'Failed to load resource: the server responded with a status of 404 (Not Found)') optionalFaviconFailures.push(detail);
     else failures.push(detail);
@@ -85,6 +86,203 @@ async function observeMermaidErrors(page: Page): Promise<MermaidError[]> {
     }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
   }, prefix);
   return errors;
+}
+
+type WidthSample = {
+  ms: number; visible: boolean; loader: boolean; body: string; page: string; content: string;
+  boxes: Record<string, { left: number; width: number }>;
+};
+
+async function checkReadingWidth(browser: Browser, url: (path: string) => string): Promise<void> {
+  const plain = 'documentation/project-context';
+  const app = readFileSync(join('dist', `${plain}.html`), 'utf8').match(/<script\b[^>]*type="module"[^>]*src="([^"]+)"/);
+  assert(app?.[1], 'Width fixture needs the app module from matching built HTML');
+  const issues: string[] = [];
+  const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  type Case = { name: string; mode: string | null; values?: [string, string]; want?: [string, string];
+    viewport?: number; dark?: boolean; delay?: boolean; blocked?: boolean; reload?: boolean };
+  const run = async (fixture: Case) => {
+    const context = await browser.createBrowserContext();
+    try {
+      const page = await context.newPage();
+      await observe(page, fixture.blocked ? 'reading-width-storage-fixture' : undefined);
+      await page.setViewport({ width: fixture.viewport ?? 2560, height: 1280 });
+      await page.setCacheEnabled(false);
+      await page.evaluateOnNewDocument(({ mode, values, dark, blocked }) => {
+        if (window !== window.top) return;
+        // Seed once so reload checks the values actually retained by the application.
+        if (!sessionStorage.getItem('reading-width-seeded')) {
+          sessionStorage.setItem('reading-width-seeded', 'yes');
+          localStorage.setItem('vitepress-theme-appearance', dark ? 'dark' : 'light');
+          if (mode !== null) localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', mode);
+          if (values) for (const [index, kind] of ['page', 'content'].entries())
+            localStorage.setItem(`vitepress-nolebase-enhanced-readabilities-${kind}-layout-max-width`, values[index]!);
+        }
+        if (blocked) for (const method of ['getItem', 'setItem'] as const) {
+          const original = Storage.prototype[method];
+          Storage.prototype[method] = function(key: string, value?: string) {
+            if (key.startsWith('vitepress-nolebase-enhanced-readabilities-')) throw new DOMException('reading-width-storage-fixture', 'SecurityError');
+            return Reflect.apply(original, this, value === undefined ? [key] : [key, value]);
+          };
+        }
+        const state = window as unknown as { widthSamples: WidthSample[] };
+        state.widthSamples = [];
+        const sample = () => {
+          const article = document.querySelector<HTMLElement>('.VPDoc > .container');
+          if (article) {
+            const boxes: WidthSample['boxes'] = {};
+            for (const [name, selector] of Object.entries({ article: '.VPDoc > .container', text: '.content-container',
+              sidebar: '.VPSidebar', nav: '.VPNavBar .container' })) {
+              const rect = document.querySelector(selector)?.getBoundingClientRect();
+              if (rect) boxes[name] = { left: rect.left, width: rect.width };
+            }
+            const visible = (element: Element) => {
+              const css = getComputedStyle(element);
+              return css.visibility === 'visible' && css.display !== 'none' && css.opacity !== '0';
+            };
+            const loader = document.querySelector('.article-loading');
+            state.widthSamples.push({ ms: performance.now(), visible: visible(article), loader: !!loader && visible(loader),
+              body: document.body.className, page: document.body.style.getPropertyValue('--vp-nolebase-enhanced-readabilities-page-max-width'),
+              content: document.body.style.getPropertyValue('--vp-nolebase-enhanced-readabilities-content-max-width'), boxes });
+          }
+          if (performance.now() < 10000) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }, fixture);
+      let releasedAt = 0;
+      const release = Promise.withResolvers<void>();
+      if (fixture.delay) {
+        await page.setRequestInterception(true);
+        page.on('request', request => { void (async () => {
+          if (request.url() === new URL(app[1]!, url('')).href) await release.promise;
+          await request.continue();
+        })().catch(error => failures.push(`width intercept: ${String(error)}`)); });
+      }
+      const navigate = async (reload = false) => {
+        const navigation = reload ? page.reload({ waitUntil: 'networkidle0' }) : page.goto(url(plain), { waitUntil: 'networkidle0' });
+        if (fixture.delay) {
+          await page.waitForSelector('.VPDoc > .container');
+          await pause(2500);
+          releasedAt = await page.evaluate(() => performance.now());
+          await page.screenshot({ path: join(artifacts, `${label}-width-${fixture.name}-before-app.png`) });
+          release.resolve();
+        }
+        await navigation;
+        await pause(1700);
+      };
+      await navigate();
+      if (fixture.reload) await navigate(true);
+      const report = await page.evaluate(() => ({
+        samples: (window as unknown as { widthSamples: WidthSample[] }).widthSamples,
+        fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime,
+        stored: (() => { try { return localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode'); } catch { return null; } })(),
+        text: document.querySelector('.vp-doc')?.textContent?.trim().length ?? 0,
+        overflow: document.documentElement.scrollWidth > innerWidth + 1,
+        dark: document.documentElement.classList.contains('dark'),
+      }));
+      await Bun.write(join(artifacts, `${label}-width-${fixture.name}.json`), JSON.stringify({ fixture, releasedAt, ...report }, null, 2));
+      const problem = (message: string) => issues.push(`${fixture.name}: ${message}`);
+      if (report.fcp === undefined) problem('no first-contentful-paint');
+      const beforePaint = report.samples.findLastIndex(row => row.ms < (report.fcp ?? 0));
+      const painted = report.samples.slice(Math.max(0, beforePaint));
+      const end = painted.at(-1);
+      if (!end || painted.length < 2) { problem('missing visible frame measurements'); return; }
+      if (painted.some(row => !row.visible || row.loader)) problem('plain text hidden or masked');
+      if (report.text < 100 || report.overflow) problem('text missing or horizontal overflow');
+      if (fixture.delay && painted.filter(row => row.ms < releasedAt).length < 2) problem('no frames before delayed app release');
+      if (fixture.dark !== undefined && report.dark !== fixture.dark) problem('theme fixture not applied');
+      for (const [name, expected] of Object.entries(end.boxes)) {
+        const moved = painted.find(row => Math.abs((row.boxes[name]?.left ?? NaN) - expected.left) > 1 || Math.abs((row.boxes[name]?.width ?? NaN) - expected.width) > 1);
+        if (moved) problem(`${name} moved after first paint: ${JSON.stringify(moved.boxes[name])} → ${JSON.stringify(expected)} at ${Math.round(moved.ms)}ms`);
+      }
+      if (!fixture.blocked && report.stored !== (['1', '3', '4', '5'].includes(fixture.mode ?? '') ? fixture.mode : '1')) problem(`unexpected saved mode ${report.stored}`);
+      if (fixture.want && (end.page !== fixture.want[0] || end.content !== fixture.want[1])) problem(`percent ${end.page}/${end.content}, expected ${fixture.want}`);
+      console.log(`CHECK width ${fixture.name}: ${painted.length} frames, FCP ${Math.round(report.fcp ?? 0)}ms`);
+      await Bun.write(join(artifacts, `${label}-width-failures.json`), JSON.stringify(issues, null, 2));
+      assert.deepEqual(issues, [], 'Reading width must match from first paint through plugin mount');
+
+      if (fixture.name === 'controlsAndNavigation') {
+        await page.hover('.VPNolebaseEnhancedReadabilitiesMenu');
+        await page.locator('label[aria-label="Оригинальная ширина"]').click();
+        await page.waitForFunction(() => !document.body.classList.contains('VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth'));
+        await page.$eval('.VPSidebar a[href$="/documentation/"]', node => (node as HTMLElement).click());
+        await page.waitForFunction(path => location.pathname === path, {}, new URL(url('documentation/')).pathname);
+        await page.goBack({ waitUntil: 'networkidle0' });
+        await page.reload({ waitUntil: 'networkidle0' }); await pause(1700);
+        assert.equal(await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode')), '3');
+        assert.equal(await page.$eval('.content-container', node => node.getBoundingClientRect().width), 688);
+      }
+      if (fixture.name === 'responsiveResize') {
+        for (const width of [390, 2560]) {
+          await page.setViewport({ width, height: 1280 }); await pause(1700);
+          assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+          assert.equal(await page.evaluate(() => localStorage.getItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode')), '5');
+          assert.equal(await page.evaluate(() => document.body.style.getPropertyValue('--vp-nolebase-enhanced-readabilities-page-max-width')), width === 390 ? '100%' : '75%');
+        }
+        await page.reload({ waitUntil: 'networkidle0' }); await pause(1700);
+        const rows = await page.evaluate(() => (window as unknown as { widthSamples: WidthSample[] }).widthSamples);
+        assert(rows.every(row => Math.abs(row.boxes.text!.width - rows.at(-1)!.boxes.text!.width) <= 1), 'responsive reload changed text width');
+      }
+      if (fixture.blocked) {
+        await page.goto(url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'), { waitUntil: 'networkidle0' });
+        await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+        assert(await page.$eval('.VPDoc > .container', node => getComputedStyle(node).visibility === 'visible'));
+        assert(await page.$('.diagram-section:has(#stalewhilerevalidate) svg'));
+        const bootstrap = readFileSync(join('dist', `${plain}.html`), 'utf8').match(/<script id="reading-layout"[^>]*>([\s\S]*?)<\/script>/)?.[1];
+        assert(bootstrap, 'Built HTML must contain the early layout script');
+        await page.evaluate(code => {
+          const descriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
+          Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('blocked getter', 'SecurityError'); } });
+          try {
+            document.body.classList.remove('VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth');
+            (0, eval)(code);
+            if (!document.body.classList.contains('VPNolebaseEnhancedReadabilitiesLayoutSwitchFullWidth')) throw new Error('Blocked getter lost FullWidth fallback');
+          } finally { Object.defineProperty(window, 'localStorage', descriptor); }
+        }, bootstrap);
+      }
+      if (fixture.name === 'revokedStorage') {
+        await page.evaluate(target => {
+          const original = Storage.prototype.getItem;
+          Storage.prototype.getItem = function(key: string) {
+            if (key.startsWith('vitepress-nolebase-enhanced-readabilities-')) throw new DOMException('reading-width-storage-fixture', 'SecurityError');
+            return original.call(this, key);
+          };
+          const link = document.createElement('a'); link.href = target; document.body.append(link); link.click(); link.remove();
+        }, url('modules/2/tracks/offline/caching-strategies#stalewhilerevalidate'));
+        await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'), { timeout: 3000 });
+        assert(await page.$('.diagram-section:has(#stalewhilerevalidate) svg'));
+      }
+    } finally { await context.close(); }
+  };
+  for (const mode of [null, '1', '3', '4', '5']) for (const reload of [false, true]) {
+    await run({ name: `firstPaint-${mode ?? 'default'}-${reload ? 'reload' : 'fresh'}`, mode, reload,
+      ...(mode === '4' || mode === '5' ? { values: ['7500', '6500'] as [string, string], want: ['75%', '65%'] as [string, string] } : {}) });
+  }
+  for (const mode of [null, '5']) for (const dark of [false, true])
+    await run({ name: `delayedApp-${mode ?? 'default'}-${dark ? 'dark' : 'light'}`, mode, dark, delay: true,
+      ...(mode === '5' ? { values: ['7500', '6500'] as [string, string], want: ['75%', '65%'] as [string, string] } : {}) });
+  for (const mode of ['999', 'broken']) await run({ name: `invalidMode-${mode}`, mode });
+  for (const [name, values, want] of [
+    ['clamped', ['-1', '12000'], ['60%', '100%']],
+    ['rounded', ['6551', '6551'], ['66%', '66%']],
+    ['invalid', ['broken', 'broken'], ['100%', '100%']],
+    ['numericSyntax', ['6.551e3', '0xFF'], ['66%', '60%']],
+  ] as const) await run({ name: `invalidStorage-${name}`, mode: '5', values: [...values], want: [...want] });
+  await run({ name: 'blockedStorage', mode: null, blocked: true });
+  await run({ name: 'revokedStorage', mode: '5', values: ['7500', '6500'], want: ['75%', '65%'] });
+  await run({ name: 'controlsAndNavigation', mode: null });
+  await run({ name: 'responsiveResize', mode: '5', values: ['7500', '6500'], want: ['75%', '65%'] });
+  for (const viewport of [390, 1439, 1440]) await run({ name: `responsive-${viewport}`, mode: '5', viewport,
+    values: ['7500', '6500'], want: viewport < 1440 ? ['100%', '100%'] : ['75%', '65%'] });
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage(); await page.setJavaScriptEnabled(false);
+    await page.goto(url(plain), { waitUntil: 'networkidle0' });
+    assert(await page.$eval('.vp-doc', node => getComputedStyle(node).visibility === 'visible' && (node.textContent?.length ?? 0) > 100));
+  } finally { await context.close(); }
+  await Bun.write(join(artifacts, `${label}-width-failures.json`), JSON.stringify(issues, null, 2));
+  assert.deepEqual(issues, [], 'Reading width must match from first paint through plugin mount');
+  console.log('PASS width: first paint, hard reload, delayed app, storage, controls, resize and no JS');
 }
 
 type LoadingSample = { ms: number; url: string; visible: boolean; loader: boolean; pending: boolean; y: number; top: number | null; height: number; frame: number; readyFrames: number; targetReady: boolean; fontsReady: boolean };
@@ -412,6 +610,12 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     return getComputedStyle(node).transform;
   });
   const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+  const scale = () => diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
+  const dimensions = await frame.evaluate(node => {
+    const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!;
+    return { width: node.clientWidth, height: node.clientHeight, canvasWidth: canvas.offsetWidth, canvasHeight: canvas.offsetHeight };
+  });
+  assert(Math.abs(await scale() - Math.min(1, dimensions.width / dimensions.canvasWidth)) < .001, 'Opening preserves the readable width-based view');
   const point = async () => {
     await frame.evaluate(node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -446,6 +650,32 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   assert(Math.abs(await page.evaluate(() => scrollY) - keyScroll) <= 1, 'Arrow pan does not scroll the page');
   await page.keyboard.press('Tab');
   assert(await frame.evaluate(node => document.activeElement !== node), 'Tab leaves the canvas');
+  await click('Вписать');
+  const fit = await scale();
+  const fullFit = Math.min(1, dimensions.width / dimensions.canvasWidth, dimensions.height / dimensions.canvasHeight);
+  assert(Math.abs(fit - fullFit) < .001, 'Fit accounts for both frame width and capped height');
+  assert(await frame.evaluate(node => {
+    const box = node.getBoundingClientRect(), canvas = node.querySelector('.diagram__canvas')!.getBoundingClientRect();
+    return canvas.left >= box.left - 1 && canvas.top >= box.top - 1 && canvas.right <= box.right + 1 && canvas.bottom <= box.bottom + 1;
+  }), 'Fit shows all four canvas edges');
+  await page.screenshot({ path: join(artifacts, `${label}-${await diagram.evaluate(node => node.getAttribute('data-diagram-kind'))}-${page.viewport()!.width}-fit.png`) });
+  await click('Уменьшить');
+  assert(await scale() < fit, 'Minus zooms below the full overview');
+  await click('Вписать');
+  await point();
+  const beforeOut = await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale, dpr: devicePixelRatio }));
+  await page.keyboard.down('Control');
+  await page.mouse.wheel({ deltaY: 100 });
+  await settle();
+  await page.keyboard.up('Control');
+  assert(await scale() < fit, 'Ctrl+wheel zooms below fit');
+  assert.deepEqual(await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale, dpr: devicePixelRatio })), beforeOut, 'Zoom out preserves browser scale and page scroll');
+  await diagram.$eval('button[aria-label="Уменьшить"]', node => { for (let i = 0; i < 30; i++) (node as HTMLElement).click(); });
+  await settle();
+  const minimum = Math.min(.1, fullFit);
+  assert(Math.abs(await scale() - minimum) < .001, 'Manual zoom reaches 10% or a smaller full fit');
+  await click('Увеличить');
+  assert(await scale() > minimum, 'Plus zooms back from the manual minimum');
   await click('Вписать');
   for (const zoomed of [false, true]) {
     if (zoomed) await click('Увеличить');
@@ -487,7 +717,7 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
   await click('Уменьшить');
   assert.notEqual(await transform(), enlarged, 'Zoom out changes the diagram');
   await click('Вписать');
-  assert.equal(await transform(), initial, 'Fit restores the initial view');
+  assert.equal(await transform(), initial, 'Fit restores the full overview');
   for (const exit of ['button', 'Escape', 'fallback']) {
     if (exit === 'fallback') await diagram.evaluate(node => {
       Object.defineProperty(node, 'requestFullscreen', { configurable: true, value: () => Promise.reject(new Error('test fallback')) });
@@ -518,9 +748,69 @@ async function checkDiagramFrameInteraction(page: Page, selector: string): Promi
     await settle();
     await wheelZoom();
     await click('Вписать');
+    const afterExitFit = await scale();
+    await click('Уменьшить');
+    assert(await scale() < afterExitFit, 'Zoom out stays available after leaving fullscreen');
+    await click('Вписать');
     if (exit === 'fallback') await diagram.evaluate(node => { Reflect.deleteProperty(node, 'requestFullscreen'); });
   }
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Diagram frame has no page overflow');
+}
+
+async function checkHugeDiagramMinimum(browser: Browser, url: (path: string) => string): Promise<void> {
+  const context = await browser.createBrowserContext();
+  try {
+    const page = await context.newPage();
+    await observe(page);
+    await page.setViewport({ width: 1440, height: 1000 });
+    await page.goto(url('modules/2/tracks/offline/caching-strategies'), { waitUntil: 'networkidle0' });
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-article-loading'));
+    const diagram = await page.waitForSelector('figure[data-diagram-kind="mermaid"]');
+    assert(diagram);
+    await diagram.waitForSelector('svg');
+    await checkDiagramFrameInteraction(page, 'figure[data-diagram-kind="mermaid"]');
+    await diagram.evaluate(node => {
+      const svg = node.querySelector('svg')!;
+      svg.setAttribute('viewBox', '0 0 1000 10000');
+      svg.parentElement!.dispatchEvent(new CustomEvent('vitepress-mermaid:render-complete', { bubbles: true, detail: { success: true, id: 'huge-minimum-fixture' } }));
+    });
+    await page.waitForFunction(node => node.querySelector<HTMLElement>('.diagram__canvas')!.offsetHeight === 10000, {}, diagram);
+    const state = () => diagram.$eval('.diagram__canvas', node => {
+      const matrix = new DOMMatrix(getComputedStyle(node).transform);
+      return { scale: matrix.a, panX: matrix.e / matrix.a, panY: matrix.f / matrix.a };
+    });
+    const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+    const click = async (name: string) => { await diagram.$eval(`button[aria-label="${name}"]`, node => (node as HTMLElement).click()); await settle(); };
+    await click('Вписать');
+    assert(Math.abs((await state()).scale - .07) < .0001, 'Huge full overview initially uses 700/10000');
+    await diagram.$eval('.diagram__frame', node => (node as HTMLElement).focus({ preventScroll: true }));
+    await page.keyboard.press('ArrowDown');
+    await settle();
+    const beforeShrink = await state();
+    await page.setViewport({ width: 1440, height: 600 });
+    await settle();
+    assert.deepEqual(await state(), beforeShrink, 'Height shrink preserves admissible scale and pan');
+    await diagram.$eval('button[aria-label="Уменьшить"]', node => { for (let i = 0; i < 30; i++) (node as HTMLElement).click(); });
+    await settle();
+    const afterShrink = await state();
+    assert(Math.abs(afterShrink.scale - .042) < .0001, 'Height shrink updates manual minimum to 420/10000');
+    await page.setViewport({ width: 1440, height: 1000 });
+    await settle();
+    const afterGrowth = await state();
+    assert(Math.abs(afterGrowth.scale - .07) < .0001, 'Height growth clamps only a now-invalid scale');
+    assert(Math.abs(afterGrowth.panX - afterShrink.panX) < .1 && Math.abs(afterGrowth.panY - afterShrink.panY) < .1, 'Minimum correction preserves the existing pan');
+    await click('Увеличить');
+    const manual = await state();
+    await page.setViewport({ width: 1440, height: 600 });
+    await settle();
+    assert.deepEqual(await state(), manual, 'Another height change preserves the reader view');
+    await click('Вписать');
+    assert(await diagram.$eval('.diagram__frame', node => {
+      const frame = node.getBoundingClientRect(), canvas = node.querySelector('.diagram__canvas')!.getBoundingClientRect();
+      return canvas.left >= frame.left - 1 && canvas.top >= frame.top - 1 && canvas.right <= frame.right + 1 && canvas.bottom <= frame.bottom + 1;
+    }), 'Huge canvas remains fully accessible after height changes');
+    console.log('PASS huge diagram height-only: minimum updates below 10%, reader scale/pan preserved');
+  } finally { await context.close(); }
 }
 
 async function checkMermaidInteraction(page: Page): Promise<void> {
@@ -542,12 +832,24 @@ async function checkMermaidInteraction(page: Page): Promise<void> {
   await checkDiagramFrameInteraction(page, selector);
   const viewport = page.viewport()!;
   const canvasTransform = () => diagram.$eval('.diagram__canvas', node => getComputedStyle(node).transform);
+  await diagram.$eval('button[aria-label="Уменьшить"]', node => (node as HTMLElement).click());
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 350)));
+  const manualView = await canvasTransform();
+  const previousSvg = await diagram.$('svg');
+  await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+  await page.waitForFunction((node, old) => !!node.querySelector('svg') && node.querySelector('svg') !== old, {}, diagram, previousSvg);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await canvasTransform(), manualView, 'Theme rerender preserves the manually reduced view');
   const beforeHeight = await canvasTransform();
   await page.setViewport({ ...viewport, height: viewport.height - 20 });
   await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 100)));
   assert.equal(await canvasTransform(), beforeHeight, 'Height-only resize preserves the view');
   await page.setViewport(viewport);
-
+  const changedSvg = await diagram.$('svg');
+  await page.$eval('.VPSwitchAppearance', node => (node as HTMLElement).click());
+  await page.waitForFunction((node, old) => !!node.querySelector('svg') && node.querySelector('svg') !== old, {}, diagram, changedSvg);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await canvasTransform(), manualView, 'Restoring the theme keeps the manually reduced view');
 }
 
 async function checkMermaidTouch(page: Page, diagram: import('puppeteer').ElementHandle<Element>): Promise<void> {
@@ -563,12 +865,23 @@ async function checkMermaidTouch(page: Page, diagram: import('puppeteer').Elemen
     assert(box);
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
     const beforePinch = await canvasTransform();
+    const startingScale = await diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
     const pageState = await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale }));
     await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 0, x: x - 20, y }, { id: 1, x: x + 20, y }] });
     for (const distance of [24, 28, 32, 36, 40]) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 0, x: x - distance, y }, { id: 1, x: x + distance, y }] });
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     assert.notEqual(await canvasTransform(), beforePinch, 'Two-finger pinch zooms the diagram');
+    const enlargedScale = await diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 0, x: x - 60, y }, { id: 1, x: x + 60, y }] });
+    for (const distance of [48, 36, 24, 12, 6]) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 0, x: x - distance, y }, { id: 1, x: x + distance, y }] });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const reducedScale = await diagram.$eval('.diagram__canvas', node => new DOMMatrix(getComputedStyle(node).transform).a);
+    assert(reducedScale < enlargedScale, 'Pinch inward reduces the diagram');
+    assert(reducedScale < startingScale, 'Pinch inward zooms below the opening scale');
+    const minimum = await diagram.$eval('.diagram__frame', node => { const canvas = node.querySelector<HTMLElement>('.diagram__canvas')!; return Math.min(.1, node.clientWidth / canvas.offsetWidth, node.clientHeight / canvas.offsetHeight); });
+    assert(reducedScale >= minimum - .001, 'Pinch respects the common manual minimum');
     assert.deepEqual(await page.evaluate(() => ({ y: scrollY, scale: visualViewport?.scale })), pageState, 'Pinch preserves page scroll and browser scale');
     await page.$eval('.vp-doc h1', node => node.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -1117,12 +1430,11 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
         assert.equal(await page.$('.mermaid .error-icon, .mermaid .error-text'), null, file);
         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${file} ${width}: overflow`);
         count += expected;
-        if (/auth-scenarios|offline\/deployment|documentation\/csrf\/scenarios/.test(path)) {
+        if (/auth-scenarios|offline\/deployment|documentation\/security\/(csrf|xss)/.test(path)) {
           await page.screenshot({ path: join(artifacts, `${label}-${path.replaceAll('/', '-')}-${width}-${dark ? 'dark' : 'light'}.png`) });
         }
       }
-      assert.equal(count, 53);
-      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all 53 source Mermaid blocks rendered, no errors/overflow`);
+      console.log(`PASS ${width} ${dark ? 'dark' : 'light'}: all ${count} source Mermaid blocks rendered, no errors/overflow`);
       await context.close();
     }
   }
@@ -1244,10 +1556,10 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   await observe(page);
-  const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/csrf/',
-    'documentation/csrf/scenarios', 'documentation/csrf/checks', 'documentation/project-context'];
-  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', routes[2], routes[3], routes[4], routes[5], routes[6]].map(path => `${SITE_BASE}${path}`);
-  const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/csrf/"])`;
+  const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
+    'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
+  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
+  const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
   const menu = '.VPLocalNav button.menu';
@@ -1267,8 +1579,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     if (mobile) await openMenu();
     await page.locator(sidebarLink(path)).click();
     await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}${path}`);
-    const headings: Record<string, string> = { 'documentation/csrf/': 'csrf-как-устроено', 'documentation/csrf/scenarios': 'csrf-сценарии',
-      'documentation/csrf/checks': 'csrf-проверка-и-ограничения' };
+    const headings: Record<string, string> = { 'documentation/security/': 'безопасность', 'documentation/security/csrf': 'csrf',
+      'documentation/security/xss': 'xss', 'documentation/security/csp': 'csp' };
     await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
     if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
     await tree();
@@ -1281,9 +1593,9 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       const response = await page.goto(url(route), { waitUntil: 'networkidle0' });
       assert(response?.ok(), `${route}: canonical page must exist`);
       await tree();
-      await expanded(route.startsWith('documentation/csrf/'));
+      await expanded(route.startsWith('documentation/security/'));
       assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
-      if (route !== 'documentation/architecture/') assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
+      if (!['documentation/architecture/', 'documentation/security/csp'].includes(route)) assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
     }
     await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
     if (mobile) await openMenu();
@@ -1293,15 +1605,18 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.keyboard.press('Space'); await expanded(false);
     await page.keyboard.press('Enter'); await expanded(true);
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
-    await click('documentation/csrf/', mobile);
+    await click('documentation/security/', mobile);
     await expanded(true);
-    await click('documentation/csrf/scenarios', mobile);
+    await click('documentation/security/csrf', mobile);
     await page.reload({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
-    await click('documentation/csrf/checks', mobile); await expanded(true);
+    await click('documentation/security/xss', mobile); await expanded(true);
+    await click('documentation/security/csp', mobile); await expanded(true);
+    assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /TODO/);
+    assert.equal(await page.$('.VPDocOutlineItem a'), null, 'CSP TODO has no sections');
     await page.goBack({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
-    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/csrf/scenarios`);
-    assert.equal(await page.$eval(sidebarLink('documentation/csrf/scenarios'), el => el.getAttribute('aria-current')), 'page');
+    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/security/xss`);
+    assert.equal(await page.$eval(sidebarLink('documentation/security/xss'), el => el.getAttribute('aria-current')), 'page');
     if (mobile) {
       await openMenu(); await page.keyboard.press('Escape');
       await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
@@ -1326,9 +1641,6 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const moves = [
     ['architecture/', 'documentation/architecture/', 'архитектура-mvp'],
     ['project-context', 'documentation/project-context', 'владельцы-командных-пакетов'],
-    ['security/csrf/', 'documentation/csrf/', 'три-cookie'],
-    ['security/csrf/scenarios', 'documentation/csrf/scenarios', 'первыи-заход-в-чистом-браузере'],
-    ['security/csrf/checks', 'documentation/csrf/checks', 'известные-ограничения'],
   ];
   for (const [old, canonical, heading] of moves) {
     await page.goto(url(old!), { waitUntil: 'networkidle0' });
@@ -1338,6 +1650,15 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       assert.equal(new URL(page.url()).pathname, `${SITE_BASE}${canonical}`);
       assert.equal(new URL(page.url()).hash, `#${encodeURI(heading!)}`);
       await visibleHash();
+    }
+  }
+  for (const old of ['security/csrf/', 'security/csrf/scenarios', 'security/csrf/checks',
+    'documentation/csrf/', 'documentation/csrf/scenarios', 'documentation/csrf/checks']) {
+    for (const hash of ['', '#три-cookie', '#%D1%82%D1%80%D0%B8-cookie']) {
+      await page.goto(url(old + hash), { waitUntil: 'networkidle0' });
+      assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/security/csrf`);
+      assert.equal(new URL(page.url()).hash, new URL(old + hash, url('')).hash);
+      assert.equal(await page.$eval('.vp-doc h1', el => el.id), 'csrf');
     }
   }
   for (const [source, target] of [['#contract', 'documentation/architecture/#contract'],
@@ -1362,7 +1683,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   assert(await page.$(`.diagram__canvas iframe[src="${SITE_BASE}contract.html"]`));
   assert(await page.$(`.diagram__links a[href="${SITE_BASE}contract.html"]`));
   for (const file of ['contract.html', 'contract.png']) assert.equal((await fetch(url(file))).status, 200);
-  console.log('PASS five old routes with raw/encoded hashes, diagram landings and root HTML/PNG');
+  console.log('PASS architecture/context anchors, six removed CSRF routes, diagram landings and root HTML/PNG');
   await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
   await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
   await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('.vp-doc a[href$="openwiki/"]')]);
@@ -1373,10 +1694,12 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
   await page.click('button[aria-label="Найти в документации"]');
   await page.waitForSelector('#localsearch-input', { visible: true });
-  await page.type('#localsearch-input', 'CSRF: сценарии');
-  const result = `.VPLocalSearchBox a.result[href^="${SITE_BASE}documentation/csrf/scenarios"]`;
-  await page.waitForSelector(result, { visible: true }); await page.click(result);
-  await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/csrf/scenarios`);
+  await page.type('#localsearch-input', 'CSRF');
+  const result = `.VPLocalSearchBox a.result[href^="${SITE_BASE}documentation/security/csrf"]`;
+  await page.waitForSelector(result, { visible: true });
+  assert.equal(await page.$(`.VPLocalSearchBox a.result[href*="documentation/csrf/"]`), null, 'Search excludes deleted pages');
+  await page.click(result);
+  await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/security/csrf`);
   await expanded(true); await tree();
   console.log('PASS static OpenWiki navigation and canonical local search');
   await context.close();
@@ -1459,7 +1782,7 @@ async function checkTitle(browser: Browser, url: (path: string) => string): Prom
         path: join(artifacts, `${label}-title-${route.replaceAll('/', '-') || 'home'}-${viewport}-${dark ? 'dark' : 'light'}-${mode ?? 'fresh'}.png`),
       });
     };
-    for (const route of ['', 'documentation/', 'documentation/csrf/scenarios', 'modules/2/tracks/bff']) {
+    for (const route of ['', 'documentation/', 'documentation/security/csrf', 'modules/2/tracks/bff']) {
       for (const viewport of [320, 390, 768, 960, 1280, 1440]) {
         await page.setViewport({ width: viewport, height: 1000 });
         await page.goto(url(route), { waitUntil: 'networkidle0' });
@@ -1498,7 +1821,9 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
     headless: true, args: ['--no-sandbox'],
   });
+  if (check('width')) await checkReadingWidth(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('loading')) await checkArticleLoading(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
+  if (check('mermaid') || sections.includes('zoom')) await checkHugeDiagramMinimum(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('mermaid')) await checkMermaid(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('title')) await checkTitle(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
   if (check('hierarchy')) await checkHierarchy(browser, path => `${server.url.origin}${SITE_BASE}${path}`);
@@ -1565,6 +1890,28 @@ try {
   assert(diagramDocument);
   await diagramDocument.waitForSelector('svg');
   assert(await diagramDocument.$$eval('svg', elements => elements.reduce((count, element) => count + element.querySelectorAll('*').length, 0) > 10));
+  const eraserDocument = await diagramDocument.evaluate(async () => {
+    await document.fonts.ready;
+    const root = document.getElementById('eraser-scene')!.getBoundingClientRect();
+    return { viewport: [innerWidth, innerHeight], scroll: [document.documentElement.scrollWidth, document.documentElement.scrollHeight],
+      margin: getComputedStyle(document.body).margin, padding: getComputedStyle(document.body).padding,
+      root: { left: root.left, top: root.top, right: root.right, bottom: root.bottom } };
+  });
+  assert.equal(eraserDocument.margin, '0px', 'Eraser iframe has no body margins');
+  assert.equal(eraserDocument.padding, '0px');
+  assert(eraserDocument.scroll.every((value, i) => value <= eraserDocument.viewport[i]!), 'Eraser document has no internal overflow');
+  assert(eraserDocument.root.left >= 0 && eraserDocument.root.top >= 0 && eraserDocument.root.right <= eraserDocument.viewport[0]! && eraserDocument.root.bottom <= eraserDocument.viewport[1]!, 'All Eraser root edges fit inside its iframe');
+  const standalone = await context.newPage();
+  try {
+    await observe(standalone);
+    await standalone.setViewport({ width: 390, height: 300 });
+    const html = await page.evaluate(async href => (await fetch(href)).text(), diagramDocument.url());
+    await standalone.setContent(html, { waitUntil: 'load' });
+    await standalone.evaluate(async () => { await document.fonts.ready; window.scrollTo(100, 100); });
+    await standalone.waitForFunction(() => scrollX > 0 && scrollY > 0);
+    assert(await standalone.evaluate(() => document.documentElement.scrollWidth > innerWidth && document.documentElement.scrollHeight > innerHeight), 'Standalone HTML remains scrollable in a small window');
+  } finally { await standalone.close(); }
+  console.log('PASS Eraser document: no iframe overflow, all root edges, standalone HTML scrolls');
   await checkDiagramFrameInteraction(page, '.diagram');
   const scaleBefore = await page.$eval('.diagram__canvas', element => getComputedStyle(element).transform);
   await page.click('.diagram button[aria-label="Увеличить"]');

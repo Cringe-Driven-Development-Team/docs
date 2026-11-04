@@ -1,9 +1,23 @@
 import { expect, test } from "bun:test";
+import * as diagramScale from "../site/.vitepress/theme/diagram-scale.ts";
 import { fitOffset, fitScale, frameStyle, MAX_SCALE, STEP, stepScale, widthChanged } from "../site/.vitepress/theme/diagram-scale.ts";
 
 test("fitScale: fits the canvas into the frame width, never above 1", () => {
   expect(fitScale(800, 1636)).toBeCloseTo(0.489, 3);
   expect(fitScale(2000, 1636)).toBe(1);
+});
+
+test("readable start, full fit and manual minimum are independent", () => {
+  const minimumScale = diagramScale.minimumScale;
+  expect(minimumScale).toBeFunction();
+  expect(fitScale(1145, 1055)).toBe(1);
+  const full = fitScale(1145, 1055, 910, 1805);
+  expect(full).toBeCloseTo(910 / 1805, 8);
+  expect(minimumScale(full)).toBe(.1);
+  expect(stepScale(full, -1, minimumScale(full))).toBeLessThan(full);
+  expect(minimumScale(.04)).toBe(.04);
+  expect(stepScale(.11, -1, minimumScale(full))).toBe(.1);
+  expect(stepScale(4, 1, minimumScale(full))).toBe(4);
 });
 
 test("fitScale: with the frame height (fullscreen) the whole canvas fits by the tighter side", () => {
