@@ -8,6 +8,7 @@ import { preparePlatformWikis, readPreparedPlatformWikis } from "./openwiki-sour
 import { join, resolve } from "node:path";
 import { ROOT_NAMES } from "../site/.vitepress/diagram-names.ts";
 import { INDEX_FILE, renderRedirect, writePageRedirects } from "./build-index.ts";
+import { addNoindex } from "./noindex.ts";
 
 const MAIN_BRANCH = "main";
 const BRANCH_STEP_TIMEOUT_MS = 5 * 60 * 1000;
@@ -271,6 +272,7 @@ async function main(argv: string[]): Promise<number> {
   // Список превью — по ссылке из README (раздел «Превью веток»); старый индекс — только переадресация.
   await Bun.write(INDEX_FILE, renderRedirect(ROOT_NAMES));
   await writePageRedirects();
+  await addNoindex("dist");
   if (process.env.GITHUB_STEP_SUMMARY) {
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderSummary(entries));
   }

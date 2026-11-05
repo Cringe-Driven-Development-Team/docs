@@ -40,6 +40,7 @@ export default defineConfig({
     cleanUrls: true,
     // Логотип cellestial.ru (src/assets/logo-mark.svg фронта). VitePress не добавляет base к ссылкам в head.
     head: [
+      ['meta', { name: 'robots', content: 'noindex' }],
       ['link', { rel: 'icon', type: 'image/svg+xml', href: `${SITE_BASE}favicon.svg` }],
       ['script', { id: 'reading-layout' }, readingLayoutHeadScript()],
       ['script', {}, articleLoadingHeadScript()],
