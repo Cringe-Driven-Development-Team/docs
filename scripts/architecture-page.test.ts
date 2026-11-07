@@ -23,7 +23,8 @@ test("documentation sidebar is a linked collapsed tree", () => {
   const sidebar = config.themeConfig!.sidebar as Record<string, unknown>;
   expect(Object.keys(sidebar)).toEqual(['/documentation/', '/modules/']);
   expect(sidebar['/documentation/']).toEqual([{text: 'Документация', items: [
-    {text: 'Что работает сейчас', link: '/documentation/'},
+    {text: 'Обзор продукта', link: '/documentation/'},
+    {text: 'Что работает сейчас', link: '/documentation/current-state'},
     {text: 'BFF: проверенная часть', link: '/documentation/bff'},
     {text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
       {text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration'},
@@ -77,7 +78,7 @@ test("config: three entrances keep architecture in documentation, no branch prev
   const home = readFileSync("site/index.md", "utf8");
   expect(home).not.toContain("/diagrams/");
   expect(home).toContain("/documentation/");
-  const documentation = readFileSync("site/documentation/index.md", "utf8");
+  const documentation = readFileSync("site/documentation/current-state.md", "utf8");
   for (const link of ["/documentation/bff", "/documentation/architecture/", "/documentation/security/", "/documentation/project-context", "/modules/"]) {
     expect(documentation).toContain(`](${link})`);
   }
@@ -116,10 +117,10 @@ test("page has no links to removed diagram folders", () => {
 
 test("current behavior points to documentation", () => {
   const modules = readFileSync("site/modules/index.md", "utf8");
-  expect(modules).toContain("](/documentation/)");
+  expect(modules).toContain("](/documentation/current-state)");
   expect(modules).not.toContain("](/documentation/csrf/)");
   const context = readFileSync("site/documentation/project-context.md", "utf8");
-  expect(context).toContain("](/documentation/)");
+  expect(context).toContain("](/documentation/current-state)");
   expect(context).toContain('](/documentation/architecture/#contract)');
   expect(readFileSync(PAGE, 'utf8')).toContain('{#contract}');
 });

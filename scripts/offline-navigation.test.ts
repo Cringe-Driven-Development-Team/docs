@@ -16,10 +16,10 @@ test("offline navigation: один родитель и две дочерние �
 });
 
 test("offline navigation: вход и взаимные ссылки имеют страницы назначения", () => {
-  expect(read("site/documentation/index.md")).toContain(`](${overview})`);
+  expect(read("site/documentation/current-state.md")).toContain(`](${overview})`);
   expect(read("site/documentation/offline/index.md")).toContain(`](${build})`);
   expect(read("site/documentation/offline/build-and-registration.md")).toContain(`](${overview})`);
-  for (const file of ["site/documentation/index.md", "site/documentation/offline/index.md", "site/documentation/offline/build-and-registration.md"]) expect(read(file)).toContain(`](${infrastructure})`);
+  for (const file of ["site/documentation/current-state.md", "site/documentation/offline/index.md", "site/documentation/offline/build-and-registration.md"]) expect(read(file)).toContain(`](${infrastructure})`);
   for (const file of ["site/documentation/offline/index.md", "site/documentation/offline/build-and-registration.md", "site/documentation/offline/infrastructure.md"]) expect(existsSync(file)).toBe(true);
   const infra = read("site/documentation/offline/infrastructure.md");
   expect(infra).toContain(`](${overview})`);

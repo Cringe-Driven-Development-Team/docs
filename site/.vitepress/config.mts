@@ -15,7 +15,8 @@ const documentationSidebar = [
   {
     text: 'Документация',
     items: [
-      { text: 'Что работает сейчас', link: '/documentation/' },
+      { text: 'Обзор продукта', link: '/documentation/' },
+      { text: 'Что работает сейчас', link: '/documentation/current-state' },
       { text: 'BFF: проверенная часть', link: '/documentation/bff' },
       { text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },

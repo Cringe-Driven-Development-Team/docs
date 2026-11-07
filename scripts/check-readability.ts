@@ -1724,9 +1724,9 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   await observe(page);
-  const routes = ['documentation/', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
+  const routes = ['documentation/', 'documentation/current-state', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
     'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
-  const links = [routes[0], routes[1], 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
+  const links = [...routes.slice(0, 3), 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', ...routes.slice(3)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
@@ -1806,6 +1806,26 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       return rect.top >= header - 1 && rect.top < innerHeight && rect.bottom > header;
     }), `Hidden target: ${page.url()}`);
   };
+  await page.goto(url('documentation/current-state'), { waitUntil: 'networkidle0' });
+  await page.locator(`.VPNavBar a[href="${SITE_BASE}documentation/"]`).click();
+  await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Обзор продукта'));
+  await page.locator(sidebarLink('documentation/current-state')).click();
+  await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/current-state`);
+  assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /31\.10\.2026/);
+  for (const hash of ['документация-работающего-продукта', 'что-подтверждено-на-проде', 'офлаин-режим',
+    'архитектура-безопасность-и-эксплуатация', 'где-находятся-планы-и-openwiki']) {
+    await page.goto(url(`documentation/#${hash}`), { waitUntil: 'networkidle0' });
+    await visibleHash();
+    const target = `documentation/current-state#${hash}`;
+    await page.locator(`.vp-doc a[href="${SITE_BASE}${target}"]`).click();
+    await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/current-state`);
+    await visibleHash();
+    await page.reload({ waitUntil: 'networkidle0' });
+    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/current-state`);
+    assert.equal(decodeURIComponent(new URL(page.url()).hash), `#${hash}`);
+    await visibleHash();
+  }
+  console.log('PASS product overview entry, current evidence, old documentation fragments and reload');
   const moves = [
     ['architecture/', 'documentation/architecture/', 'архитектура-mvp'],
     ['project-context', 'documentation/project-context', 'владельцы-командных-пакетов'],
