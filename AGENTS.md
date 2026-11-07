@@ -84,8 +84,9 @@
 - Правка скилла — только в `.agents/skills/<имя>/`, затем `bun run skills:sync`; `bun run test` падает, если
   копия разошлась.
 - Где держать скилл — в репозитории, в маркетплейсе `agent-plugins` или у себя: `docs/skills-placement.md`.
-- `cellestial-product` — подготовиться к обсуждению продукта и новых фич: начать с обзора,
-  затем читать источники выбранного сценария по необходимости.
+- `cellestial-product` из плагина [`cdd-product@cdd`](https://github.com/Cringe-Driven-Development-Team/agent-plugins/tree/main/plugins/cdd-product)
+  — подготовиться к обсуждению продукта и новых фич: начать с обзора,
+  затем читать источники выбранного сценария по необходимости. Локальную копию здесь не держим.
 - `eraser-diagrams` — править схемы в `diagrams/`: формат, цвета, раскладка, цикл validate → check → render.
 - `docs-modules` — править данные модулей и треков в `site/modules/` (подзадачи, задачи, подтреки, связи,
   ошибки `module-graph check`).
