@@ -286,6 +286,10 @@ bun run typecheck  # строгая проверка типов скриптов
 bun run skills:sync # копия скиллов .claude/skills из .agents/skills; правь скиллы только в .agents/skills
 ```
 
+Для обсуждения продукта установите плагин [`cdd-product@cdd`](https://github.com/Cringe-Driven-Development-Team/agent-plugins/tree/main/plugins/cdd-product)
+из маркетплейса команды. Он содержит скилл `cellestial-product` и работает из любого
+репозитория; локальные копии этого скилла в docs больше не хранятся.
+
 #### Работа в Codex
 
 Запускай новую сессию из корня клона `docs` или его git worktree: так Codex обнаружит
