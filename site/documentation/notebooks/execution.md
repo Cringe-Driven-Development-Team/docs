@@ -148,6 +148,16 @@ Durable FIFO backend вмещает 1000 незавершённых команд
 
 `runtime.updates({sessionId,after,executionIds})` принимает до 100 явных IDs. BFF параллельно читает session, queue и одну страницу events, затем по одному snapshot для объединения явных IDs и `body.execution_id` событий. Сбой любого чтения отклоняет ответ целиком. Возвращаются `session`, `runtime_queue`, `events`, `executions`, `next_cursor`, `has_more`. [Aggregation](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/bff/src/router/runtime.ts#L53).
 
+Страница Go events содержит до 100 событий с целевым бюджетом 16 MiB body; первое большое событие возвращается целиком. Пустая страница сохраняет входной cursor. Snapshot execution — накопленное состояние, а не очередной фрагмент для безусловного добавления к output. [Пагинация событий](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtimesession/adapters/postgres/events.go#L101).
+
+| Публичный объект | Существенные поля |
+| --- | --- |
+| Session | `id, notebook_id, language, state, stage, reason, generation, created_at, last_activity_at, public_seq, journal_incomplete, cleanup_error` |
+| Execution | `execution_id, session_id, cell_id, source_hash, timeout_seconds, attempt, state, outputs, execution_count, output_truncated, projection` |
+| Event | `seq, kind, body`; для code — `body.execution_id`, для inspection — отдельный `inspection_id` |
+
+Адреса агента, токены, cloud IDs и внутренние Code/SourceVersion/Dispatch в эти ответы не входят. [HTTP converters](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtimesession/delivery/http/runtime.go#L59).
+
 Браузер делает одну последовательную цепочку: обычно новый шаг через 2000 мс после предыдущего, при has_more и следующей порции IDs — сразу. Cursor продвигается после применения данных. При ошибке экран, cursor и offset остаются, появляется linkLost и повторяется тот же шаг. Это не признак отсутствия окружения. Full content ради каждого output не загружается. [Polling](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/runtime.ts#L214).
 
 При reload начальные индикаторы берутся из queue, cursor начинается с нуля, watermark — из `active_session.public_seq`. Старые terminal/applied события до watermark не должны подменять сохранённые outputs; более новые могут обновить экран. После terminal session ещё дочитываются pending-проекции; недочитанный исход становится unknown. [Replay](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/runtime.ts#L126), [apply](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/runtime.ts#L322).
