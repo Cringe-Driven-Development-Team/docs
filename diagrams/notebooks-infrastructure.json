@@ -1,0 +1,287 @@
+{
+  "entities": [
+    {
+      "tag": "Textbox",
+      "id": "evidence",
+      "text": "Декларация и код на 08.11.2026 · сеть на проде не проверена",
+      "x": 0,
+      "y": 0,
+      "width": 1000
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "icon": "monitor",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ],
+      "x": 0,
+      "y": 160
+    },
+    {
+      "tag": "Group",
+      "id": "gateway",
+      "title": {
+        "text": "Gateway VPS"
+      },
+      "x": 300,
+      "y": 80,
+      "width": 360,
+      "height": 660,
+      "color": "blue",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "caddy",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Caddy"
+        }
+      ],
+      "x": 420,
+      "y": 160,
+      "containerId": "gateway"
+    },
+    {
+      "tag": "Icon",
+      "id": "bff",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "BFF"
+        }
+      ],
+      "x": 420,
+      "y": 540,
+      "containerId": "gateway"
+    },
+    {
+      "tag": "Group",
+      "id": "backend",
+      "title": {
+        "text": "Backend VPS"
+      },
+      "x": 960,
+      "y": 80,
+      "width": 520,
+      "height": 900,
+      "color": "blue",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "go-api",
+      "icon": "go",
+      "texts": [
+        {
+          "text": "Go API"
+        }
+      ],
+      "x": 1060,
+      "y": 540,
+      "containerId": "backend"
+    },
+    {
+      "tag": "Icon",
+      "id": "postgres",
+      "icon": "database",
+      "texts": [
+        {
+          "text": "PostgreSQL"
+        }
+      ],
+      "x": 1060,
+      "y": 160,
+      "containerId": "backend"
+    },
+    {
+      "tag": "Textbox",
+      "id": "persistent",
+      "text": "Постоянные данные блокнотов и runtime",
+      "x": 1000,
+      "y": 800,
+      "width": 420
+    },
+    {
+      "tag": "Group",
+      "id": "runtime",
+      "title": {
+        "text": "Runtime VPS · приватная сеть"
+      },
+      "x": 1800,
+      "y": 80,
+      "width": 740,
+      "height": 1180,
+      "color": "blue",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "nginx",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "nginx / mTLS"
+        }
+      ],
+      "x": 1900,
+      "y": 540,
+      "containerId": "runtime"
+    },
+    {
+      "tag": "Icon",
+      "id": "agent",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Agent / SQLite"
+        }
+      ],
+      "x": 2300,
+      "y": 540,
+      "containerId": "runtime"
+    },
+    {
+      "tag": "Group",
+      "id": "container",
+      "title": {
+        "text": "Docker · read-only root · non-root"
+      },
+      "x": 1840,
+      "y": 860,
+      "width": 660,
+      "height": 340,
+      "color": "blue",
+      "isContainer": true,
+      "containerId": "runtime",
+      "styleMode": "plain"
+    },
+    {
+      "tag": "Icon",
+      "id": "kernel",
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Jupyter / kernel"
+        }
+      ],
+      "x": 2300,
+      "y": 940,
+      "containerId": "container"
+    },
+    {
+      "tag": "Icon",
+      "id": "tmpfs",
+      "icon": "database",
+      "texts": [
+        {
+          "text": "tmpfs"
+        }
+      ],
+      "x": 1940,
+      "y": 940,
+      "containerId": "container"
+    },
+    {
+      "tag": "Textbox",
+      "id": "firewall",
+      "text": "Firewall: DNS к resolver, HTTP(S) наружу; внутренние назначения закрыты",
+      "x": 1840,
+      "y": 180,
+      "width": 620
+    },
+    {
+      "tag": "Textbox",
+      "id": "old-s3",
+      "text": "S3 notebook bucket: прежняя модель и offline migration. Текущий repository сюда не пишет.",
+      "x": 900,
+      "y": 1100,
+      "width": 600
+    },
+    {
+      "tag": "Textbox",
+      "id": "provisioning",
+      "text": "VPS сессии создаёт Go / OpenStack, настраивает Ansible. Pulumi готовит общую инфраструктуру.",
+      "x": 300,
+      "y": 1100,
+      "width": 480
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 2680,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "caddy",
+      "label": "HTTPS",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "bff",
+      "label": "Reverse proxy"
+    },
+    {
+      "tag": "Relationship",
+      "from": "bff",
+      "to": "go-api",
+      "label": "Приватная сеть"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "postgres",
+      "label": "Транзакции"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "nginx",
+      "label": "mTLS"
+    },
+    {
+      "tag": "Relationship",
+      "from": "nginx",
+      "to": "agent",
+      "label": "Loopback"
+    },
+    {
+      "tag": "Relationship",
+      "from": "agent",
+      "to": "kernel",
+      "label": "Jupyter + token"
+    },
+    {
+      "tag": "Relationship",
+      "from": "kernel",
+      "to": "tmpfs",
+      "label": "Временные файлы"
+    }
+  ]
+}

@@ -206,6 +206,8 @@ Actions только проверяет PR с изменениями `openwiki/*
 | [frontend](https://docs.cellestial.ru/frontend.html) | Client/BFF/schemas, командные библиотеки, внешний владелец Vite plugin и npm-пакетов |
 | [contract](https://docs.cellestial.ru/contract.html) | tRPC браузер/BFF и OpenAPI BFF/Go, Apidog, Orval/Zod, oapi-codegen и drift |
 | [infra](https://docs.cellestial.ru/infra.html) | Три VPS, Pulumi state/Ansible, auxiliary integrations/backup и границы runtime |
+| [notebooks-components](https://docs.cellestial.ru/notebooks-components.html) | Блокноты: компоненты и путь данных по коду 08.11.2026; прод не проверен |
+| [notebooks-infrastructure](https://docs.cellestial.ru/notebooks-infrastructure.html) | Блокноты: размещение, изоляция и хранение по коду 08.11.2026; прод не проверен |
 
 **Сценарии безопасности** (`diagrams/security/`) объясняют фактическую реализацию
 из [раздела CSRF](https://docs.cellestial.ru/documentation/security/csrf), с теми же

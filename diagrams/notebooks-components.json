@@ -1,0 +1,260 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "cloud-provider",
+      "title": {
+        "text": "Облачный API"
+      },
+      "x": 560,
+      "y": 980,
+      "width": 300,
+      "height": 240,
+      "color": "green",
+      "isContainer": true
+    },
+    {
+      "tag": "Textbox",
+      "id": "evidence",
+      "text": "Код на 08.11.2026 · не проверка прода",
+      "x": 0,
+      "y": 0,
+      "width": 640
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "icon": "monitor",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ],
+      "x": 0,
+      "y": 160
+    },
+    {
+      "tag": "Group",
+      "id": "services",
+      "title": {
+        "text": "Сервис блокнотов"
+      },
+      "x": 260,
+      "y": 100,
+      "width": 1180,
+      "height": 720,
+      "color": "blue",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "caddy",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Caddy"
+        }
+      ],
+      "x": 320,
+      "y": 160,
+      "containerId": "services"
+    },
+    {
+      "tag": "Icon",
+      "id": "bff",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "BFF"
+        }
+      ],
+      "x": 660,
+      "y": 160,
+      "containerId": "services"
+    },
+    {
+      "tag": "Icon",
+      "id": "go-api",
+      "icon": "go",
+      "texts": [
+        {
+          "text": "Go API"
+        }
+      ],
+      "x": 1040,
+      "y": 160,
+      "containerId": "services"
+    },
+    {
+      "tag": "Icon",
+      "id": "postgres",
+      "icon": "database",
+      "texts": [
+        {
+          "text": "PostgreSQL"
+        }
+      ],
+      "x": 1040,
+      "y": 660,
+      "containerId": "services"
+    },
+    {
+      "tag": "Icon",
+      "id": "provisioner",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Go provisioner"
+        }
+      ],
+      "x": 660,
+      "y": 660,
+      "containerId": "services"
+    },
+    {
+      "tag": "Group",
+      "id": "runtime",
+      "title": {
+        "text": "Окружение сессии"
+      },
+      "x": 1620,
+      "y": 100,
+      "width": 420,
+      "height": 720,
+      "color": "blue",
+      "isContainer": true
+    },
+    {
+      "tag": "Icon",
+      "id": "agent",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Runtime-agent"
+        }
+      ],
+      "x": 1780,
+      "y": 160,
+      "containerId": "runtime"
+    },
+    {
+      "tag": "Icon",
+      "id": "kernel",
+      "icon": "code",
+      "texts": [
+        {
+          "text": "Jupyter / kernel"
+        }
+      ],
+      "x": 1780,
+      "y": 660,
+      "containerId": "runtime"
+    },
+    {
+      "tag": "Icon",
+      "id": "cloud",
+      "icon": "cloud",
+      "texts": [
+        {
+          "text": "OpenStack API"
+        }
+      ],
+      "x": 660,
+      "y": 1040,
+      "containerId": "cloud-provider"
+    },
+    {
+      "tag": "Textbox",
+      "id": "data-owner",
+      "text": "PostgreSQL: source, порядок, revision, outputs и история исполнения",
+      "x": 1000,
+      "y": 900,
+      "width": 480
+    },
+    {
+      "tag": "Textbox",
+      "id": "temporary",
+      "text": "Kernel: переменные и временные файлы",
+      "x": 1660,
+      "y": 900,
+      "width": 360
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 2140,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "caddy",
+      "label": "HTTPS",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "bff",
+      "label": "HTML / tRPC"
+    },
+    {
+      "tag": "Relationship",
+      "from": "bff",
+      "to": "go-api",
+      "label": "Запросы от имени пользователя"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "postgres",
+      "label": "Чтение и транзакции"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "provisioner",
+      "label": "Создать / удалить окружение"
+    },
+    {
+      "tag": "Relationship",
+      "from": "provisioner",
+      "to": "cloud",
+      "label": "Ресурсы VPS"
+    },
+    {
+      "tag": "Relationship",
+      "from": "go-api",
+      "to": "agent",
+      "label": "Команды / события"
+    },
+    {
+      "tag": "Relationship",
+      "from": "agent",
+      "to": "kernel",
+      "label": "Выполнить код"
+    }
+  ]
+}
