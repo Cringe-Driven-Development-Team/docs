@@ -22,6 +22,9 @@ const documentationSidebar = [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },
         { text: 'Инфраструктура PWA', link: '/documentation/offline/infrastructure' },
       ] },
+      { text: 'Блокноты: реализация', link: '/documentation/notebooks/', collapsed: true, items: [
+        { text: 'Редактирование и сохранение', link: '/documentation/notebooks/editing' },
+      ] },
       { text: 'Архитектура', link: '/documentation/architecture/' },
       { text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [
         { text: 'CSRF', link: '/documentation/security/csrf' },
