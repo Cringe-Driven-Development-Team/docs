@@ -34,7 +34,7 @@ Cellestial — веб-приложение для работы с Python-бло�
 | Свои блокноты | Просматривает список, создаёт и находит блокнот; отдельные макеты показывают загрузку `.ipynb` | [Список](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52150), [загрузка файла](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52417); [границы текущего плана](/modules/2/tracks/file-exec) |
 | Редактирование | Добавляет и переставляет ячейки, вводит Python и Markdown, сохраняет изменения и разрешает конфликт версий | [Блокнот](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52526), [Markdown](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-14596); [редактор](/modules/2/tracks/monaco) |
 | Исполнение | Запускает окружение, отдельную ячейку или весь блокнот; видит очередь, результат или ошибку и останавливает окружение | [Исполнение](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52575); [план](/modules/2/tracks/file-exec), [правила сохранения и запуска](/modules/2/tracks/file-exec/contract) |
-| Поиск внутри блокнота | Ищет текст и видит совпадения либо отсутствие результата | [Совпадения](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52618), [ничего не найдено](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52636); [трек поиска](/modules/2/tracks/file-search), подробные правила пока не описаны |
+| Поиск внутри блокнота | Ищет текст, видит счётчик и переходит между совпадениями; отдельный экран показывает отсутствие результата | [Совпадения](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52618), [ничего не найдено](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52636); [трек поиска](/modules/2/tracks/file-search), подробные правила пока не описаны |
 | Профиль и защита аккаунта | Открывает настройки; подключает аутентификатор через QR или ручной ключ, подтверждает кодом; отключает 2FA с паролем | [Профиль](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52651), [подключение 2FA](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027); [профиль](/modules/2/tracks/profile), [сценарии 2FA](/modules/2/tracks/2fa) |
 
 ## Решения и ограничения
@@ -68,8 +68,8 @@ Cellestial — веб-приложение для работы с Python-бло�
 
 ## Открытые вопросы для обсуждения
 
-- **Поиск:** трек пока не задаёт подробные требования. Область поиска, переходы между совпадениями
-  и связь с результатами исполнения нужно уточнить перед расширением сценария.
+- **Поиск:** трек пока не задаёт подробные требования. Макет показывает счётчик и стрелки перехода между совпадениями. Подробные правила области
+  поиска и включения результатов исполнения нужно зафиксировать перед расширением сценария.
   [Трек](/modules/2/tracks/file-search) и макеты выше — отправная точка.
 - **Согласованность сохранения и результатов:** документ от 04.11.2026 фиксирует расхождение
   целевого правила версии содержимого с Apidog/backend. При обсуждении сохранения и исполнения
