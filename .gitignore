@@ -3,6 +3,7 @@ dist/
 .eraser/
 .idea/
 .superpowers/
+docs/superpowers/plans/
 .claude/worktrees/
 site/.vitepress/dist/
 site/.vitepress/cache/
