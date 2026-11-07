@@ -24,6 +24,9 @@ const documentationSidebar = [
       ] },
       { text: 'Блокноты: реализация', link: '/documentation/notebooks/', collapsed: true, items: [
         { text: 'Редактирование и сохранение', link: '/documentation/notebooks/editing' },
+        {text: 'Окружение и исполнение', link: '/documentation/notebooks/execution'},
+        {text: 'Результаты', link: '/documentation/notebooks/results'},
+        {text: 'Хранение и инфраструктура', link: '/documentation/notebooks/storage-and-infrastructure'},
       ] },
       { text: 'Архитектура', link: '/documentation/architecture/' },
       { text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [

@@ -4,7 +4,7 @@ import { diagramNames, indexNames } from "./build-index.ts";
 import config from "../site/.vitepress/config.mts";
 
 const PAGE = "site/documentation/architecture/index.md";
-const ORDER = ["server-access", "deployment", "ci", "cd", "frontend", "contract", "infra"];
+const ORDER = ["server-access", "deployment", "ci", "cd", "frontend", "contract", "infra", "notebooks-components", "notebooks-infrastructure"];
 
 test("server access identifies roles without publishing addresses", () => {
   const page = readFileSync(PAGE, "utf8");
@@ -32,6 +32,9 @@ test("documentation sidebar is a linked collapsed tree", () => {
     ]},
     {text: 'Блокноты: реализация', link: '/documentation/notebooks/', collapsed: true, items: [
       {text: 'Редактирование и сохранение', link: '/documentation/notebooks/editing'},
+      {text: 'Окружение и исполнение', link: '/documentation/notebooks/execution'},
+      {text: 'Результаты', link: '/documentation/notebooks/results'},
+      {text: 'Хранение и инфраструктура', link: '/documentation/notebooks/storage-and-infrastructure'},
     ]},
     {text: 'Архитектура', link: '/documentation/architecture/'},
     {text: 'Безопасность', link: '/documentation/security/', collapsed: true, items: [

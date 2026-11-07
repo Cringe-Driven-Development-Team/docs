@@ -5,7 +5,7 @@ aside: false
 # Архитектура работающего сервиса {#архитектура-mvp}
 
 Срез **01.11.2026**: размещение и доступность компонентов проверены по SSH и HTTP.
-Здесь показаны работающие процессы и настроенные связи; планы развития — в [модулях](/modules/).
+Исторические схемы этого среза показывают работающие процессы и настроенные связи; планы развития — в [модулях](/modules/).
 [Проверка гостевого BFF](/documentation/bff) и [владельцы сведений](/documentation/project-context)
 помогают перейти от схемы к каноническому описанию и нужному репозиторию.
 
@@ -41,6 +41,8 @@ sha256:26205cff0bdfd9c1d74e9f23557d8c931c724b9573ee49ce1b6eec3748c233f3
 SHA исходников подтверждает реализацию, а наблюдение на выложенной версии — только
 явно названный сценарий. Более свежий main сам по себе не обновляет это свидетельство.
 :::
+
+Дополнительно ниже приведены две схемы блокнотов **по исходникам 08.11.2026**. Они не обновляют свидетельство проверки прода от 01.11.2026.
 
 Схемы хранятся в [`diagrams/`](https://github.com/Cringe-Driven-Development-Team/docs/tree/main/diagrams),
 рендерятся eraser-diagrams. Масштаб — кнопками, Ctrl/⌘ + колесо или щипком;
@@ -173,3 +175,15 @@ Docs/Pages экспортирует существующие wiki, генера�
 [очередь и Telegram proxy](https://github.com/Cringe-Driven-Development-Team/.github/blob/515352beac1a5a3ae98140121ca40e25f9551707/services/webhook-alerts/README.md#L3-L29).
 
 <Diagram name="infra" />
+
+## Блокноты: компоненты {#notebooks-components}
+
+Срез исходников 08.11.2026; прод не проверен. [Версии, роли и путь данных](/documentation/notebooks/) объясняют браузер → Caddy → BFF → Go, PostgreSQL и отдельный runtime. Историческая S3-модель блокнотов в старых схемах не описывает этот repository.
+
+<Diagram name="notebooks-components" />
+
+## Блокноты: инфраструктура {#notebooks-infrastructure}
+
+Срез исходников 08.11.2026; сеть на проде не проверена. [Хранение и изоляция](/documentation/notebooks/storage-and-infrastructure) отделяют постоянный PostgreSQL от временных файлов kernel, описывают provisioning и mTLS.
+
+<Diagram name="notebooks-infrastructure" />
