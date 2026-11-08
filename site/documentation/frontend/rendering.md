@@ -6,19 +6,19 @@ title: Компоненты и рендеринг
 
 На примере `Cell` здесь показано, как ввод меняет состояние и превращается
 в обновление DOM. Это чтение frontend на 08.11.2026, SHA
-`0606aa6cb83b78a76f1e69816b2a6abd82dc20ee`, а не новый прогон на проде.
+`ea123518d624521f999e884ff32ddec0a5bf6bfa`, а не новый прогон на проде.
 Разбор пакета относится к `@cdd-team/react` 1.7.1; гарантии других реализаций
 React из совпадения имён API не следуют.
 
 ## Cell: JSX, props и события {#cell}
 
 `NotebookPage` подписана на notebook-store и строит список ячеек.
-Каждая `Cell` получает `cell`, отображаемый `text`, флаги и обработчики:
+Через обёртку `CodeOrText` каждая `Cell` получает `cell`, отображаемый `text`, флаги и обработчики:
 `text={notebook.drafts[row.cell.id] ?? row.cell.source}` выбирает черновик
 раньше подтверждённого текста. `onInput` передаёт новый source и признак
 композиции в `editSource`, а `onCommit` вызывает `commitSource`.
 Компонент сам запросов BFF не отправляет.
-[Пропсы и обработчики](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L427-L468).
+[Пропсы и обработчики](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L529-L571).
 
 JSX описывает дерево элементов: тип, props, children и key. Runtime `jsx/jsxs`
 командного React нормализует children и передаёт их в `h`; это ещё не DOM.
@@ -29,7 +29,7 @@ JSX описывает дерево элементов: тип, props, children 
 `textarea`. В React 1.7.1 DOM-патчер подключает обработчики через
 `addEventListener`, при замене снимает старый обработчик; `onDoubleClick`
 сопоставляется с `dblclick`, суффикс `Capture` выбирает фазу захвата.
-См. [события Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L211-L273)
+См. [события Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Cell/Cell.tsx#L216-L278)
 и [patch-dom.ts](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/patch-dom.ts#L70-L157).
 
 ## Локальный режим и key
@@ -38,8 +38,10 @@ JSX описывает дерево элементов: тип, props, children 
 и `mode.refocus`. Source принадлежит notebook-store, выделенная ячейка и
 цель фокуса — странице. Существующий Markdown открывается в просмотре,
 новый получает `startEditing`; code показывает редактор при доступном вводе.
+При подсветке совпадений поиска Markdown-preview временно показывает исходник;
+это не меняет владельца текста и очередь сохранения.
 `tooLarge` удерживает Markdown в редакторе, чтобы текст можно было сократить.
-[Условия режима](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L154-L172).
+[Условия режима](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Cell/Cell.tsx#L160-L177).
 
 Список использует `key={row.cell.id}`, поэтому при перемещении ячейки её
 идентичность не определяется новым индексом. Внутри стоят ключи `editor`,
@@ -47,7 +49,7 @@ JSX описывает дерево элементов: тип, props, children 
 соседей, переносит подходящий узел, удаляет оставшиеся. Сохранённая
 идентичность позволяет сохранить hooks; смена типа или ключа создаёт другой
 узел и его состояние. `key` не является атрибутом DOM.
-См. [ключи списка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L427-L435),
+См. [ключи списка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L529-L539),
 [reconcile.ts](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/reconcile.ts#L105-L154)
 и [useState](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/hooks.ts#L75-L112).
 
@@ -75,8 +77,8 @@ Zustand 1.0.1; она не переносит гарантии других ве
 props к DOM. У textarea обновляется `value`, у статуса — соответствующий
 текст/компонент; повторный вызов компонента не означает пересоздание всей
 страницы. Сохранение на сервере начинается отдельно от этого обновления.
-См. [подписки страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L199-L201),
-[макет](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/layouts/RootLayout.tsx#L13-L17),
+См. [подписки страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L213-L216),
+[макет](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/layouts/RootLayout.tsx#L13-L17),
 [планирование render](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/render.ts#L35-L52)
 и [commit](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/commit.ts#L77-L121).
 
@@ -104,11 +106,11 @@ flowchart TD
 ## Эффекты и cleanup
 
 `useLayoutEffect` Cell работает с уже изменённым DOM: переводит фокус,
-восстанавливает позицию курсора, подгоняет высоту textarea и синхронизирует
+ставит курсор в конец при возврате фокуса, подгоняет высоту textarea и синхронизирует
 декоративную подсветку. Один `ResizeObserver` следит за шириной редактора;
 cleanup вызывает `disconnect` при смене зависимостей или удалении компонента.
 Массив зависимостей определяет повтор эффекта, поэтому наблюдатель не
-создаётся на каждое нажатие. [Эффекты Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L165-L205).
+создаётся на каждое нажатие. [Эффекты Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Cell/Cell.tsx#L170-L210).
 
 React 1.7.1 запускает layout-эффекты после мутаций DOM в commit;
 `useEffect` относится к отдельной очереди passive-эффектов. На странице
@@ -118,7 +120,7 @@ cleanup эффекта `[id]` вызывает `leaveNotebook` и `closeRuntime`
 использует флаг `alive`, чтобы завершившийся запрос старой страницы не
 открыл другой блокнот. Это отдельная защита от поколения очереди сохранения.
 См. [commitRoot](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/commit.ts#L22-L43)
-и [эффекты страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L203-L262).
+и [эффекты страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L219-L277).
 
 ## Клавиатура и touch
 
@@ -136,9 +138,9 @@ preview находятся в [редактировании блокнота](/d
 добавление и изменение структуры скрываются. Запуск остаётся доступен.
 Если указатель сменился во время ввода, страница вызывает `leaveNotebook`,
 а Cell переводит режим в просмотр.
-См. [touch.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/utils/touch.ts#L1-L16),
-[реакцию страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L250-L253)
-и [ветви Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L313-L379).
+См. [media.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/utils/media.ts#L1-L15),
+[реакцию страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L265-L268)
+и [ветви Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Cell/Cell.tsx#L319-L403).
 
 ## Что проверить в понимании
 
@@ -150,3 +152,5 @@ preview находятся в [редактировании блокнота](/d
   как описано в [сохранении и конфликтах](./state#saving).
 
 Карта приложения — в [обзоре](./), выбор страницы — в [роутинге](./routing).
+
+Применение классов к DOM и область CSS описаны в [стилях](./styles#modules).

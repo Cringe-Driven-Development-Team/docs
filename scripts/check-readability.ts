@@ -1752,6 +1752,36 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   await observe(page);
+  const visibleHash = async () => {
+    await page.waitForFunction(() => !!document.getElementById(decodeURIComponent(location.hash.slice(1))));
+    // Mermaid and the reading plugin settle after hydration and width correction.
+    await new Promise(resolve => setTimeout(resolve, 1800));
+    assert(await page.evaluate(() => {
+      const rect = document.getElementById(decodeURIComponent(location.hash.slice(1)))!.getBoundingClientRect();
+      const header = Math.max(document.querySelector('.VPNav')?.getBoundingClientRect().bottom ?? 0, document.querySelector('.VPLocalNav')?.getBoundingClientRect().bottom ?? 0);
+      return rect.top >= header - 1 && rect.top < innerHeight && rect.bottom > header;
+    }), `Hidden target: ${page.url()}`);
+  };
+  // Land directly before traversing lazy diagrams: redirects must scroll on their own.
+  await page.setViewport({ width: 1440, height: 1000 });
+  for (const hash of ['', 'bff-проверенная-часть', 'что-наблюдается-на-проде',
+    'релизы-и-граница-доказательства', 'где-искать-реализацию', 'что-еще-нужно-проверить']) {
+    await page.goto(url('documentation/frontend/startup'), { waitUntil: 'networkidle0' });
+    await page.goto(url(`documentation/bff${hash ? `#${encodeURIComponent(hash)}` : ''}`), { waitUntil: 'networkidle0' });
+    const landing = async () => {
+      assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/frontend/bff`);
+      assert.equal(decodeURIComponent(new URL(page.url()).hash), hash ? `#${hash}` : '');
+      const target = hash || 'bff';
+      assert.equal(await page.$$eval('[id]', (nodes, id) => nodes.filter(node => node.id === id).length, target), 1, 'unique BFF heading');
+      if (hash) await visibleHash();
+      else assert(await page.$eval('.vp-doc h1', node => { const r = node.getBoundingClientRect(); return r.top >= 0 && r.bottom < innerHeight; }), 'BFF title visible without hash');
+    };
+    await landing();
+    await page.reload({ waitUntil: 'networkidle0' }); await landing();
+    await page.goBack({ waitUntil: 'networkidle0' });
+    assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/frontend/startup`, 'Back skips replaced BFF redirect');
+  }
+  console.log(`PASS old BFF: no fragment and five IDs, base/path/hash/unique heading/visibility/reload/Back under ${SITE_BASE}`);
   const routes = ['documentation/', 'documentation/current-state', 'documentation/architecture/', 'documentation/security/',
     'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
   const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/routing', 'documentation/frontend/build',
@@ -1854,16 +1884,6 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   }
   console.log(`PASS canonical tree, Frontend from architecture, all ${frontendRoutes.length - 1} children, active parent, native caret, SPA/reload/Back, mobile Escape`);
   await page.setViewport({ width: 1440, height: 1000 });
-  const visibleHash = async () => {
-    await page.waitForFunction(() => !!document.getElementById(decodeURIComponent(location.hash.slice(1))));
-    // Mermaid and the reading plugin settle after hydration and width correction.
-    await new Promise(resolve => setTimeout(resolve, 1800));
-    assert(await page.evaluate(() => {
-      const rect = document.getElementById(decodeURIComponent(location.hash.slice(1)))!.getBoundingClientRect();
-      const header = Math.max(document.querySelector('.VPNav')?.getBoundingClientRect().bottom ?? 0, document.querySelector('.VPLocalNav')?.getBoundingClientRect().bottom ?? 0);
-      return rect.top >= header - 1 && rect.top < innerHeight && rect.bottom > header;
-    }), `Hidden target: ${page.url()}`);
-  };
   await page.goto(url('documentation/current-state'), { waitUntil: 'networkidle0' });
   await page.locator(`.VPNavBar a[href="${SITE_BASE}documentation/"]`).click();
   await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Обзор продукта'));
@@ -1947,6 +1967,19 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.click(result);
   await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/security/csrf`);
   await expanded(true); await tree();
+  for (const [query, route] of [['switchSession', 'session'], ['jsxImportSource', 'build'], ['release-please', 'packages']]) {
+    await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
+    await page.click('button[aria-label="Найти в документации"]');
+    await page.waitForSelector('#localsearch-input', { visible: true });
+    await page.type('#localsearch-input', query!);
+    const result = `.VPLocalSearchBox a.result[href^="${SITE_BASE}documentation/frontend/${route}"]`;
+    await page.waitForSelector(result, { visible: true });
+    assert.equal(await page.$('.VPLocalSearchBox a.result[href*="documentation/bff"]'), null, 'Search excludes old BFF page');
+    await page.click(result);
+    await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/frontend/${route}`);
+    await expanded(true, frontendCaret); await tree();
+  }
+  console.log('PASS Frontend local search: session, build and packages content');
   console.log('PASS static OpenWiki navigation and canonical local search');
   await context.close();
 }

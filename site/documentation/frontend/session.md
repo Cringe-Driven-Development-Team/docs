@@ -84,7 +84,7 @@ flowchart TD
 `POST /auth/logout`; при истёкшем access Go не вызывается. BFF удаляет cookie
 при любом итоге Go и отвечает `{ browserSession: 'ended', serverRevocation }`.
 Это разделяет выход в браузере и подтверждение отзыва на сервере.
-Источники: [auth.logout](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/router/auth.ts#L19-L33) и [отзыв без refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/go/api.ts#L206-L222).
+Источники: [auth.logout](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/router/auth.ts#L19-L33) и [отзыв без refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/go/api.ts#L197-L209).
 
 | `serverRevocation` | Основание и сообщение клиенту |
 | --- | --- |

@@ -37,7 +37,7 @@ Cellestial — аналог Google Colab и Jupyter Notebook: веб-прило�
 | Свои блокноты | Просматривает список, создаёт и находит блокнот; отдельные макеты показывают загрузку `.ipynb` | [Список](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52150), [загрузка файла](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52417); [границы текущего плана](/modules/2/tracks/file-exec) |
 | Редактирование | Добавляет и переставляет ячейки, вводит Python и Markdown, сохраняет изменения и разрешает конфликт версий | [Блокнот](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52526), [Markdown](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-14596); [редактор](/modules/2/tracks/monaco) |
 | Исполнение | Запускает окружение, отдельную ячейку или весь блокнот; видит очередь, результат или ошибку и останавливает окружение | [Исполнение](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52575); [план](/modules/2/tracks/file-exec), [правила сохранения и запуска](/modules/2/tracks/file-exec/contract) |
-| Поиск внутри блокнота | Ищет текст, видит счётчик и переходит между совпадениями; отдельный экран показывает отсутствие результата | [Совпадения](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52618), [ничего не найдено](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52636); [трек поиска](/modules/2/tracks/file-search), [подробное ТЗ #42](https://github.com/Cringe-Driven-Development-Team/frontend/issues/42), реализация UI пока отсутствует |
+| Поиск внутри блокнота | Ищет текст, видит счётчик и переходит между совпадениями; отдельный экран показывает отсутствие результата | [Совпадения](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52618), [ничего не найдено](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52636); [трек поиска](/modules/2/tracks/file-search), [подробное ТЗ #42](https://github.com/Cringe-Driven-Development-Team/frontend/issues/42); [срез реализации](/documentation/notebooks/) |
 | Профиль и защита аккаунта | Открывает настройки; подключает аутентификатор через QR или ручной ключ, подтверждает кодом; отключает 2FA с паролем | [Профиль](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=398-52651), [подключение 2FA](https://www.figma.com/design/7iaVDGiwzQk2vZIB5ogVlq/Cellestial?node-id=496-16027); [профиль](/modules/2/tracks/profile), [сценарии 2FA](/modules/2/tracks/2fa) |
 
 ## Решения и ограничения
@@ -71,13 +71,13 @@ Cellestial — аналог Google Colab и Jupyter Notebook: веб-прило�
 
 ## Открытые вопросы для обсуждения
 
-- **Поиск:** подробные требования зафиксированы в [#42](https://github.com/Cringe-Driven-Development-Team/frontend/issues/42). Они описывают поиск по исходникам, включая локальные черновики, без outputs; текущий UI поиска не реализован. [Статус реализации](/documentation/notebooks/).
+- **Поиск:** подробные требования зафиксированы в [#42](https://github.com/Cringe-Driven-Development-Team/frontend/issues/42). Они описывают поиск по исходникам, включая локальные черновики, без outputs; UI поиска присутствует в срезе исходников 08.11.2026; это не новый прогон на проде. [Статус реализации](/documentation/notebooks/).
 - **Согласованность сохранения и результатов:** на 08.11.2026 Apidog уже исключает outputs из hash, но backend при публикации нового результата меняет revision. [Разрыв и последствия](/documentation/notebooks/editing#revision) описаны по исходникам; вопрос не объявлен решённым.
 - **Приоритет следующей возможности** выбирается в обсуждении. Идея не становится принятым решением
   и не меняет обзор автоматически.
 
 Для начала достаточно этой страницы и выбранного сценария. Подробности устройства системы —
-в [архитектуре](/documentation/architecture/), владельцы источников — в
+в [Frontend](/documentation/frontend/) и [архитектуре](/documentation/architecture/), владельцы источников — в
 [контексте проекта](/documentation/project-context), планы работ — в [модулях](/modules/).
 
 ## Результаты прежних проверок
