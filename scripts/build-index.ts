@@ -77,6 +77,7 @@ export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
   { file: "documentation/csrf/index.html", target: "../security/csrf" },
   { file: "documentation/csrf/scenarios.html", target: "../security/csrf" },
   { file: "documentation/csrf/checks.html", target: "../security/csrf" },
+  { file: "documentation/bff.html", target: "frontend/bff" },
   { file: "bff/index.html", target: "../modules/2/tracks/bff" },
   { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
   { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },

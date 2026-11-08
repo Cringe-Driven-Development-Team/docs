@@ -108,6 +108,7 @@ test("PAGE_REDIRECTS: old BFF pages to the track, removed bff diagrams to the cu
     { file: "documentation/csrf/index.html", target: "../security/csrf" },
     { file: "documentation/csrf/scenarios.html", target: "../security/csrf" },
     { file: "documentation/csrf/checks.html", target: "../security/csrf" },
+    { file: "documentation/bff.html", target: "frontend/bff" },
     { file: "bff/index.html", target: "../modules/2/tracks/bff" },
     { file: "bff/contract.html", target: "../modules/2/tracks/bff/contract" },
     { file: "bff/auth.html", target: "../modules/2/tracks/bff/auth" },
@@ -219,6 +220,7 @@ test('k3s redirects preserve base and fragments', () => {
 
 test('documentation redirects preserve base and hashes', () => {
   const moves = [
+    ['documentation/bff.html', 'frontend/bff', 'documentation/frontend/bff'],
     ['architecture/index.html', '../documentation/architecture/', 'documentation/architecture/'],
     ['project-context.html', 'documentation/project-context', 'documentation/project-context'],
     ['security/csrf/index.html', '../../documentation/security/csrf', 'documentation/security/csrf'],

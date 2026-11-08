@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 
 const read = (page: string) => readFileSync(`site/documentation/frontend/${page}.md`, "utf8");
 const section = (md: string, title: string) => md.replace(/ \{#[^}]+\}/g, "").split(`\n## ${title}\n`)[1]?.split(/\n## /)[0] ?? "";
-const FRONTEND_SHA = "0606aa6cb83b78a76f1e69816b2a6abd82dc20ee";
+const FRONTEND_SHA = "ea123518d624521f999e884ff32ddec0a5bf6bfa";
 
 test("frontend: обзор объясняет действующее редактирование", () => {
   const overview = read("index");
@@ -15,11 +15,15 @@ test("frontend: обзор объясняет действующее редак�
 
 test("frontend: страницы идут от устройства приложения к самопроверке", () => {
   for (const [page, headings] of [
-    ["index", ["Статус сведений", "Монорепа", "Карта файлов", "Сквозной сценарий", "Что проверить в понимании"]],
+    ["index", ["Статус сведений", "Карта тем", "Монорепа", "Карта файлов", "Сквозной сценарий", "Что проверить в понимании"]],
     ["startup", ["Первый HTML от BFF", "Проверка bootstrap в браузере", "Сторы до первого рендера", "Прямой URL и SPA-переход", "Повреждённые данные останавливают запуск", "Что проверить в понимании"]],
     ["routing", ["PAGES и дерево маршрутов", "Переход и история", "Параметры и 404", "beforeLoad и защита запросов", "Что проверить в понимании"]],
     ["rendering", ["Cell: JSX, props и события", "Локальный режим и key", "Внешний стор и обновление DOM", "Эффекты и cleanup", "Клавиатура и touch", "Что проверить в понимании"]],
     ["state", ["Кто владеет состоянием", "Подтверждённый снимок и черновики", "Ввод и IME", "Новый ввод во время запроса", "Смена блокнота и поздний ответ", "Сохранение и конфликты", "Граница runtime", "Что проверить в понимании"]],
+    ['requests', ['Один клиент и два транспорта', 'Загрузка данных', 'cells.update и подтверждение записи', 'Ошибки и реакция интерфейса', 'Проверка через существующие моки', 'Что проверить в понимании']],
+    ['session', ['Cookie и начальный статус', 'Refresh и потеря сессии', 'Смена сессии и поздние ответы', 'Выход в браузере', 'Выход со всех устройств и смена пароля', 'Что проверить в понимании']],
+    ['bff', ['HTML и RPC одного приложения', 'RPC: контекст и валидация', 'Общий загрузчик NotebookPage', 'Go-адаптер и ошибки', 'Apidog, Orval и схемы', 'Что проверить в понимании', 'BFF: проверенная часть']],
+    ['packages', ['Что установлено в приложении', 'Импорт и совместимость', 'npm и workspace', 'Выпуск и обновление приложения', 'Что проверить в понимании']],
   ] as const) {
     expect(read(page).match(/^## .+$/gm)?.map((line) => line.slice(3).replace(/ \{#[^}]+\}/g, ""))).toEqual([...headings]);
   }
@@ -127,7 +131,7 @@ test("frontend: источники закреплены на проверенн�
 });
 
 test("frontend: страницы не содержат чувствительных значений и неэкранированных шаблонов", () => {
-  for (const page of ["index", "startup", "routing", "rendering", "state"]) {
+  for (const page of ["index", "routing", "build", "styles", "startup", "rendering", "state", "requests", "session", "bff", "packages", "checks"]) {
     const md = read(page);
     expect(md, page).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
     expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY|(?:token|secret|password)\s*[:=]\s*["'][^"']+/i);
@@ -154,4 +158,238 @@ test("frontend: шесть схем объясняют связи рядом с 
   for (const [page, count] of [["index", 1], ["startup", 1], ["routing", 1], ["rendering", 1], ["state", 2]] as const) {
     expect(read(page).match(/^```mermaid$/gm)?.length ?? 0, page).toBe(count);
   }
+});
+
+
+test("frontend: запросы, сессия и серверная обработка имеют полные страницы", () => {
+  for (const value of ['httpBatchLink', 'httpLink', 'FormData', 'X-CSRF', 'cells.update', 'appCode', 'zodError', 'maxURLLength: 2000', "credentials: 'same-origin'", 'RouterInputs', 'RouterOutputs', 'If-Match', 'неизвестен']) expect(read('requests'), value).toContain(value);
+  for (const value of ['switchSession', 'SESSION_CHANGED', 'HttpOnly', 'UNAUTHORIZED', '30 с', '10 с', 'logoutAll', 'serverRevocation', '#142']) expect(read('session'), value).toContain(value);
+  for (const value of ['createContext', 'authedProcedure', 'loadNotebook', 'NotebookPage', 'strictObject', 'unwrap', 'Orval', 'spec/openapi.json', 'isJSON', '503']) expect(read('bff'), value).toContain(value);
+  for (const id of ['bff-проверенная-часть', 'что-наблюдается-на-проде', 'релизы-и-граница-доказательства', 'где-искать-реализацию', 'что-еще-нужно-проверить']) expect(read('bff').split(`{#${id}}`), id).toHaveLength(2);
+  for (const page of ['requests', 'session', 'bff']) {
+    expect(read(page), page).toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
+    expect(read(page), page).toContain('08.11.2026');
+    expect(read(page), page).toMatch(/не новый прогон|не свидетельство нового прогона/);
+  }
+});
+
+for (const [page, title, relationships] of [
+  ['requests', 'Один клиент и два транспорта', [/splitLink/, /FormData/, /httpLink/, /httpBatchLink/, /batch --> bff/, /multipart --> bff/, /X-CSRF/, /context -->.*response/, /split -\.->.*Сбой сети.*response/, /response.*data\.code.*appCode.*zodError/, /response -->\|.*UNAUTHORIZED.*\| guest/, /guest.*guest.*login/, /response -->\|.*notebook_conflict.*\| reconcile/, /response -->\|.*BAD_GATEWAY.*сеть.*\| reconcile/, /reconcile.*notebooks\.get.*сверка/, /response -->\|.*FORBIDDEN.*\| operation/, /operation.*сесси/]],
+  ['session', 'Смена сессии и поздние ответы', [/switchSession/, /closing/, /inflight/, /Set-Cookie/, /generation/, /SESSION_CHANGED/]],
+  ['bff', 'RPC: контекст и валидация', [/createContext/, /CSRF/, /authedProcedure/, /strictObject/, /createGo/, /unwrap/, /Go/, /html.*--> handler/, /handler --> adapter/, /rpc.*--> context/, /input --> adapter/, /adapter --> go/, /unwrap -->\|.*HTML.*\| bootstrap/, /bootstrap.*HTML.*bootstrap/, /unwrap -->\|.*RPC.*\| result/]],
+] as const) test(`frontend: транспорт и серверная граница — ${page}`, () => {
+  const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+  expect(pair, page).not.toBeNull();
+  expect(pair![1]!.replace(/\s/g, '').length).toBeGreaterThan(80);
+  expect(pair![1], page).toContain('https://github.com/');
+  for (const relation of relationships) expect(pair![2], page).toMatch(relation);
+  if (page === 'bff') expect(pair![2]).not.toMatch(/html[^\n]*--> (?:context|csrf)/);
+  expect(read(page).match(/^```mermaid$/gm)).toHaveLength(1);
+});
+
+test("frontend: новые запросы и сессия ссылаются на существующих владельцев", () => {
+  for (const [from, link, target, heading] of [
+    ['requests', './bff#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['session', './bff#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['bff', '#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['index', '/documentation/frontend/bff#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['requests', './state#saving', 'state', '## Сохранение и конфликты {#saving}'],
+    ['requests', './session#switching', 'session', '## Смена сессии и поздние ответы {#switching}'],
+    ['session', './startup#сторы-до-первого-рендера', 'startup', '## Сторы до первого рендера'],
+    ['bff', './startup#первыи-html-от-bff', 'startup', '## Первый HTML от BFF'],
+    ['bff', './requests#errors', 'requests', '## Ошибки и реакция интерфейса {#errors}'],
+  ]) {
+    expect(read(from!), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
+  }
+  for (const from of [
+    'site/documentation/current-state.md',
+    'site/documentation/architecture/index.md',
+    'site/modules/2/tracks/bff.md',
+    'site/modules/2/tracks/bff/migration.md',
+  ]) {
+    expect(readFileSync(from, 'utf8'), from).toContain('](/documentation/frontend/bff#bff-проверенная-часть)');
+    expect(read('bff'), from).toContain('## BFF: проверенная часть {#bff-проверенная-часть}');
+  }
+});
+
+
+test("frontend: текущие источники отделены от исторического BFF и безопасны", () => {
+  for (const page of ['requests', 'session', 'bff']) {
+    const md = read(page);
+    const current = md.split('## BFF: проверенная часть')[0]!;
+    const sources = [...current.matchAll(/https:\/\/github\.com\/Cringe-Driven-Development-Team\/frontend\/blob\/([^\s)]+)/g)];
+    expect(sources.length, page).toBeGreaterThan(1);
+    for (const [, path] of sources) expect(path, page).toMatch(/^ea123518d624521f999e884ff32ddec0a5bf6bfa\/[^#]+#L\d+(?:-L\d+)?$/);
+    expect(md, page).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
+    expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY/);
+    expect(md.replace(/^```[\s\S]*?^```/gm, ''), page).not.toContain('{{');
+    expect(md, page).not.toMatch(/LINK_[A-Z_]+|\)_[A-Z]+/);
+  }
+  const historical = read('bff').split('## BFF: проверенная часть')[1]!;
+  for (const value of ['31.10.2026 в 13:11 UTC', 'dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64', '23d3dd9e955424a7634fb0dc49a38af6eb08792c', '14653763279dab055e3cea47a84a0c531bccf03f', 'csrf_invalid', 'не проверен авторизованным сценарием на проде', 'не утверждение об отсутствии реализации']) expect(historical, value).toContain(value);
+  expect(historical).not.toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
+});
+
+
+test("frontend: сборка отделена от проверки типов и mock от прода", () => {
+  for (const token of ['Bun', 'Turborepo', 'Vite', 'tsc --noEmit', 'jsxImportSource', 'SVGR', 'Babel']) expect(read('build'), token).toContain(token);
+  for (const token of ['CSS Modules', '.module.css', 'clsx', 'tokens.css', 'global.css']) expect(read('styles'), token).toContain(token);
+  for (const token of ['bun run check', 'bun run build', 'notebookConflict.test.ts', 'session.test.ts', 'dev:prism']) expect(read('checks'), token).toContain(token);
+  for (const token of ['Oxc', 'Rolldown', 'не проверяет типы', 'sourcemap', 'false', 'ES-модули']) expect(section(read('build'), 'Преобразования и проверка типов'), token).toContain(token);
+  expect(section(read('build'), 'Преобразования и проверка типов')).toContain('не означает');
+  for (const token of ['PostCSS', 'Lightning CSS', 'препроцессор', 'Sass', 'вложенность']) expect(section(read('styles'), 'Обработка CSS сборщиком'), token).toContain(token);
+  for (const token of ['Prism', 'Cloud Mock', 'не доказывает сохранение', 'Go', 'VITE_MOCK_PREFER', 'If-Match']) expect(section(read('checks'), 'Моки и настоящая запись в Go'), token).toContain(token);
+});
+
+test("frontend: порядок разделов сборки, стилей и проверок", () => {
+  for (const [page, headings] of [
+    ['build', ['Bun и Turborepo', 'Преобразования и проверка типов', 'Разработка и production', 'Алиасы, env и ресурсы', 'Что проверить в понимании']],
+    ['styles', ['CSS Modules и область классов', 'Кнопка: классы и состояния', 'Токены и глобальные стили', 'Обработка CSS сборщиком', 'Что проверить в понимании']],
+    ['checks', ['Что проверяют инструменты', 'Сценарии редактора и сессии', 'Индекс, хуки и CI', 'Моки и настоящая запись в Go', 'Что проверить в понимании']],
+  ] as const) expect(read(page).match(/^## .+$/gm)?.map(line => line.slice(3).replace(/ \{#[^}]+\}/g, ''))).toEqual([...headings]);
+});
+
+for (const [page, title, relations] of [
+  ['build', 'Преобразования и проверка типов', [/source.*--> typecheck/, /source.*--> oxc/, /svg.*--> svgr/, /svgr --> oxc/, /oxc --> bundle/, /Rolldown/, /Babel/, /noEmit/, /oxc --> modules/, /modules.*ES-модули.*HMR/, /modules.*--> devBrowser/, /bff.*--> devHtml/, /devHtml.*transformIndexHtml/, /devHtml.*--> devBrowser/, /bundle.*--> dist/, /dist --> prodBrowser/, /bff --> prodHtml/, /prodHtml.*шаблон/, /prodHtml.*--> prodBrowser/]],
+  ['styles', 'CSS Modules и область классов', [/module.*--> mapping/, /module.*--> selectors/, /mapping --> button/, /selectors --> dom/, /button --> dom/, /CSS Modules/, /tokens.*tokens\.css.*--> properties/, /properties.*custom properties.*каскад/, /properties --> variables/, /variables.*var\(--color-primary\)/, /variables --> selectors/]],
+  ['checks', 'Что проверяют инструменты', [/change.*--> format/, /subgraph localCheck\["bun run check"\]/, /format.*oxfmt.*--> lint/, /lint\["oxlint/, /lint --> types/, /types.*tsc --noEmit/, /types --> tests/, /tests\["bun run test/, /tests --> build/, /build\["bun run build/, /build --> ci/, /ci.*CI Check.*check.*test.*build/, /ci --> client/, /client.*--> bff/, /bff -->\|"Мок"\| mock/, /mock --> ui/, /bff -->\|"Настоящий сервер"\| go/, /go --> persistence/, /Prism/, /сохранение/]],
+] as const) test(`frontend: схема показывает границы — ${page}`, () => {
+  const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+  expect(pair, page).not.toBeNull();
+  expect(pair![1]!.replace(/\s/g, '').length, page).toBeGreaterThan(80);
+  expect(pair![1], page).toContain('https://github.com/');
+  for (const relation of relations) expect(pair![2], page).toMatch(relation);
+  if (page === 'checks') {
+    expect(read(page)).toContain('## Моки и настоящая запись в Go {#mock-boundary}');
+    expect(readFileSync('scripts/check-readability.ts', 'utf8')).toContain("['documentation/frontend/checks', 'tools', 0]");
+    const localCheck = pair![2]!.match(/subgraph localCheck[^\n]*\n([\s\S]*?)\n    end/);
+    expect(localCheck).not.toBeNull();
+    expect(localCheck![1]).not.toMatch(/bun run (?:test|build)/);
+  }
+  expect(read(page).match(/^```mermaid$/gm), page).toHaveLength(1);
+});
+
+test("frontend: новые fragment-ссылки сборки, стилей и проверок имеют цели", () => {
+  for (const [from, link, target, heading] of [
+    ['index', './build#transforms', 'build', '## Преобразования и проверка типов {#transforms}'],
+    ['index', './styles#modules', 'styles', '## CSS Modules и область классов {#modules}'],
+    ['index', './checks#tools', 'checks', '## Что проверяют инструменты {#tools}'],
+    ['build', './styles#pipeline', 'styles', '## Обработка CSS сборщиком {#pipeline}'],
+    ['build', './checks#tools', 'checks', '## Что проверяют инструменты {#tools}'],
+    ['styles', './build#transforms', 'build', '## Преобразования и проверка типов {#transforms}'],
+    ['checks', './state#saving', 'state', '## Сохранение и конфликты {#saving}'],
+    ['checks', './session#switching', 'session', '## Смена сессии и поздние ответы {#switching}'],
+    ['checks', './build#dev-prod', 'build', '## Разработка и production {#dev-prod}'],
+  ]) {
+    expect(read(from!), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
+  }
+});
+
+test("frontend: сборочные источники закреплены и страницы сохраняют границу проверки", () => {
+  for (const page of ['build', 'styles', 'checks', 'packages']) {
+    const md = read(page);
+    expect(md, page).toContain('08.11.2026');
+    expect(md, page).toMatch(/не новый прогон|не свидетельство нового прогона/);
+    const links = [...md.matchAll(/https:\/\/github\.com\/Cringe-Driven-Development-Team\/frontend\/blob\/([^\s)]+)/g)];
+    expect(links.length, page).toBeGreaterThan(1);
+    for (const [, path] of links) expect(path, page).toMatch(/^ea123518d624521f999e884ff32ddec0a5bf6bfa\/[^#]+#L\d+(?:-L\d+)?$/);
+    for (const [, path] of md.matchAll(/https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/([^\s)]+)/g)) expect(path, page).toMatch(/^[a-f0-9]{40}\/[^#]+#L\d+(?:-L\d+)?$/);
+    expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY/);
+    expect(md.replace(/^```[\s\S]*?^```/gm, ''), page).not.toContain('{{');
+  }
+});
+
+
+test("frontend: пакеты привязаны к версиям приложения", () => {
+  const page = read('packages');
+  for (const [name, version] of [['react', '1.7.1'], ['router', '0.1.0'], ['zustand', '1.0.1'], ['clsx', '0.1.0'], ['vite-plugin-bff-html', '0.2.1']]) expect(page).toContain(`| \`@cdd-team/${name}\` | \`${version}\` |`);
+  for (const token of ['workspace:', 'peerDependencies', 'release-please', 'bun.lock']) expect(page).toContain(token);
+  for (const [name, sha] of [
+    ['react', 'f4d2bd02fcc127e5603bbe09874242b071def7ba'],
+    ['router', 'bda991c58d01a88b119d910787a87966e31bfe0a'],
+    ['zustand', '4652b210db7bf9fcdbbdf96539b412201a1bec85'],
+    ['clsx', 'bda991c58d01a88b119d910787a87966e31bfe0a'],
+    ['vite-plugin-bff-html', '5be3456bc9df61efebef6902ac5ebe157a307c60'],
+  ]) expect(page).toContain(`/blob/${sha}/packages/${name}/package.json#L`);
+  for (const token of ['@cdd-team/oxlint-plugin-jsdoc', '0.1.2', '@cdd/schemas', '@cdd/bff', 'optional', '^1.7.0', '^1.2.1', '^8.3.3', 'exports', 'jsx-runtime', '/vanilla', 'paths_released', 'npm view', 'release-report.json']) expect(page).toContain(token);
+  expect(page).toMatch(/Тег[^.]*не подтверждает[^.]*npm/);
+  expect(page).toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
+  expect(page).toContain('08.11.2026');
+  expect(page).toContain('не новый прогон');
+  expect(page).not.toMatch(/frontend-packages\/blob\/main/);
+});
+
+test("frontend: выпуск отделён от подтверждения npm и обновления приложения", () => {
+  const pair = section(read('packages'), 'Выпуск и обновление приложения').match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+  expect(pair).not.toBeNull();
+  expect(pair![1]).toContain('https://github.com/');
+  for (const relation of [/change --> releasePr/, /releasePr --> tags/, /tags --> verify/, /verify --> publish/, /publish --> visible/, /visible -->\|Да\| update/, /visible -->\|Нет\| investigate/, /update --> checks/, /bun.lock/, /paths_released/]) expect(pair![2], String(relation)).toMatch(relation);
+  expect(read('packages').match(/^```mermaid$/gm)).toHaveLength(1);
+  expect(read('index')).toContain('](./packages)');
+  expect(readFileSync('site/documentation/project-context.md', 'utf8')).toContain('](/documentation/frontend/packages)');
+  for (const [link, target, heading] of [
+    ['./build#transforms', 'build', '## Преобразования и проверка типов {#transforms}'],
+    ['./styles#modules', 'styles', '## CSS Modules и область классов {#modules}'],
+    ['./checks#tools', 'checks', '## Что проверяют инструменты {#tools}'],
+  ]) {
+    expect(read('packages'), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
+  }
+});
+
+
+test("frontend: обзор даёт полную карту тем в порядке меню", () => {
+  const map = section(read('index'), 'Карта тем');
+  const topics = ['routing', 'build', 'styles', 'startup', 'rendering', 'state', 'requests', 'session', 'bff', 'packages', 'checks'];
+  expect([...map.matchAll(/\]\(\.\/([a-z]+)(?:#[^)]+)?\)/g)].map(match => match[1])).toEqual(topics);
+  for (const file of ['index', 'current-state', 'project-context']) {
+    expect(readFileSync(`site/documentation/${file}.md`, 'utf8'), file).toContain('](/documentation/frontend/)');
+  }
+});
+
+test("frontend: межстраничные связи ведут к владельцам подробностей", () => {
+  for (const [from, link, target, heading] of [
+    ['startup', './requests#transport', 'requests', '## Один клиент и два транспорта {#transport}'],
+    ['routing', './session#switching', 'session', '## Смена сессии и поздние ответы {#switching}'],
+    ['rendering', './styles#modules', 'styles', '## CSS Modules и область классов {#modules}'],
+    ['state', './requests#errors', 'requests', '## Ошибки и реакция интерфейса {#errors}'],
+  ]) {
+    expect(read(from!), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
+  }
+});
+
+test("frontend: итоговый срез учитывает Cell, media-hook и отзыв без refresh", () => {
+  expect(read('rendering')).toContain('ставит курсор в конец при возврате фокуса');
+  expect(read('rendering')).toContain('CodeOrText');
+  expect(read('index')).toContain('CodeOrText');
+  for (const page of ['index', 'rendering']) {
+    expect(read(page), page).toContain('/utils/media.ts#L');
+    expect(read(page), page).not.toContain('/utils/touch.ts');
+  }
+  expect(read('session')).toContain('/go/api.ts#L197-L209');
+});
+
+test("frontend: старый BFF используется только как browser redirect", () => {
+  const files = ['site/documentation/index.md', 'site/documentation/current-state.md', 'site/documentation/project-context.md', ...['index', 'routing', 'build', 'styles', 'startup', 'rendering', 'state', 'requests', 'session', 'bff', 'packages', 'checks'].map(page => `site/documentation/frontend/${page}.md`)];
+  for (const file of files) expect(readFileSync(file, 'utf8'), file).not.toMatch(/\]\((?:\/documentation\/bff|\.\.\/bff)(?:#|\))/);
+  const browser = readFileSync('scripts/check-readability.ts', 'utf8').split('async function checkHierarchy')[1]!.split('async function checkTitle')[0]!;
+  for (const id of ['bff-проверенная-часть', 'что-наблюдается-на-проде', 'релизы-и-граница-доказательства', 'где-искать-реализацию', 'что-еще-нужно-проверить']) expect(browser, id).toContain(id);
+  expect(browser).toContain("documentation/bff");
+  expect(browser).toContain("unique BFF heading");
+  for (const query of ['switchSession', 'jsxImportSource', 'release-please']) expect(browser, query).toContain(query);
+});
+
+
+test('frontend: входные страницы не отрицают реализацию поиска выбранного среза', () => {
+  for (const path of ['site/documentation/index.md', 'site/documentation/notebooks/index.md']) {
+    const md = readFileSync(path, 'utf8');
+    expect(md).not.toMatch(/UI поиска[^.]*отсутствует|UI[^.]*пока отсутствует|UI поиска не реализован/);
+    expect(md).toContain('не новый прогон');
+  }
+  const notebooks = readFileSync('site/documentation/notebooks/index.md', 'utf8');
+  expect(notebooks).toContain(`frontend/blob/${FRONTEND_SHA}/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L322-L346`);
+  expect(notebooks).toContain('задачей #96');
 });

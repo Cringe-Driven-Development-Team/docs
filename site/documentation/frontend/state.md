@@ -7,7 +7,7 @@ title: Управление состоянием
 Текст редактора становится видимым сразу, а сохранённым — после подтверждения
 или сверки с сервером. Здесь разобрано, как frontend разделяет эти состояния
 и сохраняет черновик при сбоях. Срез кода на 08.11.2026 —
-`0606aa6cb83b78a76f1e69816b2a6abd82dc20ee`; это не новый прогон на проде.
+`ea123518d624521f999e884ff32ddec0a5bf6bfa`; это не новый прогон на проде.
 Пользовательские правила редактирования описаны в
 [блокнотах](/documentation/notebooks/editing), здесь — устройство клиента.
 
@@ -23,13 +23,13 @@ title: Управление состоянием
 | `notebook` | Подтверждённые ячейки, черновики, лимит, конфликт и статус сохранения | Страница, очередь и runtime |
 | `runtime` | Сессия исполнения, очередь запусков, прогресс и результаты опроса | Страница и элементы запуска |
 
-Источники: [локальные hooks](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L185-L201),
-[preloaded](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/preloaded.ts#L3-L34),
-[session](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/session.ts#L6-L34),
-[connection](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/connection.ts#L4-L44),
-[toast](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/toast.ts#L4-L26),
-[snackbar](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/snackbar.ts#L4-L41)
-и [runtime](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/runtime.ts#L58-L109).
+Источники: [локальные hooks](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L199-L216),
+[preloaded](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/preloaded.ts#L3-L34),
+[session](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/session.ts#L6-L34),
+[connection](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/connection.ts#L4-L44),
+[toast](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/toast.ts#L4-L26),
+[snackbar](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/snackbar.ts#L4-L41)
+и [runtime](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/runtime.ts#L58-L109).
 
 Zustand 1.0.1 соединяет vanilla-store с hook: `create` возвращает вызываемый
 hook и методы `getState`, `setState`, `subscribe`. Частичное обновление
@@ -47,8 +47,8 @@ Hook сравнивает выбранный срез через `Object.is` и 
 `tooLarge` отмечает превышение лимита. Страница показывает
 `drafts[cellId] ?? cell.source`, поэтому ввод не ждёт сети. Метаданные
 блокнота и статусы стоят рядом, но не подменяют source.
-См. [NotebookState](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L34-L69)
-и [Snapshot](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/snapshot.ts#L3-L12).
+См. [NotebookState](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L34-L69)
+и [Snapshot](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/snapshot.ts#L3-L12).
 
 Очередь jobs, текущая операция, таймеры и `generation` — внутренние переменные
 модуля, а не поля, которые компонент должен менять. Очередь общая для
@@ -56,16 +56,16 @@ update/create/move/delete текущего блокнота: операции и
 запрос получает актуальный `confirmed.hash`. Следующая запись использует
 hash предыдущего подтверждения. Ожидающий update той же ячейки заменяется
 актуальным source; уже отправленный запрос продолжает выполняться.
-См. [внутреннее состояние](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L74-L95),
-[enqueueSource](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L309-L318)
-и [run](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L444-L478).
+См. [внутреннее состояние](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L74-L95),
+[enqueueSource](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L309-L318)
+и [run](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L444-L478).
 
 Структура меняется после подтверждения; удаление снимает черновик только
 после успеха. Структурные действия блокируются другой такой операцией,
 конфликтом или ошибкой сохранения. Подтверждённое изменение code source
 сбрасывает его прежние outputs/count/truncated, перемещение сохраняет результаты.
-См. [структурные операции](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L328-L386)
-и [применение source](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/snapshot.ts#L39-L65).
+См. [структурные операции](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L328-L386)
+и [применение source](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/snapshot.ts#L39-L65).
 
 ## Ввод и IME
 
@@ -76,17 +76,17 @@ hash предыдущего подтверждения. Ожидающий updat
 полный текст с `false`, затем вызывает commit; клавиатурные преобразования
 при активной композиции также пропускаются. Это откладывание autosave,
 а не универсальная блокировка явного `commitSource` на уровне стора.
-См. [editSource](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L270-L318)
-и [события Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L228-L251).
+См. [editSource](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L270-L318)
+и [события Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Cell/Cell.tsx#L233-L256).
 
 Предел source — 65 536 байт UTF-8, не символов: например, 32 768 букв «я»
 занимают весь предел. `tooLarge` оставляет весь черновик видимым, а постановка
 update в очередь прекращается до сокращения. При paste вставляемое начало
 подбирается по свободным байтам с учётом заменяемого выделения и без разрезания
 Unicode-символа. Серверный 413 — отдельный отказ записи, не тихое обрезание.
-См. [pastedPart](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L254-L267),
-[расчёт UTF-8](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/snapshot.ts#L14-L36)
-и [тест предела](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebook.test.ts#L120-L136).
+См. [pastedPart](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L254-L267),
+[расчёт UTF-8](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/snapshot.ts#L14-L36)
+и [тест предела](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebook.test.ts#L120-L136).
 
 ## Новый ввод во время запроса
 
@@ -97,8 +97,8 @@ Unicode-символа. Серверный 413 — отдельный отказ
 текст равен отправленному. `v2` остаётся видимым и уходит следующим update
 после commit с новым hash. Пока есть draft, успешный ответ первой записи
 не даёт ложное «Сохранено».
-См. [commit](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L374-L386)
-и [тест нового ввода](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebook.test.ts#L78-L94).
+См. [commit](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L374-L386)
+и [тест нового ввода](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebook.test.ts#L78-L94).
 
 <template #diagram>
 
@@ -128,8 +128,8 @@ sequenceDiagram
 не подтверждена: сервер может уже заменить исходный source. Стор учитывает
 inflight/pending/queued update и отправляет возврат отдельной операцией.
 Поэтому сравнения только с нынешним `confirmed` недостаточно.
-См. [updateUnconfirmed](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L434-L440)
-и [тест возврата](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebookReview.test.ts#L40-L57).
+См. [updateUnconfirmed](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L434-L440)
+и [тест возврата](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebookReview.test.ts#L40-L57).
 
 ## Смена блокнота и поздний ответ
 
@@ -138,9 +138,9 @@ inflight/pending/queued update и отправляет возврат отдел
 несохранённое в `Map` памяти этой вкладки, сбрасывает очередь и увеличивает
 `generation`. Ответ прежнего поколения не применяется к новому блокноту,
 а висящий старый запрос не задерживает его новую очередь.
-См. [reset](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L103-L121),
-[open/leave](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L175-L227)
-и [тест позднего ответа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebook.test.ts#L193-L223).
+См. [reset](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L103-L121),
+[open/leave](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L175-L227)
+и [тест позднего ответа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebook.test.ts#L193-L223).
 
 При возврате сохранённые drafts, tooLarge и orphans восстанавливаются.
 Если серверный hash прежний, допустимые drafts снова отправляются; если
@@ -148,7 +148,7 @@ hash изменился, требуется выбор версии. Это па
 теряет её, localStorage здесь нет. Явный `closeNotebook` очищает Map.
 `beforeunload` предупреждает по статусу сохранения, но имеет ограничение
 для orphans, указанное ниже.
-[Тесты возврата](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebookReview.test.ts#L173-L226).
+[Тесты возврата](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebookReview.test.ts#L173-L226).
 
 ## Сохранение и конфликты {#saving}
 
@@ -163,8 +163,8 @@ hash изменился, требуется выбор версии. Это па
 перечитывает блокнот через `notebooks.get` и сверяет порядок, ID, вид и source
 ячеек с ожидаемой структурой. `sameStructure` не сравнивает hash и результаты
 исполнения; новый hash берётся из прочитанного снимка.
-См. [reconcile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L481-L578)
-и [sameStructure](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/snapshot.ts#L139-L159).
+См. [reconcile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L481-L578)
+и [sameStructure](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/snapshot.ts#L139-L159).
 
 <template #diagram>
 
@@ -199,14 +199,14 @@ flowchart TD
 неоднозначный снимок не разрешает слепой повтор создания. Определённый отказ
 вроде 413 не получает автоматического повтора: прежний снимок оставляет ошибку
 и черновик до ручного действия.
-[Тесты неизвестного исхода и отказов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebookFailures.test.ts#L46-L196).
+[Тесты неизвестного исхода и отказов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebookFailures.test.ts#L46-L196).
 
 `409 notebook_conflict` и `NOT_FOUND` мутации останавливают очередь, снимают
 старые структурные jobs и начинают загрузку свежего снимка; drafts остаются.
 Если чтение тоже возвращает `NOT_FOUND`, ставится `notebook_gone`; при ошибке
 чтения конфликта доступен повтор, выбирать версию ещё нельзя. `too_many_cells`
 имеет другую причину: это ошибка добавления, очередь продолжает работу.
-[Разбор причин](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L489-L507).
+[Разбор причин](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L489-L507).
 
 Выбор возможен только с загруженным снимком:
 
@@ -223,8 +223,8 @@ flowchart TD
 конфликта и beforeunload не учитывают оставшиеся orphans; успешное уведомление
 не гарантирует сохранения такого текста. Условия и открытая ошибка — в
 [тексте удалённой ячейки](/documentation/notebooks/editing#orphans).
-См. [resolveConflict](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L638-L695)
-и [тесты выбора](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebookConflict.test.ts#L64-L170).
+См. [resolveConflict](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L638-L695)
+и [тесты выбора](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/notebookConflict.test.ts#L64-L170).
 
 Протокол BFF/Go и диаграмма — в
 [очереди сохранения](/documentation/notebooks/editing#save-queue).
@@ -241,8 +241,8 @@ Runtime-store хранит состояние окружения и запуск
 Конфликт, ошибка, лимит или новый ввод во время ожидания отказывают запуску.
 После выбора версии запуск нужно нажать заново; уже принятые исполнения
 конфликт редактирования не отменяет.
-См. [flush](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L752-L797)
-и [передачу из runtime](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/runtime.ts#L531-L550).
+См. [flush](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L752-L797)
+и [передачу из runtime](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/runtime.ts#L531-L550).
 Полный сценарий — в [исполнении Python](/documentation/notebooks/execution).
 
 ## Что проверить в понимании
@@ -256,3 +256,5 @@ Runtime-store хранит состояние окружения и запуск
 
 Начало пути данных — в [запуске приложения](./startup), общая цепочка — в
 [обзоре](./).
+
+Машинные поля ответов BFF и реакция интерфейса — в [запросах и ошибках](./requests#errors).

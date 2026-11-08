@@ -14,7 +14,7 @@ pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, 
 
 ::: info
 Часть проверена на проде 31.10.2026: гостевая HTML-страница и отказы tRPC без CSRF-заголовка/сессии.
-[Как работает сейчас](/documentation/bff). Вход, refresh и операции с данными здесь остаются планом
+[Как работает сейчас](/documentation/frontend/bff#bff-проверенная-часть). Вход, refresh и операции с данными здесь остаются планом
 до проверки; ход реализации — в GitHub-задачах трека.
 :::
 
