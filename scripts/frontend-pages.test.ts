@@ -280,7 +280,7 @@ test("frontend: новые fragment-ссылки сборки, стилей и �
 });
 
 test("frontend: сборочные источники закреплены и страницы сохраняют границу проверки", () => {
-  for (const page of ['build', 'styles', 'checks']) {
+  for (const page of ['build', 'styles', 'checks', 'packages']) {
     const md = read(page);
     expect(md, page).toContain('08.11.2026');
     expect(md, page).toMatch(/не новый прогон|не свидетельство нового прогона/);
@@ -290,5 +290,43 @@ test("frontend: сборочные источники закреплены и с
     for (const [, path] of md.matchAll(/https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/([^\s)]+)/g)) expect(path, page).toMatch(/^[a-f0-9]{40}\/[^#]+#L\d+(?:-L\d+)?$/);
     expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY/);
     expect(md.replace(/^```[\s\S]*?^```/gm, ''), page).not.toContain('{{');
+  }
+});
+
+
+test("frontend: пакеты привязаны к версиям приложения", () => {
+  const page = read('packages');
+  for (const [name, version] of [['react', '1.7.1'], ['router', '0.1.0'], ['zustand', '1.0.1'], ['clsx', '0.1.0'], ['vite-plugin-bff-html', '0.2.1']]) expect(page).toContain(`| \`@cdd-team/${name}\` | \`${version}\` |`);
+  for (const token of ['workspace:', 'peerDependencies', 'release-please', 'bun.lock']) expect(page).toContain(token);
+  for (const [name, sha] of [
+    ['react', 'f4d2bd02fcc127e5603bbe09874242b071def7ba'],
+    ['router', 'bda991c58d01a88b119d910787a87966e31bfe0a'],
+    ['zustand', '4652b210db7bf9fcdbbdf96539b412201a1bec85'],
+    ['clsx', 'bda991c58d01a88b119d910787a87966e31bfe0a'],
+    ['vite-plugin-bff-html', '5be3456bc9df61efebef6902ac5ebe157a307c60'],
+  ]) expect(page).toContain(`/blob/${sha}/packages/${name}/package.json#L`);
+  for (const token of ['@cdd-team/oxlint-plugin-jsdoc', '0.1.2', '@cdd/schemas', '@cdd/bff', 'optional', '^1.7.0', '^1.2.1', '^8.3.3', 'exports', 'jsx-runtime', '/vanilla', 'paths_released', 'npm view', 'release-report.json']) expect(page).toContain(token);
+  expect(page).toMatch(/Тег[^.]*не подтверждает[^.]*npm/);
+  expect(page).toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
+  expect(page).toContain('08.11.2026');
+  expect(page).toContain('не новый прогон');
+  expect(page).not.toMatch(/frontend-packages\/blob\/main/);
+});
+
+test("frontend: выпуск отделён от подтверждения npm и обновления приложения", () => {
+  const pair = section(read('packages'), 'Выпуск и обновление приложения').match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+  expect(pair).not.toBeNull();
+  expect(pair![1]).toContain('https://github.com/');
+  for (const relation of [/change --> releasePr/, /releasePr --> tags/, /tags --> verify/, /verify --> publish/, /publish --> visible/, /visible -->\|Да\| update/, /visible -->\|Нет\| investigate/, /update --> checks/, /bun.lock/, /paths_released/]) expect(pair![2], String(relation)).toMatch(relation);
+  expect(read('packages').match(/^```mermaid$/gm)).toHaveLength(1);
+  expect(read('index')).toContain('](./packages)');
+  expect(readFileSync('site/documentation/project-context.md', 'utf8')).toContain('](/documentation/frontend/packages)');
+  for (const [link, target, heading] of [
+    ['./build#transforms', 'build', '## Преобразования и проверка типов {#transforms}'],
+    ['./styles#modules', 'styles', '## CSS Modules и область классов {#modules}'],
+    ['./checks#tools', 'checks', '## Что проверяют инструменты {#tools}'],
+  ]) {
+    expect(read('packages'), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
   }
 });

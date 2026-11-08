@@ -1488,6 +1488,7 @@ async function checkDiagramPairs(browser: Browser, url: (path: string) => string
         ['documentation/frontend/bff', 'rpc', 0],
         ['documentation/frontend/build', 'transforms', 0],
         ['documentation/frontend/styles', 'modules', 0],
+        ['documentation/frontend/packages', 'release', 0],
         ['documentation/frontend/checks', 'mock-boundary', 0],
       ] as const) {
         // A fresh document checks direct fragments independently of same-page hash preparation.
@@ -1756,7 +1757,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/routing', 'documentation/frontend/build',
     'documentation/frontend/styles', 'documentation/frontend/startup',
     'documentation/frontend/rendering', 'documentation/frontend/state', 'documentation/frontend/requests',
-    'documentation/frontend/session', 'documentation/frontend/bff', 'documentation/frontend/checks'];
+    'documentation/frontend/session', 'documentation/frontend/bff', 'documentation/frontend/packages', 'documentation/frontend/checks'];
   const links = [...routes.slice(0, 2), ...frontendRoutes, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
@@ -1786,7 +1787,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       'documentation/frontend/state': 'управление-состоянием', 'documentation/frontend/requests': 'запросы-и-ошибки',
       'documentation/frontend/session': 'сессия-и-авторизация', 'documentation/frontend/bff': 'bff',
       'documentation/frontend/build': 'сборка-и-разработка', 'documentation/frontend/styles': 'стили',
-      'documentation/frontend/checks': 'проверка-изменении' };
+      'documentation/frontend/packages': 'командные-пакеты', 'documentation/frontend/checks': 'проверка-изменении' };
     await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
     if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
     await tree();

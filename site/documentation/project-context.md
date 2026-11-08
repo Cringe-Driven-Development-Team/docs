@@ -37,6 +37,10 @@ Wiki — производное представление документац�
 
 ## Владельцы командных пакетов
 
+Версии библиотек выбранного среза frontend, точки импорта и выпуск описаны в
+[командных пакетах Frontend](/documentation/frontend/packages). Карта ниже сохраняет
+исторический срез 31.10.2026; её ссылки указывают владельца, а не текущие версии приложения.
+
 Владелец библиотек — [frontend-packages](https://github.com/Cringe-Driven-Development-Team/frontend-packages). По состоянию исходников на 31.10.2026 клиент frontend использует пять пакетов из [apps/client/package.json](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/client/package.json#L13-L23), а корневой тулинг — [oxlint-плагин](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/package.json#L30-L37).
 
 | Пакет | Где править у владельца |
