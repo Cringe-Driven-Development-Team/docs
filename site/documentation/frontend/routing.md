@@ -39,6 +39,13 @@ title: Роутинг
 
 ## Переход и история {#navigation}
 
+<DiagramSection>
+
+Схема сопоставляет выдачу документа и навигацию уже запущенного клиента.
+Показана ветка, где BFF выдал HTML; его перенаправления и HTML 503 описаны
+в [запуске приложения](./startup). Защита RPC остаётся отдельной серверной
+проверкой, как объяснено ниже.
+
 `Link` создаёт обычный `a` с вычисленным `href`. Клик основной кнопкой без
 модификаторов перехватывается и вызывает переход роутера; Ctrl/Meta-клик и
 открытие в другую вкладку остаются браузеру. Из обработчика используется
@@ -59,6 +66,27 @@ Back/Forward вызывают `popstate`: подписка истории зан
 `RouterProvider` подключает роутер к истории; далее работают клиентские
 переходы. Сравнение загрузки данных при двух способах открытия — в
 [запуске приложения](./startup).
+
+<template #diagram>
+
+```mermaid
+%% Flowchart: BFF обрабатывает документ; история SPA ведёт прямо в клиентское дерево.
+flowchart TD
+    direct(["Прямой URL или reload"]) --> bff["Проверки HTML в BFF"]
+    bff -->|HTML выдан| provider["RouterProvider подключает историю"]
+    link(["Link или useNavigate"]) --> history["history: pushState / replaceState"]
+    back(["Back / Forward"]) --> popstate["popstate"]
+    provider --> tree["Совпадения в дереве маршрутов"]
+    history --> tree
+    popstate --> tree
+    tree --> guard["beforeLoad: от корня к листу"]
+    guard -->|Маршрут разрешён| outlet["RootLayout → Outlet → страница"]
+    guard -->|redirect| history
+```
+
+</template>
+
+</DiagramSection>
 
 ## Параметры и 404
 

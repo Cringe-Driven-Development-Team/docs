@@ -57,6 +57,50 @@ Frontend Cellestial загружает блокнот, показывает ре
 Это проверяется по [touch.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/utils/touch.ts#L3-L16)
 и [пропсам Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L446-L458).
 
+<DiagramSection>
+
+Схема показывает успешную правку без нового ввода во время запроса. Два пути
+открытия сходятся на данных страницы: прямой URL получает их из HTML, последующий
+SPA-переход без preloaded — через RPC. Затем видимый черновик проходит очередь
+и становится подтверждённым текстом. Точки этой цепочки —
+[загрузка страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L185-L239)
+и [очередь записи](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L403-L478).
+Условия ввода и подтверждения разобраны в шагах ниже.
+
+<template #diagram>
+
+```mermaid
+%% Sequence: два пути чтения, затем одна успешная запись source.
+sequenceDiagram
+    autonumber
+    participant client as Клиент
+    participant bff as BFF
+    participant go as Go
+    alt Прямой URL
+        client->>bff: Открыть блокнот
+        bff->>go: Прочитать данные страницы
+        go-->>bff: Блокнот и runtime-данные
+        bff-->>client: HTML с notebookPage
+    else SPA без preloaded
+        client->>bff: notebooks.get
+        bff->>go: Прочитать данные страницы
+        go-->>bff: Блокнот и runtime-данные
+        bff-->>client: Данные страницы
+    end
+    client->>client: Показать source, editSource → drafts
+    client->>client: commitSource → очередь
+    client->>bff: cells.update с source и hash
+    bff->>go: Проверенный вход, If-Match
+    go-->>bff: Успех и новый hash
+    bff-->>client: Подтверждение
+    client->>client: Обновить confirmed, снять совпавший draft
+    Note over client: Очередь пуста → «Сохранено»
+```
+
+</template>
+
+</DiagramSection>
+
 1. **Открытие.** При прямом URL BFF выдаёт HTML с `user` и `notebookPage`.
    Общий загрузчик соединяет метаданные, согласованные `hash` и ячейки из одного
    ответа content, активную runtime-сессию и её очередь, если она относится к этому

@@ -134,3 +134,24 @@ test("frontend: страницы не содержат чувствительн�
     expect(md.replace(/^```[\s\S]*?^```/gm, "").replace(/<code v-pre>[\s\S]*?<\/code>/g, ""), page).not.toContain("{{");
   }
 });
+
+test("frontend: шесть схем объясняют связи рядом с текстом", () => {
+  for (const [page, title, relationships] of [
+    ["index", "Сквозной сценарий", [/Клиент/, /BFF/, /Go/, /notebookPage/, /notebooks\.get/, /editSource/, /client->>bff: cells\.update/, /bff->>go:.*If-Match/, /confirmed/]],
+    ["startup", "Сторы до первого рендера", [/readBootstrap.*-->/, /initSession/, /setPreloadedNotebook/, /RouterProvider/, /valid -->\|Нет\| failure/, /failure --> stopped/, /BootstrapError/, /не запускается/]],
+    ["routing", "Переход и история", [/Прямой URL/, /BFF/, /pushState.*replaceState/, /popstate/, /дерев/, /tree --> guard/, /guard -->\|Маршрут разрешён\| outlet/, /beforeLoad/, /Outlet/]],
+    ["rendering", "Внешний стор и обновление DOM", [/onInput.*-->/, /editSource/, /подписчик/, /Object\.is/, /forceRender/, /useState --> render/, /forceRender --> render/, /reconcile --> commit/, /commit.*DOM/]],
+    ["state", "Новый ввод во время запроса", [/store->>bff:.*v1/, /bff-->>store:.*v1/, /v2/, /confirmed/, /drafts/, /hash/, /сохраняется/]],
+    ["state", "Сохранение и конфликты", [/неизвестен/, /notebooks\.get/, /сверка/i, /409 notebook_conflict/, /пауз/, /выбор/i, /read --> reconcile/, /pause --> fresh/, /fresh --> choice/, /условные записи/]],
+  ] as const) {
+    const body = section(read(page), title);
+    const pair = body.match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+    expect(pair, `${page}: ${title} — явная пара текста и схемы`).not.toBeNull();
+    expect(pair![1]!.replace(/\s/g, "").length).toBeGreaterThan(80);
+    expect(pair![1], `${page}: источники рядом со схемой`).toContain("https://github.com/");
+    for (const relation of relationships) expect(pair![2], `${page}: ${relation}`).toMatch(relation);
+  }
+  for (const [page, count] of [["index", 1], ["startup", 1], ["routing", 1], ["rendering", 1], ["state", 2]] as const) {
+    expect(read(page).match(/^```mermaid$/gm)?.length ?? 0, page).toBe(count);
+  }
+});
