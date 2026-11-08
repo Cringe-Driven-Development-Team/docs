@@ -1726,15 +1726,18 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await observe(page);
   const routes = ['documentation/', 'documentation/current-state', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
     'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
-  const links = [...routes.slice(0, 3), 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(3)].map(path => `${SITE_BASE}${path}`);
+  const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/routing', 'documentation/frontend/startup',
+    'documentation/frontend/rendering', 'documentation/frontend/state'];
+  const links = [...routes.slice(0, 2), ...frontendRoutes, routes[2]!, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(3)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
+  const frontendCaret = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/frontend/"]) > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
   const menu = '.VPLocalNav button.menu';
   const marker = () => page.evaluate(() => (window as unknown as Record<string, unknown>).__hierarchy);
   const tree = async () => assert.deepEqual(await page.$$eval('.VPSidebar a.link', els => els.map(el => el.getAttribute('href'))), links);
-  const expanded = async (value: boolean) => {
-    await page.waitForFunction((selector, value) => document.querySelector(selector)?.getAttribute('aria-expanded') === String(value), {}, caret, value);
+  const expanded = async (value: boolean, selector = caret) => {
+    await page.waitForFunction((selector, value) => document.querySelector(selector)?.getAttribute('aria-expanded') === String(value), {}, selector, value);
   };
   const openMenu = async () => {
     if (await page.$eval(menu, el => el.getAttribute('aria-expanded') === 'false')) {
@@ -1748,23 +1751,45 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.locator(sidebarLink(path)).click();
     await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}${path}`);
     const headings: Record<string, string> = { 'documentation/security/': 'безопасность', 'documentation/security/csrf': 'csrf',
-      'documentation/security/xss': 'xss', 'documentation/security/csp': 'csp' };
+      'documentation/security/xss': 'xss', 'documentation/security/csp': 'csp',
+      'documentation/frontend/': 'frontend', 'documentation/frontend/routing': 'роутинг',
+      'documentation/frontend/startup': 'запуск-приложения', 'documentation/frontend/rendering': 'компоненты-и-рендеринг',
+      'documentation/frontend/state': 'управление-состоянием' };
     await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
     if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
     await tree();
+    assert.equal(await page.$eval(sidebarLink(path), el => el.getAttribute('aria-current')), 'page');
     assert.equal(await marker(), true, `${path}: expected SPA navigation`);
   };
   for (const width of [1440, 390]) {
     const mobile = width === 390;
     await page.setViewport({ width, height: mobile ? 844 : 1000 });
-    for (const route of routes) {
+    for (const route of [...routes, ...frontendRoutes]) {
       const response = await page.goto(url(route), { waitUntil: 'networkidle0' });
       assert(response?.ok(), `${route}: canonical page must exist`);
       await tree();
       await expanded(route.startsWith('documentation/security/'));
+      await expanded(route.startsWith('documentation/frontend/'), frontendCaret);
       assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
       if (!['documentation/architecture/', 'documentation/security/csp'].includes(route)) assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
     }
+    await page.goto(url('documentation/architecture/'), { waitUntil: 'networkidle0' });
+    if (mobile) await openMenu();
+    await expanded(false, frontendCaret);
+    await page.waitForSelector(sidebarLink(frontendRoutes[1]!), { hidden: true });
+    await page.focus(frontendCaret);
+    await page.keyboard.press('Enter'); await expanded(true, frontendCaret);
+    await page.keyboard.press('Space'); await expanded(false, frontendCaret);
+    await page.keyboard.press('Enter'); await expanded(true, frontendCaret);
+    await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
+    for (const route of frontendRoutes) {
+      await click(route, mobile);
+      await expanded(true, frontendCaret);
+    }
+    await page.reload({ waitUntil: 'networkidle0' }); await tree(); await expanded(true, frontendCaret);
+    assert.equal(await page.$eval(sidebarLink('documentation/frontend/state'), el => el.getAttribute('aria-current')), 'page');
+    if (mobile) await openMenu();
+    await page.screenshot({ path: join(artifacts, `${label}-frontend-hierarchy-${width}.png`) });
     await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
     if (mobile) await openMenu();
     await expanded(false);
@@ -1794,7 +1819,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     }
     await page.screenshot({ path: join(artifacts, `${label}-hierarchy-${width}.png`) });
   }
-  console.log('PASS canonical tree, active parent, native caret, SPA/reload/Back, mobile Escape');
+  console.log('PASS canonical tree, Frontend from architecture, all four children, active parent, native caret, SPA/reload/Back, mobile Escape');
   await page.setViewport({ width: 1440, height: 1000 });
   const visibleHash = async () => {
     await page.waitForFunction(() => !!document.getElementById(decodeURIComponent(location.hash.slice(1))));
