@@ -3,6 +3,11 @@
 # чтобы dist/ совпадал. Спека: docs/superpowers/specs/2026-09-27-docker-render-design.md §4.
 FROM mcr.microsoft.com/playwright:v1.61.1-noble
 
+# Native-зависимости собираются из исходников, если готового бинарника для Node нет.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
 # В образе есть npm, но нет unzip, поэтому bun ставится из npm.
 # Путь к Chromium содержит номер сборки: прячем его за постоянным.
 # git: репозиторий смонтирован с чужим владельцем; build-site.ts тянет ветки по HTTPS без SSH-ключей.
