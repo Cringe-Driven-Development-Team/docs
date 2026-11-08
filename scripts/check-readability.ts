@@ -1483,6 +1483,9 @@ async function checkDiagramPairs(browser: Browser, url: (path: string) => string
         ['documentation/frontend/rendering', 'subscriptions', 0],
         ['documentation/frontend/state', 'новыи-ввод-во-время-запроса', 0],
         ['documentation/frontend/state', 'saving', 1],
+        ['documentation/frontend/requests', 'transport', 0],
+        ['documentation/frontend/session', 'switching', 0],
+        ['documentation/frontend/bff', 'rpc', 0],
       ] as const) {
         // A fresh document checks direct fragments independently of same-page hash preparation.
         const page = await context.newPage();
@@ -1745,11 +1748,12 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   await observe(page);
-  const routes = ['documentation/', 'documentation/current-state', 'documentation/bff', 'documentation/architecture/', 'documentation/security/',
+  const routes = ['documentation/', 'documentation/current-state', 'documentation/architecture/', 'documentation/security/',
     'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
   const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/routing', 'documentation/frontend/startup',
-    'documentation/frontend/rendering', 'documentation/frontend/state'];
-  const links = [...routes.slice(0, 2), ...frontendRoutes, routes[2]!, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(3)].map(path => `${SITE_BASE}${path}`);
+    'documentation/frontend/rendering', 'documentation/frontend/state', 'documentation/frontend/requests',
+    'documentation/frontend/session', 'documentation/frontend/bff'];
+  const links = [...routes.slice(0, 2), ...frontendRoutes, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const frontendCaret = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/frontend/"]) > .item > button.caret`;
@@ -1775,7 +1779,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       'documentation/security/xss': 'xss', 'documentation/security/csp': 'csp',
       'documentation/frontend/': 'frontend', 'documentation/frontend/routing': 'роутинг',
       'documentation/frontend/startup': 'запуск-приложения', 'documentation/frontend/rendering': 'компоненты-и-рендеринг',
-      'documentation/frontend/state': 'управление-состоянием' };
+      'documentation/frontend/state': 'управление-состоянием', 'documentation/frontend/requests': 'запросы-и-ошибки',
+      'documentation/frontend/session': 'сессия-и-авторизация', 'documentation/frontend/bff': 'bff' };
     await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
     if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
     await tree();
@@ -1808,7 +1813,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       await expanded(true, frontendCaret);
     }
     await page.reload({ waitUntil: 'networkidle0' }); await tree(); await expanded(true, frontendCaret);
-    assert.equal(await page.$eval(sidebarLink('documentation/frontend/state'), el => el.getAttribute('aria-current')), 'page');
+    assert.equal(await page.$eval(sidebarLink('documentation/frontend/bff'), el => el.getAttribute('aria-current')), 'page');
     if (mobile) await openMenu();
     await page.screenshot({ path: join(artifacts, `${label}-frontend-hierarchy-${width}.png`) });
     await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
@@ -1840,7 +1845,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     }
     await page.screenshot({ path: join(artifacts, `${label}-hierarchy-${width}.png`) });
   }
-  console.log('PASS canonical tree, Frontend from architecture, all four children, active parent, native caret, SPA/reload/Back, mobile Escape');
+  console.log('PASS canonical tree, Frontend from architecture, all seven children, active parent, native caret, SPA/reload/Back, mobile Escape');
   await page.setViewport({ width: 1440, height: 1000 });
   const visibleHash = async () => {
     await page.waitForFunction(() => !!document.getElementById(decodeURIComponent(location.hash.slice(1))));

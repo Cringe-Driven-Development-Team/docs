@@ -74,9 +74,9 @@ test("миграция: клиент вызывает tRPC", () => {
   expect(front).not.toContain("публичного контракта");
 });
 
-test("в меню нет раздела BFF", () => {
+test("BFF находится внутри Frontend, старого корневого раздела нет", () => {
   const config = readFileSync("site/.vitepress/config.mts", "utf8");
-  expect(config).not.toContain("text: 'BFF'");
+  expect(config).toContain("{ text: 'BFF', link: '/documentation/frontend/bff' }");
   expect(config).not.toContain("'/bff/'");
   expect(config).toContain("moduleSidebar(");
 });
@@ -628,9 +628,9 @@ test("SameSite bootstrap link keeps target heading", () => {
 });
 
 test("текущий BFF отделяет наблюдение прода от кода и непроверенных сценариев", () => {
-  const md = readFileSync("site/documentation/bff.md", "utf8");
+  const md = readFileSync("site/documentation/frontend/bff.md", "utf8");
   for (const title of ["Что наблюдается на проде", "Релизы и граница доказательства", "Где искать реализацию", "Что ещё нужно проверить"]) {
-    expect(md).toContain(`## ${title}`);
+    expect(md).toContain(`### ${title}`);
   }
   expect(md).toContain("31.10.2026");
   expect(md).toContain("403");
@@ -640,7 +640,7 @@ test("текущий BFF отделяет наблюдение прода от �
   for (const link of md.matchAll(/https:\/\/github\.com\/[^)\s]+\/blob\/([^/]+)\//g)) {
     expect(link[1]).toMatch(/^[a-f0-9]{40}$/);
   }
-  expect(readFileSync(TRACK, "utf8")).toContain("[Как работает сейчас](/documentation/bff)");
+  expect(readFileSync(TRACK, "utf8")).toContain("[Как работает сейчас](/documentation/frontend/bff#bff-проверенная-часть)");
 });
 
 

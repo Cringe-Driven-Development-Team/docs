@@ -26,6 +26,7 @@ test("protectedFiles: diagrams, index and removed-page redirects cannot be overw
     "documentation/csrf/index.html",
     "documentation/csrf/scenarios.html",
     "documentation/csrf/checks.html",
+    "documentation/bff.html",
     "bff/index.html",
     "bff/contract.html",
     "bff/auth.html",

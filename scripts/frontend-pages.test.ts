@@ -155,3 +155,62 @@ test("frontend: шесть схем объясняют связи рядом с 
     expect(read(page).match(/^```mermaid$/gm)?.length ?? 0, page).toBe(count);
   }
 });
+
+
+test("frontend: запросы, сессия и серверная обработка имеют полные страницы", () => {
+  for (const value of ['httpBatchLink', 'httpLink', 'FormData', 'X-CSRF', 'cells.update', 'appCode', 'zodError', 'maxURLLength: 2000', "credentials: 'same-origin'", 'RouterInputs', 'RouterOutputs', 'If-Match', 'неизвестен']) expect(read('requests'), value).toContain(value);
+  for (const value of ['switchSession', 'SESSION_CHANGED', 'HttpOnly', 'UNAUTHORIZED', '30 с', '10 с', 'logoutAll', 'serverRevocation', '#142']) expect(read('session'), value).toContain(value);
+  for (const value of ['createContext', 'authedProcedure', 'loadNotebook', 'NotebookPage', 'strictObject', 'unwrap', 'Orval', 'spec/openapi.json', 'isJSON', '503']) expect(read('bff'), value).toContain(value);
+  for (const id of ['bff-проверенная-часть', 'что-наблюдается-на-проде', 'релизы-и-граница-доказательства', 'где-искать-реализацию', 'что-еще-нужно-проверить']) expect(read('bff').split(`{#${id}}`), id).toHaveLength(2);
+  for (const page of ['requests', 'session', 'bff']) {
+    expect(read(page), page).toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
+    expect(read(page), page).toContain('08.11.2026');
+    expect(read(page), page).toMatch(/не новый прогон|не свидетельство нового прогона/);
+  }
+});
+
+test("frontend: транспорт, смена сессии и BFF показаны рядом с доказательством", () => {
+  for (const [page, title, relationships] of [
+    ['requests', 'Один клиент и два транспорта', [/splitLink/, /FormData/, /httpLink/, /httpBatchLink/, /batch --> bff/, /multipart --> bff/, /X-CSRF/]],
+    ['session', 'Смена сессии и поздние ответы', [/switchSession/, /closing/, /inflight/, /Set-Cookie/, /generation/, /SESSION_CHANGED/]],
+    ['bff', 'RPC: контекст и валидация', [/createContext/, /CSRF/, /authedProcedure/, /strictObject/, /createGo/, /unwrap/, /Go/]],
+  ] as const) {
+    const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+    expect(pair, page).not.toBeNull();
+    expect(pair![1]!.replace(/\s/g, '').length).toBeGreaterThan(80);
+    expect(pair![1], page).toContain('https://github.com/');
+    for (const relation of relationships) expect(pair![2], page).toMatch(relation);
+    expect(read(page).match(/^```mermaid$/gm)).toHaveLength(1);
+  }
+});
+
+test("frontend: новые запросы и сессия ссылаются на существующих владельцев", () => {
+  for (const [from, link, target, heading] of [
+    ['requests', './state#saving', 'state', '## Сохранение и конфликты {#saving}'],
+    ['requests', './session#switching', 'session', '## Смена сессии и поздние ответы {#switching}'],
+    ['session', './startup#сторы-до-первого-рендера', 'startup', '## Сторы до первого рендера'],
+    ['bff', './startup#первыи-html-от-bff', 'startup', '## Первый HTML от BFF'],
+    ['bff', './requests#errors', 'requests', '## Ошибки и реакция интерфейса {#errors}'],
+  ]) {
+    expect(read(from!), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
+  }
+});
+
+
+test("frontend: текущие источники отделены от исторического BFF и безопасны", () => {
+  for (const page of ['requests', 'session', 'bff']) {
+    const md = read(page);
+    const current = md.split('## BFF: проверенная часть')[0]!;
+    const sources = [...current.matchAll(/https:\/\/github\.com\/Cringe-Driven-Development-Team\/frontend\/blob\/([^\s)]+)/g)];
+    expect(sources.length, page).toBeGreaterThan(1);
+    for (const [, path] of sources) expect(path, page).toMatch(/^ea123518d624521f999e884ff32ddec0a5bf6bfa\/[^#]+#L\d+(?:-L\d+)?$/);
+    expect(md, page).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
+    expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY/);
+    expect(md.replace(/^```[\s\S]*?^```/gm, ''), page).not.toContain('{{');
+    expect(md, page).not.toMatch(/LINK_[A-Z_]+|\)_[A-Z]+/);
+  }
+  const historical = read('bff').split('## BFF: проверенная часть')[1]!;
+  for (const value of ['31.10.2026 в 13:11 UTC', 'dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64', '23d3dd9e955424a7634fb0dc49a38af6eb08792c', '14653763279dab055e3cea47a84a0c531bccf03f', 'csrf_invalid', 'не проверен авторизованным сценарием на проде', 'не утверждение об отсутствии реализации']) expect(historical, value).toContain(value);
+  expect(historical).not.toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
+});

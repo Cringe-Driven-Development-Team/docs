@@ -22,8 +22,10 @@ const documentationSidebar = [
         { text: 'Запуск приложения', link: '/documentation/frontend/startup' },
         { text: 'Компоненты и рендеринг', link: '/documentation/frontend/rendering' },
         { text: 'Управление состоянием', link: '/documentation/frontend/state' },
+        { text: 'Запросы и ошибки', link: '/documentation/frontend/requests' },
+        { text: 'Сессия и авторизация', link: '/documentation/frontend/session' },
+        { text: 'BFF', link: '/documentation/frontend/bff' },
       ] },
-      { text: 'BFF: проверенная часть', link: '/documentation/bff' },
       { text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },
         { text: 'Инфраструктура PWA', link: '/documentation/offline/infrastructure' },
