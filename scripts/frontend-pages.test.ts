@@ -186,6 +186,10 @@ test("frontend: транспорт, смена сессии и BFF показа�
 
 test("frontend: новые запросы и сессия ссылаются на существующих владельцев", () => {
   for (const [from, link, target, heading] of [
+    ['requests', './bff#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['session', './bff#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['bff', '#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
+    ['index', '/documentation/frontend/bff#bff-проверенная-часть', 'bff', '## BFF: проверенная часть {#bff-проверенная-часть}'],
     ['requests', './state#saving', 'state', '## Сохранение и конфликты {#saving}'],
     ['requests', './session#switching', 'session', '## Смена сессии и поздние ответы {#switching}'],
     ['session', './startup#сторы-до-первого-рендера', 'startup', '## Сторы до первого рендера'],
@@ -194,6 +198,15 @@ test("frontend: новые запросы и сессия ссылаются н�
   ]) {
     expect(read(from!), link).toContain(`](${link})`);
     expect(read(target!), heading).toContain(heading!);
+  }
+  for (const from of [
+    'site/documentation/current-state.md',
+    'site/documentation/architecture/index.md',
+    'site/modules/2/tracks/bff.md',
+    'site/modules/2/tracks/bff/migration.md',
+  ]) {
+    expect(readFileSync(from, 'utf8'), from).toContain('](/documentation/frontend/bff#bff-проверенная-часть)');
+    expect(read('bff'), from).toContain('## BFF: проверенная часть {#bff-проверенная-часть}');
   }
 });
 
