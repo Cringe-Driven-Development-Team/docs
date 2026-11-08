@@ -19,12 +19,15 @@ const documentationSidebar = [
       { text: 'Что работает сейчас', link: '/documentation/current-state' },
       { text: 'Frontend', link: '/documentation/frontend/', collapsed: true, items: [
         { text: 'Роутинг', link: '/documentation/frontend/routing' },
+        { text: 'Сборка и разработка', link: '/documentation/frontend/build' },
+        { text: 'Стили', link: '/documentation/frontend/styles' },
         { text: 'Запуск приложения', link: '/documentation/frontend/startup' },
         { text: 'Компоненты и рендеринг', link: '/documentation/frontend/rendering' },
         { text: 'Управление состоянием', link: '/documentation/frontend/state' },
         { text: 'Запросы и ошибки', link: '/documentation/frontend/requests' },
         { text: 'Сессия и авторизация', link: '/documentation/frontend/session' },
         { text: 'BFF', link: '/documentation/frontend/bff' },
+        { text: 'Проверка изменений', link: '/documentation/frontend/checks' },
       ] },
       { text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },

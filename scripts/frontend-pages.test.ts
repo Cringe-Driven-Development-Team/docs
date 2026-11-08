@@ -227,3 +227,68 @@ test("frontend: текущие источники отделены от исто
   for (const value of ['31.10.2026 в 13:11 UTC', 'dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64', '23d3dd9e955424a7634fb0dc49a38af6eb08792c', '14653763279dab055e3cea47a84a0c531bccf03f', 'csrf_invalid', 'не проверен авторизованным сценарием на проде', 'не утверждение об отсутствии реализации']) expect(historical, value).toContain(value);
   expect(historical).not.toContain('ea123518d624521f999e884ff32ddec0a5bf6bfa');
 });
+
+
+test("frontend: сборка отделена от проверки типов и mock от прода", () => {
+  for (const token of ['Bun', 'Turborepo', 'Vite', 'tsc --noEmit', 'jsxImportSource', 'SVGR', 'Babel']) expect(read('build'), token).toContain(token);
+  for (const token of ['CSS Modules', '.module.css', 'clsx', 'tokens.css', 'global.css']) expect(read('styles'), token).toContain(token);
+  for (const token of ['bun run check', 'bun run build', 'notebookConflict.test.ts', 'session.test.ts', 'dev:prism']) expect(read('checks'), token).toContain(token);
+  for (const token of ['Oxc', 'Rolldown', 'не проверяет типы', 'sourcemap', 'false', 'ES-модули']) expect(section(read('build'), 'Преобразования и проверка типов'), token).toContain(token);
+  expect(section(read('build'), 'Преобразования и проверка типов')).toContain('не означает');
+  for (const token of ['PostCSS', 'Lightning CSS', 'препроцессор', 'Sass', 'вложенность']) expect(section(read('styles'), 'Обработка CSS сборщиком'), token).toContain(token);
+  for (const token of ['Prism', 'Cloud Mock', 'не доказывает сохранение', 'Go', 'VITE_MOCK_PREFER', 'If-Match']) expect(section(read('checks'), 'Моки и настоящая запись в Go'), token).toContain(token);
+});
+
+test("frontend: порядок разделов сборки, стилей и проверок", () => {
+  for (const [page, headings] of [
+    ['build', ['Bun и Turborepo', 'Преобразования и проверка типов', 'Разработка и production', 'Алиасы, env и ресурсы', 'Что проверить в понимании']],
+    ['styles', ['CSS Modules и область классов', 'Кнопка: классы и состояния', 'Токены и глобальные стили', 'Обработка CSS сборщиком', 'Что проверить в понимании']],
+    ['checks', ['Что проверяют инструменты', 'Сценарии редактора и сессии', 'Индекс, хуки и CI', 'Моки и настоящая запись в Go', 'Что проверить в понимании']],
+  ] as const) expect(read(page).match(/^## .+$/gm)?.map(line => line.slice(3).replace(/ \{#[^}]+\}/g, ''))).toEqual([...headings]);
+});
+
+test("frontend: схемы сборки, стилей и проверок показывают разные границы", () => {
+  for (const [page, title, relations] of [
+    ['build', 'Преобразования и проверка типов', [/source.*--> typecheck/, /source.*--> oxc/, /svg.*--> svgr/, /svgr --> oxc/, /oxc --> bundle/, /Rolldown/, /Babel/, /noEmit/]],
+    ['styles', 'CSS Modules и область классов', [/module.*--> mapping/, /module.*--> selectors/, /mapping --> button/, /selectors --> dom/, /button --> dom/, /CSS Modules/]],
+    ['checks', 'Моки и настоящая запись в Go', [/client.*--> bff/, /bff -->\|"Мок"\| mock/, /mock --> ui/, /bff -->\|"Настоящий сервер"\| go/, /go --> persistence/, /Prism/, /сохранение/]],
+  ] as const) {
+    const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+    expect(pair, page).not.toBeNull();
+    expect(pair![1]!.replace(/\s/g, '').length, page).toBeGreaterThan(80);
+    expect(pair![1], page).toContain('https://github.com/');
+    for (const relation of relations) expect(pair![2], page).toMatch(relation);
+    expect(read(page).match(/^```mermaid$/gm), page).toHaveLength(1);
+  }
+});
+
+test("frontend: новые fragment-ссылки сборки, стилей и проверок имеют цели", () => {
+  for (const [from, link, target, heading] of [
+    ['index', './build#transforms', 'build', '## Преобразования и проверка типов {#transforms}'],
+    ['index', './styles#modules', 'styles', '## CSS Modules и область классов {#modules}'],
+    ['index', './checks#tools', 'checks', '## Что проверяют инструменты {#tools}'],
+    ['build', './styles#pipeline', 'styles', '## Обработка CSS сборщиком {#pipeline}'],
+    ['build', './checks#tools', 'checks', '## Что проверяют инструменты {#tools}'],
+    ['styles', './build#transforms', 'build', '## Преобразования и проверка типов {#transforms}'],
+    ['checks', './state#saving', 'state', '## Сохранение и конфликты {#saving}'],
+    ['checks', './session#switching', 'session', '## Смена сессии и поздние ответы {#switching}'],
+    ['checks', './build#dev-prod', 'build', '## Разработка и production {#dev-prod}'],
+  ]) {
+    expect(read(from!), link).toContain(`](${link})`);
+    expect(read(target!), heading).toContain(heading!);
+  }
+});
+
+test("frontend: сборочные источники закреплены и страницы сохраняют границу проверки", () => {
+  for (const page of ['build', 'styles', 'checks']) {
+    const md = read(page);
+    expect(md, page).toContain('08.11.2026');
+    expect(md, page).toMatch(/не новый прогон|не свидетельство нового прогона/);
+    const links = [...md.matchAll(/https:\/\/github\.com\/Cringe-Driven-Development-Team\/frontend\/blob\/([^\s)]+)/g)];
+    expect(links.length, page).toBeGreaterThan(1);
+    for (const [, path] of links) expect(path, page).toMatch(/^ea123518d624521f999e884ff32ddec0a5bf6bfa\/[^#]+#L\d+(?:-L\d+)?$/);
+    for (const [, path] of md.matchAll(/https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/([^\s)]+)/g)) expect(path, page).toMatch(/^[a-f0-9]{40}\/[^#]+#L\d+(?:-L\d+)?$/);
+    expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY/);
+    expect(md.replace(/^```[\s\S]*?^```/gm, ''), page).not.toContain('{{');
+  }
+});
