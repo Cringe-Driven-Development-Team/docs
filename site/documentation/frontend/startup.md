@@ -55,6 +55,8 @@ BFF сначала готовит HTML с данными пользовател�
 
 ## Сторы до первого рендера
 
+<DiagramSection>
+
 Последовательность в [main.tsx](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/main.tsx#L16-L44)
 делает проверенные данные доступными до первого показа компонентов:
 
@@ -70,6 +72,24 @@ BFF сначала готовит HTML с данными пользовател�
 Так компоненты получают исходную сессию из HTML без запасного запроса пользователя.
 Здесь описана граница регистрации service worker; его кеширование объясняется
 в [офлайн-разделе](/documentation/offline/).
+
+<template #diagram>
+
+```mermaid
+%% Flowchart: проверка входа отделяет успешную инициализацию от остановки.
+flowchart TD
+    readBootstrap["readBootstrap: прочитать и проверить JSON"] --> valid{"Форма корректна?"}
+    valid -->|Да| initSession["initSession: user → guest или authed"]
+    initSession --> preloaded["setPreloadedNotebook: данные страницы"]
+    preloaded --> prepare["Зарегистрировать обработчики и service worker"]
+    prepare --> render["createRoot → render с RouterProvider"]
+    valid -->|Нет| failure["BootstrapError: показать ошибку запуска"]
+    failure --> stopped(["RouterProvider не запускается"])
+```
+
+</template>
+
+</DiagramSection>
 
 ## Прямой URL и SPA-переход
 

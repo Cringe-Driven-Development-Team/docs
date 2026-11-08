@@ -53,6 +53,12 @@ JSX описывает дерево элементов: тип, props, children 
 
 ## Внешний стор и обновление DOM {#subscriptions}
 
+<DiagramSection>
+
+Две причины обновления сходятся на рендере: source меняется во внешнем сторе,
+режим Markdown — в локальном hook Cell. Схема относится к React 1.7.1 и
+Zustand 1.0.1; она не переносит гарантии других версий на командные пакеты.
+
 Ввод меняет `drafts` через `useNotebookStore.setState`. Zustand 1.0.1 создаёт
 новый объект состояния при частичном обновлении и уведомляет подписчиков.
 Его hook читает срез, подписывается в `useLayoutEffect`, сравнивает
@@ -73,6 +79,27 @@ props к DOM. У textarea обновляется `value`, у статуса — 
 [макет](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/layouts/RootLayout.tsx#L13-L17),
 [планирование render](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/render.ts#L35-L52)
 и [commit](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/src/commit.ts#L77-L121).
+
+<template #diagram>
+
+```mermaid
+%% Flowchart: внешний source и локальный режим сходятся на render, затем commit DOM.
+flowchart TD
+    onInput(["Cell: onInput"]) --> editSource["editSource → drafts → setState"]
+    editSource --> subscribers["Уведомить подписчиков стора"]
+    subscribers --> comparison{"Срез изменился? Object.is"}
+    comparison -->|Да| forceRender["Hook: forceRender"]
+    comparison -->|Нет| unchanged(["Без рендера от уведомления"])
+    local(["Cell: смена режима Markdown"]) --> useState["Локальный useState"]
+    forceRender --> render["Вычислить компоненты и JSX"]
+    useState --> render
+    render --> reconcile["reconcile: сопоставить дерево"]
+    reconcile --> commit["commit → изменения DOM"]
+```
+
+</template>
+
+</DiagramSection>
 
 ## Эффекты и cleanup
 

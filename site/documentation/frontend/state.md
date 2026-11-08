@@ -90,6 +90,8 @@ Unicode-символа. Серверный 413 — отдельный отказ
 
 ## Новый ввод во время запроса
 
+<DiagramSection>
+
 Пусть отправлен `v1`, а пользователь уже набрал `v2`. Ответ подтверждает
 `v1` и новый hash в `confirmed`, но `drafts` снимается только если текущий
 текст равен отправленному. `v2` остаётся видимым и уходит следующим update
@@ -97,6 +99,30 @@ Unicode-символа. Серверный 413 — отдельный отказ
 не даёт ложное «Сохранено».
 См. [commit](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L374-L386)
 и [тест нового ввода](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/test/notebook.test.ts#L78-L94).
+
+<template #diagram>
+
+```mermaid
+%% Sequence: подтверждение отправленного source не снимает более новый draft.
+sequenceDiagram
+    autonumber
+    participant input as Ввод
+    participant store as Notebook-store
+    participant bff as BFF
+    input->>store: editSource v1, затем commit
+    store->>bff: cells.update: v1 и текущий hash
+    input->>store: editSource v2, пока v1 в полёте
+    Note over store: drafts = v2, интерфейс показывает v2
+    bff-->>store: Подтверждение v1 и новый hash
+    store->>store: confirmed = v1 с новым hash
+    Note over store: drafts v2 ≠ v1<br/>v2 сохраняется<br/>«Сохранено»<br/>ещё нет
+    input->>store: commit нового текста
+    store->>bff: Следующий update: v2 с новым hash
+```
+
+</template>
+
+</DiagramSection>
 
 Даже возврат к исходному тексту остаётся draft, пока предыдущая правка ещё
 не подтверждена: сервер может уже заменить исходный source. Стор учитывает
@@ -126,6 +152,12 @@ hash изменился, требуется выбор версии. Это па
 
 ## Сохранение и конфликты {#saving}
 
+<DiagramSection>
+
+Схема ограничена успешным чтением свежего снимка и показывает, почему нельзя
+вслепую повторить запись. Ошибки чтения, NOT_FOUND, определённые отказы и судьба
+удалённых ячеек разобраны ниже; выбор «Мой» допускает новый конфликт.
+
 После сетевого сбоя, timeout или серверной ошибки исход записи неизвестен:
 сервер мог применить её до потери ответа. Стор хранит pending-операцию,
 перечитывает блокнот через `notebooks.get` и сверяет порядок, ID, вид и source
@@ -133,6 +165,28 @@ hash изменился, требуется выбор версии. Это па
 исполнения; новый hash берётся из прочитанного снимка.
 См. [reconcile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L481-L578)
 и [sameStructure](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/snapshot.ts#L139-L159).
+
+<template #diagram>
+
+```mermaid
+%% Flowchart: неопределённая запись требует сверки, явный конфликт — выбора версии.
+flowchart TD
+    uncertain(["Исход записи неизвестен"]) --> read["notebooks.get: свежий снимок"]
+    read --> reconcile{"Сверка с ожидаемой структурой"}
+    reconcile -->|Результат операции| confirmed["Подтвердить без повтора"]
+    reconcile -->|Прежняя структура| retry["Один повтор с hash снимка"]
+    reconcile -->|Другая структура| choice{"Выбор версии"}
+    conflict(["409 notebook_conflict"]) --> pause["Очередь на паузе; drafts остаются"]
+    pause --> fresh["notebooks.get: свежий снимок"]
+    fresh --> choice
+    choice -->|Серверный| server["Принять снимок, отбросить drafts"]
+    choice -->|Мой| mine["Принять снимок → условные записи drafts"]
+    choice -->|Закрыть диалог| paused(["Оставить очередь на паузе"])
+```
+
+</template>
+
+</DiagramSection>
 
 | Результат сверки | Действие |
 | --- | --- |
