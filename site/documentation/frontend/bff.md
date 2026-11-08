@@ -47,18 +47,20 @@ HTML-хендлер получает пользователя через Go пр
 <template #diagram>
 
 ```mermaid
-%% Flowchart: gates before Go and response validation before returning to the browser.
+%% Flowchart: HTML и RPC имеют отдельные входы; общий Go-слой возвращает результат своему обработчику.
 flowchart TD
+    html["GET страницы: HTML"] --> handler["HTML-хендлер: сессия / createGo<br/>пользователь и loadNotebook"]
     rpc["RPC /api/trpc"] --> context["createContext: CSRF"]
     context --> csrf{"CSRF принят?"}
     csrf -->|Нет| denied["FORBIDDEN: csrf_invalid"]
-    csrf -->|Да| session["Чтение сессии"]
-    session --> auth["authedProcedure: сессия и createGo"]
+    csrf -->|Да| auth["authedProcedure: сессия / createGo"]
     auth --> input["zod strictObject: вход ячейки"]
-    input --> adapter["ctx.go: session.call"]
+    handler --> adapter["Go-адаптер: session.call"]
+    input --> adapter
     adapter --> go["Go через fetch-клиент Orval"]
     go --> unwrap["unwrap: статус и zod-ответ"]
-    unwrap --> result["Результат или ошибка tRPC"]
+    unwrap -->|"HTML-запрос"| bootstrap["HTML + bootstrap<br/>либо redirect / 503"]
+    unwrap -->|"RPC-запрос"| result["Результат или ошибка tRPC"]
     classDef error fill:#fecaca,stroke:#b91c1c,color:#374151
     class denied error
     classDef decision fill:#fef3c7,stroke:#b45309,color:#374151
@@ -68,7 +70,9 @@ flowchart TD
 </template>
 </DiagramSection>
 
-Схема показывает защищённую процедуру ячеек. Public/optional-процедуры используют
+Схема сопоставляет HTML с чтением Go и защищённую RPC-процедуру ячеек.
+HTML-хендлер сам выбирает bootstrap, redirect или ошибку; через RPC-контекст
+и CSRF gate он не проходит. Public/optional-процедуры используют
 ту же CSRF-проверку и базовый middleware, но имеют другие требования к сессии.
 Политика CSRF и её ограничения — у [владельца темы](/documentation/security/csrf).
 

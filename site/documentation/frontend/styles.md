@@ -22,19 +22,28 @@ CSS-каскада: наследование и глобальные селек�
 См. [импорт и выбор классов Button](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Button/Button.tsx#L1-L4)
 и [применение к button](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Button/Button.tsx#L68-L85).
 
+Токены идут другим путём: `tokens.css` задаёт глобальные custom properties,
+а `var(--color-primary)` подставляет значение в локальное правило кнопки.
+CSS Modules меняет имена классов, но не превращает эти значения в локальные.
+Источники: [токены](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/styles/tokens.css#L1-L33) и
+[использование в кнопке](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Button/Button.module.css#L28-L42).
+
 <template #diagram>
 
 ```mermaid
-%% Flowchart: CSS Modules выпускает согласованные имена для JS и CSS, сходящиеся в DOM.
+%% Flowchart: локальные имена сходятся в DOM, глобальные токены дают значения через каскад.
 flowchart TD
     module["Button.module.css<br/>CSS Modules"] --> mapping["styles: карта имён"]
     module --> selectors["CSS: локальные селекторы"]
     mapping --> button["Button: clsx → className"]
     button --> dom["button в DOM"]
     selectors --> dom
+    tokens["tokens.css"] --> properties["Глобальные custom properties<br/>значения через каскад"]
+    properties --> variables["Button.module.css:<br/>var(--color-primary)"]
+    variables --> selectors
     classDef source fill:#ddd6fe,stroke:#7c3aed,color:#374151
     classDef result fill:#a7f3d0,stroke:#059669,color:#374151
-    class module source
+    class module,tokens source
     class dom result
 ```
 

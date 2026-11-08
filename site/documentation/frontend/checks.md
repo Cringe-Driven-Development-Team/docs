@@ -13,10 +13,48 @@ title: Проверка изменений
 
 ## Что проверяют инструменты {#tools}
 
+<DiagramSection>
+
 Из корня frontend до коммита должны проходить `bun run check` и `bun run build`;
 для изменённого поведения запускают и `bun run test`. `check` включает
 `oxfmt --check`, oxlint и typecheck, но не тесты и не production build.
 Точные команды — [package.json](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/package.json#L15-L26).
+
+Схема ведёт изменение через отдельные команды и CI к проверке сценария.
+Только форматирование, lint и typecheck входят в локальный `check`;
+тесты и build запускаются отдельно. Зелёный CI не заменяет браузерную проверку,
+а её результат с моками не подтверждает запись в Go.
+Граница CI задана [workflow Check](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/.github/workflows/ci.yml#L1-L55),
+граница мока — [правилами контракта](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/docs/api-contract.md#L58-L88).
+
+<template #diagram>
+
+```mermaid
+%% Flowchart: путь изменения через команды; границы check, CI и свидетельства записи различаются.
+flowchart TD
+    change["Изменение"] --> format
+    subgraph localCheck["bun run check"]
+        format["oxfmt: формат"] --> lint["oxlint: правила / JSDoc"]
+        lint --> types["tsc --noEmit: типы"]
+    end
+    types --> tests["bun run test: сценарии"]
+    tests --> build["bun run build: сборка"]
+    build --> ci["CI Check: check → test → build<br/>и Docker-образ BFF"]
+    ci --> client["Браузер: изменённый сценарий"]
+    client --> bff["BFF"]
+    bff -->|"Мок"| mock["Cloud Mock / Prism"]
+    mock --> ui["Ответ и реакция UI<br/>без доказательства записи"]
+    bff -->|"Настоящий сервер"| go["Go"]
+    go --> persistence["Проверка: сохранение<br/>и повторное чтение"]
+    classDef limited fill:#fed7aa,stroke:#ea580c,color:#374151
+    classDef evidence fill:#a7f3d0,stroke:#059669,color:#374151
+    class ui limited
+    class persistence evidence
+```
+
+</template>
+
+</DiagramSection>
 
 | Инструмент / команда | Что обнаруживает | Чего не доказывает |
 | --- | --- | --- |
@@ -76,35 +114,13 @@ CI job **Check** устанавливает зависимости по lockfile
 
 ## Моки и настоящая запись в Go {#mock-boundary}
 
-<DiagramSection>
-
 Один интерфейс можно проверить с разными ответчиками за BFF.
 Cloud Mock Apidog и локальный Prism показывают контрактные ответы; этот путь
 не доказывает сохранение данных в Go. Проверка перезагрузки и фактической записи
 требует Go, который действительно хранит изменения.
 Это ограничение прямо задано [владельцем контракта](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/docs/api-contract.md#L58-L88),
 а запуск Prism описан [существующим скриптом](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/scripts/dev/prism.ts#L1-L27).
-Схема показывает альтернативные проверки, не одновременную отправку в два сервера.
-
-<template #diagram>
-
-```mermaid
-%% Flowchart: контрактный ответ мока и настоящее сохранение требуют разных проверок.
-flowchart TD
-    client["Браузер"] --> bff["BFF"]
-    bff -->|"Мок"| mock["Cloud Mock / Prism"]
-    mock --> ui["Ответ и реакция UI"]
-    bff -->|"Настоящий сервер"| go["Go"]
-    go --> persistence["Проверка: сохранение<br/>и повторное чтение"]
-    classDef limited fill:#fed7aa,stroke:#ea580c,color:#374151
-    classDef evidence fill:#a7f3d0,stroke:#059669,color:#374151
-    class ui limited
-    class persistence evidence
-```
-
-</template>
-
-</DiagramSection>
+Браузерные пути — альтернативные проверки, не одновременная отправка в два сервера.
 
 Spec First начинается с контракта в Apidog, затем UI проверяют через BFF → Cloud
 Mock выбранной ветки. Если мок расходится с контрактом или не покрывает сценарий,

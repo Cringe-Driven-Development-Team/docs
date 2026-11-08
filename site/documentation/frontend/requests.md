@@ -26,10 +26,17 @@ GET-батчи. Query читает данные, mutation меняет их; о�
 не читает её. `fetchTracked` учитывает соединение и ошибки сети.
 Источник: [api/trpc.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/api/trpc.ts#L118-L158) и [uploadAvatar](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/session.ts#L164-L184).
 
+Ответ возвращается к клиентской классификации: потеря сессии, сверка записи
+и ошибка отдельной операции требуют разных реакций. Сбой сети возникает
+в транспорте; после отправки записи он также требует сверки, как `BAD_GATEWAY`.
+Успешный ответ применяется вызывающим кодом; схема ниже выделяет ошибки.
+Источники: [машинные ошибки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/errors.ts#L28-L77) и
+[классификация записи](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/notebook/index.ts#L490-L578).
+
 <template #diagram>
 
 ```mermaid
-%% Flowchart: JSON batches and multipart converge on the same BFF boundary.
+%% Flowchart: два транспорта сходятся в BFF; ответ возвращается к классификации и реакции клиента.
 flowchart TD
     client["Единственный trpc"] --> split{"splitLink: FormData?"}
     split -->|Да| multipart["httpLink: multipart"]
@@ -37,8 +44,16 @@ flowchart TD
     multipart --> bff["BFF /api/trpc"]
     batch --> bff
     bff --> context["Контекст: X-CSRF и сессия"]
+    split -.->|"Сбой сети"| response
+    context -->|"Ответ tRPC"| response{"Клиент: data.code<br/>appCode / zodError"}
+    response -->|"UNAUTHORIZED защищённой процедуры"| guest["Сессия → guest, переход /login"]
+    response -->|"CONFLICT: notebook_conflict"| reconcile["notebooks.get: сверка записи"]
+    response -->|"BAD_GATEWAY / сеть после записи"| reconcile
+    response -->|"FORBIDDEN / BAD_REQUEST / прочие ошибки"| operation["Ошибка операции<br/>без потери сессии"]
     classDef decision fill:#fef3c7,stroke:#b45309,color:#374151
-    class split decision
+    classDef error fill:#fecaca,stroke:#b91c1c,color:#374151
+    class split,response decision
+    class guest,operation error
 ```
 
 </template>

@@ -173,19 +173,18 @@ test("frontend: запросы, сессия и серверная обрабо�
   }
 });
 
-test("frontend: транспорт, смена сессии и BFF показаны рядом с доказательством", () => {
-  for (const [page, title, relationships] of [
-    ['requests', 'Один клиент и два транспорта', [/splitLink/, /FormData/, /httpLink/, /httpBatchLink/, /batch --> bff/, /multipart --> bff/, /X-CSRF/]],
-    ['session', 'Смена сессии и поздние ответы', [/switchSession/, /closing/, /inflight/, /Set-Cookie/, /generation/, /SESSION_CHANGED/]],
-    ['bff', 'RPC: контекст и валидация', [/createContext/, /CSRF/, /authedProcedure/, /strictObject/, /createGo/, /unwrap/, /Go/]],
-  ] as const) {
-    const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
-    expect(pair, page).not.toBeNull();
-    expect(pair![1]!.replace(/\s/g, '').length).toBeGreaterThan(80);
-    expect(pair![1], page).toContain('https://github.com/');
-    for (const relation of relationships) expect(pair![2], page).toMatch(relation);
-    expect(read(page).match(/^```mermaid$/gm)).toHaveLength(1);
-  }
+for (const [page, title, relationships] of [
+  ['requests', 'Один клиент и два транспорта', [/splitLink/, /FormData/, /httpLink/, /httpBatchLink/, /batch --> bff/, /multipart --> bff/, /X-CSRF/, /context -->.*response/, /split -\.->.*Сбой сети.*response/, /response.*data\.code.*appCode.*zodError/, /response -->\|.*UNAUTHORIZED.*\| guest/, /guest.*guest.*login/, /response -->\|.*notebook_conflict.*\| reconcile/, /response -->\|.*BAD_GATEWAY.*сеть.*\| reconcile/, /reconcile.*notebooks\.get.*сверка/, /response -->\|.*FORBIDDEN.*\| operation/, /operation.*сесси/]],
+  ['session', 'Смена сессии и поздние ответы', [/switchSession/, /closing/, /inflight/, /Set-Cookie/, /generation/, /SESSION_CHANGED/]],
+  ['bff', 'RPC: контекст и валидация', [/createContext/, /CSRF/, /authedProcedure/, /strictObject/, /createGo/, /unwrap/, /Go/, /html.*--> handler/, /handler --> adapter/, /rpc.*--> context/, /input --> adapter/, /adapter --> go/, /unwrap -->\|.*HTML.*\| bootstrap/, /bootstrap.*HTML.*bootstrap/, /unwrap -->\|.*RPC.*\| result/]],
+] as const) test(`frontend: транспорт и серверная граница — ${page}`, () => {
+  const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+  expect(pair, page).not.toBeNull();
+  expect(pair![1]!.replace(/\s/g, '').length).toBeGreaterThan(80);
+  expect(pair![1], page).toContain('https://github.com/');
+  for (const relation of relationships) expect(pair![2], page).toMatch(relation);
+  if (page === 'bff') expect(pair![2]).not.toMatch(/html[^\n]*--> (?:context|csrf)/);
+  expect(read(page).match(/^```mermaid$/gm)).toHaveLength(1);
 });
 
 test("frontend: новые запросы и сессия ссылаются на существующих владельцев", () => {
@@ -251,19 +250,24 @@ test("frontend: порядок разделов сборки, стилей и п
   ] as const) expect(read(page).match(/^## .+$/gm)?.map(line => line.slice(3).replace(/ \{#[^}]+\}/g, ''))).toEqual([...headings]);
 });
 
-test("frontend: схемы сборки, стилей и проверок показывают разные границы", () => {
-  for (const [page, title, relations] of [
-    ['build', 'Преобразования и проверка типов', [/source.*--> typecheck/, /source.*--> oxc/, /svg.*--> svgr/, /svgr --> oxc/, /oxc --> bundle/, /Rolldown/, /Babel/, /noEmit/]],
-    ['styles', 'CSS Modules и область классов', [/module.*--> mapping/, /module.*--> selectors/, /mapping --> button/, /selectors --> dom/, /button --> dom/, /CSS Modules/]],
-    ['checks', 'Моки и настоящая запись в Go', [/client.*--> bff/, /bff -->\|"Мок"\| mock/, /mock --> ui/, /bff -->\|"Настоящий сервер"\| go/, /go --> persistence/, /Prism/, /сохранение/]],
-  ] as const) {
-    const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
-    expect(pair, page).not.toBeNull();
-    expect(pair![1]!.replace(/\s/g, '').length, page).toBeGreaterThan(80);
-    expect(pair![1], page).toContain('https://github.com/');
-    for (const relation of relations) expect(pair![2], page).toMatch(relation);
-    expect(read(page).match(/^```mermaid$/gm), page).toHaveLength(1);
+for (const [page, title, relations] of [
+  ['build', 'Преобразования и проверка типов', [/source.*--> typecheck/, /source.*--> oxc/, /svg.*--> svgr/, /svgr --> oxc/, /oxc --> bundle/, /Rolldown/, /Babel/, /noEmit/, /oxc --> modules/, /modules.*ES-модули.*HMR/, /modules.*--> devBrowser/, /bff.*--> devHtml/, /devHtml.*transformIndexHtml/, /devHtml.*--> devBrowser/, /bundle.*--> dist/, /dist --> prodBrowser/, /bff --> prodHtml/, /prodHtml.*шаблон/, /prodHtml.*--> prodBrowser/]],
+  ['styles', 'CSS Modules и область классов', [/module.*--> mapping/, /module.*--> selectors/, /mapping --> button/, /selectors --> dom/, /button --> dom/, /CSS Modules/, /tokens.*tokens\.css.*--> properties/, /properties.*custom properties.*каскад/, /properties --> variables/, /variables.*var\(--color-primary\)/, /variables --> selectors/]],
+  ['checks', 'Что проверяют инструменты', [/change.*--> format/, /subgraph localCheck\["bun run check"\]/, /format.*oxfmt.*--> lint/, /lint\["oxlint/, /lint --> types/, /types.*tsc --noEmit/, /types --> tests/, /tests\["bun run test/, /tests --> build/, /build\["bun run build/, /build --> ci/, /ci.*CI Check.*check.*test.*build/, /ci --> client/, /client.*--> bff/, /bff -->\|"Мок"\| mock/, /mock --> ui/, /bff -->\|"Настоящий сервер"\| go/, /go --> persistence/, /Prism/, /сохранение/]],
+] as const) test(`frontend: схема показывает границы — ${page}`, () => {
+  const pair = section(read(page), title).match(/<DiagramSection>([\s\S]*?)<template #diagram>\s*```mermaid\n([\s\S]*?)```\s*<\/template>\s*<\/DiagramSection>/);
+  expect(pair, page).not.toBeNull();
+  expect(pair![1]!.replace(/\s/g, '').length, page).toBeGreaterThan(80);
+  expect(pair![1], page).toContain('https://github.com/');
+  for (const relation of relations) expect(pair![2], page).toMatch(relation);
+  if (page === 'checks') {
+    expect(read(page)).toContain('## Моки и настоящая запись в Go {#mock-boundary}');
+    expect(readFileSync('scripts/check-readability.ts', 'utf8')).toContain("['documentation/frontend/checks', 'tools', 0]");
+    const localCheck = pair![2]!.match(/subgraph localCheck[^\n]*\n([\s\S]*?)\n    end/);
+    expect(localCheck).not.toBeNull();
+    expect(localCheck![1]).not.toMatch(/bun run (?:test|build)/);
   }
+  expect(read(page).match(/^```mermaid$/gm), page).toHaveLength(1);
 });
 
 test("frontend: новые fragment-ссылки сборки, стилей и проверок имеют цели", () => {

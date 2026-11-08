@@ -1489,7 +1489,7 @@ async function checkDiagramPairs(browser: Browser, url: (path: string) => string
         ['documentation/frontend/build', 'transforms', 0],
         ['documentation/frontend/styles', 'modules', 0],
         ['documentation/frontend/packages', 'release', 0],
-        ['documentation/frontend/checks', 'mock-boundary', 0],
+        ['documentation/frontend/checks', 'tools', 0],
       ] as const) {
         // A fresh document checks direct fragments independently of same-page hash preparation.
         const page = await context.newPage();

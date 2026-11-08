@@ -35,17 +35,34 @@ BFF не попадает в браузерный bundle. См. [клиент](h
 [обработчиком SVGR 5.2.0](https://github.com/pd4d10/vite-plugin-svgr/blob/8ff69f4a228b86c8f4d141d31f371fa1e105644d/src/index.ts#L31-L58).
 Зелёная сборка сама по себе не проверяет типы.
 
+После transform пути расходятся: dev отдаёт ES-модули и HMR, production —
+собранные ассеты. HTML в обоих случаях готовит BFF; dev-плагин дополнительно
+вызывает `transformIndexHtml`. Пути заданы [dev-конфигом](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/vite.config.dev.ts#L57-L84) и
+[production-конфигом](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/vite.config.prod.ts#L4-L14);
+условия CDN и доставка HTML подробнее разобраны ниже.
+
 <template #diagram>
 
 ```mermaid
-%% Flowchart: проверка типов отделена от выпуска JS; SVG сходится с TS/TSX на Oxc.
+%% Flowchart: общий transform и отдельный typecheck; dev доставляет модули, prod — готовые ассеты.
 flowchart TD
     source["TS / TSX"] --> typecheck["tsc --noEmit: типы"]
     source --> oxc["Oxc: TS / JSX → JS"]
     svg["SVG?react"] --> svgr["SVGR: SVG → JSX<br/>Babel внутри"]
     svgr --> oxc
-    oxc --> bundle["Rolldown: bundle"]
-    bundle --> dist["dist: JS-чанки"]
+    subgraph development["Разработка"]
+        modules["Vite dev: ES-модули / CSS<br/>и HMR"] --> devBrowser["Браузер dev"]
+        devHtml["BFF HTML plugin:<br/>transformIndexHtml"] --> devBrowser
+    end
+    subgraph production["Production"]
+        bundle["Rolldown: bundle / ресурсы"] --> dist["dist: JS / CSS / index.html"]
+        dist --> prodBrowser["Браузер production<br/>JS / CSS релиза с CDN"]
+        prodHtml["BFF: шаблон dist/index.html"] --> prodBrowser
+    end
+    oxc --> modules
+    oxc --> bundle
+    bff["BFF: HTML с bootstrap"] --> devHtml
+    bff --> prodHtml
     classDef check fill:#ddd6fe,stroke:#7c3aed,color:#374151
     classDef artifact fill:#a7f3d0,stroke:#059669,color:#374151
     class typecheck check
