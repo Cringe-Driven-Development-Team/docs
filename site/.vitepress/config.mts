@@ -17,6 +17,12 @@ const documentationSidebar = [
     items: [
       { text: 'Обзор продукта', link: '/documentation/' },
       { text: 'Что работает сейчас', link: '/documentation/current-state' },
+      { text: 'Frontend', link: '/documentation/frontend/', collapsed: true, items: [
+        { text: 'Роутинг', link: '/documentation/frontend/routing' },
+        { text: 'Запуск приложения', link: '/documentation/frontend/startup' },
+        { text: 'Компоненты и рендеринг', link: '/documentation/frontend/rendering' },
+        { text: 'Управление состоянием', link: '/documentation/frontend/state' },
+      ] },
       { text: 'BFF: проверенная часть', link: '/documentation/bff' },
       { text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },
