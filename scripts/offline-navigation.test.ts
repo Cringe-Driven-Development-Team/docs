@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
+import type { DefaultTheme } from "vitepress";
 import config from "../site/.vitepress/config.mts";
 
 const read = (file: string) => readFileSync(file, "utf8");
@@ -7,9 +8,11 @@ const overview = "/documentation/offline/";
 const build = "/documentation/offline/build-and-registration";
 const infrastructure = "/documentation/offline/infrastructure";
 
-test("offline navigation: один родитель и две дочерние страницы", () => {
-  const sidebar = (config.themeConfig!.sidebar as Record<string, unknown>)["/documentation/"] as { items: { text: string; link: string; collapsed?: boolean; items?: {text: string; link: string}[] }[] }[];
-  const parents = sidebar[0]!.items.filter(item => item.link === overview);
+test("offline navigation: раздел внутри Frontend и две дочерние страницы", () => {
+  const sidebar = (config.themeConfig!.sidebar as Record<string, unknown>)["/documentation/"] as DefaultTheme.SidebarItem[];
+  expect(sidebar[0]!.items!.filter(item => item.link === overview)).toHaveLength(0);
+  const frontend = sidebar[0]!.items!.find(item => item.link === "/documentation/frontend/");
+  const parents = frontend?.items?.filter(item => item.link === overview) ?? [];
   expect(parents).toHaveLength(1);
   expect(parents[0]).toEqual({ text: "Офлайн-режим", link: overview, collapsed: true,
     items: [{ text: "Сборка и регистрация SW", link: build }, { text: "Инфраструктура PWA", link: infrastructure }] });
