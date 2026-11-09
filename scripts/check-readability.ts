@@ -1487,6 +1487,7 @@ async function checkDiagramPairs(browser: Browser, url: (path: string) => string
       for (const [path, hash, pairIndex] of [
         ['modules/2/tracks/offline/caching-strategies', 'stalewhilerevalidate', 0],
         ['documentation/frontend/', 'notebook-flow', 0],
+        ['documentation/frontend/architecture', 'state-flow', 0],
         ['documentation/frontend/startup', 'сторы-до-первого-рендера', 0],
         ['documentation/frontend/routing', 'navigation', 0],
         ['documentation/frontend/rendering', 'subscriptions', 0],
@@ -1805,7 +1806,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   console.log(`PASS old BFF: no fragment and five IDs, base/path/hash/unique heading/visibility/reload/Back under ${SITE_BASE}`);
   const routes = ['documentation/', 'documentation/current-state', 'documentation/architecture/', 'documentation/security/',
     'documentation/security/csrf', 'documentation/security/xss', 'documentation/security/csp', 'documentation/project-context'];
-  const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/routing', 'documentation/frontend/build',
+  const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/architecture', 'documentation/frontend/routing', 'documentation/frontend/build',
     'documentation/frontend/styles', 'documentation/frontend/startup',
     'documentation/frontend/rendering', 'documentation/frontend/state', 'documentation/frontend/requests',
     'documentation/frontend/session', 'documentation/frontend/bff', 'documentation/frontend/packages', 'documentation/frontend/checks',
@@ -1837,7 +1838,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}${path}`);
     const headings: Record<string, string> = { 'documentation/security/': 'безопасность', 'documentation/security/csrf': 'csrf',
       'documentation/security/xss': 'xss', 'documentation/security/csp': 'csp',
-      'documentation/frontend/': 'frontend', 'documentation/frontend/routing': 'роутинг',
+      'documentation/frontend/': 'frontend', 'documentation/frontend/architecture': 'frontend-architecture', 'documentation/frontend/routing': 'роутинг',
       'documentation/frontend/startup': 'запуск-приложения', 'documentation/frontend/rendering': 'компоненты-и-рендеринг',
       'documentation/frontend/state': 'управление-состоянием', 'documentation/frontend/requests': 'запросы-и-ошибки',
       'documentation/frontend/session': 'сессия-и-авторизация', 'documentation/frontend/bff': 'bff',
@@ -2005,7 +2006,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.click(result);
   await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/security/csrf`);
   await expanded(true); await tree();
-  for (const [query, route] of [['switchSession', 'session'], ['jsxImportSource', 'build'], ['release-please', 'packages']]) {
+  for (const [query, route] of [['onSaved', 'architecture'], ['switchSession', 'session'], ['jsxImportSource', 'build'], ['release-please', 'packages']]) {
     await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
     await page.click('button[aria-label="Найти в документации"]');
     await page.waitForSelector('#localsearch-input', { visible: true });
