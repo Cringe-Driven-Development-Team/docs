@@ -3,7 +3,7 @@
     {
       "tag": "Textbox",
       "id": "evidence",
-      "text": "Декларация и код на 08.11.2026 · сеть на проде не проверена",
+      "text": "Backend 06841d4 / infra a59f858 · 09.11.2026. Сетевая изоляция runtime отдельно не проверена.",
       "x": 0,
       "y": 0,
       "width": 1000
@@ -196,8 +196,8 @@
     },
     {
       "tag": "Textbox",
-      "id": "old-s3",
-      "text": "S3 notebook bucket: прежняя модель и offline migration. Текущий repository сюда не пишет.",
+      "id": "storage-boundary",
+      "text": "PostgreSQL — постоянное хранилище блокнотов. Архивный S3 bucket вне рабочего пути приложения.",
       "x": 900,
       "y": 1100,
       "width": 600
@@ -205,7 +205,7 @@
     {
       "tag": "Textbox",
       "id": "provisioning",
-      "text": "VPS сессии создаёт Go / OpenStack, настраивает Ansible. Pulumi готовит общую инфраструктуру.",
+      "text": "Go / OpenStack создаёт VPS с подготовленным образом. Ansible настраивает сессию и проверяет версию образа.",
       "x": 300,
       "y": 1100,
       "width": 480

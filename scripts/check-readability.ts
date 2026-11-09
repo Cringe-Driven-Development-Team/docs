@@ -1866,7 +1866,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       await expanded(route.startsWith('documentation/frontend/'), frontendCaret);
       await expanded(route.startsWith('documentation/frontend/releases/'), releasesCaret);
       assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
-      if (!['documentation/architecture/', 'documentation/security/csp'].includes(route)) assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
+      if (route !== 'documentation/architecture/') assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
     }
     await page.goto(url('documentation/architecture/'), { waitUntil: 'networkidle0' });
     if (mobile) await openMenu();
@@ -1907,8 +1907,6 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
     await click('documentation/security/xss', mobile); await expanded(true);
     await click('documentation/security/csp', mobile); await expanded(true);
-    assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /TODO/);
-    assert.equal(await page.$('.VPDocOutlineItem a'), null, 'CSP TODO has no sections');
     await page.goBack({ waitUntil: 'networkidle0' }); await tree(); await expanded(true);
     assert.equal(new URL(page.url()).pathname, `${SITE_BASE}documentation/security/xss`);
     assert.equal(await page.$eval(sidebarLink('documentation/security/xss'), el => el.getAttribute('aria-current')), 'page');
@@ -1928,7 +1926,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Обзор продукта'));
   await page.locator(sidebarLink('documentation/current-state')).click();
   await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/current-state`);
-  assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /31\.10\.2026/);
+  await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Документация работающего продукта'));
+  assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /Что реализовано в выложенном коде/);
   for (const hash of ['документация-работающего-продукта', 'что-подтверждено-на-проде', 'офлаин-режим',
     'архитектура-безопасность-и-эксплуатация', 'где-находятся-планы-и-openwiki']) {
     await page.goto(url(`documentation/#${hash}`), { waitUntil: 'networkidle0' });

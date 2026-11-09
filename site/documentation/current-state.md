@@ -1,50 +1,75 @@
 # Документация работающего продукта
 
-Здесь перечислено только поведение, наблюдавшееся на [cellestial.ru](https://cellestial.ru).
-Проверка 31.10.2026 в 13:11 UTC проведена в чистом Chrome; подробные результаты,
-SHA выкладок и ссылки на источники собраны в [проверенной части BFF](/documentation/frontend/bff#bff-проверенная-часть).
+Cellestial — SPA с BFF и Go API. Блокноты, ячейки и результаты хранятся в PostgreSQL;
+код исполняется в отдельном runtime-окружении. Здесь собраны текущие версии,
+результаты проверки прода и ссылки на устройство приложения.
+
+**Проверка 09.11.2026, 04:19 МСК:** публичные HTTP-запросы без сессии и форма входа
+в чистом headless Chrome на Linux. HTML содержит выпуск frontend/BFF
+[`319e691`](https://github.com/Cringe-Driven-Development-Team/frontend/commit/319e691b79f81e09dcffabc04941831a5f4b5930),
+соответствующий последнему успешному [frontend CD](https://github.com/Cringe-Driven-Development-Team/frontend/actions/runs/42538007203).
+Backend [`06841d4`](https://github.com/Cringe-Driven-Development-Team/backend/commit/06841d4765c28ad7e52bf5e36df3b72cb22c094e)
+подтверждён [production CD](https://github.com/Cringe-Driven-Development-Team/backend/actions/runs/42536140424/job/128901944399).
+Версии инфраструктуры и схема размещения — в [архитектуре](/documentation/architecture/).
 
 ## Что подтверждено на проде
 
-- Гостю доступна форма входа.
-- Гостевой bootstrap не содержит пользователя и не устанавливает cookie.
-- Проверенный GET tRPC без CSRF-заголовка отклонён.
-- Для проверенного GET tRPC с CSRF-заголовком проверка требует сессию.
-- Прежний публичный маршрут пользователя недоступен.
+| Проверка без сессии | Результат |
+| --- | --- |
+| `/login` с `Accept: text/html` | `200`; в Chrome отрисованы поля логина/пароля и кнопка входа, ошибок JavaScript не получено |
+| Гостевой bootstrap | `user: null`; ответ не устанавливает cookie, HTML имеет `Cache-Control: private, no-store` |
+| GET `/api/trpc/users.me` без `X-CSRF` | `403`, `csrf_invalid` |
+| Тот же GET с `X-CSRF: 1` | `401`, `UNAUTHORIZED`: требуется сессия |
+| POST `/api/trpc/auth.login` с чужим `Origin`, `X-CSRF: 1` и пустым JSON | `403`, `csrf_invalid` |
+| `/api/v1/users/me` на публичном домене | `404`: браузеру не предоставляется прямой маршрут Go API |
+| Ответ `/login` | Заголовок `Content-Security-Policy` включён в режиме применения, не Report-Only |
+| `/sw.js`, `/manifest.webmanifest`, `/offline.html`, `/offline.css`, `/onest-variable.woff2` | `200`; публичные файлы доступны без сессии |
 
-Точные запросы, ответы и свидетельства — в [результатах проверки BFF](/documentation/frontend/bff#bff-проверенная-часть).
+Проверка POST подтверждает отклонение указанного запроса с чужим Origin; это не полный
+аудит CSRF. Успешный вход, регистрация, refresh, выход, операции с блокнотами и аватарами,
+создание runtime-сессии и исполнение кода в этом прогоне не проверялись.
+Прямой доступ к серверам, сетевая изоляция runtime и восстановление backup также не проверены.
 
-Это подтверждает гостевой маршрут браузер → BFF. Вход и регистрация, авторизованный
-участок BFF → Go, refresh, выход, блокноты и POST-защита от чужого Origin этой проверкой
-не подтверждены. Они остаются [планом трека BFF](/modules/2/tracks/bff).
+## Что реализовано в выложенном коде
+
+Вход, регистрация и выход — процедуры BFF, которые вызывают Go и управляют cookie сессии.
+При обращении к Go реализованы refresh и повтор запроса после истечения access token.
+[Процедуры авторизации](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/router/auth.ts#L6),
+[обновление сессии и повтор запроса](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/session/session.ts#L82).
+
+BFF содержит процедуры пользователей, 2FA, блокнотов, ячеек и runtime. Go подключает
+PostgreSQL для блокнотов и истории исполнения, Redis для сессий/лимитов и S3 для аватаров.
+[Роутер BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/router/index.ts#L9),
+[подключение хранилищ](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L87).
+Описание реализации не заменяет проверку полного пользовательского сценария.
 
 ## Офлайн-режим
 
-[Офлайн-режим](/documentation/offline/) описывает хранение SW, Cache Storage и проверенное
-поведение отдельной офлайн-страницы. [Сборка и регистрация SW](/documentation/offline/build-and-registration)
-связывает Workbox, vite-plugin-pwa и настройки проекта. Дата и границы этой проверки приведены в разделе.
-Путь файлов через BFF и CDN, заголовки и выпуск описаны в
-[инфраструктуре PWA](/documentation/offline/infrastructure).
+SW настроен на отдельную неперсональную офлайн-страницу при отказе сети во время навигации.
+В precache входят её HTML, CSS, шрифт и манифест. Персональный HTML, ответы API и ассеты
+редактора не сохраняются этим SW; автономное редактирование и исполнение блокнотов не предусмотрены.
+[Конфигурация выпуска](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/client/vite/plugins.ts#L43).
+
+В текущем прогоне проверена HTTP-доступность публичных файлов; отключение сети и установку
+PWA повторно не проверяли. Устройство кеша и границы браузерных проверок — в
+[офлайн-режиме](/documentation/offline/), [сборке и регистрации SW](/documentation/offline/build-and-registration)
+и [инфраструктуре PWA](/documentation/offline/infrastructure).
 
 ## Архитектура, безопасность и эксплуатация
 
-[Frontend](/documentation/frontend/) объясняет клиент, BFF и сохранение по срезу исходников
-08.11.2026; чтение кода не расширяет границы исторической проверки выше.
-
-- [Архитектура](/documentation/architecture/) показывает текущую раскладку на трёх VPS, контракты и процессы выпуска по проверенному срезу.
-- [Безопасность](/documentation/security/) объясняет проверки CSRF в BFF и защиту от XSS
-  при встраивании bootstrap и выводе пользовательского текста. Источники и границы проверки
-  приведены в подразделах; CSP пока обозначен как TODO.
-- Для эксплуатации: [свидетельства production-выкладок и граница проверки](/documentation/frontend/bff#bff-проверенная-часть),
-  [инфраструктурный репозиторий](https://github.com/Cringe-Driven-Development-Team/infra).
-  Успешная выкладка сама по себе не доказывает работоспособность пользовательского сценария.
-- [Контекст проекта и владельцы сведений](/documentation/project-context) помогают найти исходники,
-  контракт API и правила команды. Реализация BFF принадлежит frontend, Go API — backend,
-  инфраструктура — infra; ссылки на проверенные версии приведены на странице BFF.
+- [Архитектура](/documentation/architecture/) — размещение компонентов, хранилища, runtime, CI/CD и подтверждения выкладок.
+- [Frontend](/documentation/frontend/) — клиент, рендеринг, состояние и сохранение;
+  [BFF](/documentation/frontend/bff) — запросы и сессия. У подробных страниц указаны собственные версии исходников и границы проверки.
+- [Блокноты](/documentation/notebooks/) — модель документа, сохранение и исполнение.
+- [Безопасность](/documentation/security/) — CSRF и XSS. [CSP](/documentation/security/csp)
+  описывает действующую блокирующую политику Caddy, разрешённые источники ресурсов
+  и границы проверки.
+- [Контекст проекта и владельцы сведений](/documentation/project-context) — где находятся код, контракт API и правила команды.
+  Frontend владеет клиентом и BFF, backend — Go API и runtime-agent, infra — инфраструктурой.
 
 ## Где находятся планы и OpenWiki
 
-[Модули](/modules/) содержат планы учебной работы, а не перечень уже работающих возможностей.
-Публичная <a href="../openwiki/" target="_self">OpenWiki</a> — производный тематический указатель; канонический текст
-остаётся в документах этого репозитория. При расхождении проверь дату и свидетельство
-в исходной странице, а состояние продакшена — на стенде.
+[Модули](/modules/) содержат планы и историю учебной работы. Статус реализации и результаты
+проверок следует смотреть в документации продукта и связанных исходниках.
+Публичная <a href="../openwiki/" target="_self">OpenWiki</a> — производный тематический указатель;
+канонический текст остаётся в документах этого репозитория.

@@ -26,8 +26,30 @@ test('security: обзор ведёт к трём существующим по�
   }
 });
 
-test('security: CSP остаётся только TODO', () => {
-  expect(read('csp').trim()).toBe('# CSP\n\nTODO');
+test('security: CSP объясняет действующую политику и два этапа её применения', () => {
+  const md = read('csp');
+  expect(md).not.toMatch(/\bTODO\b/);
+  expect(md).toContain('Content-Security-Policy');
+  for (const name of ['default-src', 'script-src', 'style-src', 'img-src',
+    'font-src', 'connect-src', 'manifest-src', 'worker-src', 'base-uri',
+    'form-action', 'frame-ancestors']) expect(md).toContain(name);
+  expect(md.match(/^## .+$/gm)).toEqual([
+    '## Где задаётся политика', '## Действующие директивы',
+    '## Как браузер проверяет ресурс', '## Границы защиты', '## Источники и проверка',
+  ]);
+  expect(md.match(/^```mermaid$/gm)).toHaveLength(2);
+  expect(md.match(/<DiagramSection>/g)).toHaveLength(2);
+  expect(md.match(/<template #diagram>/g)).toHaveLength(2);
+  expect(md).toContain('sequenceDiagram');
+  expect(md).toContain('flowchart TD');
+});
+
+test('security: соседние страницы ведут к действующей CSP без заглушек', () => {
+  for (const file of ['security/index', 'security/xss', 'current-state', 'offline/infrastructure']) {
+    const md = readFileSync(`site/documentation/${file}.md`, 'utf8');
+    expect(md, file).toContain('](/documentation/security/csp)');
+    expect(md, file).not.toMatch(/CSP[^\n]*TODO/);
+  }
 });
 
 test('security: CSRF описывает проверки BFF и границу Go', () => {

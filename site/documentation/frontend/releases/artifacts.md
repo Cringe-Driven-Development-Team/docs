@@ -29,7 +29,7 @@ title: Состав выпуска
 | --- | --- |
 | `sha` | Полный SHA коммита; совпадает с тегом Release и меткой образа |
 | `image_ref` | `ghcr.io/cringe-driven-development-team/bff@sha256:…` — точный образ |
-| `image_id` | Config digest образа, используемый Docker как image ID |
+| `image_id` | Config digest конфигурации образа; не всегда совпадает с Docker `.Id` |
 | `assets` | Каталог `releases/<SHA>/` |
 | `ci_run`, `ci_run_attempt` | Ссылка на исходный push/main CI и номер попытки, подготовившей артефакты |
 | `publication_run` | Запуск, завершивший публикацию |
@@ -48,7 +48,7 @@ title: Состав выпуска
 | Git SHA | Коммит исходников | Найти код и тег `release-<SHA>` |
 | Тег образа `sha-<SHA>` | Имя в GHCR | Удобно найти образ; тег не заменяет digest |
 | Registry digest в `image_ref` | Манифест опубликованного образа | Именно его передать Docker/Ansible для выкатки |
-| Config digest / `image_id` | Конфигурацию образа | Проверить результат `docker load` |
+| Config digest / `image_id` | Конфигурацию образа | Сверить config архива; при проверке `docker load` учитывать image store |
 | SHA-256 в `SHA256SUMS` | Байты конкретного архива или manifest | Проверить скачанный файл |
 
 Не сравнивайте checksum архива с registry digest: это хеши разных объектов.
@@ -94,8 +94,11 @@ gunzip -c bff-image.tar.gz | docker load
 ```
 
 Ожидайте `OK` для трёх файлов. При несовпадении остановитесь: не используйте повреждённый
-комплект. После `docker load` проверьте ID и метку образа; значения ниже сравните
-с `image_id` и `sha` в `release.json`:
+комплект. После `docker load` проверьте ID и метку образа. Метка revision должна совпадать
+с `sha` в `release.json`. Значение `.Id` зависит от хранилища Docker: допустимы
+`image_id` (config digest) или digest после `@` в `image_ref` (registry/index digest
+при containerd image store). Иное значение ID или другая revision означают несовпадение.
+Именно эти два варианта принимает [проверка архива в CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/archives.ts#L95-L112):
 
 ```bash [Проверка загруженного образа]
 release_sha='ВСТАВЬТЕ_SHA_ИЗ_RELEASE_JSON'
