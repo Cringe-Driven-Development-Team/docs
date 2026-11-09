@@ -44,10 +44,10 @@ test("documentation sidebar is a linked collapsed tree", () => {
         {text: 'Откат', link: '/documentation/frontend/releases/rollback'},
         {text: 'Ошибки и уведомления', link: '/documentation/frontend/releases/troubleshooting'},
       ]},
-    ]},
-    {text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
-      {text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration'},
-      {text: 'Инфраструктура PWA', link: '/documentation/offline/infrastructure'},
+      {text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
+        {text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration'},
+        {text: 'Инфраструктура PWA', link: '/documentation/offline/infrastructure'},
+      ]},
     ]},
     {text: 'Блокноты: реализация', link: '/documentation/notebooks/', collapsed: true, items: [
       {text: 'Редактирование и сохранение', link: '/documentation/notebooks/editing'},
