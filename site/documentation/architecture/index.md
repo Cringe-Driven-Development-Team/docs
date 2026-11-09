@@ -82,8 +82,10 @@ SHA исходников подтверждает реализацию, а на�
 
 ## Проверки CI {#ci}
 
-**Кто что проверяет и публикует?** Frontend CI проверяет код, а main publish с включённым
-флагом создаёт BFF image, S3-ассеты выбранного SHA и запись release-artifacts.
+**Кто что проверяет и публикует?** Frontend CI проверяет код. После успешного Check на
+push в main job Publish release публикует BFF-образ в GHCR, файлы клиента в S3/CDN и
+готовый GitHub Release с четырьмя Assets. Порядок и повторы описаны в
+[CI и публикации](/documentation/frontend/releases/publication).
 Backend CI проверяет Go/runtime-agent/kernel images; публикация образов выполняется
 при push/main или `workflow_dispatch` независимо от `PRODUCTION_ENABLED`, который
 ограничивает production deploy.
@@ -93,7 +95,7 @@ frontend/backend в учебные репозитории при включён�
 при push/main или ручном запуске на main. Docs собирает Pages и экспортирует существующие wiki. Frontend-packages публикует библиотеки/Vite plugin через npm OIDC,
 static загружает собственную статику в S3.
 
-Источники: [frontend checks/publish](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/ci.yml#L23-L138),
+Источники: [frontend checks/publish](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/ci.yml#L23-L147),
 [backend jobs и course-sync](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/.github/workflows/ci.yml#L17-L254),
 [npm publishing](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/.github/workflows/release.yml#L33-L90),
 [static Check/Upload](https://github.com/Cringe-Driven-Development-Team/static/blob/a0cea30d81d00f2e7d915b7fa0c92a25851b4e87/.github/workflows/ci.yml#L19-L52),
@@ -105,17 +107,22 @@ static загружает собственную статику в S3.
 ## Выкатка CD {#cd}
 
 **Как выпуск становится работающим релизом?** Frontend CD запускается вручную через
-`workflow_dispatch`: выбирает выпуск, проверяет BFF digest и связанные ассеты,
-вызывает Ansible и проверяет фактический результат. Rollback выбирает существующий
-выпуск из истории GitHub Deployments без пересборки. Сам main CI frontend не выкладывает.
+`workflow_dispatch`: выбирает опубликованный GitHub Release, проверяет manifest, BFF digest
+и CDN, создаёт отдельный production Deployment, вызывает Ansible и проверяет результат.
+Пустое поле выбирает выпуск по обновлённой first-parent истории main; полный тег фиксирует
+конкретный выбор. [Инструкция CD](/documentation/frontend/releases/deployment#selection).
+Rollback выбирает цель по истории production и проверяет её Release без пересборки:
+[правила отката](/documentation/frontend/releases/rollback#target).
+Сам main CI frontend не выкладывает. Описание frontend CI/CD сверено с кодом 09.11.2026;
+новая проверка production здесь не выполнялась.
 Backend CD после успешного main CI при `PRODUCTION_ENABLED=true` вызывает Ansible
 и обновляет Go на приватной VPS2 через SSH gateway; после backend #64 этот маршрут
 проверен успешной выкладкой и SSH-сверкой работающего образа.
 Миграции PostgreSQL выполняет Go при запуске. Откат BFF не откатывает БД.
 Infra Pulumi/Ansible управляет ресурсами и конфигурацией отдельно от этих выпусков.
 
-Источники: [ручной frontend CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/cd.yml#L3-L114),
-[rollback](https://github.com/Cringe-Driven-Development-Team/frontend/blob/baf512e9a7bd7e5452554cdc89baa20e24aa7a32/.github/workflows/rollback.yml#L3-L110),
+Источники: [ручной frontend CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L3-L158),
+[rollback](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/rollback.yml#L3-L143),
 [backend CD и known_hosts для jump](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/.github/workflows/cd.yml#L14-L81),
 [выбор backend-хоста](https://github.com/Cringe-Driven-Development-Team/infra/blob/0a21f459dc2722d631b11cb9e82af5d3aa1c95ef/ansible/deploy-backend.yml#L1-L37),
 [миграции при старте Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/6e1a0d81bc284e87aa4a9561d7b65eee835a26c3/internal/app/app.go#L43-L67).

@@ -87,9 +87,9 @@ gh release download "$release_tag" --repo Cringe-Driven-Development-Team/fronten
 Проверка для обоих способов:
 
 ```bash [Проверка скачанных файлов]
-sha256sum -c SHA256SUMS
-mkdir dist
-tar -xzf frontend-dist.tar.gz -C dist
+sha256sum -c SHA256SUMS &&
+mkdir dist &&
+tar -xzf frontend-dist.tar.gz -C dist &&
 gunzip -c bff-image.tar.gz | docker load
 ```
 

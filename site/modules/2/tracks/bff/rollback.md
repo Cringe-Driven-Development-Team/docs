@@ -6,92 +6,42 @@ title: Откат
 
 # Ручной откат BFF
 
-::: info План, ещё не внедрено
-Это целевой ручной workflow из [frontend#4](https://github.com/Cringe-Driven-Development-Team/frontend/issues/4)
-и контракт образа из [infra#74](https://github.com/Cringe-Driven-Development-Team/infra/issues/74).
-Сейчас [rollback.yml](https://github.com/Cringe-Driven-Development-Team/frontend/blob/495981555390f39995bd3ab296b1f6a6e37577c8/.github/workflows/rollback.yml#L1-L53)
-меняет S3-указатель; он ещё не возвращает образ BFF.
-:::
+Rollback возвращает сохранённый выпуск без пересборки. Его цель определяется историей
+production, а состав проверяется по GitHub Release. Подробные UI/CLI и схема выбора —
+в [инструкции отката](/documentation/frontend/releases/rollback).
+Описание сверено с кодом 09.11.2026; новый откат на production не выполнялся.
 
 ## Как выбрать прежний выпуск
 
-Значения SHA, digest и двух видов Deployments — в [«Терминах»](./release#термины).
+Значения SHA, digest и Deployment — в [терминах](./release#термины).
 
-Workflow читает историю `production` Deployments через GitHub API. Каждая успешная запись содержит
-полный SHA в `ref` и точный `image_ref` по digest в `payload`. Если последняя попытка закончилась
-`success`, цель отката — предыдущий успешный Deployment с **другим** digest. Если последняя попытка
-завершилась `failure` или `error`, цель восстановления — последний успешный Deployment. Если попытка
-ещё выполняется или её статус неизвестен, workflow не выбирает цель автоматически. Успешный
-`release-artifacts` Deployment связывает SHA цели с исходным CI run и CDN-путём.
-
-Для выбора цели отдельное SSH-подключение к VPS не требуется. История показывает **последний
-подтверждённый результат выкатки**, но не доказывает, что контейнер работает сейчас: он мог упасть
-или быть удалён. Поэтому до нового развёртывания workflow не называет версию на VPS фактической.
-Если подходящей успешной записи нет, digest неоднозначен или артефакты недоступны, workflow
-останавливается до изменения VPS и показывает причину. Сообщение Telegram и `.env` не служат
-источником истории релизов.
-
-<DiagramSection>
+Если последняя попытка имеет `success`, берётся предыдущий успешный выпуск с другим digest.
+После `failure` или `error` выбирается последний успешный выпуск. Незавершённая или неизвестная
+последняя попытка, отсутствие цели или неоднозначный digest останавливают выбор до изменения VPS.
+Последний success — подтверждённая история проверки, а не датчик текущего состояния контейнера.
+[Алгоритм выбора](/documentation/frontend/releases/rollback#target).
 
 ## Проверка и переключение
 
-Схема показывает, когда workflow может выбрать цель и когда должен остановиться до изменения VPS.
+Workflow проверяет Release цели, направление к предку, публичный GHCR digest и CDN.
+Затем создаёт отдельный production Deployment с `action=rollback`, передаёт SHA и digest
+в Ansible и проверяет результат. BFF возвращает HTML и ссылки на ассеты выбранного SHA.
+Ошибка в Ansible может означать частичное переключение; провал Health check после успешного
+Switch BFF означает `failure`. Автоматического отката не происходит.
 
-<template #diagram>
-
-```mermaid
-flowchart TD
-    START["Оператор запускает ручной workflow"] --> HISTORY["GitHub: история production Deployments"]
-    HISTORY --> LAST{"Последняя попытка успешна?"}
-    LAST -- "Да" --> PREV["Предыдущий success с другим digest"]
-    LAST -- "Ошибка" --> RECOVER["Последний успешный Deployment"]
-    LAST -- "Не завершена / неизвестно" --> STOP
-    PREV --> TARGET{"Цель однозначна?"}
-    RECOVER --> TARGET
-    TARGET -- "Нет" --> STOP["Остановиться до изменения VPS"]
-    TARGET -- "Да" --> CHECK["Сверить release-artifacts, GHCR digest, SHA и CDN"]
-    CHECK --> READY{"Выпуск доступен?"}
-    READY -- "Нет" --> STOP
-    READY -- "Да" --> DEP["Создать Deployment для старого SHA"]
-    DEP --> ANS["Тот же deploy-bff.yml: digest и SHA"]
-    ANS --> VERIFY["Проверить образ, healthy, HTML, RPC и CDN"]
-    VERIFY --> OK{"Проверки прошли?"}
-    OK -- "Да" --> SUCCESS["Deployment success; подтвердить переход"]
-    OK -- "Нет" --> FAILURE["Deployment failure; сообщить известное состояние"]
-```
-
-</template>
-
-1. В общей с CD и retention группе `production` сверить целевой SHA и digest с успешным
-   `release-artifacts` Deployment, проверить доступность digest в GHCR, совпадение
-   `org.opencontainers.image.revision` с SHA и сохранность JS/CSS в CDN. Старый тег или S3-указатель
-   не заменяют эти проверки.
-2. Создать новый GitHub Deployment для **целевого старого SHA**, с действием `rollback`, точным
-   `image_ref`, каталогом ассетов и ссылкой на run отката. SHA запуска workflow на `main` не является
-   версией BFF. Автоматическую запись от environment job отключить; для старого SHA задать
-   `auto_merge: false`.
-3. Передать `bff_image_ref` и `bff_release_sha` в тот же `deploy-bff.yml`, что используется при
-   обычной выкатке. Ansible скачивает образ до изменения Compose, запускает BFF с его прежним HTML
-   и ждёт `healthy`. Go при этом не переключается.
-4. После переключения сверить образ контейнера с выбранным digest, метку выпуска и bootstrap в
-   публичном HTML, защищённый RPC и доступность ассетов этого SHA. Только тогда новый Deployment
-   получает `success`, а уведомление показывает выбранную цель и проверенный результат. При ошибке
-   workflow сообщает этап сбоя; фактическую версию после сбоя называет «неизвестно», если она не проверена.
-
-Откат не происходит автоматически. Кнопка «Откатить» в Telegram лишь открывает страницу ручного
-workflow. Провал проверки после переключения не превращается в успех из-за того, что команда Ansible
-завершилась без ошибки.
-
-</DiagramSection>
+[Проверки результата](/documentation/frontend/releases/deployment#что-проверяет-health-check)
+и [диагностика ошибок](/documentation/frontend/releases/troubleshooting#diagnosis).
+Реализация — [Rollback](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/rollback.yml#L40-L143) и
+[выбор цели](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/deployments.ts#L52-L143).
 
 ## Что остаётся доступным
 
-Retention сохраняет последние пять клиентских выпусков, а сверх них ассеты последнего успешного
-production Deployment и предыдущего успешного выпуска с другим digest независимо от возраста.
-После неуспешной или незавершённой попытки очистка откладывается до следующего подтверждённого
-результата: попытка могла переключить контейнер, даже если проверка не прошла. Иначе старый образ
-сможет вернуться, но его HTML будет ссылаться на уже удалённые JS/CSS.
+Retention сохраняет последние пять каталогов клиента в S3, а также ассеты последнего
+успешного и предыдущего успешного выпуска с другим digest независимо от возраста.
+После неуспешной или незавершённой попытки очистка откладывается. Файлы GitHub Release
+этой очисткой не удаляются, но сами по себе не восстанавливают отсутствующие CDN-файлы
+или GHCR-образ. [Правила хранения](/documentation/frontend/releases/artifacts#retention).
 
-`SESSION_KEY` при обычной выкатке и откате остаётся прежним, поэтому действующая сессионная cookie
-читается новым запуском BFF. Откат BFF не откатывает Go API, миграции и данные PostgreSQL;
-совместимость выбранного BFF с текущим Go оценивается отдельно.
+`SESSION_KEY` берётся из Vault; одинаковый ключ позволяет читать действительную cookie.
+Откат BFF не откатывает Go API, миграции и данные PostgreSQL.
+[Границы отката](/documentation/frontend/releases/rollback#границы-отката).

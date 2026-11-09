@@ -79,12 +79,12 @@ test('infra backup storage belongs to Selectel, separate from external Telegram'
   expect(telegram.color).toBe('green');
 });
 
-test('CI uses service-specific publish flags and backend event gates', () => {
+test('CI uses main publishing and backend event gates', () => {
   const doc = readDiagram('ci'), nodes = indexById(doc);
   const status = nodes['ci-scope'];
   expect(status?.tag).toBe('Textbox');
   if (status?.tag !== 'Textbox') throw new Error('CI scope must explain publication conditions');
-  expect(status.text).toContain('Frontend main publish: PRODUCTION_ENABLED');
+  expect(doc.connections.find(e => e.from === 'frontend-ci' && e.to === 'frontend-release')?.label).toBe('push main');
   expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main / manual');
 });
 

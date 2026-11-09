@@ -3,7 +3,7 @@
     {"tag":"Group","id":"github","x":0,"y":120,"width":1440,"height":1460,"isContainer":true,"title":{"text":"GitHub · проверки и публикация","icon":"github"},"color":"purple"},
     {"tag":"Group","id":"fe-repo","x":40,"y":180,"width":620,"height":380,"isContainer":true,"title":{"text":"frontend","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
     {"tag":"Activity","id":"frontend-ci","x":80,"y":260,"width":160,"height":80,"texts":[{"text":"lint / types / test / build"}],"containerId":"fe-repo"},
-    {"tag":"Activity","id":"frontend-release","x":400,"y":260,"width":160,"height":80,"texts":[{"text":"release-artifacts"}],"containerId":"fe-repo"},
+    {"tag":"Activity","id":"frontend-release","x":400,"y":260,"width":160,"height":80,"texts":[{"text":"Publish release"}],"containerId":"fe-repo"},
     {"tag":"Activity","id":"frontend-course-sync","x":400,"y":440,"width":160,"height":80,"texts":[{"text":"course-sync · копия main"}],"containerId":"fe-repo"},
     {"tag":"Group","id":"be-repo","x":760,"y":180,"width":620,"height":380,"isContainer":true,"title":{"text":"backend","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
     {"tag":"Activity","id":"backend-ci","x":800,"y":260,"width":160,"height":80,"texts":[{"text":"lint / test / runtime-agent / kernels"}],"containerId":"be-repo"},
@@ -29,12 +29,12 @@
     {"tag":"Icon","id":"static-assets","x":1660,"y":960,"icon":"database","texts":[{"text":"Общая статика"}],"containerId":"storage"},
     {"tag":"Group","id":"npm-registry","x":1560,"y":1200,"width":320,"height":300,"isContainer":true,"title":{"text":"npm registry","icon":"cloud"},"color":"green"},
     {"tag":"Icon","id":"npm","x":1660,"y":1280,"icon":"npm","texts":[{"text":"Пакеты библиотеки / Vite"}],"containerId":"npm-registry"},
-    {"tag":"Textbox","id":"ci-scope","x":0,"y":1680,"width":1880,"text":"Frontend main publish: PRODUCTION_ENABLED=true. Backend images: push main / manual. Course-sync: COURSE_SYNC_ENABLED=true. Публикация release-artifacts не выкладывает frontend. Генерация OpenWiki ручная; Pages экспортирует Markdown."},
+    {"tag":"Textbox","id":"ci-scope","x":0,"y":1680,"width":1880,"text":"Frontend main publish: push main после Check. Backend images: push main / manual. Course-sync: COURSE_SYNC_ENABLED=true. GitHub Release хранит готовый комплект; публикация не выкладывает frontend. Генерация OpenWiki ручная; Pages экспортирует Markdown."},
     {"tag":"Activity","id":"infra-preview","x":400,"y":940,"width":160,"height":80,"texts":[{"text":"Pulumi preview"}],"containerId":"infra-repo"},
     {"tag":"Legend","id":"legend","x":2020,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Пайплайн и внешние системы, пунктир","color":"#3a3a3a"},{"text":"Прочие связи","color":"#1c1c1c"}]}
   ],
   "connections": [
-    {"tag":"Relationship","from":"frontend-ci","to":"frontend-release","label":"main · flag"},
+    {"tag":"Relationship","from":"frontend-ci","to":"frontend-release","label":"push main"},
     {"tag":"Relationship","from":"frontend-ci","to":"frontend-course-sync","label":"main · flag"},
     {"tag":"Relationship","from":"frontend-release","to":"bff-image","label":"BFF digest","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"frontend-release","to":"release-assets","label":"ассеты SHA","color":"black","lineStyle":"dashed"},
