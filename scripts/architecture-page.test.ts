@@ -60,15 +60,18 @@ test("documentation sidebar is a linked collapsed tree", () => {
 });
 
 test('production evidence distinguishes configuration from scenarios', () => {
-  const intro = readFileSync(PAGE, 'utf8').split('\n## deployment')[0]!;
-  for (const value of ['Архитектура работающего сервиса', '{#архитектура-mvp}', '01.11.2026',
-    '6e1a0d81bc284e87aa4a9561d7b65eee835a26c3', 'baf512e9a7bd7e5452554cdc89baa20e24aa7a32',
-    '26205cff0bdfd9c1d74e9f23557d8c931c724b9573ee49ce1b6eec3748c233f3',
-    '41302004065', 'RUNTIME_ENABLED=true', 'gateway', 'VPS2', 'auxiliary']) {
+  const page = readFileSync(PAGE, 'utf8');
+  const intro = page.split('\n## ')[0]!;
+  for (const value of ['Архитектура работающего сервиса', '{#архитектура-mvp}', '09.11.2026', '03:37 МСК',
+    '319e691b79f81e09dcffabc04941831a5f4b5930', '06841d4765c28ad7e52bf5e36df3b72cb22c094e',
+    '42538007203', '42536140424', '42532217133', 'Прямой SSH', 'HTTP-проверки']) {
     expect(intro, value).toContain(value);
   }
   expect(intro).toMatch(/runtime[\s\S]*не проверен/);
   expect(intro).toMatch(/Авторизованн[\s\S]*не проверен/);
+  expect(page).not.toMatch(/01\.11\.2026|baf512e9|6e1a0d81|Историческ|исторический срез/);
+  expect(page).not.toMatch(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+  expect(page).not.toContain('{{');
 });
 
 test("every root diagram is on /documentation/architecture/ with a heading and a Diagram", () => {

@@ -17,6 +17,9 @@ test('deployment places backend on VPS2', () => {
   expect(['go-api', 'postgres', 'redis'].map(id => nodes[id]?.containerId)).toEqual(['vps2', 'vps2', 'vps2']);
   expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>caddy', 'caddy>bff', 'bff>go-api', 'go-api>postgres', 'go-api>redis']));
   expect(edgePairs(doc)).not.toContain('client>go-api');
+  expect(nodes['s3-notebooks']).toBeUndefined();
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['go-api>s3-avatars', 'client>s3-avatars', 'go-api>agent', 'agent>kernel']));
+  expect(doc.connections.find(e => e.to === 'redis')?.label).toContain('сессии');
 });
 
 test('infra separates service roles', () => {
@@ -25,8 +28,9 @@ test('infra separates service roles', () => {
   const status = nodes['runtime-status'];
   expect(status?.tag).toBe('Textbox');
   if (status?.tag !== 'Textbox') throw new Error('runtime-status must describe verification limits');
-  expect(status.text).toContain('RUNTIME_ENABLED=true');
+  expect(status.text).toContain('OpenStack');
   expect(status.text).toContain('не проверен');
+  expect(edgePairs(readDiagram('infra'))).toContain('githubbot>proxy');
 });
 
 test('browser calls BFF, BFF calls Go', () => {
@@ -36,6 +40,7 @@ test('browser calls BFF, BFF calls Go', () => {
   expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff')?.label).toContain('/api/trpc');
   expect(doc.connections.find(e => e.from === 'bff' && e.to === 'go-api')?.label).toContain('/api/v1');
   expect(nodes['bff-plugin']?.containerId).toBe('repo-packages');
+  expect(edgePairs(doc)).toContain('pwa-files>bff');
   for (const name of ['@cdd-team/react', '@cdd-team/router', '@cdd-team/zustand']) expect(JSON.stringify(doc)).toContain(name);
 });
 
@@ -79,13 +84,28 @@ test('infra backup storage belongs to Selectel, separate from external Telegram'
   expect(telegram.color).toBe('green');
 });
 
-test('CI uses service-specific publish flags and backend event gates', () => {
+test('CI publishes frontend Releases on main and keeps backend event gates', () => {
   const doc = readDiagram('ci'), nodes = indexById(doc);
   const status = nodes['ci-scope'];
   expect(status?.tag).toBe('Textbox');
   if (status?.tag !== 'Textbox') throw new Error('CI scope must explain publication conditions');
-  expect(status.text).toContain('Frontend main publish: PRODUCTION_ENABLED');
+  expect(status.text).not.toContain('PRODUCTION_ENABLED');
+  expect(doc.connections.find(e => e.to === 'frontend-release')?.label).toBe('push main');
+  expect(doc.connections.find(e => e.to === 'frontend-course-sync')?.label).toBe('push main');
+  expect(doc.connections.find(e => e.to === 'backend-course-sync')?.label).toBe('main · flag');
+  expect(JSON.stringify(nodes['frontend-release'])).toContain('GitHub Release');
   expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main / manual');
+});
+
+test('current notebook infrastructure has no S3 migration path', () => {
+  const doc = readDiagram('notebooks-infrastructure');
+  expect(edgePairs(doc)).toContain('go-api>postgres');
+  expect(JSON.stringify(doc)).not.toMatch(/offline migration|01\.11\.2026|08\.11\.2026/);
+  expect(JSON.stringify(doc)).toContain('подготовленным образом');
+  const storage = readFileSync('site/documentation/notebooks/storage-and-infrastructure.md', 'utf8');
+  const section = storage.split('### S3')[1]?.split('\n##')[0] ?? '';
+  expect(section).toContain('архив');
+  expect(section).not.toMatch(/offline migration|API отказывается запускаться|notebook-migration\.md/);
 });
 
 test('infra preview and apply independently follow checks', () => {
