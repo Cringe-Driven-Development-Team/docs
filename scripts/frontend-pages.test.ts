@@ -131,7 +131,7 @@ test("frontend: источники закреплены на проверенн�
 });
 
 test("frontend: страницы не содержат чувствительных значений и неэкранированных шаблонов", () => {
-  for (const page of ["index", "routing", "build", "styles", "startup", "rendering", "state", "requests", "session", "bff", "packages", "checks"]) {
+  for (const page of ["architecture", "index", "routing", "build", "styles", "startup", "rendering", "state", "requests", "session", "bff", "packages", "checks"]) {
     const md = read(page);
     expect(md, page).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
     expect(md, page).not.toMatch(/gh[pousr]_[A-Za-z0-9]+|BEGIN (?:RSA |OPENSSH )?PRIVATE KEY|(?:token|secret|password)\s*[:=]\s*["'][^"']+/i);
@@ -139,8 +139,9 @@ test("frontend: страницы не содержат чувствительн�
   }
 });
 
-test("frontend: шесть схем объясняют связи рядом с текстом", () => {
+test("frontend: схемы объясняют связи рядом с текстом", () => {
   for (const [page, title, relationships] of [
+    ["architecture", "Состояние и обновление UI", [/login/, /tRPC/, /BFF/, /store/, /Успешный ответ/, /result --> store/, /store --> ui/]],
     ["index", "Сквозной сценарий", [/Клиент/, /BFF/, /Go/, /notebookPage/, /notebooks\.get/, /editSource/, /client->>bff: cells\.update/, /bff->>go:.*If-Match/, /confirmed/]],
     ["startup", "Сторы до первого рендера", [/readBootstrap.*-->/, /initSession/, /setPreloadedNotebook/, /RouterProvider/, /valid -->\|Нет\| failure/, /failure --> stopped/, /BootstrapError/, /не запускается/]],
     ["routing", "Переход и история", [/Прямой URL/, /BFF/, /pushState.*replaceState/, /popstate/, /дерев/, /tree --> guard/, /guard -->\|Маршрут разрешён\| outlet/, /beforeLoad/, /Outlet/]],
@@ -155,7 +156,7 @@ test("frontend: шесть схем объясняют связи рядом с 
     expect(pair![1], `${page}: источники рядом со схемой`).toContain("https://github.com/");
     for (const relation of relationships) expect(pair![2], `${page}: ${relation}`).toMatch(relation);
   }
-  for (const [page, count] of [["index", 1], ["startup", 1], ["routing", 1], ["rendering", 1], ["state", 2]] as const) {
+  for (const [page, count] of [["architecture", 1], ["index", 1], ["startup", 1], ["routing", 1], ["rendering", 1], ["state", 2]] as const) {
     expect(read(page).match(/^```mermaid$/gm)?.length ?? 0, page).toBe(count);
   }
 });
@@ -343,7 +344,7 @@ test("frontend: выпуск отделён от подтверждения npm 
 
 test("frontend: обзор даёт полную карту тем в порядке меню", () => {
   const map = section(read('index'), 'Карта тем');
-  const topics = ['routing', 'build', 'styles', 'startup', 'rendering', 'state', 'requests', 'session', 'bff', 'packages', 'checks'];
+  const topics = ['architecture', 'routing', 'build', 'styles', 'startup', 'rendering', 'state', 'requests', 'session', 'bff', 'packages', 'checks'];
   expect([...map.matchAll(/\]\(\.\/([a-z]+)(?:#[^)]+)?\)/g)].map(match => match[1])).toEqual(topics);
   for (const file of ['index', 'current-state', 'project-context']) {
     expect(readFileSync(`site/documentation/${file}.md`, 'utf8'), file).toContain('](/documentation/frontend/)');
@@ -374,7 +375,7 @@ test("frontend: итоговый срез учитывает Cell, media-hook и
 });
 
 test("frontend: старый BFF используется только как browser redirect", () => {
-  const files = ['site/documentation/index.md', 'site/documentation/current-state.md', 'site/documentation/project-context.md', ...['index', 'routing', 'build', 'styles', 'startup', 'rendering', 'state', 'requests', 'session', 'bff', 'packages', 'checks'].map(page => `site/documentation/frontend/${page}.md`)];
+  const files = ['site/documentation/index.md', 'site/documentation/current-state.md', 'site/documentation/project-context.md', ...['architecture', 'index', 'routing', 'build', 'styles', 'startup', 'rendering', 'state', 'requests', 'session', 'bff', 'packages', 'checks'].map(page => `site/documentation/frontend/${page}.md`)];
   for (const file of files) expect(readFileSync(file, 'utf8'), file).not.toMatch(/\]\((?:\/documentation\/bff|\.\.\/bff)(?:#|\))/);
   const browser = readFileSync('scripts/check-readability.ts', 'utf8').split('async function checkHierarchy')[1]!.split('async function checkTitle')[0]!;
   for (const id of ['bff-проверенная-часть', 'что-наблюдается-на-проде', 'релизы-и-граница-доказательства', 'где-искать-реализацию', 'что-еще-нужно-проверить']) expect(browser, id).toContain(id);
@@ -393,4 +394,26 @@ test('frontend: входные страницы не отрицают реали
   const notebooks = readFileSync('site/documentation/notebooks/index.md', 'utf8');
   expect(notebooks).toContain(`frontend/blob/${FRONTEND_SHA}/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L322-L346`);
   expect(notebooks).toContain('задачей #96');
+});
+
+
+test('frontend: архитектура подтверждает классификацию исходниками', () => {
+  const md = read('architecture');
+  const classification = section(md, 'Классификация');
+  const axes = ['SPA / MPA', 'CSR / SSR / SSG', 'Организация UI', 'Управление состоянием', 'Организация кода', 'Взаимодействие с сервером', 'Организация репозитория'];
+  const rows = classification.split('\n').filter(line => line.startsWith('| ')).slice(2);
+  expect(rows.map(row => row.split('|')[1]!.trim())).toEqual(axes);
+  expect(section(md, 'Почему CSR')).toContain('script#bootstrap');
+  expect(section(md, 'Почему CSR')).toContain('createRoot');
+  expect(section(md, 'Организация кода')).toContain('NotebooksPage');
+  for (const value of ['useState', '@cdd-team/zustand', 'login()', 'Flux']) expect(md).toContain(value);
+  for (const value of ['Observer', 'onEdit', 'onSaved', 'отписк', 'модул', 'Singleton']) expect(section(md, 'Подтверждённые паттерны')).toContain(value);
+  expect(section(md, 'Границы классификации')).toMatch(/FSD[\s\S]*DDD[\s\S]*MVC/);
+  expect(md).toContain('не новый прогон');
+  const refs = [...md.matchAll(/https:\/\/github\.com\/Cringe-Driven-Development-Team\/frontend\/blob\/([^\s)]+)/g)];
+  expect(refs.length).toBeGreaterThan(5);
+  for (const [, ref] of refs) expect(ref).toMatch(/^319e691b79f81e09dcffabc04941831a5f4b5930\/[^#]+#L\d+(?:-L\d+)?$/);
+  for (const path of ['./startup', './rendering', './state', './requests', './session', './bff', '/documentation/architecture/']) expect(md).toContain(`](${path})`);
+  for (const id of ['frontend-architecture', 'classification', 'csr', 'modules', 'state-flow', 'patterns', 'limits', 'summary']) expect(md).toContain(`{#${id}}`);
+  expect(section(read('index'), 'Статус сведений')).toContain('[Архитектура](./architecture)');
 });
