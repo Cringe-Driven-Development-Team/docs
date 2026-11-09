@@ -112,7 +112,7 @@ test("config: three entrances keep architecture in documentation, no branch prev
   expect(documentation).toContain('06841d4765c28ad7e52bf5e36df3b72cb22c094e');
   expect(documentation).toContain('## Что реализовано в выложенном коде');
   expect(documentation).toContain('PostgreSQL');
-  expect(documentation).toContain('CSP уже применяется на проде');
+  expect(documentation).toContain('действующую блокирующую политику Caddy');
   expect(documentation).toContain('повторно не проверяли');
   expect(documentation).not.toMatch(/31\.10\.2026|остаются.*планом|CSP пока обозначен как TODO/);
 

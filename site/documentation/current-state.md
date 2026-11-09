@@ -61,9 +61,9 @@ PWA повторно не проверяли. Устройство кеша и �
 - [Frontend](/documentation/frontend/) — клиент, рендеринг, состояние и сохранение;
   [BFF](/documentation/frontend/bff) — запросы и сессия. У подробных страниц указаны собственные версии исходников и границы проверки.
 - [Блокноты](/documentation/notebooks/) — модель документа, сохранение и исполнение.
-- [Безопасность](/documentation/security/) — CSRF и XSS. CSP уже применяется на проде;
-  [страница CSP](/documentation/security/csp) ещё не заполнена. Политика задана в
-  [Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/caddy/templates/Caddyfile.j2#L7).
+- [Безопасность](/documentation/security/) — CSRF и XSS. [CSP](/documentation/security/csp)
+  описывает действующую блокирующую политику Caddy, разрешённые источники ресурсов
+  и границы проверки.
 - [Контекст проекта и владельцы сведений](/documentation/project-context) — где находятся код, контракт API и правила команды.
   Frontend владеет клиентом и BFF, backend — Go API и runtime-agent, infra — инфраструктурой.
 

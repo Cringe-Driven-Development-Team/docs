@@ -133,11 +133,9 @@ origin из списка BFF и реальные JS/CSS-чанки, указан
 | JS/CSS с CDN выпуска | 200 каждый | `text/javascript; charset=utf-8` / `text/css; charset=utf-8` | `max-age=86400` |
 
 Во всех восьми ответах origin присутствовал `nosniff`, отсутствовал `Service-Worker-Allowed`.
-CSP пришла как **Content-Security-Policy-Report-Only**; блокирующего `Content-Security-Policy`
-не было. Report-Only позволяет обнаруживать нарушения, но не блокирует их по этой политике.
-Успешные GET не доказывают готовность текущих правил к включению enforcement.
-[Смысл Report-Only — MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy-Report-Only),
-[CSP в проекте](/documentation/security/csp).
+Действующая блокирующая политика, разрешения для файлов PWA и отдельная проверка
+заголовка описаны в [CSP проекта](/documentation/security/csp). Успешные GET файлов
+из этой проверки не доказывают работу PWA под текущей политикой.
 
 Уровни HTTP-политики различаются: загрузчик записывает в S3 для файлов кроме `index.html`
 метаданные `public, max-age=31536000, immutable`, а проверенные ответы CDN содержали
