@@ -70,6 +70,7 @@ Frontend проверяет типы, линтер, тесты, сборку к�
 Merge Queue и `main`. После успешных проверок push в `main` публикует GitHub Release
 `release-<SHA>`: образ BFF по digest, ассеты в S3/CDN и описание комплекта выпуска.
 Публикация не выкатывает приложение и не зависит от `PRODUCTION_ENABLED`.
+Подробно: [CI и публикация выпуска](/documentation/frontend/releases/publication).
 
 Backend CI проверяет Go, runtime-agent и реальные Python/R kernels. На `main`
 или при ручном запуске публикует образы; `PRODUCTION_ENABLED` управляет только CD.
@@ -92,10 +93,12 @@ static загружает общую статику в S3.
 ## Выкатка CD {#cd}
 
 Frontend CD запускается вручную. Оператор указывает тег Release; пустое поле
-выбирает последний опубликованный выпуск по истории `main`. До выкладки проверяются
+выбирает ближайший опубликованный выпуск по first-parent истории обновлённого `main`
+после ожидания очереди. До выкладки проверяются
 комплект, digest образа и ассеты. Ansible обновляет BFF на gateway; затем проверяются
 работающий образ, HTML и CDN. Rollback выбирает существующий выпуск из истории
-production без пересборки.
+production без пересборки. Инструкции: [выкатка](/documentation/frontend/releases/deployment)
+и [откат](/documentation/frontend/releases/rollback).
 
 Backend CD после успешного push/main при `PRODUCTION_ENABLED=true` получает
 `backend@sha256:…` от CI. Ansible выкатывает этот digest на VPS2 через gateway,
@@ -203,3 +206,20 @@ Docker, nginx, nftables и окружение агента; Ansible провер
 Подробнее — [хранение и изоляция](/documentation/notebooks/storage-and-infrastructure).
 
 <Diagram name="notebooks-infrastructure" />
+
+## Выпуск фронта {#frontend-release-lifecycle}
+
+Готовый комплект в GitHub Releases связывает файлы S3/CDN и образ GHCR. Ручной CD
+создаёт отдельный production Deployment и проверяет результат переключения BFF.
+Реализация сверена 09.11.2026; источники и границы проверки — в
+[разделе выкаток](/documentation/frontend/releases/).
+
+<Diagram name="frontend-release-lifecycle" />
+
+## Доставка фронта {#frontend-release-delivery}
+
+Браузер получает HTML и API через Caddy/BFF, JS/CSS выпуска — через CDN/S3.
+Образ GHCR скачивается при выкатке. Подробнее о файлах и идентификаторах —
+[состав выпуска](/documentation/frontend/releases/artifacts).
+
+<Diagram name="frontend-release-delivery" />

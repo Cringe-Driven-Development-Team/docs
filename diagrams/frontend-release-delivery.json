@@ -1,0 +1,199 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "device",
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 220,
+      "isContainer": true,
+      "title": {
+        "text": "Устройство пользователя"
+      },
+      "color": "white"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 80,
+      "y": 80,
+      "containerId": "device",
+      "icon": "monitor",
+      "texts": [
+        {
+          "text": "Браузер"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "gateway",
+      "x": 480,
+      "y": 0,
+      "width": 760,
+      "height": 220,
+      "isContainer": true,
+      "title": {
+        "text": "Selectel · gateway"
+      },
+      "color": "blue"
+    },
+    {
+      "tag": "Icon",
+      "id": "caddy",
+      "x": 560,
+      "y": 80,
+      "containerId": "gateway",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "Caddy"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "bff",
+      "x": 1000,
+      "y": 80,
+      "containerId": "gateway",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "BFF · HTML и API"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "delivery",
+      "x": 0,
+      "y": 420,
+      "width": 760,
+      "height": 240,
+      "isContainer": true,
+      "title": {
+        "text": "Selectel · доставка файлов"
+      },
+      "color": "blue"
+    },
+    {
+      "tag": "Icon",
+      "id": "cdn",
+      "x": 80,
+      "y": 500,
+      "containerId": "delivery",
+      "icon": "cloud",
+      "texts": [
+        {
+          "text": "CDN · JS и CSS"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "s3",
+      "x": 560,
+      "y": 500,
+      "containerId": "delivery",
+      "icon": "database",
+      "texts": [
+        {
+          "text": "S3 · releases/SHA/"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "registry",
+      "x": 980,
+      "y": 420,
+      "width": 260,
+      "height": 240,
+      "isContainer": true,
+      "title": {
+        "text": "GHCR"
+      },
+      "color": "green"
+    },
+    {
+      "tag": "Icon",
+      "id": "image",
+      "x": 1060,
+      "y": 500,
+      "containerId": "registry",
+      "icon": "package",
+      "texts": [
+        {
+          "text": "Образ BFF"
+        }
+      ]
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1360,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Рабочее место",
+          "color": "#242424"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "caddy",
+      "label": "HTML и /api/trpc",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "caddy",
+      "to": "bff",
+      "label": "запрос / ответ"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "cdn",
+      "label": "ресурсы из HTML",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "cdn",
+      "to": "s3",
+      "label": "источник при cache miss"
+    },
+    {
+      "tag": "Relationship",
+      "from": "image",
+      "to": "bff",
+      "label": "pull"
+    }
+  ]
+}

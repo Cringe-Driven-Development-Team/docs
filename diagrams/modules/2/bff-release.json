@@ -2,136 +2,147 @@
   "entities": [
     {
       "tag": "Group",
-      "id": "github",
-      "title": { "text": "GitHub: готовые выпуски и production" },
+      "id": "catalog",
       "x": 0,
       "y": 0,
-      "width": 560,
-      "height": 760,
-      "color": "purple",
-      "isContainer": true
+      "width": 280,
+      "height": 280,
+      "isContainer": true,
+      "title": {
+        "text": "GitHub Releases"
+      },
+      "color": "purple"
     },
     {
       "tag": "Icon",
-      "id": "ci",
-      "icon": "github",
-      "texts": [{ "text": "CI: один полный Git SHA" }],
+      "id": "release",
       "x": 100,
       "y": 100,
-      "containerId": "github"
-    },
-    {
-      "tag": "Icon",
-      "id": "ready-deployment",
+      "containerId": "catalog",
       "icon": "package",
-      "texts": [{ "text": "release-artifacts: SHA и digest" }],
-      "x": 380,
-      "y": 240,
-      "containerId": "github"
-    },
-    {
-      "tag": "Icon",
-      "id": "cd",
-      "icon": "rocket",
-      "texts": [{ "text": "CD: проверка и выкатка" }],
-      "x": 100,
-      "y": 460,
-      "containerId": "github"
-    },
-    {
-      "tag": "Icon",
-      "id": "production-deployment",
-      "icon": "history",
-      "texts": [{ "text": "production: цель и статус" }],
-      "x": 380,
-      "y": 460,
-      "containerId": "github"
+      "texts": [
+        {
+          "text": "Published Release · 4 Assets"
+        }
+      ]
     },
     {
       "tag": "Group",
-      "id": "registry",
-      "title": { "text": "GHCR" },
-      "x": 700,
-      "y": 420,
-      "width": 380,
-      "height": 340,
-      "color": "green",
-      "isContainer": true
-    },
-    {
-      "tag": "Icon",
-      "id": "bff-image",
-      "icon": "docker",
-      "texts": [{ "text": "Образ BFF + HTML по digest" }],
-      "x": 840,
-      "y": 560,
-      "containerId": "registry"
-    },
-    {
-      "tag": "Group",
-      "id": "cdn",
-      "title": { "text": "S3/CDN: выпуск того же SHA" },
-      "x": 700,
+      "id": "actions",
+      "x": 420,
       "y": 0,
-      "width": 380,
-      "height": 300,
-      "color": "green",
-      "isContainer": true
+      "width": 1160,
+      "height": 720,
+      "isContainer": true,
+      "title": {
+        "text": "GitHub Actions · ручной CD"
+      },
+      "color": "purple"
     },
     {
-      "tag": "Icon",
-      "id": "assets",
-      "icon": "cloud",
-      "texts": [{ "text": "JS/CSS выпуска" }],
-      "x": 840,
-      "y": 120,
-      "containerId": "cdn"
+      "tag": "Activity",
+      "id": "checks",
+      "x": 500,
+      "y": 100,
+      "width": 240,
+      "height": 100,
+      "containerId": "actions",
+      "texts": [
+        {
+          "text": "Проверить Release, GHCR и CDN"
+        }
+      ]
     },
     {
-      "tag": "Group",
-      "id": "vps",
-      "title": { "text": "VPS: точный образ работает" },
-      "x": 1220,
-      "y": 0,
-      "width": 520,
-      "height": 760,
-      "color": "blue",
-      "isContainer": true
+      "tag": "Activity",
+      "id": "record",
+      "x": 900,
+      "y": 100,
+      "width": 240,
+      "height": 100,
+      "containerId": "actions",
+      "texts": [
+        {
+          "text": "Создать production Deployment"
+        }
+      ]
     },
     {
-      "tag": "Icon",
+      "tag": "Activity",
       "id": "ansible",
-      "icon": "code",
-      "texts": [{ "text": "Ansible / Compose" }],
       "x": 1300,
+      "y": 100,
+      "width": 240,
+      "height": 100,
+      "containerId": "actions",
+      "texts": [
+        {
+          "text": "Ansible · digest и SHA"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "health",
+      "x": 1300,
+      "y": 440,
+      "width": 240,
+      "height": 100,
+      "containerId": "actions",
+      "texts": [
+        {
+          "text": "Health check"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "result",
+      "x": 900,
+      "y": 440,
+      "width": 240,
+      "height": 100,
+      "containerId": "actions",
+      "texts": [
+        {
+          "text": "success / failure / error"
+        }
+      ]
+    },
+    {
+      "tag": "Textbox",
+      "id": "scope",
+      "x": 480,
       "y": 620,
-      "containerId": "vps"
+      "width": 1000,
+      "containerId": "actions",
+      "text": "После Switch BFF: success или failure по Health check. Ошибка переключения — error. Автоотката нет."
+    },
+    {
+      "tag": "Group",
+      "id": "gateway",
+      "x": 1720,
+      "y": 0,
+      "width": 280,
+      "height": 720,
+      "isContainer": true,
+      "title": {
+        "text": "Selectel · gateway"
+      },
+      "color": "blue"
     },
     {
       "tag": "Icon",
       "id": "bff",
+      "x": 1820,
+      "y": 100,
+      "containerId": "gateway",
       "icon": "server",
-      "texts": [{ "text": "BFF: HTML и RPC" }],
-      "x": 1560,
-      "y": 620,
-      "containerId": "vps"
-    },
-    {
-      "tag": "Icon",
-      "id": "caddy",
-      "icon": "shield",
-      "texts": [{ "text": "Caddy" }],
-      "x": 1560,
-      "y": 120,
-      "containerId": "vps"
-    },
-    {
-      "tag": "Icon",
-      "id": "client",
-      "icon": "globe",
-      "texts": [{ "text": "Браузер" }],
-      "x": 1920,
-      "y": 120
+      "texts": [
+        {
+          "text": "BFF · HTML и API"
+        }
+      ]
     },
     {
       "tag": "Legend",
@@ -140,24 +151,73 @@
       "y": 0,
       "width": 340,
       "entries": [
-        { "text": "Наша инфраструктура", "color": "#2866c4" },
-        { "text": "GitHub", "color": "#c43dcf" },
-        { "text": "Внешние сервисы", "color": "#30a050" },
-        { "text": "Пользовательский трафик", "color": "#c38424" },
-        { "text": "Прочие связи", "color": "#1c1c1c" }
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "GitHub",
+          "color": "#c43dcf"
+        },
+        {
+          "text": "Пайплайн и внешние системы, пунктир",
+          "color": "#3a3a3a"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
       ]
     }
   ],
   "connections": [
-    { "tag": "Relationship", "from": "ci", "to": "bff-image", "label": "образ @sha256" },
-    { "tag": "Relationship", "from": "ci", "to": "assets", "label": "ассеты releases/SHA/" },
-    { "tag": "Relationship", "from": "ci", "to": "ready-deployment", "label": "успех после проверки" },
-    { "tag": "Relationship", "from": "ready-deployment", "to": "cd", "label": "digest и CDN-путь" },
-    { "tag": "Relationship", "from": "cd", "to": "production-deployment", "label": "запись / статус" },
-    { "tag": "Relationship", "from": "cd", "to": "ansible", "label": "bff_image_ref + SHA" },
-    { "tag": "Relationship", "from": "ansible", "to": "bff", "label": "pull и запуск" },
-    { "tag": "Relationship", "from": "client", "to": "caddy", "label": "GET HTML / RPC", "color": "orange", "lineStyle": "solid" },
-    { "tag": "Relationship", "from": "caddy", "to": "bff", "label": "запрос к BFF" },
-    { "tag": "Relationship", "from": "client", "to": "assets", "label": "JS/CSS выпуска", "color": "orange", "lineStyle": "solid" }
+    {
+      "tag": "Relationship",
+      "from": "release",
+      "to": "checks",
+      "label": "manifest",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "checks",
+      "to": "record",
+      "label": "проверки пройдены"
+    },
+    {
+      "tag": "Relationship",
+      "from": "record",
+      "to": "ansible",
+      "label": "следующий шаг"
+    },
+    {
+      "tag": "Relationship",
+      "from": "ansible",
+      "to": "bff",
+      "label": "переключение",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "bff",
+      "to": "health",
+      "label": "ответы на пробы",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "health",
+      "to": "result",
+      "label": "результат"
+    },
+    {
+      "tag": "Relationship",
+      "from": "result",
+      "to": "record",
+      "label": "статус"
+    }
   ]
 }

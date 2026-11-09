@@ -149,57 +149,27 @@ origin из списка BFF и реальные JS/CSS-чанки, указан
 Прежнее свидетельство гостевого офлайн-сценария и установки сохранено в
 [обзоре](/documentation/offline/) со своей датой и SHA.
 
-<DiagramSection>
-
 ## Как выпускается новая версия
 
-CI сначала выполняет проверки и сборку. На push в `main` при включённой публикации он
-готовит два артефакта одного SHA: каталог клиента в S3/CDN и публичный образ BFF в GHCR.
-Запись `release-artifacts` создаётся после проверки файлов и образа. Неизменяемый каталог
-`releases/<sha>/` связывает HTML-шаблон с ассетами его выпуска.
+После Check на push в `main` CI публикует файлы клиента в S3/CDN, публичный BFF-образ
+в GHCR и GitHub Release с четырьмя Assets. HTML и публичные PWA-файлы входят в образ;
+ссылки на JS/CSS ведут в неизменяемый каталог `releases/<SHA>/`.
+[Состав выпуска и маршруты доставки](/documentation/frontend/releases/artifacts).
 
-Отдельный workflow **CD запускается вручную** для готового SHA. Он проверяет артефакты,
-передаёт digest образа и SHA зафиксированной ревизии Ansible, разворачивает BFF, затем
-проверяет запущенный выпуск. Публикация артефактов сама по себе не переключает приложение
-на новую версию.
+Ручной CD выбирает опубликованный Release, проверяет manifest, образ и CDN, затем
+передаёт digest и SHA в Ansible из актуального `infra/main`. Переключение BFF возвращает
+HTML и PWA-файлы выбранного выпуска; обновление уже установленного service worker
+зависит от его жизненного цикла в браузере. Публикация файлов сама по себе не переключает BFF.
+[Выкатка и проверка результата](/documentation/frontend/releases/deployment).
 
-Процесс задают [CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/.github/workflows/ci.yml#L23-L123)
-и [CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/.github/workflows/cd.yml#L40-L139).
-В исследованном коде CD закреплён infra `ae597f80bf0fcc0dbd8daa243cc61292c9760397`:
-[INFRA_REF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/.github/workflows/cd.yml#L16-L19),
-[контракт выкатки BFF](https://github.com/Cringe-Driven-Development-Team/infra/blob/ae597f80bf0fcc0dbd8daa243cc61292c9760397/ansible/deploy-bff.yml#L1-L43).
-Это описание кода процесса; новый запуск CI/CD данным HTTP-прогоном не выполнялся.
-
-<template #diagram>
-
-```mermaid
-%% Flowchart: готовый выпуск — результат CI и вход отдельного ручного CD.
-flowchart TB
-  subgraph publishRelease["CI · готовим выпуск"]
-    checks["Проверки и сборка"] --> publish["Публикация S3/CDN<br>и образа GHCR"]
-    publish --> readyRelease["Готовый выпуск · SHA"]
-  end
-  subgraph deployRelease["CD · разворачиваем готовый выпуск"]
-    direction TB
-    manualCd["Ручной запуск CD"] --> verify["Проверка артефактов"]
-    verify --> ansible["Ansible · образ по digest<br>и SHA выпуска"]
-    ansible --> runningBff["Запущенный BFF"]
-    runningBff --> health["Проверка выпуска<br>и результат"]
-  end
-  readyRelease --> deployRelease
-  classDef trigger fill:#fed7aa,stroke:#c2410c,color:#374151
-  classDef success fill:#a7f3d0,stroke:#047857,color:#374151
-  class manualCd trigger
-  class readyRelease,health success
-```
-
-</template>
-
-Практические команды и настройка доступов остаются в
-[runbook выпуска frontend](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/docs/release.md).
-Здесь показано, как этот процесс доставляет PWA-файлы вместе с BFF и релизными ассетами.
-
-</DiagramSection>
+Этот процесс сверён с исходниками 09.11.2026:
+[CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/ci.yml#L39-L147),
+[CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L43-L147),
+[образ BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/Dockerfile#L7-L17),
+[Ansible](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/deploy-bff.yml#L1-L43).
+Новая выкатка и обновление установленной PWA здесь не проверялись; HTTP-наблюдения
+выше сохраняют собственную дату и SHA. Схемы и практические команды — в
+[разделе выкаток](/documentation/frontend/releases/).
 
 ## Как проверить раздачу
 

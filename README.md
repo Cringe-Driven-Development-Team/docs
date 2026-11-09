@@ -204,6 +204,8 @@ Actions только проверяет PR с изменениями `openwiki/*
 | [ci](https://docs.cellestial.ru/ci.html) | Проверки и публикация GHCR/S3/npm, владельцы репозиториев, course-sync и Pages |
 | [cd](https://docs.cellestial.ru/cd.html) | Ручной frontend CD/rollback, автоматический backend CD через gateway, отдельный infra apply |
 | [frontend](https://docs.cellestial.ru/frontend.html) | Client/BFF/schemas, командные библиотеки, внешний владелец Vite plugin и npm-пакетов |
+| [frontend-release-lifecycle](https://docs.cellestial.ru/frontend-release-lifecycle.html) | От CI и публикации Release до ручного CD и production Deployment |
+| [frontend-release-delivery](https://docs.cellestial.ru/frontend-release-delivery.html) | HTML/API через BFF, клиентские ресурсы через CDN/S3 и образ из GHCR |
 | [contract](https://docs.cellestial.ru/contract.html) | tRPC браузер/BFF и OpenAPI BFF/Go, Apidog, Orval/Zod, oapi-codegen и drift |
 | [infra](https://docs.cellestial.ru/infra.html) | Три VPS, Pulumi state/Ansible, auxiliary integrations/backup и границы runtime |
 | [notebooks-components](https://docs.cellestial.ru/notebooks-components.html) | Блокноты: компоненты и путь данных по коду 08.11.2026; прод не проверен |

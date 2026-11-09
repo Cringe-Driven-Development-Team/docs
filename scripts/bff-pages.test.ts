@@ -511,10 +511,13 @@ test("выпуск, откат и сборка ведут к владельца�
     expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
   }
-  const release = readFileSync(RELEASE, "utf8");
-  for (const needle of ["auto_inactive: false", "auto_merge: false", "deployment: false", "анонимное скачивание", "единственный успешный", "org.opencontainers.image.revision", "RPC", "CDN"]) expect(release, needle).toContain(needle);
-  const rollback = readFileSync(ROLLBACK, "utf8");
-  for (const needle of ["другим", "failure", "error", "неизвестен", "до изменения VPS", "последние пять", "независимо от возраста", "очистка откладывается", "SESSION_KEY", "не откатывает Go API"]) expect(rollback, needle).toContain(needle);
+  for (const [file, links] of [
+    [RELEASE, ["/documentation/frontend/releases/artifacts#download", "/documentation/frontend/releases/deployment"]],
+    [ROLLBACK, ["/documentation/frontend/releases/rollback#target", "/documentation/frontend/releases/artifacts#retention"]],
+  ] as const) {
+    const md = readFileSync(file, "utf8");
+    for (const link of links) expect(md).toContain(`](${link})`);
+  }
 });
 
 
@@ -544,9 +547,8 @@ test("bootstrap: сессия, ошибки, кеширование и выпу�
   const cache = section(md, "Кеширование");
   for (const value of ["гостевые", "private, no-store", "PWA"]) expect(cache, value).toContain(value);
   const release = section(readFileSync(RELEASE, "utf8"), "Путь до production");
-  expect(release.indexOf("загружает ассеты")).toBeGreaterThan(-1);
-  expect(release.indexOf("загружает ассеты")).toBeLessThan(release.indexOf("Workflow вызывает"));
-  expect(release).toContain("Ошибка любого шага запрещает CD");
+  expect(release).toContain("](/documentation/frontend/releases/deployment)");
+  expect(release).toContain("](./bootstrap#контракт)");
   expect(section(md, "Проверка")).toContain("Проект: проверить после внедрения");
   const allowed = section(readFileSync(CLIENT, "utf8"), "Какие вызовы BFF принимает");
   expect(allowed).toContain("HTML-хендлер");
@@ -607,7 +609,7 @@ test("MVP release differs from future canary", () => {
   const artifacts = section(readFileSync(RELEASE, "utf8"), "Один SHA, два артефакта");
   expect(artifacts).toContain("неизменяемый");
   const rollback = readFileSync(ROLLBACK, "utf8");
-  for (const needle of ["SESSION_KEY", "frontend/issues/4", "предыдущего", "Откат"]) expect(rollback, needle).toContain(needle);
+  for (const needle of ["SESSION_KEY", "/documentation/frontend/releases/rollback", "предыдущего", "Откат"]) expect(rollback, needle).toContain(needle);
   const canary = subsection(release, "Канарейка — следующий этап");
   for (const needle of ["стабильный сегмент", "HTML", "RPC", "ошибок", "задержек", "возврат трафика", "cookie", "refresh", "открытыми вкладками", "Go/БД", "10 секунд", "между процессами"]) expect(canary.toLowerCase(), needle).toContain(needle.toLowerCase());
   expect(section(readFileSync(CLIENT, "utf8"), "Клиент")).toContain("UNAUTHORIZED");

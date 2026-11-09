@@ -1,0 +1,297 @@
+{
+  "entities": [
+    {
+      "tag": "Group",
+      "id": "github",
+      "x": 300,
+      "y": 0,
+      "width": 1440,
+      "height": 620,
+      "isContainer": true,
+      "title": {
+        "text": "GitHub · frontend"
+      },
+      "color": "purple"
+    },
+    {
+      "tag": "Icon",
+      "id": "main",
+      "x": 360,
+      "y": 100,
+      "containerId": "github",
+      "icon": "github",
+      "texts": [
+        {
+          "text": "Коммит main"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "publish",
+      "x": 600,
+      "y": 100,
+      "width": 180,
+      "height": 80,
+      "containerId": "github",
+      "texts": [
+        {
+          "text": "CI · Publish release"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "release",
+      "x": 1000,
+      "y": 100,
+      "containerId": "github",
+      "icon": "package",
+      "texts": [
+        {
+          "text": "Release · четыре файла"
+        }
+      ]
+    },
+    {
+      "tag": "Activity",
+      "id": "cd",
+      "x": 1000,
+      "y": 440,
+      "width": 180,
+      "height": 80,
+      "containerId": "github",
+      "texts": [
+        {
+          "text": "Ручной CD / Rollback"
+        }
+      ]
+    },
+    {
+      "tag": "Icon",
+      "id": "production",
+      "x": 1460,
+      "y": 440,
+      "containerId": "github",
+      "icon": "list",
+      "texts": [
+        {
+          "text": "Deployment · попытка"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "operator",
+      "x": 0,
+      "y": 400,
+      "width": 240,
+      "height": 220,
+      "isContainer": true,
+      "title": {
+        "text": "Рабочее место"
+      },
+      "color": "white"
+    },
+    {
+      "tag": "Icon",
+      "id": "client",
+      "x": 60,
+      "y": 480,
+      "containerId": "operator",
+      "icon": "user",
+      "texts": [
+        {
+          "text": "Оператор"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "registry",
+      "x": 300,
+      "y": 800,
+      "width": 480,
+      "height": 220,
+      "isContainer": true,
+      "title": {
+        "text": "GHCR"
+      },
+      "color": "green"
+    },
+    {
+      "tag": "Icon",
+      "id": "image",
+      "x": 480,
+      "y": 880,
+      "containerId": "registry",
+      "icon": "package",
+      "texts": [
+        {
+          "text": "BFF image · digest"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "storage",
+      "x": 920,
+      "y": 800,
+      "width": 340,
+      "height": 220,
+      "isContainer": true,
+      "title": {
+        "text": "Selectel · S3 и CDN"
+      },
+      "color": "blue"
+    },
+    {
+      "tag": "Icon",
+      "id": "assets",
+      "x": 1040,
+      "y": 880,
+      "containerId": "storage",
+      "icon": "database",
+      "texts": [
+        {
+          "text": "Файлы releases/SHA/"
+        }
+      ]
+    },
+    {
+      "tag": "Group",
+      "id": "gateway",
+      "x": 1400,
+      "y": 800,
+      "width": 340,
+      "height": 220,
+      "isContainer": true,
+      "title": {
+        "text": "Selectel · gateway"
+      },
+      "color": "blue"
+    },
+    {
+      "tag": "Icon",
+      "id": "bff",
+      "x": 1520,
+      "y": 880,
+      "containerId": "gateway",
+      "icon": "server",
+      "texts": [
+        {
+          "text": "BFF · HTML и API"
+        }
+      ]
+    },
+    {
+      "tag": "Legend",
+      "id": "legend",
+      "x": 1840,
+      "y": 0,
+      "width": 340,
+      "entries": [
+        {
+          "text": "Наша инфраструктура",
+          "color": "#2866c4"
+        },
+        {
+          "text": "GitHub",
+          "color": "#c43dcf"
+        },
+        {
+          "text": "Внешние сервисы",
+          "color": "#30a050"
+        },
+        {
+          "text": "Рабочее место",
+          "color": "#242424"
+        },
+        {
+          "text": "Пользовательский трафик",
+          "color": "#c38424"
+        },
+        {
+          "text": "Пайплайн и внешние системы, пунктир",
+          "color": "#3a3a3a"
+        },
+        {
+          "text": "Прочие связи",
+          "color": "#1c1c1c"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "tag": "Relationship",
+      "from": "main",
+      "to": "publish",
+      "label": "push + Check",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "publish",
+      "to": "release",
+      "label": "draft → assets → publish",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "publish",
+      "to": "image",
+      "label": "push образа",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "publish",
+      "to": "assets",
+      "label": "загрузка файлов",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "client",
+      "to": "cd",
+      "label": "Run workflow",
+      "color": "orange",
+      "lineStyle": "solid"
+    },
+    {
+      "tag": "Relationship",
+      "from": "release",
+      "to": "cd",
+      "label": "проверенный состав",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "cd",
+      "to": "production",
+      "label": "начало и результат",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "cd",
+      "to": "bff",
+      "label": "Ansible · выбранный digest",
+      "color": "black",
+      "lineStyle": "dashed"
+    },
+    {
+      "tag": "Relationship",
+      "from": "image",
+      "to": "bff",
+      "label": "скачивание образа"
+    }
+  ]
+}
