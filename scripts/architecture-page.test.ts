@@ -100,19 +100,22 @@ test("config: three entrances keep architecture in documentation, no branch prev
   expect(home).not.toContain("/diagrams/");
   expect(home).toContain("/documentation/");
   const documentation = readFileSync("site/documentation/current-state.md", "utf8");
-  for (const link of ["/documentation/frontend/bff#bff-проверенная-часть", "/documentation/architecture/", "/documentation/security/", "/documentation/project-context", "/modules/"]) {
+  for (const link of ["/documentation/frontend/bff", "/documentation/architecture/", "/documentation/security/", "/documentation/project-context", "/modules/"]) {
     expect(documentation).toContain(`](${link})`);
   }
   expect(documentation).toContain('href="../openwiki/" target="_self"');
-  const observed = documentation.split("## Что подтверждено на проде")[1]?.split("## Архитектура")[0] ?? "";
-  const observations = observed.match(/^- .+$/gm) ?? [];
-  expect(observations).toHaveLength(5);
-  expect(observations[1]).toContain("не содержит пользователя и не устанавливает cookie");
-  expect(observations[2]).toContain("GET tRPC без CSRF-заголовка");
-  expect(observations[3]).toContain("GET tRPC с CSRF-заголовком");
-  expect(observed).toContain("POST-защита от чужого Origin");
-  expect(documentation).toContain("31.10.2026");
-  expect(documentation).toContain("не подтверждены");
+  const observed = documentation.split("## Что подтверждено на проде")[1]?.split("## Что реализовано")[0] ?? "";
+  for (const value of ['Accept: text/html', 'user: null', 'не устанавливает cookie', 'csrf_invalid',
+    'UNAUTHORIZED', 'Content-Security-Policy', 'не проверялись']) expect(observed, value).toContain(value);
+  expect(documentation).toContain('09.11.2026, 04:19 МСК');
+  expect(documentation).toContain('319e691b79f81e09dcffabc04941831a5f4b5930');
+  expect(documentation).toContain('06841d4765c28ad7e52bf5e36df3b72cb22c094e');
+  expect(documentation).toContain('## Что реализовано в выложенном коде');
+  expect(documentation).toContain('PostgreSQL');
+  expect(documentation).toContain('действующую блокирующую политику Caddy');
+  expect(documentation).toContain('повторно не проверяли');
+  expect(documentation).not.toMatch(/31\.10\.2026|остаются.*планом|CSP пока обозначен как TODO/);
+
 });
 
 test("docs tell where module plan diagrams live", () => {

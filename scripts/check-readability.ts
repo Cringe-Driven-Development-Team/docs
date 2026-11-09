@@ -1889,7 +1889,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Обзор продукта'));
   await page.locator(sidebarLink('documentation/current-state')).click();
   await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}documentation/current-state`);
-  assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /31\.10\.2026/);
+  await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Документация работающего продукта'));
+  assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /Что реализовано в выложенном коде/);
   for (const hash of ['документация-работающего-продукта', 'что-подтверждено-на-проде', 'офлаин-режим',
     'архитектура-безопасность-и-эксплуатация', 'где-находятся-планы-и-openwiki']) {
     await page.goto(url(`documentation/#${hash}`), { waitUntil: 'networkidle0' });
