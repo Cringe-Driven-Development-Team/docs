@@ -29,6 +29,13 @@ const documentationSidebar = [
         { text: 'BFF', link: '/documentation/frontend/bff' },
         { text: 'Командные пакеты', link: '/documentation/frontend/packages' },
         { text: 'Проверка изменений', link: '/documentation/frontend/checks' },
+        { text: 'Выкатки', link: '/documentation/frontend/releases/', collapsed: true, items: [
+          { text: 'CI и публикация', link: '/documentation/frontend/releases/publication' },
+          { text: 'Состав выпуска', link: '/documentation/frontend/releases/artifacts' },
+          { text: 'Выкатка', link: '/documentation/frontend/releases/deployment' },
+          { text: 'Откат', link: '/documentation/frontend/releases/rollback' },
+          { text: 'Ошибки и уведомления', link: '/documentation/frontend/releases/troubleshooting' },
+        ]},
       ] },
       { text: 'Офлайн-режим', link: '/documentation/offline/', collapsed: true, items: [
         { text: 'Сборка и регистрация SW', link: '/documentation/offline/build-and-registration' },

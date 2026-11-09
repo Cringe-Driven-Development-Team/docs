@@ -1,5 +1,5 @@
 // Схемы корня diagrams/ — они на странице «Архитектура»; тест сверяет список с diagrams/*.json.
-export const ROOT_NAMES: readonly string[] = ["cd", "ci", "contract", "deployment", "frontend", "infra", "notebooks-components", "notebooks-infrastructure"];
+export const ROOT_NAMES: readonly string[] = ["cd", "ci", "contract", "deployment", "frontend-release-delivery", "frontend-release-lifecycle", "frontend", "infra", "notebooks-components", "notebooks-infrastructure"];
 
 // Тематические схемы вне обзора «Архитектура»: фактическая безопасность и планы модулей.
 // Открываются по прямому адресу и встраиваются через <Diagram>; папка не задаёт статус фактов.

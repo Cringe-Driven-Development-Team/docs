@@ -187,3 +187,21 @@ Docs/Pages экспортирует существующие wiki, генера�
 Срез исходников 08.11.2026; сеть на проде не проверена. [Хранение и изоляция](/documentation/notebooks/storage-and-infrastructure) отделяют постоянный PostgreSQL от временных файлов kernel, описывают provisioning и mTLS.
 
 <Diagram name="notebooks-infrastructure" />
+
+
+## Выпуск фронта {#frontend-release-lifecycle}
+
+Готовый комплект в GitHub Releases связывает файлы S3/CDN и образ GHCR. Ручной CD
+создаёт отдельный production Deployment и проверяет результат переключения BFF.
+Реализация сверена 09.11.2026; источники и границы проверки — в
+[разделе выкаток](/documentation/frontend/releases/).
+
+<Diagram name="frontend-release-lifecycle" />
+
+## Доставка фронта {#frontend-release-delivery}
+
+Браузер получает HTML и API через Caddy/BFF, JS/CSS выпуска — через CDN/S3.
+Образ GHCR скачивается при выкатке. Подробнее о файлах и идентификаторах —
+[состав выпуска](/documentation/frontend/releases/artifacts).
+
+<Diagram name="frontend-release-delivery" />

@@ -1312,6 +1312,7 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
     const page = await context.newPage();
     await observe(page);
     await page.evaluateOnNewDocument(mode => {
+      if (window !== window.top) return;
       localStorage.setItem('vitepress-nolebase-enhanced-readabilities-layout-switch-mode', String(mode));
       localStorage.setItem('vitepress-nolebase-enhanced-readabilities-page-layout-max-width', '10000');
       localStorage.setItem('vitepress-nolebase-enhanced-readabilities-content-layout-max-width', '8000');
@@ -1338,6 +1339,14 @@ async function checkHashScrolling(browser: Browser, url: (path: string) => strin
     for (const hash of ['cacheonly', 'networkonly', 'cachefirst', 'networkfirst', 'stalewhilerevalidate', 'стратегии-кеширования']) {
       await page.goto(url(`modules/2/tracks/offline/theory#${hash}`), { waitUntil: 'networkidle0' });
       await visible(`theory#${hash}`);
+    }
+    for (const width of [1440, 390]) {
+      await page.setViewport({ width, height: width === 390 ? 844 : 1000 });
+      for (const target of ['deployment#selection', 'artifacts#download', 'rollback#target']) {
+        await page.goto(url(`documentation/frontend/releases/${target}`), { waitUntil: 'networkidle0' });
+        await page.reload({ waitUntil: 'networkidle0' });
+        await visible(`release ${target} ${width}`);
+      }
     }
     await page.goto(url('modules/2/tracks/bff/client#клиент'), { waitUntil: 'networkidle0' });
     for (const [width, hash] of [[390, 'какие-вызовы-bff-принимает'], [1440, 'клиент']] as const) {
@@ -1590,10 +1599,21 @@ async function checkDiagramPairs(browser: Browser, url: (path: string) => string
   }
 }
 
+async function stubFigmaFrames(page: Page): Promise<void> {
+  // Page navigation checks the embed host; the external Figma canvas has separate checks.
+  await page.setRequestInterception(true);
+  page.on('request', request => {
+    if (request.isNavigationRequest() && new URL(request.url()).hostname === 'embed.figma.com') {
+      void request.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Figma fixture</title>' });
+    } else void request.continue();
+  });
+}
+
 async function checkPages(browser: Browser, url: (path: string) => string) {
   await checkDiagramPairs(browser, url);
   const page = await browser.newPage();
   await observe(page);
+  await stubFigmaFrames(page);
   const visibleHash = async () => {
     await page.waitForFunction(() => {
       if (document.documentElement.hasAttribute('data-article-loading')) return false;
@@ -1610,6 +1630,7 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
       const context = await browser.createBrowserContext();
       const page = await context.newPage();
       await observe(page);
+      await stubFigmaFrames(page);
       await page.setViewport({ width, height: width === 390 ? 844 : 1440 });
       await page.evaluateOnNewDocument(dark => {
         if (window !== window.top) return;
@@ -1787,11 +1808,15 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   const frontendRoutes = ['documentation/frontend/', 'documentation/frontend/routing', 'documentation/frontend/build',
     'documentation/frontend/styles', 'documentation/frontend/startup',
     'documentation/frontend/rendering', 'documentation/frontend/state', 'documentation/frontend/requests',
-    'documentation/frontend/session', 'documentation/frontend/bff', 'documentation/frontend/packages', 'documentation/frontend/checks'];
+    'documentation/frontend/session', 'documentation/frontend/bff', 'documentation/frontend/packages', 'documentation/frontend/checks',
+    'documentation/frontend/releases/', 'documentation/frontend/releases/publication',
+    'documentation/frontend/releases/artifacts', 'documentation/frontend/releases/deployment',
+    'documentation/frontend/releases/rollback', 'documentation/frontend/releases/troubleshooting'];
   const links = [...routes.slice(0, 2), ...frontendRoutes, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const frontendCaret = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/frontend/"]) > .item > button.caret`;
+  const releasesCaret = `.VPSidebarItem.collapsible.level-2:has(> .item > a[href="${SITE_BASE}documentation/frontend/releases/"]) > .item > button.caret`;
   const sidebarLink = (path: string) => `.VPSidebar a[href="${SITE_BASE}${path}"]`;
   const menu = '.VPLocalNav button.menu';
   const marker = () => page.evaluate(() => (window as unknown as Record<string, unknown>).__hierarchy);
@@ -1817,7 +1842,13 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       'documentation/frontend/state': 'управление-состоянием', 'documentation/frontend/requests': 'запросы-и-ошибки',
       'documentation/frontend/session': 'сессия-и-авторизация', 'documentation/frontend/bff': 'bff',
       'documentation/frontend/build': 'сборка-и-разработка', 'documentation/frontend/styles': 'стили',
-      'documentation/frontend/packages': 'командные-пакеты', 'documentation/frontend/checks': 'проверка-изменении' };
+      'documentation/frontend/packages': 'командные-пакеты', 'documentation/frontend/checks': 'проверка-изменении',
+      'documentation/frontend/releases/': 'release-overview',
+      'documentation/frontend/releases/publication': 'release-publication',
+      'documentation/frontend/releases/artifacts': 'release-assets',
+      'documentation/frontend/releases/deployment': 'release-deployment',
+      'documentation/frontend/releases/rollback': 'release-rollback',
+      'documentation/frontend/releases/troubleshooting': 'release-troubleshooting' };
     await page.waitForFunction(id => document.querySelector('.vp-doc h1')?.id === id, {}, headings[path]);
     if (mobile) await page.waitForFunction(selector => document.querySelector(selector)?.getAttribute('aria-expanded') === 'false', {}, menu);
     await tree();
@@ -1833,6 +1864,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       await tree();
       await expanded(route.startsWith('documentation/security/'));
       await expanded(route.startsWith('documentation/frontend/'), frontendCaret);
+      await expanded(route.startsWith('documentation/frontend/releases/'), releasesCaret);
       assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
       if (!['documentation/architecture/', 'documentation/security/csp'].includes(route)) assert(await page.$('.VPDocOutlineItem a'), `${route}: headings remain in outline`);
     }
@@ -1846,6 +1878,13 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.keyboard.press('Enter'); await expanded(true, frontendCaret);
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
     for (const route of frontendRoutes) {
+      if (route.startsWith('documentation/frontend/releases/')) {
+        if (mobile) await openMenu();
+        if (await page.$eval(releasesCaret, el => el.getAttribute('aria-expanded') === 'false')) {
+          await page.locator(releasesCaret).click();
+        }
+        await expanded(true, releasesCaret);
+      }
       await click(route, mobile);
       await expanded(true, frontendCaret);
     }
