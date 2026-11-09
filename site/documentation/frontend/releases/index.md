@@ -12,7 +12,7 @@ title: Выкатки фронта
 
 | Страница | Что узнаете и сможете сделать |
 | --- | --- |
-| [CI и публикация](./publication) | Как коммит становится готовым выпуском и что делать после обрыва публикации |
+| [CI и публикация](./publication) | Как Merge Queue проверяет PR перед слиянием, как коммит становится выпуском и что делать после обрыва публикации |
 | [Состав выпуска](./artifacts) | Где находятся файлы, что означают SHA/digest и как скачать комплект |
 | [Выкатка](./deployment) | Как запустить CD, выбрать выпуск и проверить результат |
 | [Откат](./rollback) | Как штатный Rollback выбирает цель и когда он остановится |
@@ -39,12 +39,14 @@ Actions запускает код, который связывает эти су
 
 <Diagram name="frontend-release-lifecycle" />
 
-1. После Check на push в `main` job Publish release подготавливает клиент и BFF одного SHA.
-2. Файлы загружаются в S3, образ — в GHCR; проверяются CDN и анонимное чтение образа.
-3. CI публикует GitHub Release с полным комплектом файлов.
-4. Человек запускает CD. Он выбирает и проверяет Release, создаёт production Deployment,
+1. [Merge Queue](./publication#merge-queue) проверяет PR вместе с актуальным `main` и
+   предшествующими PR. Успешные проверки допускают слияние, но ещё не создают Release.
+2. После Check на push в `main` job Publish release подготавливает клиент и BFF одного SHA.
+3. Файлы загружаются в S3, образ — в GHCR; проверяются CDN и анонимное чтение образа.
+4. CI публикует GitHub Release с полным комплектом файлов.
+5. Человек запускает CD. Он выбирает и проверяет Release, создаёт production Deployment,
    запускает Ansible и проверяет результат через публичный сайт.
-5. Статус Deployment фиксирует результат попытки. Webhook-сервис готовит уведомление Telegram.
+6. Статус Deployment фиксирует результат попытки. Webhook-сервис готовит уведомление Telegram.
 
 Связи подтверждены [CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/ci.yml#L39-L147),
 [CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L43-L158) и
