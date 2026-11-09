@@ -1,8 +1,8 @@
 {
   "entities": [
-    {"tag":"Textbox","id":"verification","x":0,"y":0,"width":1440,"text":"**Размещение проверено 01.11.2026** · HTTPS/гостевой BFF и доступность Go; успешный login и runtime-сессия не проверены."},
+    {"tag":"Textbox","id":"verification","x":0,"y":0,"width":2060,"text":"09.11.2026 · frontend/BFF 319e691 · backend 06841d4 · infra a59f858. Сквозной запуск runtime не проверен."},
     {"tag":"Icon","id":"client","x":0,"y":300,"icon":"chrome","texts":[{"text":"Браузер"}]},
-    {"tag":"Group","id":"selectel","x":220,"y":160,"width":1280,"height":1080,"isContainer":true,"title":{"text":"Selectel · работающий сервис","icon":"cloud"},"color":"blue"},
+    {"tag":"Group","id":"selectel","x":220,"y":160,"width":1900,"height":1080,"isContainer":true,"title":{"text":"Selectel · работающий сервис","icon":"cloud"},"color":"blue"},
     {"tag":"Group","id":"gateway","x":260,"y":220,"width":420,"height":180,"isContainer":true,"title":{"text":"Gateway · Docker Compose","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
     {"tag":"Icon","id":"caddy","x":300,"y":280,"icon":"server","texts":[{"text":"Caddy · HTTPS"}],"containerId":"gateway"},
     {"tag":"Icon","id":"bff","x":500,"y":280,"icon":"server","texts":[{"text":"BFF · HTML и tRPC"}],"containerId":"gateway"},
@@ -11,28 +11,33 @@
     {"tag":"Icon","id":"postgres","x":1120,"y":300,"icon":"postgres","texts":[{"text":"PostgreSQL 18"}],"containerId":"vps2"},
     {"tag":"Icon","id":"redis","x":1120,"y":500,"icon":"redis","texts":[{"text":"Redis 8"}],"containerId":"vps2"},
     {"tag":"Group","id":"auxiliary","x":260,"y":480,"width":420,"height":180,"isContainer":true,"title":{"text":"Auxiliary · служебные интеграции","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
-    {"tag":"Icon","id":"hooks","x":400,"y":540,"icon":"bell","texts":[{"text":"Hooks / Telegram proxy"}],"containerId":"auxiliary"},
+    {"tag":"Icon","id":"hooks","x":400,"y":520,"icon":"bell","texts":[{"text":"Hooks / githubbot / Telegram proxy"}],"containerId":"auxiliary"},
     {"tag":"Group","id":"release-assets","x":260,"y":740,"width":760,"height":180,"isContainer":true,"title":{"text":"JS / CSS выбранного выпуска","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
     {"tag":"Icon","id":"cdn-release","x":300,"y":800,"icon":"cloud","texts":[{"text":"CDN релизов"}],"containerId":"release-assets"},
     {"tag":"Icon","id":"s3-release","x":700,"y":800,"icon":"database","texts":[{"text":"S3 релизов"}],"containerId":"release-assets"},
     {"tag":"Group","id":"static-assets","x":260,"y":1000,"width":760,"height":180,"isContainer":true,"title":{"text":"Изображения / шрифты · static","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
     {"tag":"Icon","id":"cdn-static","x":300,"y":1060,"icon":"cloud","texts":[{"text":"CDN статики"}],"containerId":"static-assets"},
     {"tag":"Icon","id":"s3-static","x":700,"y":1060,"icon":"database","texts":[{"text":"S3 статики"}],"containerId":"static-assets"},
-    {"tag":"Icon","id":"s3-notebooks","x":1160,"y":800,"icon":"database","texts":[{"text":"S3 блокнотов"}],"containerId":"selectel"},
-    {"tag":"Icon","id":"s3-avatars","x":1160,"y":1060,"icon":"database","texts":[{"text":"S3 аватарок · настроен"}],"containerId":"selectel"},
-    {"tag":"Textbox","id":"s3-status","x":0,"y":1060,"width":200,"text":"S3: наличие и конфигурация подтверждены. Пользовательский CRUD не проверен."},
-    {"tag":"Legend","id":"legend","x":1600,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]}
+    {"tag":"Icon","id":"s3-avatars","x":1160,"y":800,"icon":"database","texts":[{"text":"S3 аватаров"}],"containerId":"selectel"},
+    {"tag":"Legend","id":"legend","x":2240,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]},
+    {"tag":"Group","id":"runtime","x":1560,"y":220,"width":500,"height":420,"isContainer":true,"title":{"text":"Runtime VPS · по сессии","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"agent","x":1600,"y":300,"icon":"server","texts":[{"text":"nginx / runtime-agent"}],"containerId":"runtime"},
+    {"tag":"Icon","id":"kernel","x":1880,"y":300,"icon":"code","texts":[{"text":"Jupyter / kernel"}],"containerId":"runtime"},
+    {"tag":"Textbox","id":"runtime-files","x":1600,"y":500,"width":400,"text":"Память kernel и временные файлы; постоянные результаты — в PostgreSQL.","containerId":"runtime"}
   ],
   "connections": [
     {"tag":"Relationship","from":"client","to":"caddy","label":"HTTPS","color":"orange","lineStyle":"solid"},
-    {"tag":"Relationship","from":"caddy","to":"bff","label":"HTML / tRPC"},
+    {"tag":"Relationship","from":"caddy","to":"bff","label":"HTML / tRPC / PWA"},
     {"tag":"Relationship","from":"bff","to":"go-api","label":"HTTP · приватная сеть"},
-    {"tag":"Relationship","from":"go-api","to":"postgres","label":"SQL"},
-    {"tag":"Relationship","from":"go-api","to":"redis","label":"кеш / токены"},
+    {"tag":"Relationship","from":"go-api","to":"postgres","label":"блокноты / результаты"},
+    {"tag":"Relationship","from":"go-api","to":"redis","label":"сессии / лимиты"},
     {"tag":"Relationship","from":"client","to":"cdn-release","label":"JS / CSS","color":"orange","lineStyle":"solid"},
     {"tag":"Relationship","from":"s3-release","to":"cdn-release","label":"origin"},
     {"tag":"Relationship","from":"client","to":"cdn-static","label":"картинки / шрифты","color":"orange","lineStyle":"solid"},
     {"tag":"Relationship","from":"s3-static","to":"cdn-static","label":"origin"},
-    {"tag":"Relationship","from":"go-api","to":"s3-notebooks","label":"S3 · настроен"}
+    {"tag":"Relationship","from":"go-api","to":"s3-avatars","label":"аватары"},
+    {"tag":"Relationship","from":"client","to":"s3-avatars","label":"avatars.cellestial.ru","color":"orange","lineStyle":"solid"},
+    {"tag":"Relationship","from":"go-api","to":"agent","label":"mTLS"},
+    {"tag":"Relationship","from":"agent","to":"kernel","label":"исполнение"}
   ]
 }

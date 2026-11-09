@@ -16,10 +16,10 @@
     {
       "tag": "Textbox",
       "id": "evidence",
-      "text": "Код на 08.11.2026 · не проверка прода",
+      "text": "Устройство backend 06841d4 / frontend 319e691 · 09.11.2026",
       "x": 0,
       "y": 0,
-      "width": 640
+      "width": 1020
     },
     {
       "tag": "Icon",

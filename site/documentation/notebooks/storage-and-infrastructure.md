@@ -3,7 +3,7 @@
 Документ и результаты живут в PostgreSQL. Go управляет отдельной VPS сессии; agent запускает kernel в контейнере, а рабочие файлы kernel временные. Потеря окружения не означает удаления сохранённых ячеек и outputs.
 
 ::: info Проверено по коду
-08.11.2026: backend/agent `a46aa8e`, infra `7242521`, frontend/BFF `0606aa6`. [Полные SHA](./). Размещение, изоляция и миграция на текущем проде не проверялись; ниже описана декларация и реализация.
+08.11.2026: backend/agent `a46aa8e`, infra `7242521`, frontend/BFF `0606aa6`. [Полные SHA](./). Разделы S3 и подготовки runtime обновлены по коду 09.11.2026. Сквозной запуск и изоляция runtime на проде не проверены.
 :::
 
 ## Владельцы данных
@@ -22,11 +22,9 @@
 
 Сохранение source блокирует строку notebook, проверяет revision и меняет затронутые ячейки, размеры, preview и revision одной транзакцией. Тяжёлые outputs/attachments при source-save не читаются; content читается в read-only repeatable-read, поэтому hash соответствует ячейкам. Полная сборка ipynb нужна на import/export boundary, а не при каждом PATCH. [Editing repository](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/editing.go#L16), [content](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/notebook.go#L145).
 
-### S3 и миграция
+### S3 {#s3-и-миграция}
 
-Приватный notebook bucket остаётся в infra как часть прежней модели и offline migration. Текущий notebook repository подключён к PostgreSQL и не пишет содержимое в S3. S3 других подсистем, например аватаров, не меняет источник истины блокнотов. Runtime-agent не пишет ни notebook tables, ни notebook bucket. [Wiring app](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/app/app.go#L97), [руководство миграции](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/docs/notebook-migration.md#L3).
-
-Миграция — административный offline-процесс, не пользовательский import API. API отказывается запускаться при неперенесённых revision; инструкция требует переноса и verify, S3 автоматически не удаляется. Факт её выполнения на проде здесь неизвестен. [Проверка старых записей](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/app/app.go#L101), [migration verify](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/docs/notebook-migration.md#L51).
+Блокноты и результаты хранятся в PostgreSQL; runtime-agent не пишет напрямую в таблицы блокнотов или S3. Notebook bucket остаётся в infra как архив вне рабочего пути API. S3 используется для аватаров. Источники на 09.11.2026: [подключение хранилищ](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L101), [назначение бакета](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/inventory/group_vars/all/vars.yml#L60).
 
 ### Список блокнотов
 
@@ -52,7 +50,7 @@ Gateway содержит Caddy и BFF, backend-хост — Go API, PostgreSQL �
 
 Pulumi готовит общую инфраструктуру: учётную запись provisioner, security group, SSH keypair, CA/клиентский сертификат и ключ шифрования runtime credentials. **Отдельные VPS создаёт Go через OpenStack**, не отдельный Pulumi resource на каждую сессию. Go создаёт порт, загрузочный том и сервер, затем запускает Ansible с назначением сессии и артефактами; временные файлы операции удаляются, SSH проверяет host key. [Общие ресурсы](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/pulumi/index.ts#L866), [OpenStack adapter](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtime/adapters/openstack/provider.go#L49), [Ansible runner](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtime/adapters/ansible/runner.go#L79).
 
-Playbook ждёт SSH/Python и cloud-init, ставит Docker, nginx, nftables и Python venv; wheel агента сверяется по SHA-256, зависимости закреплены. Systemd запускает агента с приватным state dir, NoNewPrivileges/ProtectSystem/ProtectHome/PrivateTmp и Restart=on-failure. Повтор настройки того же назначения не перезапускает активного агента; чужое назначение отвергается. Повторная установка не обещает восстановления живой памяти kernel. [Playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/site.yml#L13), [agent install](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/roles/runtime_agent/tasks/main.yml#L2), [assignment](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/roles/runtime_agent/tasks/assignment.yml#L2).
+Runtime-VPS запускается из подготовленного образа с Docker, nginx, nftables и Python venv. Playbook ждёт SSH/Python и cloud-init, проверяет образ и применяет настройки сессии. Wheel агента сверяется по SHA-256; wheel и закреплённые зависимости переустанавливаются только при изменении. Повтор настройки того же назначения не перезапускает активного агента; чужое назначение отвергается. Источники на 09.11.2026: [playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/site.yml#L13), [образ](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/roles/runtime_host/tasks/main.yml#L1), [agent install](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/roles/runtime_agent/tasks/main.yml#L24).
 
 ## Изоляция kernel
 

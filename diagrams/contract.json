@@ -13,7 +13,7 @@
     {"tag":"Activity","id":"be-drift","x":1720,"y":460,"width":160,"height":80,"texts":[{"text":"Contract drift · schedule / manual"}],"containerId":"backend"},
     {"tag":"Icon","id":"go-api","x":1520,"y":740,"icon":"go","texts":[{"text":"Go handlers / embedded spec"}],"containerId":"backend"},
     {"tag":"Icon","id":"client","x":0,"y":740,"icon":"chrome","texts":[{"text":"Браузер · tRPC client"}]},
-    {"tag":"Textbox","id":"contract-scope","x":420,"y":1220,"width":1580,"text":"Apidog → генераторы: экспортированный OpenAPI snapshot, не сетевой вызов при каждом запросе. tRPC — контракт браузер/BFF; OpenAPI — BFF/Go. Генерация и drift не означают выкладку или проверку login."},
+    {"tag":"Textbox","id":"contract-scope","x":420,"y":1220,"width":1580,"text":"Apidog → генераторы: OpenAPI snapshot. Браузер → BFF: tRPC; BFF → Go: HTTP/OpenAPI. BFF агрегирует runtime.updates; браузер получает изменения опросом."},
     {"tag":"Legend","id":"legend","x":2120,"y":0,"width":340,"entries":[{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Пайплайн и внешние системы, пунктир","color":"#3a3a3a"},{"text":"Прочие связи","color":"#1c1c1c"}]}
   ],
   "connections": [

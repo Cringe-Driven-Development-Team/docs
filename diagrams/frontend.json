@@ -14,12 +14,13 @@
     {"tag":"Icon","id":"npm","x":1860,"y":280,"icon":"npm","texts":[{"text":"npm-пакеты"}],"containerId":"registry"},
     {"tag":"Group","id":"runtime","x":300,"y":900,"width":1320,"height":500,"isContainer":true,"title":{"text":"Путь запроса · детали размещения в deployment","icon":"cloud"},"color":"blue"},
     {"tag":"Icon","id":"client","x":0,"y":1000,"icon":"chrome","texts":[{"text":"Браузер"}]},
-    {"tag":"Icon","id":"bff","x":680,"y":1000,"icon":"hono","texts":[{"text":"BFF · сессия / bootstrap / tRPC"}],"containerId":"runtime"},
+    {"tag":"Icon","id":"bff","x":680,"y":1000,"icon":"hono","texts":[{"text":"BFF · сессия / bootstrap / tRPC / PWA"}],"containerId":"runtime"},
     {"tag":"Icon","id":"go-api","x":1400,"y":1000,"icon":"go","texts":[{"text":"Go API"}],"containerId":"runtime"},
     {"tag":"Icon","id":"html-template","x":1040,"y":1000,"icon":"file-code","texts":[{"text":"HTML-шаблон из образа"}],"containerId":"runtime"},
     {"tag":"Icon","id":"cdn-release","x":360,"y":1240,"icon":"cloud","texts":[{"text":"CDN · JS / CSS"}],"containerId":"runtime"},
-    {"tag":"Textbox","id":"scope","x":300,"y":1480,"width":1320,"text":"Код реализует HTML/bootstrap и работу с сессией. Проверены гостевые ответы; успешный login и авторизованный вызов Go этим срезом не подтверждены."},
-    {"tag":"Legend","id":"legend","x":2200,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]}
+    {"tag":"Textbox","id":"scope","x":300,"y":1480,"width":1320,"text":"CSR: BFF передаёт начальные данные в JSON bootstrap; компоненты рендерятся в браузере. PWA-файлы — с origin, JS/CSS приложения — с CDN."},
+    {"tag":"Legend","id":"legend","x":2200,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]},
+    {"tag":"Icon","id":"pwa-files","x":1040,"y":1240,"icon":"file-code","texts":[{"text":"SW / manifest / offline"}],"containerId":"runtime"}
   ],
   "connections": [
     {"tag":"Relationship","from":"repo-packages","to":"npm","label":"публикация пакетов"},
@@ -28,8 +29,9 @@
     {"tag":"Relationship","from":"client-source","to":"cdn-release","label":"bundle выпуска"},
     {"tag":"Relationship","from":"bff-source","to":"bff","label":"код в образе"},
     {"tag":"Relationship","from":"html-template","to":"bff","label":"шаблон"},
-    {"tag":"Relationship","from":"client","to":"bff","label":"HTML /api/trpc","color":"orange","lineStyle":"solid"},
+    {"tag":"Relationship","from":"client","to":"bff","label":"HTML /api/trpc / PWA","color":"orange","lineStyle":"solid"},
     {"tag":"Relationship","from":"bff","to":"go-api","label":"HTTP /api/v1"},
-    {"tag":"Relationship","from":"client","to":"cdn-release","label":"JS / CSS","color":"orange","lineStyle":"solid"}
+    {"tag":"Relationship","from":"client","to":"cdn-release","label":"JS / CSS","color":"orange","lineStyle":"solid"},
+    {"tag":"Relationship","from":"pwa-files","to":"bff","label":"публичные файлы"}
   ]
 }

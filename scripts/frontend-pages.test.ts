@@ -204,13 +204,13 @@ test("frontend: новые запросы и сессия ссылаются н�
   }
   for (const from of [
     'site/documentation/current-state.md',
-    'site/documentation/architecture/index.md',
     'site/modules/2/tracks/bff.md',
     'site/modules/2/tracks/bff/migration.md',
   ]) {
     expect(readFileSync(from, 'utf8'), from).toContain('](/documentation/frontend/bff#bff-проверенная-часть)');
     expect(read('bff'), from).toContain('## BFF: проверенная часть {#bff-проверенная-часть}');
   }
+  expect(readFileSync('site/documentation/architecture/index.md', 'utf8')).toContain('](/documentation/frontend/bff)');
 });
 
 
