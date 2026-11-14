@@ -21,6 +21,8 @@ test("protectedFiles: diagrams, index and removed-page redirects cannot be overw
     "architecture/index.html",
     "modules/3/tracks/trpc.html",
     "modules/3/tracks/zod.html",
+    "modules/3/tracks/react-hook-form.html",
+    "modules/3/tracks/variable-inspection.html",
     "project-context.html",
     "security/csrf/index.html",
     "security/csrf/scenarios.html",

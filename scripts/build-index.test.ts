@@ -103,6 +103,8 @@ test("PAGE_REDIRECTS: old BFF pages to the track, removed bff diagrams to the cu
     { file: "architecture/index.html", target: "../documentation/architecture/" },
     { file: "modules/3/tracks/trpc.html", target: "../../../modules/3/tracks/http-libraries" },
     { file: "modules/3/tracks/zod.html", target: "../../../modules/3/tracks/http-libraries" },
+    { file: "modules/3/tracks/react-hook-form.html", target: "../" },
+    { file: "modules/3/tracks/variable-inspection.html", target: "../" },
     { file: "project-context.html", target: "documentation/project-context" },
     { file: "security/csrf/index.html", target: "../../documentation/security/csrf" },
     { file: "security/csrf/scenarios.html", target: "../../documentation/security/csrf" },
