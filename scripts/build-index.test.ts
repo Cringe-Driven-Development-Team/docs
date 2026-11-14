@@ -101,6 +101,8 @@ test("renderRedirect: noindex, link to architecture/ and a script that follows d
 test("PAGE_REDIRECTS: old BFF pages to the track, removed bff diagrams to the current ones, relative targets", () => {
   expect(PAGE_REDIRECTS).toEqual([
     { file: "architecture/index.html", target: "../documentation/architecture/" },
+    { file: "modules/3/tracks/trpc.html", target: "../../../modules/3/tracks/http-libraries" },
+    { file: "modules/3/tracks/zod.html", target: "../../../modules/3/tracks/http-libraries" },
     { file: "project-context.html", target: "documentation/project-context" },
     { file: "security/csrf/index.html", target: "../../documentation/security/csrf" },
     { file: "security/csrf/scenarios.html", target: "../../documentation/security/csrf" },

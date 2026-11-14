@@ -343,7 +343,7 @@ test("MVP uses official tRPC", () => {
     const md = readFileSync(file, "utf8");
     expect(md, file).toContain("@trpc/client");
     expect(md, file).toContain("@trpc/server");
-    expect(md, file).toContain("/modules/3/tracks/trpc");
+    expect(md, file).toContain("/modules/3/tracks/http-libraries");
     expect(md, file).not.toContain("@cdd-team/trpc-client");
   }
 });
@@ -396,14 +396,14 @@ test("в треке есть схема контракта: генерация, 
   expect(part).toContain("@cdd/schemas");
 });
 
-test("«Контракт»: схемы Orval — пакет @cdd/schemas для BFF, свой zod — модуль №3", () => {
+test("«Контракт»: схемы Orval — пакет @cdd/schemas для BFF, HTTP и ручные проверки — модуль №3", () => {
   const md = readFileSync(CONTRACT, "utf8");
   expect(section(md, "Источники правды")).toContain("@cdd/schemas");
   expect(section(md, "Генерация Orval")).toContain("target: 'packages/schemas/src/zod.ts'");
   expect(md).not.toContain("apps/bff/src/go/zod.ts");
   expect(section(md, "Роутер")).toContain("from '@cdd/schemas'");
   const client = section(readFileSync(CLIENT, "utf8"), "Клиент");
-  for (const needle of ["src/utils/credentials.ts", "zodError", "/modules/3/tracks/zod", "/modules/3/tracks/react-hook-form"]) expect(client, needle).toContain(needle);
+  for (const needle of ["src/utils/credentials.ts", "zodError", "/modules/3/tracks/http-libraries", "/modules/3/tracks/react-hook-form"]) expect(client, needle).toContain(needle);
   expect(md).not.toContain("resolve: { alias");
 });
 
@@ -776,7 +776,6 @@ test("перенесённые темы используют прямые ссы
     [CLIENT, "./contract#роутер", CONTRACT, "## Роутер"],
     [CLIENT, "./procedures#как-добавить-процедуру", PROCEDURES, "## Как добавить процедуру"],
     [AUTH, "./client#какие-вызовы-bff-принимает", CLIENT, "## Какие вызовы BFF принимает"],
-    ["site/modules/3/tracks/zod.md", "/modules/2/tracks/bff/client#клиент", CLIENT, "## Клиент"],
   ]) {
     expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);

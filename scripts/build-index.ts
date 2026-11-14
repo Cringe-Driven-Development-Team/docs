@@ -70,6 +70,8 @@ export const INDEX_FILE = join("dist", "diagrams", "index.html");
 // Цели относительные: так переадресация работает и в превью веток.
 export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
   { file: "architecture/index.html", target: "../documentation/architecture/" },
+  { file: "modules/3/tracks/trpc.html", target: "../../../modules/3/tracks/http-libraries" },
+  { file: "modules/3/tracks/zod.html", target: "../../../modules/3/tracks/http-libraries" },
   { file: "project-context.html", target: "documentation/project-context" },
   { file: "security/csrf/index.html", target: "../../documentation/security/csrf" },
   { file: "security/csrf/scenarios.html", target: "../../documentation/security/csrf" },

@@ -75,9 +75,9 @@ try {
 ([`src/utils/credentials.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/f499d4e/src/utils/credentials.ts#L28)):
 своего Zod пока нет. Если вход не прошёл схему на BFF, форма раскладывает `data.zodError` по полям.
 
-В модуле №3 появляются собственные [клиент и сервер tRPC](/modules/3/tracks/trpc) и свой
-[Zod](/modules/3/tracks/zod): общие схемы `@cdd/schemas` проверяют поля на BFF и в браузере вместо
-ручных правил, вместе со своим [React Hook Form](/modules/3/tracks/react-hook-form).
+В модуле №3 запланирован [переход на HTTP API без tRPC и Zod](/modules/3/tracks/http-libraries):
+общие ручные проверки `@cdd/schemas` используются на BFF и в браузере,
+вместе со своим [React Hook Form](/modules/3/tracks/react-hook-form).
 
 ## Какие вызовы BFF принимает
 
