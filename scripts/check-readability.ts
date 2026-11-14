@@ -1862,6 +1862,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     const moduleCaret = (id: number) => `.VPSidebarItem.level-0:has(a[href="${SITE_BASE}modules/${id}/"]) > .item > button.caret`;
     await page.goto(url('modules/3/'), { waitUntil: 'networkidle0' });
     await expanded(false, moduleCaret(2)); await expanded(true, moduleCaret(3));
+    assert.deepEqual(await page.$$eval(`.VPSidebar a[href^="${SITE_BASE}modules/3/"]`, els => els.map(el => el.getAttribute('href'))),
+      ['modules/3/', 'modules/3/tracks/http-libraries', 'modules/3/tracks/seo'].map(path => `${SITE_BASE}${path}`));
     await page.reload({ waitUntil: 'networkidle0' });
     await expanded(false, moduleCaret(2)); await expanded(true, moduleCaret(3));
     if (mobile) await openMenu();
@@ -1883,16 +1885,32 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
       await page.locator(moduleCaret(2)).click(); await expanded(false, moduleCaret(2));
       await page.locator(moduleCaret(2)).click(); await expanded(true, moduleCaret(2));
     }
-    await page.goto(url('modules/3/tracks/zod'), { waitUntil: 'networkidle0' });
+    await page.locator(sidebarLink('modules/3/')).click();
+    await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}modules/3/`);
+    if (mobile) await openMenu();
+    await page.locator(moduleCaret(2)).click();
     await expanded(false, moduleCaret(2));
     await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
-    await page.locator(`.vp-doc a[href="${SITE_BASE}modules/2/tracks/bff/client#клиент"]`).click();
+    await page.goBack({ waitUntil: 'networkidle0' });
     await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}modules/2/tracks/bff/client`);
     assert.equal(await marker(), true, 'module 3 to module 2: expected SPA navigation');
     if (mobile) await openMenu();
     await expanded(true, moduleCaret(2)); await expanded(true, moduleCaret(3));
     await page.waitForSelector(sidebarLink('modules/2/tracks/bff/client'), { visible: true });
     console.log(`PASS module defaults, reload, direct track/subpage, manual toggles and SPA navigation at ${width}px`);
+    if (mobile) {
+      await page.keyboard.press('Escape');
+      await page.waitForSelector('.VPBackdrop', { hidden: true });
+    }
+    await page.locator(`.vp-doc a[href="${SITE_BASE}modules/3/tracks/react-hook-form"]`).click();
+    await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}modules/3/`);
+    for (const id of ['react-hook-form', 'variable-inspection']) {
+      await page.goto(url(`modules/3/tracks/${id}`), { waitUntil: 'networkidle0' });
+      assert.equal(new URL(page.url()).pathname, `${SITE_BASE}modules/3/`);
+      await page.reload({ waitUntil: 'networkidle0' });
+      assert.equal(new URL(page.url()).pathname, `${SITE_BASE}modules/3/`);
+    }
+    console.log(`PASS removed module 3 tracks: historical link, both redirects and reload at ${width}px under ${SITE_BASE}`);
     for (const route of [...routes, ...frontendRoutes]) {
       const response = await page.goto(url(route), { waitUntil: 'networkidle0' });
       assert(response?.ok(), `${route}: canonical page must exist`);

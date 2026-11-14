@@ -90,6 +90,12 @@ export default defineConfig({
         md.use(tabsMarkdownPlugin);
         md.use(groupIconMdPlugin);
         md.use(mermaidFence);
+        const renderLink = md.renderer.rules.link_open!;
+        md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+          // Историческая ссылка должна открыть HTML-переадресацию, а не SPA-страницу 404.
+          if (tokens[idx]!.attrGet('href') === '/modules/3/tracks/react-hook-form') tokens[idx]!.attrSet('target', '_self');
+          return renderLink(tokens, idx, options, env, self);
+        };
       },
     },
     themeConfig: {
