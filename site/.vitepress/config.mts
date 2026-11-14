@@ -100,7 +100,8 @@ export default defineConfig({
       ],
       sidebar: {
         '/documentation/': documentationSidebar,
-        '/modules/': moduleSidebar(modules),
+        '/modules/': moduleSidebar(modules).map(group =>
+          group.items?.some(item => item.link === '/modules/2/') ? { ...group, collapsed: true } : group),
       },
       socialLinks: [{ icon: 'github', link: 'https://github.com/Cringe-Driven-Development-Team/docs' }],
       outline: { level: [2, 3], label: 'На этой странице' },
