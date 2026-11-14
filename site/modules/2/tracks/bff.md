@@ -21,7 +21,7 @@ pages: [workspace, contract, procedures, client, auth, auth-scenarios, service, 
 Подзадачи трека, включая «tRPC (server)» — роутер tRPC в BFF, делает Денис; Валентин — изменения на стороне Go (см. [«Go API»](./bff/migration#go-api)).
 Клиент к Go и zod-схемы из контракта Go — подтрек [«Orval»](./bff-orval). Подключение официального
 `@trpc/client` — подтрек [«tRPC (client)»](./trpc-client); сервер использует официальный `@trpc/server`
-и `zod`. Собственные клиент и сервер tRPC появятся в [модуле №3](/modules/3/tracks/trpc).
+и `zod`. В [модуле №3](/modules/3/tracks/http-libraries) запланирован переход с tRPC на HTTP API.
 
 Браузер получает HTML с пользователем из BFF (Backend for Frontend), затем вызывает процедуры tRPC;
 BFF ходит в Go API общим клиентом с единой обработкой сессии и refresh.
@@ -63,9 +63,9 @@ BFF ходит в Go API общим клиентом с единой обраб�
   Формы проверяют поля своими правилами, как сейчас, а ошибку входа от BFF (`zodError`) раскладывают по полям.
   Подробности — [«Контракт»](./bff/contract).
 
-В [модуле №3](/modules/3/) появляются свои [клиент и сервер tRPC](/modules/3/tracks/trpc),
-[Zod](/modules/3/tracks/zod) и [React Hook Form](/modules/3/tracks/react-hook-form): общие схемы
-`@cdd/schemas` проверяют поля на BFF и в браузере ещё до запроса.
+В [модуле №3](/modules/3/) запланированы [HTTP API и свои библиотеки](/modules/3/tracks/http-libraries)
+и [React Hook Form](/modules/3/tracks/react-hook-form): tRPC, Orval и Zod удаляются,
+общие ручные проверки `@cdd/schemas` используются на BFF и в браузере.
 
 ## Карта задач
 
@@ -175,5 +175,6 @@ mTLS не входит в MVP. HTTP в частной сети остаётся 
 После начального HTML с bootstrap вызовы клиента к BFF идут через tRPC, клиент переключается разом: проект учебный, реальных
 пользователей нет. Девять процедур названы по ресурсам Go (`auth.*`, `users.me`, `notebooks.*`,
 `cells.*`); если экрану нужно больше одного вызова Go, для него заводится процедура `views.*`. Клиент
-tRPC в модуле №2 официальный, типы он берёт из `AppRouter`. В модуле №3 его заменяют
-[собственные клиент и сервер](/modules/3/tracks/trpc). Подробности — [«Контракт»](./bff/contract).
+tRPC в модуле №2 официальный, типы он берёт из `AppRouter`. В модуле №3 запланирован
+[переход на типизированный HTTP API](/modules/3/tracks/http-libraries). Подробности контракта
+модуля №2 — [«Контракт»](./bff/contract).

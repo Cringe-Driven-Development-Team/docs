@@ -6,13 +6,12 @@ do:
   ManInTheCoat: front
 mentors: [YarikMix]
 related:
-  - track: zod
-    why: "Поля форм проверяются схемами из @cdd/schemas на своём Zod"
+  - track: http-libraries
+    why: "Формы и BFF используют общие ручные проверки из @cdd/schemas и согласованный формат ошибок полей"
 ---
 
-Пакет `@cdd-team/react-hook-form` в монорепе библиотек
-[`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages). Формы проверяют поля
-схемами из `@cdd/schemas` ещё до запроса — через Standard Schema своего [Zod](./zod), — а ошибку `zodError` от BFF
-раскладывают по полям так же, как свою. Ручные правила полей из
-[`src/utils/credentials.ts`](https://github.com/frontend-park-mail-ru/2026_2_Cringe_Driven_Development/blob/f499d4e/src/utils/credentials.ts#L28)
-заменяются схемами: правило поля описано один раз, в контракте Go.
+План модуля №3 — пакет `@cdd-team/react-hook-form` в монорепе библиотек
+[`frontend-packages`](https://github.com/Cringe-Driven-Development-Team/frontend-packages).
+Формы используют общие ручные проверки из `@cdd/schemas` ещё до запроса; BFF независимо
+проверяет вход теми же правилами. Ошибки полей от HTTP API отображаются так же, как ошибки
+локальной проверки. Контракт и удаление Zod — в треке [«HTTP API и свои библиотеки»](./http-libraries).

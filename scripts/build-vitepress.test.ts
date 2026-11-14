@@ -19,6 +19,8 @@ test("protectedFiles: diagrams, index and removed-page redirects cannot be overw
     "modules/2/bff-contract.png",
     "diagrams/index.html",
     "architecture/index.html",
+    "modules/3/tracks/trpc.html",
+    "modules/3/tracks/zod.html",
     "project-context.html",
     "security/csrf/index.html",
     "security/csrf/scenarios.html",
