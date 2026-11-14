@@ -1859,6 +1859,40 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   for (const width of [1440, 390]) {
     const mobile = width === 390;
     await page.setViewport({ width, height: mobile ? 844 : 1000 });
+    const moduleCaret = (id: number) => `.VPSidebarItem.level-0:has(a[href="${SITE_BASE}modules/${id}/"]) > .item > button.caret`;
+    await page.goto(url('modules/3/'), { waitUntil: 'networkidle0' });
+    await expanded(false, moduleCaret(2)); await expanded(true, moduleCaret(3));
+    await page.reload({ waitUntil: 'networkidle0' });
+    await expanded(false, moduleCaret(2)); await expanded(true, moduleCaret(3));
+    if (mobile) await openMenu();
+    for (const id of [2, 3]) {
+      const initiallyOpen = id === 3;
+      await page.locator(moduleCaret(id)).click();
+      await expanded(!initiallyOpen, moduleCaret(id));
+      await expanded(!initiallyOpen, moduleCaret(id === 2 ? 3 : 2));
+      await page.locator(moduleCaret(id)).click();
+      await expanded(initiallyOpen, moduleCaret(id));
+    }
+    await page.screenshot({ path: join(artifacts, `${label}-module-menu-${width}.png`) });
+    for (const route of ['modules/2/tracks/bff', 'modules/2/tracks/bff/client']) {
+      await page.goto(url(route), { waitUntil: 'networkidle0' });
+      if (mobile) await openMenu();
+      await expanded(true, moduleCaret(2)); await expanded(true, moduleCaret(3));
+      await page.waitForSelector(sidebarLink(route), { visible: true });
+      assert.equal(await page.$eval(sidebarLink(route), el => el.getAttribute('aria-current')), 'page');
+      await page.locator(moduleCaret(2)).click(); await expanded(false, moduleCaret(2));
+      await page.locator(moduleCaret(2)).click(); await expanded(true, moduleCaret(2));
+    }
+    await page.goto(url('modules/3/tracks/zod'), { waitUntil: 'networkidle0' });
+    await expanded(false, moduleCaret(2));
+    await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
+    await page.locator(`.vp-doc a[href="${SITE_BASE}modules/2/tracks/bff/client#клиент"]`).click();
+    await page.waitForFunction(path => location.pathname === path, {}, `${SITE_BASE}modules/2/tracks/bff/client`);
+    assert.equal(await marker(), true, 'module 3 to module 2: expected SPA navigation');
+    if (mobile) await openMenu();
+    await expanded(true, moduleCaret(2)); await expanded(true, moduleCaret(3));
+    await page.waitForSelector(sidebarLink('modules/2/tracks/bff/client'), { visible: true });
+    console.log(`PASS module defaults, reload, direct track/subpage, manual toggles and SPA navigation at ${width}px`);
     for (const route of [...routes, ...frontendRoutes]) {
       const response = await page.goto(url(route), { waitUntil: 'networkidle0' });
       assert(response?.ok(), `${route}: canonical page must exist`);

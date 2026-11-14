@@ -67,6 +67,13 @@ test("documentation sidebar is a linked collapsed tree", () => {
   expect(config.themeConfig!.nav).toContainEqual({text: 'Документация', link: '/documentation/', activeMatch: '^/documentation/'});
 });
 
+test('module sidebar collapses module 2 and expands module 3 by default', () => {
+  const sidebar = config.themeConfig!.sidebar as Record<string, import('vitepress').DefaultTheme.SidebarItem[]>;
+  const groups = sidebar['/modules/']!;
+  expect(groups.find(group => group.items?.some(item => item.link === '/modules/2/'))?.collapsed).toBe(true);
+  expect(groups.find(group => group.items?.some(item => item.link === '/modules/3/'))?.collapsed).toBe(false);
+});
+
 test('production evidence distinguishes configuration from scenarios', () => {
   const page = readFileSync(PAGE, 'utf8');
   const intro = page.split('\n## ')[0]!;
