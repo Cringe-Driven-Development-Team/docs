@@ -89,7 +89,7 @@ test("UI Kit: modals and snackbars are subtracks linked to React Portal API", ()
   }
 });
 
-test("Orval stays in module 2, only HTTP libraries and SEO remain in module 3", () => {
+test("Orval stays in module 2, CJM joins HTTP libraries and SEO in module 3", () => {
   const byId = new Map(october!.tracks.map((t) => [t.id, t]));
   expect(byId.get("bff")?.subtasks.map((s) => s.title)).toEqual(["tRPC (server)", "Turborepo + bun workspaces"]);
   expect(byId.get("bff-orval")?.partOf).toBe("bff");
@@ -99,12 +99,21 @@ test("Orval stays in module 2, only HTTP libraries and SEO remain in module 3", 
   expect(third?.title).toBe("Модуль №3");
   expect(third?.sprints).toEqual(["Sprint 9", "Sprint 10", "Sprint 11", "Sprint 12"]);
   const tracks = new Map(third!.tracks.map((t) => [t.id, t]));
-  expect([...tracks.keys()].sort()).toEqual(["http-libraries", "seo"]);
+  expect([...tracks.keys()].sort()).toEqual(["cjm", "http-libraries", "seo"]);
   expect(tracks.get("seo")?.title).toBe("SEO");
   expect(tracks.get("seo")?.do).toEqual([{ login: "iRedTea", side: "front" }]);
   expect(tracks.get("seo")?.subtasks.map((s) => s.title)).toEqual(["Open graph"]);
   expect(tracks.get("seo")?.area).toBe("front");
-  for (const t of tracks.values()) expect(t.mentors, t.id).toEqual(["YarikMix"]);
+  for (const id of ["http-libraries", "seo"]) expect(tracks.get(id)?.mentors, id).toEqual(["YarikMix"]);
+  const cjm = tracks.get("cjm");
+  expect(cjm?.title).toBe("CJM и FigJam");
+  expect(cjm?.area).toBe("front");
+  expect(cjm?.do).toEqual([
+    { login: "YarikMix", side: "front" },
+    { login: "ManInTheCoat", side: "front" },
+  ]);
+  expect(cjm?.mentors).toEqual([]);
+  expect(cjm?.subtasks.map((s) => s.title)).toEqual(["Первый CJM-флоу", "Остальные CJM-флоу"]);
 });
 
 test("Figma: screens of profile and notebook are subtasks linked to their tracks", () => {
@@ -151,7 +160,7 @@ test("tRPC: official client stays in module 2, HTTP migration replaces own libra
   expect(readFileSync("site/modules/2/tracks/trpc-client.md", "utf8")).toContain("frontend/issues/46");
 
   const third = modules.find((m) => m.id === "3")!;
-  expect(third.tracks).toHaveLength(2);
+  expect(third.tracks).toHaveLength(3);
   const http = third.tracks.find((t) => t.id === "http-libraries");
   expect(http).toBeDefined();
   expect(http?.title).toBe("HTTP API и свои библиотеки");
@@ -169,5 +178,5 @@ test("tRPC: official client stays in module 2, HTTP migration replaces own libra
     ["Перенос и выпуск", ["frontend-packages#67"]],
   ]);
   const load = Object.fromEntries(personLoad(third, people).map((l) => [l.login, [l.doing, l.mentoring]]));
-  expect(load).toEqual({ YarikMix: [0, 2], blackHATred: [0, 0], ManInTheCoat: [1, 0], iRedTea: [2, 0], GrayMouse9: [0, 0], MrDuckVC: [0, 0] });
+  expect(load).toEqual({ YarikMix: [1, 2], blackHATred: [0, 0], ManInTheCoat: [2, 0], iRedTea: [2, 0], GrayMouse9: [0, 0], MrDuckVC: [0, 0] });
 });
