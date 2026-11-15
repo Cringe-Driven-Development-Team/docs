@@ -74,6 +74,7 @@ export const PAGE_REDIRECTS: readonly { file: string; target: string }[] = [
   { file: "modules/3/tracks/zod.html", target: "../../../modules/3/tracks/http-libraries" },
   { file: "modules/3/tracks/react-hook-form.html", target: "../" },
   { file: "modules/3/tracks/variable-inspection.html", target: "../" },
+  { file: "modules/3/tracks/seo.html", target: "../" },
   { file: "project-context.html", target: "documentation/project-context" },
   { file: "security/csrf/index.html", target: "../../documentation/security/csrf" },
   { file: "security/csrf/scenarios.html", target: "../../documentation/security/csrf" },
