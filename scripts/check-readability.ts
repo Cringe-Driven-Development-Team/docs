@@ -1863,7 +1863,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await page.goto(url('modules/3/'), { waitUntil: 'networkidle0' });
     await expanded(false, moduleCaret(2)); await expanded(true, moduleCaret(3));
     assert.deepEqual(await page.$$eval(`.VPSidebar a[href^="${SITE_BASE}modules/3/"]`, els => els.map(el => el.getAttribute('href'))),
-      ['modules/3/', 'modules/3/tracks/http-libraries', 'modules/3/tracks/seo'].map(path => `${SITE_BASE}${path}`));
+      ['modules/3/', 'modules/3/tracks/http-libraries'].map(path => `${SITE_BASE}${path}`));
     await page.reload({ waitUntil: 'networkidle0' });
     await expanded(false, moduleCaret(2)); await expanded(true, moduleCaret(3));
     if (mobile) await openMenu();
