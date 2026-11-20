@@ -1,58 +1,57 @@
 ---
 type: ownership
-title: Владельцы репозиториев и командных пакетов
-description: Где проверять реализацию BFF, Go API и инфраструктуры, кому принадлежат шесть командных пакетов и какие версии источников подтверждают карту.
+title: Владельцы репозиториев и пакетов
+description: Куда идти за реализацией клиента, BFF, Go API и инфраструктуры, кому принадлежат HTTP-контракт и командные пакеты.
 tags: [ownership, repositories, packages, sources]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-02T21:45:57.919Z
+    at: 2026-11-20T16:39:19.736Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
-  - id: openwiki-source-4f5bdd77990b98e5f7081f26
-    resource: repo://site/documentation/bff.md
-  - id: openwiki-source-30ec31c4dde661ab7b0b77e3
-    resource: repo://site/documentation/index.md
+  - id: openwiki-source-1a80ca3cbf75612a6a6f7bf8
+    resource: repo://site/documentation/current-state.md
+  - id: openwiki-source-ce98287df8bcc7af43c8a489
+    resource: repo://site/documentation/frontend/bff.md
+  - id: openwiki-source-527fdfd3396771ab16c48a10
+    resource: repo://site/documentation/frontend/packages.md
   - id: openwiki-source-e1dd9e8766736372528742ec
     resource: repo://site/documentation/project-context.md
-generated: { by: "codex", at: "2026-11-02T21:45:57.919Z" }
+generated: { by: "codex", at: "2026-11-20T16:39:19.736Z" }
 ---
 
-# Владельцы сведений и места правки
+# Владельцы репозиториев и пакетов
 
-Начинай с `AGENTS.md` и README рабочего репозитория. Состояние реализации проверяй по его коду, конфигурации и проверкам на актуальном SHA. Для работающего поведения нужны SHA выкаченного релиза, дата и результат сценария на проде; код и CI сами по себе этого не доказывают. [Источник: site/documentation/project-context.md, строки 9–24](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/project-context.md#L9-L24).
+Начни с `AGENTS.md` и README рабочего репозитория. При пробеле, противоречии или правке сверяй реализацию по коду, конфигурации и проверкам владельца на нужном SHA. При расхождении уточни ревизии, проверь код для вопроса о реализации и стенд для вопроса о состоянии прода, затем исправь документ-владелец. Для продового утверждения нужны SHA выкаченного релиза, дата и результат сценария. Каноническое общепроектное описание остаётся в docs. [Порядок работы](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/project-context.md#L7-L14), [источники и правила](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/project-context.md#L25-L37), [расхождения](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/project-context.md#L65-L67).
 
-## Репозитории и границы компонентов
+## Как найти владельца
 
-| Предмет изменения | Владелец | С чего начать проверку |
+| Что нужно проверить | Владелец и точка входа |
+| --- | --- |
+| Клиент, HTML и tRPC | [frontend](https://github.com/Cringe-Driven-Development-Team/frontend), `apps/client/`, `apps/bff/`, `packages/schemas/` |
+| Go API, сохранение и runtime-agent | [backend](https://github.com/Cringe-Driven-Development-Team/backend). Подключение хранилищ описано в `internal/app/app.go`; развёртывание среды исполнения изучают через `docs/runtime-provisioning.md` |
+| Сеть, облачные ресурсы, серверы и подготовка runtime | [infra](https://github.com/Cringe-Driven-Development-Team/infra), `pulumi/`, `pulumi/bootstrap/` и `ansible/` |
+| HTTP-контракт BFF → Go | Apidog. Orval и oapi-codegen получают экспортированный OpenAPI snapshot |
+| Свидетельства гостевого прогона и общая схема | [docs](https://github.com/Cringe-Driven-Development-Team/docs), `site/documentation/current-state.md`, `site/documentation/architecture/index.md` и `site/documentation/project-context.md` |
+| Правила задач и PR | Общий репозиторий [`.github`](https://github.com/Cringe-Driven-Development-Team/.github), `CONTRIBUTING.md` |
+
+[Карта репозиториев и видов сведений](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/project-context.md#L16-L31), [владельцы компонентов](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/current-state.md#L58-L68), [пути infra](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/AGENTS.md#L39-L44), [генерация контракта](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/architecture/index.md#L137-L152).
+
+Точки входа BFF закреплены на срезе frontend `ea123518d624521f999e884ff32ddec0a5bf6bfa`: `bff.ts` собирает приложение, `context.ts` обрабатывает CSRF и сессию, `go/api.ts` вызывает Go. Для хранилищ и provisioning архитектурная страница ссылается на выложенный backend `06841d4765c28ad7e52bf5e36df3b72cb22c094e`. [Сборка BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/bff.ts#L9-L38), [контекст](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/context.ts#L19-L42), [Go-адаптер](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/go/api.ts#L80-L88), [хранилища](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L87), [provisioning](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/docs/runtime-provisioning.md#L1). [Указатели docs на BFF](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/bff.md#L13-L20), [на контекст](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/bff.md#L35-L45), [на адаптер](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/bff.md#L90-L97) и [на backend](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/architecture/index.md#L173-L186).
+
+## Где менять командные пакеты
+
+Исходники и публикация пакетов принадлежат [frontend-packages](https://github.com/Cringe-Driven-Development-Team/frontend-packages). Карта показывает места правки. Потребление подтверждают манифесты frontend и его `bun.lock` на срезе `ea123518d624521f999e884ff32ddec0a5bf6bfa`. [Карта пакетов](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/project-context.md#L39-L56), [зависимости и lockfile](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/packages.md#L12-L46), [манифест клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/package.json#L13-L30), [корневые зависимости](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/package.json#L34-L43), [lockfile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/bun.lock#L282-L298).
+
+| Пакет | Применение во frontend | Манифест у владельца на SHA пакета |
 | --- | --- | --- |
-| HTML, tRPC и BFF | [frontend](https://github.com/Cringe-Driven-Development-Team/frontend) | `apps/bff/src/bff.ts`, `apps/bff/src/context.ts`, `apps/bff/src/go/api.ts` |
-| Go API | [backend](https://github.com/Cringe-Driven-Development-Team/backend) | Код, конфигурация и проверки backend; контракт HTTP API в Apidog |
-| Инфраструктура | [infra](https://github.com/Cringe-Driven-Development-Team/infra) | `pulumi/`, `pulumi/bootstrap/`, `ansible/` |
-| Общепроектное описание и свидетельства сценариев | [docs](https://github.com/Cringe-Driven-Development-Team/docs) | `site/documentation/project-context.md`, `site/documentation/bff.md`, `site/documentation/architecture/index.md` |
-| Задачи и PR | [общие процессы .github](https://github.com/Cringe-Driven-Development-Team/.github) | `CONTRIBUTING.md` и локальные инструкции рабочего репозитория |
+| `@cdd-team/react` | Рендерер клиента | [packages/react/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/package.json#L1-L30) |
+| `@cdd-team/router` | Маршрутизация клиента | [packages/router/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/package.json#L1-L44) |
+| `@cdd-team/zustand` | Общие сторы | [packages/zustand/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/4652b210db7bf9fcdbbdf96539b412201a1bec85/packages/zustand/package.json#L1-L45) |
+| `@cdd-team/clsx` | Сборка строки CSS-классов | [packages/clsx/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/clsx/package.json#L1-L25) |
+| `@cdd-team/vite-plugin-bff-html` | Инструменты разработки клиента | [packages/vite-plugin-bff-html/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/5be3456bc9df61efebef6902ac5ebe157a307c60/packages/vite-plugin-bff-html/package.json#L1-L47) |
+| `@cdd-team/oxlint-plugin-jsdoc` | Корневой линтер | [packages/oxlint-plugin-jsdoc/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/ecd57a1f6e5a10c6b2a253a9d635136d14b81b18/packages/oxlint-plugin-jsdoc/package.json#L1-L47) |
 
-Распределение BFF/Go/инфраструктуры явно дано в [site/documentation/index.md, строки 36–38](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/index.md#L36-L38); карта видов сведений — в [site/documentation/project-context.md, строки 16–29](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/project-context.md#L16-L29). Каталоги infra указаны в [AGENTS.md, строки 38–40](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/AGENTS.md#L38-L40).
+У владельца release-please готовит release PR. После слияния workflow проверяет и публикует выпущенные пакеты. Доступность версии подтверждают в npm. Обновление зависимости и `bun.lock` приложения происходит во frontend отдельно. [Процесс владельца](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/project-context.md#L45-L56), [выпуск и обновление](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/packages.md#L82-L107), [release.yml на SHA среза](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/.github/workflows/release.yml#L15-L82).
 
-Для BFF канонический документ сохраняет ссылки на [сборку HTML/tRPC](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/bff/src/bff.ts#L21-L32), [контекст CSRF/сессии](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/bff/src/context.ts#L25-L31) и [вызов Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/bff/src/go/api.ts#L44-L55) на SHA `dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64`, а для Go — на [backend `23d3dd9e955424a7634fb0dc49a38af6eb08792c`](https://github.com/Cringe-Driven-Development-Team/backend/tree/23d3dd9e955424a7634fb0dc49a38af6eb08792c). Это указатели из [site/documentation/bff.md, строки 38–49](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/bff.md#L38-L49), а не результат нового чтения соседнего main. Свидетельство гостевого прода и его пределы разобраны в [архитектуре](../architecture/mvp.md) и [безопасности](../architecture/security-bff.md).
-
-## Командные пакеты
-
-Владелец библиотек — [frontend-packages](https://github.com/Cringe-Driven-Development-Team/frontend-packages). Карта на **31.10.2026** ссылается на frontend `dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64`: пять пакетов в [apps/client/package.json, строки 13–23](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/client/package.json#L13-L23) и oxlint-плагин в [корневом package.json, строки 30–37](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/package.json#L30-L37). [Источник карты: site/documentation/project-context.md, строки 33–46](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/project-context.md#L33-L46).
-
-| Пакет | Потребитель по карте | Каталог у владельца на `fa65157b5f6957fbf30fa2ebd4b3b75af19cc955` |
-| --- | --- | --- |
-| `@cdd-team/react` | frontend, клиент | [packages/react/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/packages/react/package.json#L1) |
-| `@cdd-team/vite-plugin-bff-html` | frontend, клиент | [packages/vite-plugin-bff-html/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/packages/vite-plugin-bff-html/package.json#L1) |
-| `@cdd-team/router` | frontend, клиент | [packages/router/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/packages/router/package.json#L1) |
-| `@cdd-team/zustand` | frontend, клиент | [packages/zustand/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/packages/zustand/package.json#L1) |
-| `@cdd-team/clsx` | frontend, клиент | [packages/clsx/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/packages/clsx/package.json#L1) |
-| `@cdd-team/oxlint-plugin-jsdoc` | frontend, корневой тулинг | [packages/oxlint-plugin-jsdoc/package.json](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/packages/oxlint-plugin-jsdoc/package.json#L1) |
-
-Процесс выпуска также принадлежит frontend-packages. Каноническая карта указывает [инструкцию владельца на `fa65157b5f6957fbf30fa2ebd4b3b75af19cc955`](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/README.md#L72-L79) и [release workflow на том же SHA](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/fa65157b5f6957fbf30fa2ebd4b3b75af19cc955/.github/workflows/release.yml#L15-L82): release-please готовит release PR, после слияния workflow проверяет и публикует выпущенные пакеты. Наличие GitHub Release не подтверждает успешную публикацию в npm. За версиями, API и результатами публикации переходи к владельцу. Здесь зафиксировано место правки по зависимостям и CI, а не состояние прода. [Источник: site/documentation/project-context.md, строка 46](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/project-context.md#L46).
-
-## Как разрешать расхождения
-
-При расхождении источников сравни версии по SHA и свежесть клона, проверь код для факта реализации и стенд для состояния продакшена, затем исправь документ-владелец вместе с изменением. [Источник: site/documentation/project-context.md, строки 54–56](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/project-context.md#L54-L56).
-
-Канонический текст остаётся в docs. Если wiki устарела или недоступна, используй её только как указатель и читай исходники. SHA этой wiki фиксирует версию описания и карты, но не свежесть соседнего кода или прода. [Правило источников](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/project-context.md#L31), [граница SHA docs](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/openwiki/INSTRUCTIONS.md#L26-L31). Вернуться к [карте вопросов](../quickstart.md).
+[Архитектура работающего сервиса](../architecture/mvp.md), [граница BFF](../architecture/security-bff.md) и [карта вопросов](../quickstart.md).

@@ -1,64 +1,98 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b3e4680961605f0afb4ae5b2e1c11468a0c37f26c39f36c40439f2ab8726c548",
+  "pageVersion": "sha256:5ee4476375f7392dc31e897a6979c53341d8ca4cabb6547c03a3a7fc1ed934e8",
   "claims": [
     {
-      "id": "claim_9346bc20c2384b7ea46b21ca5d0bb0c4",
-      "statement": "В проверке гостевого BFF от 31.10.2026 13:11 UTC GET /api/trpc/users.me без X-CSRF возвращает 403 csrf_invalid, а с X-CSRF: 1 без сессии — 401; bootstrap /login содержит user: null и не устанавливает cookie.",
+      "id": "claim_e98246914857468a918d253296a35095",
+      "statement": "По срезу frontend 08.11.2026 createContext проверяет X-CSRF: 1 до чтения сессии и вызова Go; POST также должен иметь допустимый Origin и same-origin Sec-Fetch-Site, если этот заголовок есть. Сессия проверяется отдельно.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/bff.md#L25-L36",
-          "version": "repo-lines-v1:sha256:8ded0d55c8e561102b8775dd6dccbcfe3639c02bb972215bdac11a9345160b7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzZhY2FiYWQ5ZTdiYmYzMmU2MmY4MWNhZDI3NDA0ZjIyZDgwZjUyMTM0MzA3YWE3ZjM0NzllY2FkOTRmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YTQxMzRjYzhlN2VkODczNDU3ODIyYjBkOTA0YWRkZTFiNThhNDJmYWIzODdjZTdhOWNkZWVkOGExMDNhYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NmI1YmIzNzZjMzgxZjExMGZjYjgxZjdlNjYyZjVlNWFhMzZhZWRjNjBkODlmMjExMzliYTUxN2VlNmU4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMWQxNzAyZGNlMzczMTZiN2I4MDU3MjUzNTNmODA2Y2VlNGNhZDc5N2JmOTI1OGU2Mjg5NzRmNDYxYzhmYTcifQ"
+          "resource": "repo://site/documentation/frontend/bff.md#L35-L45",
+          "version": "repo-lines-v1:sha256:737cf608a5254f781918b57ee1b167510986c1256f713880e891da79738081a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjOGVlZmUzMjI5ZmI1NmEyMmU1MjE1NDEwYjZkNGQwOGQzMzkzZDlmYTAxOTc3NjYzYzZmZTZlYjA2ODJiN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyYTk5OGE1ZWQ3OGY3ZmRmMjk5ZGZiNWRmODQxYTcxZjdmNWRhNmYzYjM3YzkzMjg4OTJiMjczMTE0ZTg4NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNWE3NDFmMWYzOGY5NTIzOWZmOTM3YWRiNGM5NjViZmYwY2E1ZDQ2OTQyNGE3Y2FhM2MzYTUwNDFkMzIwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTYyYjNkNGYzNzQwNjYxYzFkNzEyOGNjYjk5MGRiMmJlNTEyMTEwYTVmN2IxYzM3MWFkOWQ3NmFkMDFjOTkifQ"
         },
         {
-          "resource": "repo://site/documentation/bff.md#L3-L15",
-          "version": "repo-lines-v1:sha256:af29e3d497815014482a9a772cc4a3f08fdf8265181d9ba4369bac861297aa17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2E2M2FmMzg1NjFkZTg0OGYwMmYwZGExNzkwOTVkMTU3OWY1ZmYzZjE0YmUwOWQ5OTY2MThmMWM2MzA1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NWQxN2EzZDFiZGYwMDVjNzAxY2UxMzk2YmNmZGQ0ZjcwZTM2NzMxNTYxYTI5M2NlMzJiMjRjNmJkYTQ2ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNGFmMzBmZDllZDcxZmUwNmFiZjRmMDBjZjQ2MGIzOTMwNjI1YTVkN2Y1YjUzNWUwZmUxYTAzZmM4NzgyNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYTA1YWJiOWQ0MTAyYjUwNTRhN2MxMThhMjAxOTZlMTc2ODU2NmYzMWMzMDNkMTc4ZDVmYTlkOWMyYzYxZjQifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_e98246914857468a918d253296a35095",
-      "statement": "Каноническая страница по ссылке на frontend/apps/bff/src/context.ts на SHA dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64 описывает CSRF перед чтением сессии, X-CSRF: 1 и дополнительные проверки Origin и Sec-Fetch-Site для POST, но продовое свидетельство ограничено двумя GET.",
-      "evidence": [
-        {
-          "resource": "repo://site/documentation/bff.md#L40-L48",
-          "version": "repo-lines-v1:sha256:78c94f93afadd8db39fca67cf460fa80d36bb2b829d3b78527ac4c2003b1e93d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU1ZjY1OTE3NzRkMzI1MzM1M2EwYTZhNTM4MmIzZjliM2YwZmQ3Nzk5YWQ0NmFkZDZjNjhjYThkMmM1MDgwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcxMjk0YWQzZWQ2MzUxN2ViMzAyMjU2ZmQ0Yjc0ODcwZmZjMmNkYzgxYjdmNWQyNGZiNmZjOTNmZjJmZTZkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODExZDE3MDJkY2UzNzMxNmI3YjgwNTcyNTM1M2Y4MDZjZWU0Y2FkNzk3YmY5MjU4ZTYyODk3NGY0NjFjOGZhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE4NzY5ZTk2YzI0MTQ1YTYzYzQ4ZWRmOGQwYjRiZmFkNmJhNzljZmQ1ZjQzMDFiYTU4ODQ0ZDk5ZmI0NDVkMCJ9"
+          "resource": "repo://site/documentation/frontend/bff.md#L9-L11",
+          "version": "repo-lines-v1:sha256:a020ee162c5652212c72fee773cb379e43d962b9b28dba867a28b12737be6970:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNmZGU0ZTU1N2MzNmJhODRhZDY5ZWE0MDdlYWRhY2VhYTExMzUwYTY5MzAyNWZiYjhjNDM1MjVjNTdkN2ZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFjNDQ3NzQ3NGE3Y2M1MDBlOTQ4ZWQyZTUyZGVlMzllY2M3Yzk1YjY3M2QwMDBmNGYyMDUzODJkYmRhMWQ0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODdhOTU0OWUyMTUwMGMwMDM3YmY0NGFjOTk5YzVlZWUzYzZjMTE1MWM2MThhOTU5YWVmZmZhZjUxOWUxMzFmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmE0OTM4MjY5OWI1NjdhOTYyYzJhZjg0YjIzODI2MzRkMjEwOWZkMDZhNWYwNGRhM2E2MWQ5NDE5MjhhMTFhNCJ9"
         }
       ]
     },
     {
       "id": "claim_c16ab55f54bc40179320398aeae6de26",
-      "statement": "Проверка гостевого маршрута не подтверждает авторизованный BFF → Go, вход, регистрацию, refresh и параллельные запросы, выход, истечение сессии, блокноты и POST-защиту от чужого Origin.",
+      "statement": "Гостевой прогон 09.11.2026 подтвердил отказ конкретному POST с чужим Origin. Успешный вход, регистрация, refresh, выход, операции с блокнотами и аватарами и исполнение runtime остались за пределами проверки.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/bff.md#L46-L57",
-          "version": "repo-lines-v1:sha256:232c53393ae5b5ee989ba68cf6736756c34812df7d63ac896141818afc62c566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MTgzZTQ1NjRlMmVmZDkyNzAzMDkyZDJmNTcwMDQwMzIwNjJlYTU4NDFhM2VmMTE4ZGJiMGYwZjRiMzNjMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MWY2MTQ3Zjg5MGVmODQ5YjNlZmEwNzcwNGY2MWM0NDdlMjhmZGNlMDNkNjExN2NiNTgxNzg4ZjkzODA0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0ZjBiMmUwN2Q0Y2IxZDRjOTQzODI0YTBjM2JiNWRlMmJiNzc1MTkyZThkODNhOTZiNTEwNDVmMzhmZGNiMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://site/documentation/current-state.md#L21-L31",
+          "version": "repo-lines-v1:sha256:d68e12998f46cdc7047b30d04fc7b085f53ba2c0a5da1c915ffec87a38508563:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4Y2Y5NjdjNTUwOTVhZmM4ZGYwMjI5ODk3ZDA0MDI4MjIxNDQ1MjBjNjY0ZTFlYTM3OGY3NzkyMTMzZTcyMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZjg0N2IwNzNlZGIwOGZjNGFiNTA4YWZlYzI0NzU1OWRiOTI4YjA3ODE5Y2VhYzljZjJkODZkZGE3NTQ3YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzOGI5YjMxMGFmYjQzNjhjNTEwZTQ0YzIwMDBiMWFkMDU4MmRiYzE0NzE3ODA0NjQ3MzQ3MGE3ZDMyMmEyZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlN2UwNjVmNTU2OWVjNDE1MTA0ODAzN2YwNjNhNGEwZGVlYmJkM2I5OGY5Y2YwY2I3OWRhMWJmMWZkNDFmMGQifQ"
         }
       ]
     },
     {
-      "id": "claim_22167a17a1d64055967cdeb95c2ab279",
-      "statement": "Раздел site/documentation/csrf/ помечен как исторический и не описывает текущую защиту BFF.",
+      "id": "claim_fed4261b9d67412f843e254321584df8",
+      "statement": "На frontend/BFF 319e691 в гостевом прогоне 09.11.2026 HTML входа имел private, no-store, user: null и не устанавливал cookie. users.me без X-CSRF вернул 403 csrf_invalid, с заголовком без сессии — 401 UNAUTHORIZED, а публичный /api/v1/users/me — 404.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/csrf/index.md#L1-L5",
-          "version": "repo-lines-v1:sha256:6f24d90be895d453445056fd5987f28fd28fd374f03d5c5bf36412811f509d4b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIyNzNhMmNhMjdiZGVjZDk5OWQ4YzE1YTEwYWY4YTk4MWFjODJkZTk0YmVlZWEwZjFhZWM1MmNlMzcwZTQyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQwNDI3MzZlMTQwY2Q3NWE4YmYwOWNkOGUwMWRkNTdlNTZiYTc1NDQzOTA4MzI1N2RiZjZmM2UyZmI4MjUwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2YyZTYzNWQ1NmJkZDMyZGVlOGNlMzIwODc1ZGY3YzZmYTA2YjQ4MTA5Yzc0ZTU2NDVlMTQ1MDIyZmE1ZjIyOSJ9"
+          "resource": "repo://site/documentation/current-state.md#L17-L25",
+          "version": "repo-lines-v1:sha256:476ba97c23ba2a0b45b9f4351737a2822223cad1c26bb0bd00d5ef45867fd42f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdkMWM1MWY5Y2VkNTE4NDMxZTA3ZjEyZjhkMDQ3NmNmYjNkMDU1MGJhNzIwOTliYzJjNjkxMTE1NTBjMWZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMxNmUwMmI4MWU5NDBiYzQ3YzBhN2IzNTgzYTI4YTllNzE1MzEyZWFlMmYyMDlmMGQyNmZjMTFjYTA0ODIwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWUwOThlY2JkYmU3OTM5YzQ3ZDRjMTViODFhZWE0NWUwYzQyM2Q1NzQyOGFhMDRhYjMxNWIwZWI3MWJmMzA0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTI5YzRiN2E2NzdiMjkyODI4YTY0MzJmZjViNmE0MDIzOTA1Yjg5NzI3NGZiNTg2YTlkZGY1M2M0NTA3N2RlNSJ9"
+        },
+        {
+          "resource": "repo://site/documentation/current-state.md#L7-L12",
+          "version": "repo-lines-v1:sha256:738137fd98a0ac2020d1cdb56c1c096caec586331f05eaa0fef0225bbfad581e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU4ODJkYmIzNDYwMTFjOTJmOGQ0ZDQ4MjQwYTY2NjVhZmM0MWQ3M2JiMGE5Y2Y0YmI0NDc5MmQ4ZjEwYTU5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGFkZDEyNTk2MjBkY2E1MWY1ZGI3M2Y3NDIxNmI5MjExZGE4MzcwZmY0NTc0YzJhZWI3MmFlMWFjMDg3YmMwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc4MTkxZjVkMzNmZmE2MDdkNjU1ZjNhZjY5Yjk1OTk0YjZkMDM4MDEzNTNmMjI1MTdmNTM0MjhhYTAzZmQ5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2UyM2ExNjVjYTVlNjgyNmQ4OTBmMzNlZTY2MzQ5MjI0YWVjN2Q2ZDcxYzI2NTk3NTZiYzRhYzFkODZmN2ZlMiJ9"
         }
       ]
     },
     {
-      "id": "claim_5688d031a76a4ee2955bde1a16b28c92",
-      "statement": "В архитектурном срезе 01.11.2026 на BFF baf512e9a7bd7e5452554cdc89baa20e24aa7a32 повторно проверены /login 200 и GET users.me: без X-CSRF — 403, с X-CSRF: 1 без сессии — 401; версию BFF установили по revision и digest живого контейнера.",
+      "id": "claim_f5b52cd44b984fd387a940b375e19800",
+      "statement": "BFF управляет сессией с HttpOnly-cookie, вызывает Go по приватной сети с сервисным ключом и обновляет access token с повтором запроса при его истечении.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/architecture/index.md#L20-L33",
-          "version": "repo-lines-v1:sha256:97b501f7dcb7faebe59bd1c10218fb6211fcdc19bbd65733205fdbb5ce682559:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMTFiOGZkODNmYjJhOWJkZjU5YWJjNWYxZGJiZmRkMGJhM2QyZDQwOTNmMjg5NjYwOTJmYzA2ZjIxYWRmMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhZGRhMzdlNTg2NGVlZmJjZmUzMmM3YTQ0MWM4ODUxNTdkMDMzNWEwN2IxMzc5ZDA2YTdiNWM0YmEzY2E3MDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlNmYzZDc3ZTI4MGU5MzI0MTM3NTNlNDhlMDhiOWI3NDc5ZWQ1N2IwNDM5NTE4NGJjMDQyM2VhMWNiMjNiMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiZmFhMTc5ODU4MTQ5ZDgzY2MwZjg1OTVmNWZiNjM3ZmI1NWE3N2E5NTUyODY0YzMzYjE3YjdhZDJhZjQ0YTQifQ"
+          "resource": "repo://site/documentation/architecture/index.md#L123-L132",
+          "version": "repo-lines-v1:sha256:c311298532cbed81e77cc9eb3a0b137bc98d3bda69fc09a9bd77b4d94153eac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNGM2ZmQ0NjAzMjYyMGM2NTdlMDkxNTJiZGJmMjFhYWVlODgyMDkzYTYwYzI2YWVmNjRjNThiMzNkZDkyZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NmYzMTc0ZDhlOWEwYjkwNzFkYzM4NmY0YmYxMjVkM2RkNGZkZmNkNGMzNDA4NjJhMDdhOTVjNmU4ODcyN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwNzcwOTdmMjdjYmM0ODIxZGE3ZjUzZDk0YWYzN2EzYTk3ZDA0MTM0ZGU1YjU1ZWRkYmQzOGM3OTJjZTA0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMmNmNjMwMjk4NzkwMDg4MTVhNTUxZGQ4YjM3MjhkODkyZTMwNjEzYmFjYmFiMTgwOTcwZDMzMGMyODc5YjcifQ"
+        },
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L45-L49",
+          "version": "repo-lines-v1:sha256:89b22a03e948dea0d36e380ee5e073726111ecf9890fd6f642382d2ac6246fd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGE5MTg2N2NlNTcwM2RjYzhkZjZmZWM0NTA0MGZlZGIxMjYzZmQ1YjU1ZWM2NTA0MWQ3YWQ2NzI5MjYxN2Q0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFlZjdjYWRiOTVlZWNhYTA5YzM1OTFlOGMxODVmOTBjZTQ0ZGJjNWUxNWI2ZTEwMDc4MTk2M2M2MjQzZTgyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzFjNGM0NGMyODZiMDM4NmRhMTQ1ZTNlMDhiODA1NjA3YjE4MGI5YzAzOTI0NTdhM2IxOTMwNDllZDg3YTQxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTlkODcwMTMxMTI5ZTAzNzU5ODIxYTVmYTBjN2QwYmVkMThkNGU5ZGQ4NjFhNzU4ZTk3OWRhZmZiZmE4OWUzYyJ9"
+        },
+        {
+          "resource": "repo://site/documentation/current-state.md#L33-L44",
+          "version": "repo-lines-v1:sha256:ccfe824cfa1a69f291d9ea232d5f17e60e68794d2b59418aea59babc8070b310:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZjAyYzI1MTc4YTAyNDMwODFjN2ExMDE0ZGZhNzhmZGUwNzE4OWFiN2ZjODEwYzU3ZWFlMDdmYWZlYThkZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYzYwMWMzZjQ3ZTE4ZWUwMzAzOTIxNmFhOGNhMWI4MWMwMDI0ZTcwZjc4Zjc5ZWVjOGIzNjk2MzMyNzMxYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMTk2OTY2ZGIyNWY3Mjg2OTI3ODZjMDY3NDM0ZGU3MWIxNzYwZjVhZGYwODE3NWEyYjUyMGMzMWNjZDU5MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MzI1OTVhODQ3ZjcyNmE4MjViN2NjNTBlOWExZmQ2ZDZjYmE5NTc1ZWViMTc1YWE5MTU3YjRiM2MwMDZkOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f738e8eefac48c68a2b8628d370fa77",
+      "statement": "BFF экранирует JSON bootstrap при встраивании в HTML; безопасный DOM-вывод и изоляция HTML-результатов относятся к отдельным местам вывода.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/frontend/bff.md#L22-L29",
+          "version": "repo-lines-v1:sha256:38ed850a67350307e3831306268fd3ca898f7f7a54d97e9344c78a4661d70a0b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODI2NzEyMTllYTBiODZhNGMzNWRiZDhiMDg4MGJhNWMxYjQyYTY4YTU0ZjQ3NjhmYWJhYjczOGNjMzMyMzIyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNhN2VjZTY1Yjc0NmZhMTJmZDdjMWY4OWFjZTI3ODdmMzJkM2M0MGQwMmQzZDQ3N2Y2YTFiN2RiZDQwMDhiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGVhMTU3ZDFkNWM1OTgwZDA0NTU4YmQ5MTlkMjRmNDI5MmRmY2U0NzkzNzBmYzZmNGI0OGU3YTIzYTgxM2QzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDA3OGYxZGE5MzM2OWQ4MTU0OWM3ZTRhZThmYjQ3OWZiNTYxNGI4OGZiYWU3YzhiYjU2Y2IyOWIxNzEzM2M3ZCJ9"
+        },
+        {
+          "resource": "repo://site/documentation/security/csp.md#L131-L141",
+          "version": "repo-lines-v1:sha256:1d3323d5310b2f2f9295e51a2a3b4ab936a6971669f36fb71766ca4012f50837:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMjg0MDE5NzMxYjcyZDhjYTExNWU5YmY2MTZiOGExZjVmNDQxNjRiMGQ4NmI3YWZlNjlhOGJmZjRhZjYzZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwYTAwMTFlODM0MTg1NGNkYmFlNzk2NTFiMWQ2NjAyYTgyMmE2YTJlZmVlMjliMmY5ZjY2MDM0ODAzNWM0YzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZGFkMTUxMDJjOGQ0MWRhYWY3ODRlMWVkY2YwODU4YzU0MDRiODYxOThmOTU1ZTM5MThiNTdlYzI1MjJhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyYzc3MmI4MTY4ZGUxYTNlNTlhMjU0NjE4ZTQ5YTY3MDBhMDFkNTM0MDk1ZTAyMzJmZmEyOGI2YmUxYjZmMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_094c127628264346bc8716270200c17d",
+      "statement": "Caddy добавляет CSP к ответам BFF. В гостевом прогоне 09.11.2026 HTML входа содержал блокирующий заголовок, что не проверяет блокировку отдельных ресурсов или работу HTML-результатов.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/current-state.md#L19-L25",
+          "version": "repo-lines-v1:sha256:f199f3e080376f39886ff9147cf32cbbfd1b8ae3c30618d5fc36117d75b7b5f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQzNzM2OTBkMWIwNTBhYTI2OGE5Mjg1YWZkZDhmNjg3MjBkNjAwYjBlZDMzMTZlZTI1OGE3MjhjMmFkYjY5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMxNmUwMmI4MWU5NDBiYzQ3YzBhN2IzNTgzYTI4YTllNzE1MzEyZWFlMmYyMDlmMGQyNmZjMTFjYTA0ODIwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM1YjljMjRmYTgyOTMxMzljZjQ2ZGZmM2UwOTkwMDY2MWRhMDE4YzYzZTcxMjUyNDg2ZWRkZmQ5OTU0ZjY3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTI5YzRiN2E2NzdiMjkyODI4YTY0MzJmZjViNmE0MDIzOTA1Yjg5NzI3NGZiNTg2YTlkZGY1M2M0NTA3N2RlNSJ9"
+        },
+        {
+          "resource": "repo://site/documentation/security/csp.md#L14-L24",
+          "version": "repo-lines-v1:sha256:f700c86ec9fdc74933147b6b81ca8ad242d82c85fef5ed9e5f58a96eeaaf7761:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOWI2ZWZkMDVjMjE3YzUwMDBkMjkzOGUzMTRhZWZjZGY4ODJkMjE3MDlkYWM4NzgyMWY4NzlkNzQwNGIyODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjOGE1ZDJjZjkyYjQzNzY5MDNlMWQ0Y2FiYzM2MmI3NmEyOWVlYjdiYmU1ZGRkYTVmNDUyNmE5ZWViZjM1ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNWE3NDFmMWYzOGY5NTIzOWZmOTM3YWRiNGM5NjViZmYwY2E1ZDQ2OTQyNGE3Y2FhM2MzYTUwNDFkMzIwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTYyYjNkNGYzNzQwNjYxYzFkNzEyOGNjYjk5MGRiMmJlNTEyMTEwYTVmN2IxYzM3MWFkOWQ3NmFkMDFjOTkifQ"
+        },
+        {
+          "resource": "repo://site/documentation/security/csp.md#L147-L159",
+          "version": "repo-lines-v1:sha256:f7486637aa3bc878708b3169433862e6e9fe45a4055dd7e63bf87e378c67f952:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNWQ3NjNkMzhiODFmMjNlMTNlZmJjZTI3ODMyZWEyNzRiNmY3MGQyODA5NzVhZWMxNTg3ZDU1ZTAwNDY4ODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzVhMzIxM2EzODYzNmU2YzAyZTJhOWIwYWMzNTE0NzU4OThkZWMyYTkwMWFiYWJkYjdhODBkNDhmZmM3MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1ZjgwMTliZTZlMzcwMjJlODQ4ZjFkOWQxZGIzOTc0NzQyZjAxYzhkZGU0OTM2OWQ4OWJmZTE0NzAwOWI0OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-02T21:45:57.919Z"
+    "at": "2026-11-20T16:39:19.736Z"
   }
 }

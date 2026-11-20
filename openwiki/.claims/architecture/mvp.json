@@ -1,84 +1,132 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fee44d029eff0eacb13e0750ed092a46c033ec7c9d08a6e1f31d45787c61fe73",
+  "pageVersion": "sha256:8dc2a6b63c5471f7d21f0eb4ab90ac3584729b7241318a39d93e3f21c81321cd",
   "claims": [
     {
-      "id": "claim_a60c9e95d5cd4932be3ffbe810e713d6",
-      "statement": "Свидетельство 31.10.2026 13:11 UTC в чистом Chrome подтверждает гостевой HTML/tRPC-маршрут браузер → BFF: / перенаправляет на /login с формой, bootstrap содержит user: null без cookie, users.me без X-CSRF даёт 403 csrf_invalid, с X-CSRF: 1 без сессии — 401, а /api/v1/users/me — 404.",
-      "evidence": [
-        {
-          "resource": "repo://site/documentation/bff.md#L3-L19",
-          "version": "repo-lines-v1:sha256:a5194cb8057f0779db70fa06073932870093860734507d3951b54efba8dec818:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2E2M2FmMzg1NjFkZTg0OGYwMmYwZGExNzkwOTVkMTU3OWY1ZmYzZjE0YmUwOWQ5OTY2MThmMWM2MzA1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ODlhOGE5NWRhYTYzOTgwZDNjYzU1YTcwZDQ3YThlMzk2NGEzYTU2MTlmMGNjNTYwZjI2YjFiNWM0YmJhMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNGFmMzBmZDllZDcxZmUwNmFiZjRmMDBjZjQ2MGIzOTMwNjI1YTVkN2Y1YjUzNWUwZmUxYTAzZmM4NzgyNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZTg0YmJkMDE1YmZhODM0NzFlMzYxYzhkZDNkMmM5YjQwZmVjZTZmY2RlMmYzZDY1OWQ1YmIyMmJjMGJlNDkifQ"
-        }
-      ]
-    },
-    {
       "id": "claim_e63b8d8c82e446f294ec03b7b26aa6ed",
-      "statement": "Каноническая страница связывает участок BFF → Go с кодом frontend на SHA выкладки, но не подтверждает его авторизованным сценарием на проде; свидетельства входа, refresh, выхода, блокнотов и POST-защиты в этой проверке отсутствуют.",
+      "statement": "Гостевой прогон 09.11.2026 не включал успешный вход, refresh, выход, операции с блокнотами и аватарами, создание и исполнение runtime, SSH, изоляцию runtime и восстановление из backup.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/bff.md#L38-L57",
-          "version": "repo-lines-v1:sha256:84bf8f45f2c58b2eeb93956fb20707de07af942eaedbf1cff5fbd3f84f0bb853:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWIwNWU5OTY2OWE5ODM3YTY3NmI4Mzc1NWQ4NzQ5N2MyOWRiOTMyYzU0YmIwMjRiOGQzYWFkZDgzMzZhMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MWY2MTQ3Zjg5MGVmODQ5YjNlZmEwNzcwNGY2MWM0NDdlMjhmZGNlMDNkNjExN2NiNTgxNzg4ZjkzODA0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMzQwMTE4OTRlMzZkNmNhNGFkYTEyNzE1M2I5YWNkMTljMGI1ZTVhMmEwY2RlNDZlZWUyODUwZDlhYWEzZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_47a9cc3524a443549f3fc71ccb528674",
-      "statement": "Срез 01.11.2026 фиксирует Caddy/BFF на gateway, Go/PostgreSQL 18/Redis 8 на VPS2 без host-портов БД и Redis и отдельные служебные интеграции на auxiliary; HTTP/SSH подтверждают healthy, pg_isready, Redis ping, Go /health 200 с gateway и гостевые ответы 200/403/401.",
-      "evidence": [
+          "resource": "repo://site/documentation/architecture/index.md#L26-L30",
+          "version": "repo-lines-v1:sha256:784caf71f5743a081a6619416361f27fe33347a9ac2e6582a6dab3b5c543f183:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEzODEzNTEyOGJhNDUyMzIwMmE3YmNjYTgxNzI5YTE4NDYwYTI1NjUwNzI4ZjY0OTJlMTE0NzBiMDQ4NWRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJmZjNmYWE5OWMzNjlhZWQ4NDE5MGU2MDU1NzQ1MWYyZjU0YTk3ZjgyYTU5MjRjZDRkNGRhN2FlNjYwMzc2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBiYTc4MzEzNDliNDViMjkzMjZjNTc1MzdjYmQ3MjRhMjdkYjk2MGMwNjUzZWEzNGY2NTQ3NjdlYmFlZDRjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGVhYzE0Y2I4YzEwYzFmNzYwNzc5Yzg5NTgwMDg3MDhmNzFiYzkzMzI4MDkyMzJhNjc3YWQ0ODg5OTllMTBlZCJ9"
+        },
         {
-          "resource": "repo://site/documentation/architecture/index.md#L7-L23",
-          "version": "repo-lines-v1:sha256:0bbe1841bf5bb9d6b1690b837e62dc90b467bed654d4e4717004ccc12e5b15eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhN2ZmNzQ0OWM2ZTQ2YjExYzNiMGEwOTZlZDA1Y2IwZjhjODhkNTI0NTVhNmI0MjA5ZDIzNGZhNzAyYjkyNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NzJkY2M4NGRjMWZjYTg4NzUwN2M3NmNiN2JmMjk1MzI3OGU5YWZmZWU2NWMxYzI5ZGU1NmMzMjBmYTM2NzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYjY2YTMzZWFkMDc0NmU3NTg3YmU5NTNiNzkxMTU5OTA0OTc0MjM0ZmM4N2MwNmEwNDNhNjE5OTM5N2QzMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1ZTI1OTA5ZTY3OTc3ZGQwYzA1M2ZhYjE4ZmY0ZDY1YjY2NWQxMDQ3MWE1OTRmMzBhZjZhNmMyYmRjYmQ3NjYifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_e37dd4f470994aabba04aee749cac042",
-      "statement": "В свидетельстве 01.11.2026 версия живого BFF baf512e9a7bd7e5452554cdc89baa20e24aa7a32 установлена по revision/digest контейнера, а Go 6e1a0d81bc284e87aa4a9561d7b65eee835a26c3 — по выкладке, образу sha-6e1a0d8, healthy и HTTP 200 по SSH; это не проверка более свежего main.",
-      "evidence": [
-        {
-          "resource": "repo://site/documentation/architecture/index.md#L25-L42",
-          "version": "repo-lines-v1:sha256:7fd07a684ea166495f21dc927db465158cdf2057e22d39d43ee16b243a120359:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZGZjMTllMGQ5MmE3ZWVmMjc1ZTI1Y2JhNjA3ZjNiODA1M2VmMzU3YWM3Mjg1OWZjYTU0YjVhYThlM2RmYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NzhkOGEwM2E5ZjMzYjYzMzU3MWI3NTc0MDM1MjA0YmMxNzA0NTlkNjliOGI0ZDEyM2QzNzYyNjYxZTdhOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ODg0YzI0MjIzNWUzMDQwZTg5YWU3OTAyNWQ0NzgxYmM2MThkNzk3NWI3MzczZjljMmNiYTJkMjA2OGUyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZTViZmQxZjg3MTJiNDM4MzIyN2ZkOWQ2NzRjMTQzYzEwOGIxNmEzNGM1MDA3NjA4YmI1ZWM1NTlhNzhiODIifQ"
+          "resource": "repo://site/documentation/current-state.md#L28-L31",
+          "version": "repo-lines-v1:sha256:3c11d740c94af3ddcd85fbe803ecd89dc0f6ba81d6be2cd55d6055ca0a846730:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgxYzg4MGJmMTAzNGI3YjlmMDBhZjk5ODNjZjBjY2VmNWU5NzY2OTQ4NDgyOTRiY2I5MDM3ZjM4NjVjY2NkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFmODQ3YjA3M2VkYjA4ZmM0YWI1MDhhZmVjMjQ3NTU5ZGI5MjhiMDc4MTljZWFjOWNmMmQ4NmRkYTc1NDdiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjgwOWM3Zjk1ODRkZjM3MTY0NzY5MjBiMjk5NTcyZDdhOTQ1NmFhYTFlZWU4OGRmZDIwZWI5MTQ3YTQxYTcxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGU3ZTA2NWY1NTY5ZWM0MTUxMDQ4MDM3ZjA2M2E0YTBkZWViYmQzYjk4ZjljZjBjYjc5ZGExYmYxZmQ0MWYwZCJ9"
         }
       ]
     },
     {
       "id": "claim_f961b53f0b8341acaa5ad184318fbf65",
-      "statement": "По каноническому описанию браузер вызывает BFF через tRPC, BFF вызывает Go по HTTP OpenAPI snapshot из Apidog; oapi-codegen и Orval генерируют код из snapshot, backend drift сравнивает результат, отдельного frontend drift workflow в срезе нет.",
+      "statement": "Браузер вызывает BFF через tRPC, BFF вызывает Go по HTTP OpenAPI из Apidog. Orval и oapi-codegen генерируют код из экспортированного snapshot, Backend Contract drift повторяет генерацию и проверяет расхождения.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/architecture/index.md#L140-L153",
-          "version": "repo-lines-v1:sha256:98b5c7bbe2a21d2777047bf1898a6b390857621e72cd145d98cc9b3b38ba47ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMWE5Mjc0ZTY2ZmQ3YmY1NGE2MTFjNGQzYTVmYzViNzdkNDQyOTViNjI2MDhjZmU4YzEwMGNlZTZhYjdiMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNjNlOTU5YWM2ZTQ3NGY2OTg1MTJmZmExYmRiOTFhZGE3NjkwMDZhNDRhYWUxODU2MjBjYjAwMjAzODcwY2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDg1NDU3Y2MzYjJlZDA0MDNlNzkzODAxOTM5NjYxMjdiZTU3ODA1NzBkYjRkM2Q0YTI5Mzg5YmEyNzY4NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3OTU4YzFlNjBhYmY2NjVhNTc5ODA4ODEwZjgzYzE1M2IxOTUxMWVjOGYzOTViZDMxMmRhODdhZDZkODhmM2MifQ"
+          "resource": "repo://site/documentation/architecture/index.md#L137-L152",
+          "version": "repo-lines-v1:sha256:4daf5e369a6a268c1fdfe5bc0fd2aa7fbfd3e43b5afd36dfd2c660a83d9db868:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMWE5Mjc0ZTY2ZmQ3YmY1NGE2MTFjNGQzYTVmYzViNzdkNDQyOTViNjI2MDhjZmU4YzEwMGNlZTZhYjdiMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMGY0NTcxMjU3NTVkMzNkMWI4ZjQzMGFjNzhlMWRjNzZiYWY4ZDdlZWQ4ODQyMDVhOGVjNjkyMGRiNTllZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDg1NDU3Y2MzYjJlZDA0MDNlNzkzODAxOTM5NjYxMjdiZTU3ODA1NzBkYjRkM2Q0YTI5Mzg5YmEyNzY4NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3OTU4YzFlNjBhYmY2NjVhNTc5ODA4ODEwZjgzYzE1M2IxOTUxMWVjOGYzOTViZDMxMmRhODdhZDZkODhmM2MifQ"
         }
       ]
     },
     {
       "id": "claim_45741ff1feff4ac7a0f9c6be21f8fddd",
-      "statement": "Каноническая архитектура отделяет публикацию артефактов от production CD: frontend выкладывает выбранный выпуск вручную и откатывается без пересборки; backend CD после main CI при PRODUCTION_ENABLED обновляет Go на VPS2 через gateway, Go запускает миграции, откат BFF не откатывает БД.",
+      "statement": "Артефакты frontend публикуются отдельно от ручного production CD и откатываются выбором существующего выпуска. Backend CD после main CI при PRODUCTION_ENABLED выкатывает Go по digest. Go выполняет миграции при старте, откат приложения не откатывает PostgreSQL.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/architecture/index.md#L81-L119",
-          "version": "repo-lines-v1:sha256:394cacac64bab367d678d0873cb99dc74731d3ba345afe2ed88ff584b5aed145:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MDZmOTBmZDMwMmUzYTk1ZmY2MDU1YmE2YTkwMzhhYmY3NjNkYTk5NzUzNDg3YmJiNTk5ZmY0NGMxOGEyMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMDE2YWM2MDlhMjAzYzlkMzNkMWM2OTY3ODA0YWFmOGRlZjgwNjIyOTFiMjQ4ZTEwY2JkZDJiNjliZDQxMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlNTRmZjk1MDZhNjNjZTFhMDZhZmUzNDQ3NTc2M2YzNDEwYzJkNDY2MWVmM2MxZWUwY2M1OWQxNzBlMjQ1MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NzViOTFhYzZiNDVmZGQyNzk1MWEwMGNjOWY1NWNhMGY0YTA0YWY1OWI0NmRkMjJlMmIzNWRiNGFiM2Y4MGYifQ"
+          "resource": "repo://site/documentation/architecture/index.md#L67-L76",
+          "version": "repo-lines-v1:sha256:ab45952e53ed6fc9e7c63e7af3e9c027bcd5ef51b1bf5d9c918ab4c0583a41e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MDZmOTBmZDMwMmUzYTk1ZmY2MDU1YmE2YTkwMzhhYmY3NjNkYTk5NzUzNDg3YmJiNTk5ZmY0NGMxOGEyMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZjUxYTlmZTZjZGYwYzM5YTQ3NjhiZWYyMjE4Yjk2MTUwODU3MTlhNzM3ZDVjNjAxMjkxNmUzNTA3NzZkY2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlNTRmZjk1MDZhNjNjZTFhMDZhZmUzNDQ3NTc2M2YzNDEwYzJkNDY2MWVmM2MxZWUwY2M1OWQxNzBlMjQ1MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MmJhZDZmNjNlMzRiNDQyMjVjZjkwYTFkNjU3YzlmMDE5ZGRhYWE0OGVhZGZiMTE1NmMyZmQ4YjVkYmIyNTAifQ"
+        },
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L93-L112",
+          "version": "repo-lines-v1:sha256:6bb1779b7791a98c7b67492f6aad0cdb94411bd2f10d6b67f2cc1ffb99bcfe36:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjRlOTA5N2ZlODgyY2Q2MTg0OTc1N2FhNGZiMzRlZjkyMjU3NTNhNzdkN2I2MTUyZmZlZWI5MTk3YTRlMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkOWNkZDBjNDVlYTEzYTA0MDRjMDU1Y2M2Yzk3MjJlNWU4ZjExNWM2YTFlZTIxMTQ4MWUwZDIyNzM2NDczM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjNDVlMGM3NjY0NGVlMjVlZmI2ZTJmMWY0NjJiOGMxMzc1NTU2NWM3ZGY3YzM5NGVlMTJkZWVmZjdlZWVkMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NzViOTFhYzZiNDVmZGQyNzk1MWEwMGNjOWY1NWNhMGY0YTA0YWY1OWI0NmRkMjJlMmIzNWRiNGFiM2Y4MGYifQ"
         }
       ]
     },
     {
       "id": "claim_6fa44dfbac22450a84d828d1707b765a",
-      "statement": "Согласно архитектурному документу Pulumi управляет облачными ресурсами и отдельным проектом state, Ansible — серверами и Compose, auxiliary использует hooks SQLite/outbox, Telegram proxy и Restic; backup auxiliary не доказывает backup PostgreSQL, а runtime-VPS и восстановление продукта не испытаны срезом 01.11.",
+      "statement": "Pulumi управляет облачными ресурсами и сетью, Ansible настраивает серверы и runtime-окружения. Restic обслуживает данные auxiliary. Продовая сверка не подтверждает восстановление данных продукта.",
       "evidence": [
         {
-          "resource": "repo://site/documentation/architecture/index.md#L157-L173",
-          "version": "repo-lines-v1:sha256:97f1ad7fd9777f8d089cf3957435321e3249463b9f75c6d1c446cdec0bcff226:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NWQ2ZmU1NzdlNzU3NTZkNzQxODg5YTA0NGVlOGJkMjI1OTkwNWJjMzkwMGFmY2I3ZjJhMjM0M2MzMDhlNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1Y2E5NzYzMjFhMmNhMjFmMGU4MmFmZTJlYzFkNzBlZTU5ZjcyZjg4OTc4OTUxMGRiZDQ1MDNlOTg1YWI5NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3OTU4YzFlNjBhYmY2NjVhNTc5ODA4ODEwZjgzYzE1M2IxOTUxMWVjOGYzOTViZDMxMmRhODdhZDZkODhmM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZjY0YzY0ZTQ4YTE1OTE3MjhlMmEzMzFmMzJmNzI3M2M5ZDJmMDk3ZDdiMmRkZGQxNzdjYjczNjNlY2U4NjgifQ"
+          "resource": "repo://site/documentation/architecture/index.md#L156-L167",
+          "version": "repo-lines-v1:sha256:70d767caf59992858e4d4c6648109450120521bd9e54e45d25a216d77b9728b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NWQ2ZmU1NzdlNzU3NTZkNzQxODg5YTA0NGVlOGJkMjI1OTkwNWJjMzkwMGFmY2I3ZjJhMjM0M2MzMDhlNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZDU5ZmU4MWNiOTc4ZjNiNzFhNGVhNjFlYTM0YzExNzBjZTJiNWI1ZDFkYTYwZGQwOTA1NzY1OGFkOTBmZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3OTU4YzFlNjBhYmY2NjVhNTc5ODA4ODEwZjgzYzE1M2IxOTUxMWVjOGYzOTViZDMxMmRhODdhZDZkODhmM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4NTk2MjNkNzhhNDE4NmZjMzJhZDc4NDA2NGNkZjQ2YmIyMDE4ZDVkNzc0YTk5MTNlZWQ2ODk4NDhiODY0MTIifQ"
         },
         {
-          "resource": "repo://site/documentation/architecture/index.md#L36-L42",
-          "version": "repo-lines-v1:sha256:067d91767f8add88c5d28f2626c1f5ae84e89b35572462b2b3588a257788110a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY5Yzk1OTNiYTM3M2UxNjU0MWNjNWU4YTU1NjUwZTIzODQwMGY4ZjRhZjljNDc2MWI2YzcxZjQ0MDI4NDY5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk3OGQ4YTAzYTlmMzNiNjMzNTcxYjc1NzQwMzUyMDRiYzE3MDQ1OWQ2OWI4YjRkMTIzZDM3NjI2NjFlN2E4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM4NDlmYjI4N2RjODJhMDg0NTFmNTUxMjJmYTkyNzFiMTgzZjM0Zjg3MWQ3YmE2OGY3OTlkMTVkMGZmYmY1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBlNWJmZDFmODcxMmI0MzgzMjI3ZmQ5ZDY3NGMxNDNjMTA4YjE2YTM0YzUwMDc2MDhiYjVlYzU1OWE3OGI4MiJ9"
+          "resource": "repo://site/documentation/architecture/index.md#L26-L30",
+          "version": "repo-lines-v1:sha256:784caf71f5743a081a6619416361f27fe33347a9ac2e6582a6dab3b5c543f183:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEzODEzNTEyOGJhNDUyMzIwMmE3YmNjYTgxNzI5YTE4NDYwYTI1NjUwNzI4ZjY0OTJlMTE0NzBiMDQ4NWRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJmZjNmYWE5OWMzNjlhZWQ4NDE5MGU2MDU1NzQ1MWYyZjU0YTk3ZjgyYTU5MjRjZDRkNGRhN2FlNjYwMzc2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBiYTc4MzEzNDliNDViMjkzMjZjNTc1MzdjYmQ3MjRhMjdkYjk2MGMwNjUzZWEzNGY2NTQ3NjdlYmFlZDRjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGVhYzE0Y2I4YzEwYzFmNzYwNzc5Yzg5NTgwMDg3MDhmNzFiYzkzMzI4MDkyMzJhNjc3YWQ0ODg5OTllMTBlZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef799cfee476430dbd1893c165588421",
+      "statement": "Сверка 09.11.2026 фиксирует frontend/BFF 319e691b79f81e09dcffabc04941831a5f4b5930 по HTML и CD, backend 06841d4765c28ad7e52bf5e36df3b72cb22c094e по production CD и infra a59f8584386810b0b94f5fb23cb72c7ff906f6d7 по production apply.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L12-L24",
+          "version": "repo-lines-v1:sha256:27d340a53f4f13f0cd0786c8c1f7d49df12cf709db13b9d65edb5ef2b587c939:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMTg0MDQxNDMyY2ZhYWNkOWY5OTAwMjZiZDI0ZGVjMjczMzQxMDVlODY5ZmExZjNhMjMwYjk4YmU5ZjMzMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZTE3MzA2ZjRiZDczODFmZmI2ZGJhYTM3Y2VkMmM2Nzk0ZDcwZDI3NDg4YmU1YmJkODY3OTU3MjAxMjI1NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4ZjhkYzkxMDVlNjEzM2E3NjhlNjEwM2QwZmIyM2ZiNDU2OWEzZGFiNzkyMTQzNDg3NjU4YmNlOTkzMTc5YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0OWUwMDA1NzJjMzM4OTlmOWJjYmI5YmYyMjc4MzA4YTNmNzQ3NTVlMDg5NGIwZWQ0NzJiNTc4M2VhNjM0YWIifQ"
+        },
+        {
+          "resource": "repo://site/documentation/current-state.md#L7-L13",
+          "version": "repo-lines-v1:sha256:c1638c010631d30a19f7d7684310e92f47e33232b735bd7ab1107830f11338ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU4ODJkYmIzNDYwMTFjOTJmOGQ0ZDQ4MjQwYTY2NjVhZmM0MWQ3M2JiMGE5Y2Y0YmI0NDc5MmQ4ZjEwYTU5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY2ZjQxN2JmNjc4MDhlZjAyOWUxM2UxNGVkN2FlYWVmYmNlNjA2YzI5ZDY2ZDM1ZWU3Y2QyYjY2N2ZhOWQ2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc4MTkxZjVkMzNmZmE2MDdkNjU1ZjNhZjY5Yjk1OTk0YjZkMDM4MDEzNTNmMjI1MTdmNTM0MjhhYTAzZmQ5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWUwOThlY2JkYmU3OTM5YzQ3ZDRjMTViODFhZWE0NWUwYzQyM2Q1NzQyOGFhMDRhYjMxNWIwZWI3MWJmMzA0MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f98a87f8466649749f5b6b650818af85",
+      "statement": "Гостевой прогон 09.11.2026 в 04:19 МСК подтверждает форму входа без ошибок JavaScript, HTML 200, user: null без установки cookie и публичный ответ 404 для /api/v1/users/me.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/current-state.md#L17-L25",
+          "version": "repo-lines-v1:sha256:476ba97c23ba2a0b45b9f4351737a2822223cad1c26bb0bd00d5ef45867fd42f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdkMWM1MWY5Y2VkNTE4NDMxZTA3ZjEyZjhkMDQ3NmNmYjNkMDU1MGJhNzIwOTliYzJjNjkxMTE1NTBjMWZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMxNmUwMmI4MWU5NDBiYzQ3YzBhN2IzNTgzYTI4YTllNzE1MzEyZWFlMmYyMDlmMGQyNmZjMTFjYTA0ODIwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWUwOThlY2JkYmU3OTM5YzQ3ZDRjMTViODFhZWE0NWUwYzQyM2Q1NzQyOGFhMDRhYjMxNWIwZWI3MWJmMzA0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTI5YzRiN2E2NzdiMjkyODI4YTY0MzJmZjViNmE0MDIzOTA1Yjg5NzI3NGZiNTg2YTlkZGY1M2M0NTA3N2RlNSJ9"
+        },
+        {
+          "resource": "repo://site/documentation/current-state.md#L7-L12",
+          "version": "repo-lines-v1:sha256:738137fd98a0ac2020d1cdb56c1c096caec586331f05eaa0fef0225bbfad581e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU4ODJkYmIzNDYwMTFjOTJmOGQ0ZDQ4MjQwYTY2NjVhZmM0MWQ3M2JiMGE5Y2Y0YmI0NDc5MmQ4ZjEwYTU5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGFkZDEyNTk2MjBkY2E1MWY1ZGI3M2Y3NDIxNmI5MjExZGE4MzcwZmY0NTc0YzJhZWI3MmFlMWFjMDg3YmMwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc4MTkxZjVkMzNmZmE2MDdkNjU1ZjNhZjY5Yjk1OTk0YjZkMDM4MDEzNTNmMjI1MTdmNTM0MjhhYTAzZmQ5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2UyM2ExNjVjYTVlNjgyNmQ4OTBmMzNlZTY2MzQ5MjI0YWVjN2Q2ZDcxYzI2NTk3NTZiYzRhYzFkODZmN2ZlMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_618562bed66f463c831fe935d2661892",
+      "statement": "Caddy направляет запросы к BFF, который подставляет bootstrap в HTML для CSR и вызывает Go API по приватной сети. Браузер получает JS/CSS выпуска с CDN.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L116-L132",
+          "version": "repo-lines-v1:sha256:74bd78ff5245aeaa85c94dcfaf5c31c2f9810b1318bbc8cd93d63d62ae65bb5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZDIyY2Q5ZGUwN2E1MjA0ZDg5NWJmYzg0ZTgzYjlkYTJlNWFmYWM4YTRmZWVjNDRlOWIxNzRjNGFhNzgxMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NmYzMTc0ZDhlOWEwYjkwNzFkYzM4NmY0YmYxMjVkM2RkNGZkZmNkNGMzNDA4NjJhMDdhOTVjNmU4ODcyN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1NzViOTFhYzZiNDVmZGQyNzk1MWEwMGNjOWY1NWNhMGY0YTA0YWY1OWI0NmRkMjJlMmIzNWRiNGFiM2Y4MGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMmNmNjMwMjk4NzkwMDg4MTVhNTUxZGQ4YjM3MjhkODkyZTMwNjEzYmFjYmFiMTgwOTcwZDMzMGMyODc5YjcifQ"
+        },
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L45-L63",
+          "version": "repo-lines-v1:sha256:535074692cd011f660a45bd66b23064452b809041515ee7f77ae7a3e27694144:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhOTE4NjdjZTU3MDNkY2M4ZGY2ZmVjNDUwNDBmZWRiMTI2M2ZkNWI1NWVjNjUwNDFkN2FkNjcyOTI2MTdkNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYWU1Mjk0ZDg1ODc5MWQ3Zjg2MmZkMzcwYjNiNDJmMGI5MzViYWFiM2QyMjU1Y2M0MjBlODEzZjEzZjYyMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxYzRjNDRjMjg2YjAzODZkYTE0NWUzZTA4YjgwNTYwN2IxODBiOWMwMzkyNDU3YTNiMTkzMDQ5ZWQ4N2E0MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlNTRmZjk1MDZhNjNjZTFhMDZhZmUzNDQ3NTc2M2YzNDEwYzJkNDY2MWVmM2MxZWUwY2M1OWQxNzBlMjQ1MTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56a4380f81c24347b08fe6e217cd886c",
+      "statement": "Go использует PostgreSQL для данных блокнотов, результатов и истории исполнения, Redis для авторизации и лимитов, S3 для аватаров.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L171-L177",
+          "version": "repo-lines-v1:sha256:b77c234a45cffb58b017a47a9fadc90cd7c78d52dafada8d3c22d499cc6668f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiODEwYjRiMTQxMDM4YWNlMWM2MmU5Y2MwMjViMzBjZDVmNjE5NjFmOThmYTUzZWI1MzljMzU1NmIzYWQ1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q3ZGMxMGQ3YmYyNzIzYTFmZDIyYWM4YWQ3ZWQ1NGE4MTI2OTBjYjAwMDUzMWI4MTVmZWIyOThiMDI5NTZhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjg1OTYyM2Q3OGE0MTg2ZmMzMmFkNzg0MDY0Y2RmNDZiYjIwMThkNWQ3NzRhOTkxM2VlZDY4OTg0OGI4NjQxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjViOTFjNTljYzk4NmM0ZjAzMWQ2NThmZGI4Y2RhYjE3ZmFkOTJhNWJlMGI5ZDQyNDM1ODcxZDRkMjMyZTE3MyJ9"
+        },
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L47-L58",
+          "version": "repo-lines-v1:sha256:34b60e47d8746499efe55d7cf46ed2857dadf22bfbd7f1b34ea754102b2284c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNWFmNDMxOTU4M2JiY2I1ZmYyZmUzYTI2Y2MzYzMzMDFmNDI2YzNhZTZhODJjZjA4MGYwNTY5ZTg0YzU2MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZjUxMDFhM2M2MjFiMWJlYjY4ZWRkMWUwNzcxN2ZhMWNmYzViMTIzZWRiZDU1OTZhZGRlMWUxZGU0ZTdjZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1ZWVlOWU3ODc0ZTBlMDk0YWRmYWFhOTkyMTQyM2RmYjU3YTM4Y2I3NDBiYzg3MWYyMWJmYjgyYmRjZDlmYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMWJhN2ExNGYxYTgzM2Y4MTJjNTk1ODI0OWRkYzJkNWFmY2VkNzkyZGUzMjAwYjBjNzExMDIyZWVmMjlmOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ca1ac5d034b47e7a63c810ce7fb962d",
+      "statement": "В описанном коде OpenStack и Ansible готовят отдельную runtime-среду; Go вызывает nginx по mTLS, агент запускает kernel, постоянные данные хранятся в PostgreSQL.",
+      "evidence": [
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L179-L186",
+          "version": "repo-lines-v1:sha256:ced1f568a02c522af4721120fcab0630ab2fe18fa484f8084fb3d5f0d70b7617:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmFmMTk4OTU1ODlhZmY3NGUzYzU5ODVjYjFmYTIyMWVkMGZiYWRiZmU5MmIxNmJmMGI5MDkwNjY5NWNlNzcxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2QzOGM5NTBlMWU0ZDc4YTEzZWI2ZTM2YjY0ZTI4MTg3ZjE2MjkxMzY2OTA1Y2Q3MjY1MTM1YzUyODA4M2Q5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzJiZjJmOTE0ZDRiOWUwYThmOWQxNmYyMmI2ZmM3NzI0YTZkMzdmM2RkZTk1NWYzZTJmOTdkMWI0NjkzNzc2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTdkYTg5MDA3NTBlNDQzZGM0YTFhMGRjM2I2NzdjYjkxNjFmNWRmZGFiY2FiNWIwYTQzMjYxZmFhYWE3YjZlZCJ9"
+        },
+        {
+          "resource": "repo://site/documentation/architecture/index.md#L191-L206",
+          "version": "repo-lines-v1:sha256:663be17d8f430f9f583a9832588aa34e33257a7c0763a1d7834d42ffcc285dd0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmFlMGRhMWVhOGExNDFlNTFkNzIxZDkwZTRjNDRhZmMwYTQ1MWY4Mjk1NjA4YThmNGMyMWJjNDY1ZDM0OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMDA3NjFhZDVlNDM1ZmNlZjA1NTMzNGY1NmNiYmZkMGYyNDUzZDRiYzQ1ODliZjYyMzQ2Njc3YjY4YzVhNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MjJlY2M4Y2E2ZWExMTU3YjZlZTRkN2IyNjZkMThiNjFhMTI4NDgwNGJjNGVmNWVkMjUyOGMwM2EyMTgwMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYjk0YmNlYTM3MmNjN2QzZTM2YzczNmI2NWNmMzk4NDE5NzUzM2Q4YmRjMWViYjMzZDFmNDA5YmY1MzM3YTIifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-02T21:45:57.919Z"
+    "at": "2026-11-20T16:39:19.736Z"
   }
 }
