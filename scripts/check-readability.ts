@@ -2047,7 +2047,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   assert.equal(await marker(), undefined);
   assert.equal(new URL(page.url()).pathname, `${SITE_BASE}openwiki/`);
   await page.waitForSelector('html[data-static-export="true"] .wiki-page-provenance');
-  assert.equal(await page.$$eval('.wiki-source', cards => cards.length), 4);
+  assert.deepEqual(await page.$$eval('.wiki-source', cards => cards.map(card => card.getAttribute('data-wiki'))), ['docs', 'infra']);
   await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
   await page.click('button[aria-label="Найти в документации"]');
   await page.waitForSelector('#localsearch-input', { visible: true });

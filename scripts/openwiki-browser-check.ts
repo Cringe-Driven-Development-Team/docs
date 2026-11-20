@@ -41,7 +41,11 @@ async function main(args: string[]) {
       assert.equal((await page.request.get(new URL('../favicon.svg',base).href)).status(),200,'favicon under preview base');
       await page.locator('.wiki-page-provenance').waitFor({timeout:60000});
       assert.match(await page.locator('.wiki-page-provenance').innerText(), /docs\/openwiki\/quickstart.md/);
-      assert.equal(await page.locator('.wiki-source').count(),2);
+      const search = page.getByRole('searchbox', { name: 'Поиск по wiki' });
+      assert(await search.isVisible(), 'the public wiki has an accessible search field');
+      const cards = page.locator('.wiki-source');
+      assert.deepEqual(await cards.evaluateAll(cards => cards.map(card => card.getAttribute('data-wiki'))), ['docs', 'infra']);
+      assert.equal(await cards.evaluateAll(cards => cards[0]!.getBoundingClientRect().width + cards[1]!.getBoundingClientRect().width), width, 'source cards fill two columns');
       const filters = page.locator('#wiki-filters button');
       assert.deepEqual(await filters.allTextContents(), ['Все', 'docs', 'infra']);
       const manifest = await (await page.request.get(base+'manifest.json')).json();
@@ -97,6 +101,38 @@ async function main(args: string[]) {
         await page.locator('.mermaid svg').waitFor();
         assert.equal(await page.evaluate('window.wikiXss'),undefined);
         assert.equal(await page.locator('.md script, .md [onerror]').count(),0);
+        const results = page.locator('#sidebar .nav-item:visible');
+        const resultIds = () => results.evaluateAll(buttons => buttons.map(button => button.getAttribute('data-id')));
+        const status = page.locator('#sidebar').getByRole('status');
+        const beforeSearch = page.url();
+        for (const [query, expected] of [
+          ['  iNfRa QuIcK  ', ['infra/quickstart']],
+          ['architecture/index', ['docs/architecture/index', 'infra/architecture/index']],
+          ['Deployment-Marker', ['infra/details']],
+          ['  dEpLoYmEnT bEaCoN  ', ['infra/details']],
+        ] as const) {
+          await search.fill(query);
+          assert.deepEqual(await resultIds(), expected, `matches ${query.trim()}`);
+        }
+        assert.equal(page.url(), beforeSearch, 'search keeps the current reader route');
+        await docsFilter.click();
+        assert.deepEqual(await resultIds(), [], 'a matching page outside the selected wiki is excluded');
+        assert.match(await status.innerText(), /ничего не найдено/i);
+        await search.fill('');
+        assert.deepEqual((await resultIds()).sort(), ['docs/architecture/index', 'docs/details', 'docs/index', 'docs/quickstart']);
+        assert.equal(await status.innerText(), '');
+        await allFilter.click();
+        await search.fill('unmatched-query');
+        assert.deepEqual(await resultIds(), []);
+        assert.match(await status.innerText(), /ничего не найдено/i);
+        await search.fill('deployment beacon');
+        const previousReader = page.url();
+        await results.getByText('Details', { exact: true }).click();
+        assert.match(await provenance.innerText(), /infra\/openwiki\/details.md/);
+        assert.equal(new URL(page.url()).searchParams.get('wiki'), 'infra');
+        await page.goBack();
+        assert.equal(page.url(), previousReader);
+        assert.match(await provenance.innerText(), /docs\/openwiki\/details.md/);
       }
       const graph = await (await page.request.get(base+'graph.json')).json();
       for (const wiki of ['docs', 'infra']) {

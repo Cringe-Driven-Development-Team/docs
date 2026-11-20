@@ -67,7 +67,7 @@ test('ForceGraph receives only visible copies, repo colors, and no hidden cross 
 });
 
 test('sidebar and provenance escape titles and metadata with no inline data scripts', () => {
-  const result = runtime(`masterGraph = input; input.sources[0].sourceSha = '<bad "sha">'; graph = filterWorkspaceGraph(masterGraph, null); const elements = {}; const el = () => ({ innerHTML: '', querySelectorAll: () => [] }); document.querySelector = s => elements[s] ??= el(); buildSidebar(); renderWorkspaceSources(); ({ sidebar: elements['#sidebar'].innerHTML, sources: elements['#wiki-sources'].innerHTML, metadata: workspaceProvenance(input.nodes[0]) });`);
+  const result = runtime(`masterGraph = input; input.sources[0].sourceSha = '<bad "sha">'; graph = filterWorkspaceGraph(masterGraph, null); const elements = {}; const el = () => ({ innerHTML: '', value: '', querySelectorAll: () => [] }); document.querySelector = s => elements[s] ??= el(); buildSidebar(); renderWorkspaceSources(); ({ sidebar: elements['#wiki-pages'].innerHTML, sources: elements['#wiki-sources'].innerHTML, metadata: workspaceProvenance(input.nodes[0]) });`);
   expect(result.sidebar).toContain('&quot;&lt;img onerror=bad()&gt;');
   expect(result.sidebar).not.toContain('<img');
   expect(result.sources).toContain('16:53 31 октября 2026 г. МСК');
@@ -85,7 +85,7 @@ const elements = {};
 const events = {};
 let headings = [], anchors = [];
 const el = () => ({
-  innerHTML: '', textContent: '', scrollTop: 0, dataset: {},
+  innerHTML: '', textContent: '', scrollTop: 0, dataset: {}, value: '',
   append(child) { this.appended = child; },
   removeEventListener() {},
   querySelectorAll(selector) { return selector.startsWith('.md h') ? headings : selector === '.md a' ? anchors : selector === '[data-workspace-home]' ? [document.querySelector('#map-button')] : []; },

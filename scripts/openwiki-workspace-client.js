@@ -30,15 +30,20 @@ function workspaceLegend() {
 }
 
 function workspaceSidebar() {
-    $('#sidebar').innerHTML = `<div class="sb-head"><span class="sb-title">Страницы</span><span class="sb-count">${graph.nodes.length}</span></div>` +
+    const query = $('#wiki-search').value.trim().toLowerCase();
+    const matches = query ? graph.nodes.filter(n =>
+        [n.title, n.page, ...n.tags, n.body].some(value => value.toLowerCase().includes(query)),
+    ) : graph.nodes;
+    const list = $('#wiki-pages');
+    list.innerHTML = `<div class="sb-head"><span class="sb-title">Страницы</span><span class="sb-count">${matches.length}</span></div>` +
         wikiOrder.map(wiki => {
-            const pages = graph.nodes.filter(n => n.wiki === wiki).sort((a, b) => a.title.localeCompare(b.title));
+            const pages = matches.filter(n => n.wiki === wiki).sort((a, b) => a.title.localeCompare(b.title));
             if (!pages.length) return '';
             return `<div class="sb-group"><div class="sb-group-head"><span class="swatch" style="background:${wikiPalette[wiki]}"></span>${wiki} · ${pages.length}</div>` +
-                pages.map(n => `<button type="button" class="nav-item" data-id="${escapeHtml(n.id)}"><span class="dot" style="background:${wikiPalette[wiki]}"></span><span class="nm" title="${escapeHtml(n.title)}">${escapeHtml(n.title)}</span></button>`).join('') + '</div>';
+                pages.map(n => `<button type="button" class="nav-item${n.id === readerId ? ' active' : ''}" data-id="${escapeHtml(n.id)}"><span class="dot" style="background:${wikiPalette[wiki]}"></span><span class="nm" title="${escapeHtml(n.title)}">${escapeHtml(n.title)}</span></button>`).join('') + '</div>';
         }).join('');
-    $('#sidebar').querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => selectNode(button.dataset.id)));
-    refreshSidebarActive();
+    list.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => selectNode(button.dataset.id)));
+    $('#wiki-search-status').textContent = query && !matches.length ? 'Ничего не найдено.' : '';
 }
 
 function freshnessLabel(source) {
@@ -192,6 +197,7 @@ async function workspaceLoad(firstTime) {
     masterGraph = await response.json();
     refreshWorkspaceGraph();
     if (firstTime) {
+        $('#wiki-search').addEventListener('input', workspaceSidebar);
         // ForceGraph clears its container; retain the native legend and controls overlay.
         const overlay = $('#graph-overlay');
         initGraph();

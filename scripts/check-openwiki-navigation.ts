@@ -46,8 +46,8 @@ try {
       assert.equal(new URL(page.url()).pathname, `${SITE_BASE}openwiki/`);
       assert.equal(await page.evaluate(() => (window as unknown as Record<string, unknown>).__wikiNavigationProbe), undefined);
       await page.waitForSelector('html[data-static-export="true"] .wiki-page-provenance');
-      assert.equal(await page.$$eval('.wiki-source', cards => cards.length), 4);
-      console.log(`PASS ${SITE_BASE}${source || '(home)'} click: new static wiki document with four sources`);
+      assert.deepEqual(await page.$$eval('.wiki-source', cards => cards.map(card => card.getAttribute('data-wiki'))), ['docs', 'infra']);
+      console.log(`PASS ${SITE_BASE}${source || '(home)'} click: new static wiki document with docs and infra`);
     } catch (error) {
       failures.push(`${source || 'home'}: ${String(error)}`);
     }

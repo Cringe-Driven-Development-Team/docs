@@ -18,7 +18,9 @@ export async function createExportFixture(root: string): Promise<string> {
     await writeFile(join(wikiRoot, 'architecture/index.md'), '# Architecture\n');
     const other = id === 'docs' ? 'infra' : 'docs';
     await writeFile(join(wikiRoot, 'quickstart.md'), `---\ntitle: ${id} quickstart\ntype: Reference\n---\n# ${id}\n[Details](details.md#section)\n[${other}](https://github.com/Cringe-Driven-Development-Team/${other}/blob/main/openwiki/quickstart.md)\n`);
-    await writeFile(join(wikiRoot, 'details.md'), '---\ntitle: Details\ntype: Reference\n---\n# Details\n## Section\n<script>window.wikiXss = true</script><img src=x onerror="window.wikiXss=true">\n```mermaid\ngraph LR\n A --> B\n```\n');
+    const tags = id === 'infra' ? 'tags: [deployment-marker]\n' : '';
+    const body = id === 'infra' ? '\nA blue deployment beacon.\n' : '';
+    await writeFile(join(wikiRoot, 'details.md'), `---\ntitle: Details\ntype: Reference\n${tags}---\n# Details\n## Section\n<script>window.wikiXss = true</script><img src=x onerror="window.wikiXss=true">\n\`\`\`mermaid\ngraph LR\n A --> B\n\`\`\`\n${body}`);
   }
   await Bun.$`git -C ${root} -c user.name=Fixture -c user.email=fixture@example.com commit --allow-empty -qm after-checkpoint`.quiet();
   await writeFile(join(snapshotDir, 'snapshot.json'), JSON.stringify({

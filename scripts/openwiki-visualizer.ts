@@ -51,6 +51,8 @@ export function adaptWorkspaceAssets(native: Assets, version: string): Assets {
   new Bun.Transpiler({ loader: 'js' }).transformSync(clientJs);
   let html = replaceOnce(native.html, '<div class="main" id="main">',
     '<section id="wiki-sources" aria-label="Источники wiki"></section>\n<div class="main" id="main">', 'main');
+  html = replaceOnce(html, '<nav class="sidebar" id="sidebar"></nav>',
+    '<nav class="sidebar" id="sidebar">\n    <input class="search" id="wiki-search" type="search" aria-label="Поиск по wiki" placeholder="Поиск" autocomplete="off" />\n    <div id="wiki-pages"></div>\n    <div id="wiki-search-status" role="status"></div>\n  </nav>', 'sidebar');
   html = replaceOnce(html, '  <div class="spacer"></div>',
     '  <div id="wiki-filters" role="group" aria-label="Фильтр репозитория"></div>\n  <div class="spacer"></div>', 'filters');
   html = replaceOnce(html, '</head>', '<link rel="icon" type="image/svg+xml" href="../favicon.svg" />\n</head>', 'head');
