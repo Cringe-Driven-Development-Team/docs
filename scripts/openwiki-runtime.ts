@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 const setupCall = `    await ensureCodeModeRepoSetup(input.root, {
         createWorkflow: input.mode === "init",
     });`;
+const preflightGuard = `if (!(error instanceof EvidenceSecurityError)) {`;
 
 export async function prepareOpenWikiRuntime(temporary: string, worktree: string, packageRoot = dirname(require.resolve("openwiki/package.json"))): Promise<string> {
   packageRoot = await realpath(packageRoot);
@@ -12,6 +13,9 @@ export async function prepareOpenWikiRuntime(temporary: string, worktree: string
   const relative = "dist/generation/repository-run.js";
   const source = await readFile(join(packageRoot, relative), "utf8");
   if (source.split(setupCall).length !== 2) throw new Error("OpenWiki setup patch anchor changed; refusing to start generation.");
+  const preflightPath = "dist/claims/brains/code/preflight.js";
+  const preflight = await readFile(join(packageRoot, preflightPath), "utf8");
+  if (preflight.split(preflightGuard).length !== 2) throw new Error("OpenWiki Claims preflight patch anchor changed; refusing to start generation.");
   const runtime = join(temporary, "openwiki-runtime");
   await mkdir(runtime);
   await cp(join(packageRoot, "dist"), join(runtime, "dist"), { recursive: true });
@@ -22,5 +26,9 @@ export async function prepareOpenWikiRuntime(temporary: string, worktree: string
   // shortcut: 0.7.2 rewrites source instructions before scanning; review/remove this patch on upgrade.
   const guarded = `    if (input.mode !== "update" || input.root !== ${JSON.stringify(await realpath(worktree))}) {\n${setupCall}\n    }`;
   await writeFile(join(runtime, relative), source.replace(setupCall, guarded));
+  // shortcut: 0.7.2 aborts on excluded evidence during preflight; review on upgrade.
+  const recoverableEvidence = `if (!(error instanceof EvidenceSecurityError) &&
+                        !(error instanceof Error && error.name === "EvidenceResourceError" && error.message.startsWith("Evidence path is excluded by .openwikiignore: "))) {`;
+  await writeFile(join(runtime, preflightPath), preflight.replace(preflightGuard, recoverableEvidence));
   return join(runtime, "dist/cli/cli.js");
 }

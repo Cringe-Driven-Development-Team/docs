@@ -46,3 +46,27 @@ test("runtime copy preserves stock setup for init and other roots, without modif
   }
   expect(readFileSync(installed, "utf8")).toBe(original);
 });
+
+test("preflight marks an excluded source unresolved without allowing it as evidence", async () => {
+  const root = directory();
+  const entry = await prepareOpenWikiRuntime(directory(), root);
+  const dist = pathToFileURL(`${dirname(dirname(entry))}/`);
+  const { OpenWikiIgnore } = await import(new URL("agent/openwiki-ignore.js", dist).href);
+  const { RepositoryEvidenceResolver } = await import(new URL("claims/evidence/repository/resolver.js", dist).href);
+  const { runClaimsPreflight } = await import(new URL("claims/brains/code/preflight.js", dist).href);
+  writeFileSync(join(root, ".openwikiignore"), "orval.config.ts\n");
+  const resolver = new RepositoryEvidenceResolver({ rootDir: root, openWikiIgnore: await OpenWikiIgnore.load(root) });
+  const page = "/openwiki/quickstart.md";
+  const resource = "repo://orval.config.ts";
+  const claim = { id: "claim-1", evidence: [{ resource, version: "previous" }] };
+  const store = {
+    discoverPages: async () => [page],
+    loadPages: async () => new Map([[page, { claims: [claim] }]]),
+    discoverSidecarPages: async () => [page],
+  };
+
+  expect((await runClaimsPreflight(store, resolver)).issues).toEqual([
+    { page, kind: "unresolved", claimId: claim.id, resources: [resource] },
+  ]);
+  await expect(resolver.resolve(resource)).rejects.toThrow(/excluded by .openwikiignore/);
+});
