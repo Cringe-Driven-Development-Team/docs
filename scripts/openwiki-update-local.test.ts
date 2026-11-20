@@ -455,11 +455,13 @@ test("a module-only main change skips generation", async () => {
 });
 
 for (const origin of [
+  "https://github.com/Cringe-Driven-Development-Team/frontend.git",
+  "https://github.com/Cringe-Driven-Development-Team/backend.git",
   "https://github.com/TP-Prepare/frontend.git",
   "https://github.com/Cringe-Driven-Development-Team/frontend-packages.git",
   "https://example.invalid/Cringe-Driven-Development-Team/docs.git",
 ]) {
-  test(`foreign origin ${origin} is rejected before fetch or model`, async () => {
+  test(`unsupported origin ${origin} is rejected before fetch, Codex or gh`, async () => {
     const f = fixture(true, origin);
     await expect(runLocalUpdate(f.root, f.exec)).rejects.toThrow(/origin/);
     expect(f.calls.some((c) => c.binary === "codex" || c.binary === "gh" || c.args[0] === "fetch")).toBe(false);
@@ -467,17 +469,15 @@ for (const origin of [
   });
 }
 
-for (const repo of ["frontend", "backend", "infra"]) {
-  test(`${repo} uses its own source filter and checker CLI without package scripts`, async () => {
-    const f = fixture(true, `git@github.com:Cringe-Driven-Development-Team/${repo}.git`, true);
-    expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
-    expect(f.calls.filter((c) => c.binary === "bun").map((c) => c.args)).toEqual([
-      ["scripts/openwiki-check.ts", "--against", f.target],
-    ]);
-    const prompt = f.calls.find((c) => c.binary === "codex")!.args.at(-1)!;
-    expect(prompt).toContain("не доказывает");
-  });
-}
+test("infra uses its own source filter and checker CLI without package scripts", async () => {
+  const f = fixture(true, "git@github.com:Cringe-Driven-Development-Team/infra.git", true);
+  expect(await runLocalUpdate(f.root, f.exec)).toBe("pr-created");
+  expect(f.calls.filter((c) => c.binary === "bun").map((c) => c.args)).toEqual([
+    ["scripts/openwiki-check.ts", "--against", f.target],
+  ]);
+  const prompt = f.calls.find((c) => c.binary === "codex")!.args.at(-1)!;
+  expect(prompt).toContain("не доказывает");
+});
 
 test("CLI --repo selects a path containing spaces instead of caller cwd", () => {
   const f = fixture(false);

@@ -1,6 +1,6 @@
 import type { WikiId, WikiRoute, WikiSource, WorkspaceGraph } from './openwiki-workspace.ts';
 
-const wikiIds: readonly string[] = ['docs', 'frontend', 'backend', 'infra'];
+const wikiIds: readonly string[] = ['docs', 'infra'];
 const isWikiId = (value: string): value is WikiId => wikiIds.includes(value);
 const safeText = (value: string): boolean => !/[\u0000-\u001f\u007f\\]/.test(value);
 const isPage = (page: string): boolean => safeText(page) && !page.endsWith('.md')

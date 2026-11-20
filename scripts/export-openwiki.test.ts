@@ -11,7 +11,7 @@ async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'wiki-export-')); roots.push(root);
   return { root, snapshotDir: await createExportFixture(root) };
 }
-test('publishes exactly four sources, seven assets, checkpoint provenance and replaces only wiki output', async () => {
+test('publishes docs and infra, seven assets, checkpoint provenance and replaces only wiki output', async () => {
   const { root, snapshotDir } = await fixture();
   await mkdir(join(root, 'dist/openwiki'), { recursive: true });
   await writeFile(join(root, 'dist/openwiki/stale.txt'), 'old');
@@ -20,10 +20,11 @@ test('publishes exactly four sources, seven assets, checkpoint provenance and re
   expect((await stat(join(root,'dist/openwiki'))).mode & 0o777).toBe(0o755);
   const graph = await Bun.file(join(root, 'dist/openwiki/graph.json')).json();
   const manifest = await Bun.file(join(root, 'dist/openwiki/manifest.json')).json();
-  expect(graph.sources.map((s: {id: string}) => s.id).sort()).toEqual(['backend', 'docs', 'frontend', 'infra']);
-  expect(graph.nodes.filter((n: {page: string}) => n.page === 'quickstart')).toHaveLength(4);
+  expect(manifest.sources.map((source: {id: string}) => source.id)).toEqual(['docs', 'infra']);
+  expect([...new Set(graph.nodes.map((node: {wiki: string}) => node.wiki))].sort()).toEqual(['docs', 'infra']);
+  expect(graph.nodes.filter((n: {page: string}) => n.page === 'quickstart')).toHaveLength(2);
   expect(manifest.sources).toEqual(graph.sources);
-  expect(manifest.sources[0].repositorySha).toBe('c'.repeat(40));
+  expect(manifest.sources[1].repositorySha).toBe('d'.repeat(40));
   const checkpoint = await Bun.file(join(root,'openwiki/.last-update.json')).json();
   expect(manifest.sources.every((s:{sourceSha:string}) => s.sourceSha === checkpoint.gitHead)).toBe(true);
   const docs = manifest.sources.find((s:{id:string}) => s.id === 'docs');

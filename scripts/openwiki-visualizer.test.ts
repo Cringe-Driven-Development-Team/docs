@@ -13,7 +13,7 @@ const native = {
 };
 const source = (id: string) => ({ id, updatedAt: '2026-10-31T13:53:00.000Z', sourceSha: 'a'.repeat(40), repositorySha: 'b'.repeat(40), freshness: 'stale' });
 const node = (wiki: string, page: string, title = page) => ({ id: `${wiki}/${page}`, wiki, page, title, type: 'Reference', description: '', tags: [], body: '# Hello', size: 7, links: [], backlinks: [] });
-const graph = { root: 'CDD', generatedAt: '2026-11-01T00:00:00.000Z', types: ['Reference'], sources: ['docs', 'frontend', 'backend', 'infra'].map(source), nodes: [node('docs', 'quickstart'), node('frontend', 'quickstart'), node('frontend', 'architecture/bff', '\"<img onerror=bad()>')], edges: [{ source: 'docs/quickstart', target: 'frontend/quickstart' }, { source: 'frontend/quickstart', target: 'frontend/architecture/bff' }] };
+const graph = { root: 'CDD', generatedAt: '2026-11-01T00:00:00.000Z', types: ['Reference'], sources: ['docs', 'infra'].map(source), nodes: [node('docs', 'quickstart'), node('infra', 'quickstart'), node('infra', 'architecture/deployment', '\"<img onerror=bad()>')], edges: [{ source: 'docs/quickstart', target: 'infra/quickstart' }, { source: 'infra/quickstart', target: 'infra/architecture/deployment' }] };
 
 function runtime(extra = '') {
   const assets = adaptWorkspaceAssets(native, '0.7.2');
@@ -59,19 +59,19 @@ test('adapter rejects invalid assembled JavaScript during the build', () => {
 });
 
 test('ForceGraph receives only visible copies, repo colors, and no hidden cross edges', () => {
-  const result = runtime(`masterGraph = input; activeWiki = 'frontend'; graph = filterWorkspaceGraph(masterGraph, activeWiki); const payload = buildGraphData(); payload.nodes[0].tags.push('mutation'); payload.links[0].source = payload.nodes[0]; ({ payload, masterGraph });`);
-  expect(result.payload.nodes.map((n: { id: string }) => n.id)).toEqual(['frontend/quickstart', 'frontend/architecture/bff']);
+  const result = runtime(`masterGraph = input; activeWiki = 'infra'; graph = filterWorkspaceGraph(masterGraph, activeWiki); const payload = buildGraphData(); payload.nodes[0].tags.push('mutation'); payload.links[0].source = payload.nodes[0]; ({ payload, masterGraph });`);
+  expect(result.payload.nodes.map((n: { id: string }) => n.id)).toEqual(['infra/quickstart', 'infra/architecture/deployment']);
   expect(result.payload.links).toHaveLength(1);
-  expect(result.payload.nodes[0].color).toBe('#A97FE0');
+  expect(result.payload.nodes[0].color).toBe('#E0A63E');
   expect(result.masterGraph).toEqual(graph);
 });
 
 test('sidebar and provenance escape titles and metadata with no inline data scripts', () => {
-  const result = runtime(`masterGraph = input; input.sources[0].sourceSha = '<bad "sha">'; graph = filterWorkspaceGraph(masterGraph, null); const elements = {}; const el = () => ({ innerHTML: '', querySelectorAll: () => [] }); document.querySelector = s => elements[s] ??= el(); buildSidebar(); renderWorkspaceSources(); ({ sidebar: elements['#sidebar'].innerHTML, sources: elements['#wiki-sources'].innerHTML, metadata: workspaceProvenance(input.nodes[0]) });`);
+  const result = runtime(`masterGraph = input; input.sources[0].sourceSha = '<bad "sha">'; graph = filterWorkspaceGraph(masterGraph, null); const elements = {}; const el = () => ({ innerHTML: '', value: '', querySelectorAll: () => [] }); document.querySelector = s => elements[s] ??= el(); buildSidebar(); renderWorkspaceSources(); ({ sidebar: elements['#wiki-pages'].innerHTML, sources: elements['#wiki-sources'].innerHTML, metadata: workspaceProvenance(input.nodes[0]) });`);
   expect(result.sidebar).toContain('&quot;&lt;img onerror=bad()&gt;');
   expect(result.sidebar).not.toContain('<img');
   expect(result.sources).toContain('16:53 31 октября 2026 г. МСК');
-  expect(result.sources).toContain(`/frontend/commit/${'a'.repeat(40)}`);
+  expect(result.sources).toContain(`/infra/commit/${'a'.repeat(40)}`);
   expect(result.metadata).toContain(`/docs/blob/${'b'.repeat(40)}/openwiki/quickstart.md`);
   expect(result.metadata).toContain('Устарела');
   expect(result.metadata).toContain('title="&lt;bad &quot;sha&quot;&gt;"');
@@ -85,7 +85,7 @@ const elements = {};
 const events = {};
 let headings = [], anchors = [];
 const el = () => ({
-  innerHTML: '', textContent: '', scrollTop: 0, dataset: {},
+  innerHTML: '', textContent: '', scrollTop: 0, dataset: {}, value: '',
   append(child) { this.appended = child; },
   removeEventListener() {},
   querySelectorAll(selector) { return selector.startsWith('.md h') ? headings : selector === '.md a' ? anchors : selector === '[data-workspace-home]' ? [document.querySelector('#map-button')] : []; },
@@ -119,26 +119,26 @@ test('filter changes preserve selection, cross-wiki navigation switches repo and
   const result = runtime(browser + `
     const snapshots = [];
     const capture = () => snapshots.push({ activeWiki, current, ids: graph.nodes.map(n => n.id), href: window.location.href });
-    navigateWorkspace({ wiki: 'frontend', page: 'architecture/bff', section: 'hello' });
-    setWorkspaceFilter('frontend'); capture();
+    navigateWorkspace({ wiki: 'infra', page: 'architecture/deployment', section: 'hello' });
+    setWorkspaceFilter('infra'); capture();
     setWorkspaceFilter(null); capture();
     setWorkspaceFilter('docs'); capture();
-    navigateWorkspace({ wiki: 'frontend', page: 'architecture/bff' }); capture();
+    navigateWorkspace({ wiki: 'infra', page: 'architecture/deployment' }); capture();
     snapshots;
   `);
-  expect(result[0].current).toBe('frontend/architecture/bff');
-  expect(result[0].href).toContain('?wiki=frontend&page=architecture%2Fbff#hello');
-  expect(result[0].ids).toEqual(['frontend/quickstart', 'frontend/architecture/bff']);
-  expect(result[1].current).toBe('frontend/architecture/bff');
+  expect(result[0].current).toBe('infra/architecture/deployment');
+  expect(result[0].href).toContain('?wiki=infra&page=architecture%2Fdeployment#hello');
+  expect(result[0].ids).toEqual(['infra/quickstart', 'infra/architecture/deployment']);
+  expect(result[1].current).toBe('infra/architecture/deployment');
   expect(result[1].ids).toHaveLength(3);
   expect(result[2].current).toBe('docs/quickstart');
-  expect(result[3].activeWiki).toBe('frontend');
-  expect(result[3].current).toBe('frontend/architecture/bff');
+  expect(result[3].activeWiki).toBe('infra');
+  expect(result[3].current).toBe('infra/architecture/deployment');
 });
 
 test('initial URL, popstate and hashchange restore the page and never push history', async () => {
   const result = await runtime(browser + `
-    window.location.href += '?wiki=frontend&page=architecture%2Fbff#hello';
+    window.location.href += '?wiki=infra&page=architecture%2Fdeployment#hello';
     let pushes = 0;
     window.history.pushState = () => pushes++;
     (async () => {
@@ -153,7 +153,7 @@ test('initial URL, popstate and hashchange restore the page and never push histo
     })();
   `);
   expect(result.overlayPreserved).toBe(true);
-  expect(result.initial).toBe('frontend/architecture/bff');
+  expect(result.initial).toBe('infra/architecture/deployment');
   expect(result.back).toBe('docs/quickstart');
   expect(result.current).toBe('docs/quickstart');
   expect(result.currentRoute.section).toBe('missing');
@@ -164,7 +164,7 @@ test('initial URL, popstate and hashchange restore the page and never push histo
 test('not-found keeps the requested URL and provides a working map action for malformed and absent routes', () => {
   const result = runtime(browser + `
     const snapshots = [];
-    for (const search of ['?wiki=infra&page=missing', '?wiki=unknown&page=quickstart', '?wiki=docs&page=%']) {
+    for (const search of ['?wiki=infra&page=missing', '?wiki=frontend&page=quickstart', '?wiki=backend&page=quickstart', '?wiki=unknown&page=quickstart', '?wiki=docs&page=%']) {
       window.location.href = 'https://example.org/preview/openwiki/' + search;
       workspaceLocation();
       snapshots.push({ current, href: window.location.href, html: elements['#detail'].innerHTML });
@@ -186,19 +186,25 @@ test('not-found keeps the requested URL and provides a working map action for ma
 test('reader headings get stable unique IDs and missing sections keep the selected page', () => {
   const result = runtime(browser + `
     headings = ['Привет мир!', 'Привет мир!', 'Привет-мир-1', ''].map(textContent => ({ textContent, scrollIntoView() { this.scrolled = true; } }));
-    navigateWorkspace({ wiki: 'frontend', page: 'architecture/bff', section: 'привет-мир-1' });
+    navigateWorkspace({ wiki: 'infra', page: 'architecture/deployment', section: 'привет-мир-1' });
     const first = headings.map(h => ({ id: h.id, scrolled: h.scrolled ?? false }));
-    navigateWorkspace({ wiki: 'frontend', page: 'architecture/bff', section: '<missing>' });
+    navigateWorkspace({ wiki: 'infra', page: 'architecture/deployment', section: '<missing>' });
     ({ first, current, detail: elements['#detail'].innerHTML });
   `);
   expect(result.first).toEqual([{ id: 'привет-мир', scrolled: false }, { id: 'привет-мир-1', scrolled: true }, { id: 'привет-мир-1-1', scrolled: false }, { id: 'section', scrolled: false }]);
-  expect(result.current).toBe('frontend/architecture/bff');
+  expect(result.current).toBe('infra/architecture/deployment');
   expect(result.detail).toContain('Раздел «&lt;missing&gt;» не найден');
 });
 
 test('supported links navigate inside preview including not-found; code, historical refs and modified clicks stay ordinary', () => {
   const result = runtime(browser + `
-    const hrefs = ['https://github.com/Cringe-Driven-Development-Team/frontend/blob/main/openwiki/architecture/bff.md#hello', 'missing.md', 'https://github.com/Cringe-Driven-Development-Team/frontend/blob/old/openwiki/quickstart.md', 'https://github.com/Cringe-Driven-Development-Team/backend/blob/main/src/main.go'];
+    const ordinary = [
+      'https://github.com/Cringe-Driven-Development-Team/infra/blob/old/openwiki/quickstart.md',
+      'https://github.com/Cringe-Driven-Development-Team/frontend/blob/main/openwiki/quickstart.md',
+      'https://github.com/Cringe-Driven-Development-Team/backend/blob/main/openwiki/quickstart.md',
+      'https://github.com/Cringe-Driven-Development-Team/backend/blob/main/src/main.go'
+    ];
+    const hrefs = ['https://github.com/Cringe-Driven-Development-Team/infra/blob/main/openwiki/architecture/deployment.md#hello', 'missing.md', ...ordinary];
     anchors = hrefs.map(href => ({ href, getAttribute: () => href, hasAttribute: () => false, classList: { add() {} }, addEventListener(type, handler) { this[type] = handler; } }));
     workspaceLinks(input.nodes[0]);
     let prevented = 0;
@@ -208,40 +214,46 @@ test('supported links navigate inside preview including not-found; code, histori
     anchors[0].click(event);
     const cross = current;
     anchors[1].click?.(event);
-    ({ cross, modified, current, prevented, hrefs: anchors.map(a => a.href), handlers: anchors.map(a => !!a.click), detail: elements['#detail'].innerHTML });
+    ({ cross, modified, current, prevented, ordinary, hrefs: anchors.map(a => a.href), handlers: anchors.map(a => !!a.click), detail: elements['#detail'].innerHTML });
   `);
   expect(result.modified).toBeNull();
-  expect(result.cross).toBe('frontend/architecture/bff');
-  expect(result.hrefs[0]).toBe('https://example.org/preview/openwiki/?wiki=frontend&page=architecture%2Fbff#hello');
-  expect(result.handlers).toEqual([true, true, false, false]);
+  expect(result.cross).toBe('infra/architecture/deployment');
+  expect(result.hrefs[0]).toBe('https://example.org/preview/openwiki/?wiki=infra&page=architecture%2Fdeployment#hello');
+  expect(result.hrefs.slice(2)).toEqual(result.ordinary);
+  expect(result.handlers).toEqual([true, true, false, false, false, false]);
   expect(result.prevented).toBe(2);
   expect(result.current).toBeNull();
   expect(result.detail).toContain('Страница не найдена');
 });
 
-test('all four source cards select their wiki with keyboard buttons and expose the full source SHA', () => {
+test('the public filters are Все, docs and infra', () => {
+  const html = runtime(browser + `elements['#wiki-filters'].innerHTML;`);
+  expect([...html.matchAll(/<button[^>]*>([^<]+)<\/button>/g)].map(match => match[1])).toEqual(['Все', 'docs', 'infra']);
+});
+
+test('source cards select their wiki with keyboard buttons and expose the full source SHA', () => {
   const result = runtime(browser + `
-    const button = el(); button.dataset.wiki = 'frontend';
+    const button = el(); button.dataset.wiki = 'infra';
     elements['#wiki-sources'].querySelectorAll = selector => selector === 'button' ? [button] : [];
     renderWorkspaceSources();
     button.click();
     ({ html: elements['#wiki-sources'].innerHTML, current, activeWiki });
   `);
-  expect(result.html.match(/class="wiki-source"/g)).toHaveLength(4);
-  expect(result.html.match(/<button[^>]*data-wiki=/g)).toHaveLength(4);
+  expect(result.html.match(/class="wiki-source"/g)).toHaveLength(2);
+  expect(result.html.match(/<button[^>]*data-wiki=/g)).toHaveLength(2);
   expect(result.html).toContain(`title="${'a'.repeat(40)}"`);
-  expect(result.current).toBe('frontend/quickstart');
-  expect(result.activeWiki).toBe('frontend');
+  expect(result.current).toBe('infra/quickstart');
+  expect(result.activeWiki).toBe('infra');
 });
 
 test('filter and source buttons retain keyboard focus when their group is rebuilt', () => {
   const result = runtime(browser + `
     const focused = [];
     for (const id of ['wiki-filters', 'wiki-sources']) {
-      document.activeElement = { dataset: { wiki: 'frontend' }, closest: () => ({ id }) };
-      const replacement = { dataset: { wiki: 'frontend' }, focus() { focused.push(id); }, addEventListener() {} };
+      document.activeElement = { dataset: { wiki: 'infra' }, closest: () => ({ id }) };
+      const replacement = { dataset: { wiki: 'infra' }, focus() { focused.push(id); }, addEventListener() {} };
       elements['#' + id].querySelectorAll = selector => selector === 'button' ? [replacement] : [];
-      setWorkspaceFilter('frontend');
+      setWorkspaceFilter('infra');
     }
     focused;
   `);
@@ -251,7 +263,7 @@ test('filter and source buttons retain keyboard focus when their group is rebuil
 
 test('native reader backlinks are escaped keyboard buttons', () => {
   const result = runtime(browser + `
-    input.nodes[0].backlinks = ['frontend/architecture/bff'];
+    input.nodes[0].backlinks = ['infra/architecture/deployment'];
     refreshWorkspaceGraph();
     navigateWorkspace({ wiki: 'docs', page: 'quickstart' });
     elements['#detail'].innerHTML;

@@ -3,7 +3,7 @@ import { buildGraph } from 'openwiki/dist/visualize/graph.js';
 import { resolveWikiLink } from './openwiki-client-lib.ts';
 import type { WikiGraph as NativeWikiGraph, WikiNode as NativeWikiNode } from 'openwiki/dist/visualize/graph.js';
 
-export type WikiId = 'docs' | 'frontend' | 'backend' | 'infra';
+export type WikiId = 'docs' | 'infra';
 export type Freshness = 'fresh' | 'stale' | 'unknown';
 export type WikiSource = { id: WikiId; repositorySha: string; sourceSha: string; updatedAt: string; freshness: Freshness };
 export type PreparedWiki = { wikiRoot: string; source: WikiSource };

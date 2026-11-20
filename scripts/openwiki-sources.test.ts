@@ -6,115 +6,7 @@ import { dirname, join, relative } from 'node:path';
 import { prepareDocsWiki, preparePlatformWikis, readPreparedPlatformWikis } from './openwiki-sources.ts';
 
 const roots: string[] = [];
-const ids = ['frontend', 'backend', 'infra'] as const;
-const ignoreData = {
-  frontend: `# Closed corpus; keep aligned with scripts/openwiki-check.ts.
-**
-!/README.md
-!/AGENTS.md
-!/.openwikiignore
-!/package.json
-!/bun.lock
-!/turbo.json
-!/oxlint.config.ts
-!/oxfmt.config.ts
-!/orval.config.ts
-!/lefthook.yml
-!/.gitignore
-!/.dockerignore
-!/apps
-!apps/**
-!/packages
-!packages/**
-!/scripts
-!scripts/**
-!/docs
-/docs/**
-!docs/local-development.md
-!docs/release.md
-!docs/api-contract.md
-!/.github
-/.github/**
-!.github/workflows
-!.github/workflows/**
-# Lifecycle output is readable, but only INSTRUCTIONS.md is source evidence.
-!/openwiki
-!openwiki/**
-# Secrets, generated API code and outputs are never evidence.
-**/node_modules/**
-**/dist/**
-**/coverage/**
-**/.turbo/**
-**/.git/**
-**/.env
-**/.env.*
-**/.env/**
-**/*.pem
-**/*.key
-**/*.p12
-**/*.pfx
-/apps/bff/src/go/client.ts
-/packages/schemas/src/zod.ts
-`,
-  backend: `# Closed Go API corpus; keep aligned with scripts/openwiki-check.ts.
-**
-!/README.md
-!/AGENTS.md
-!/.openwikiignore
-!/go.mod
-!/go.sum
-!/Makefile
-!/docker-compose.yml
-!/docker-compose.override.yml
-!/.golangci.yml
-!/.editorconfig
-!/.gitignore
-!/.dockerignore
-!/internal
-!internal/**
-!/cmd
-!cmd/**
-!/migrations
-!migrations/**
-!/build
-!build/**
-!/scripts
-!scripts/**
-!/docs
-/docs/**
-!docs/authentication.md
-!docs/input-security.md
-!docs/redis-sessions.md
-!docs/local-development.md
-!docs/release.md
-!docs/apidog.md
-!/.github
-/.github/**
-!.github/workflows
-!.github/workflows/**
-# Lifecycle output is readable, but only INSTRUCTIONS.md is source evidence.
-!/openwiki
-!openwiki/**
-# Secrets, mocks, generated API code and outputs are never evidence.
-**/node_modules/**
-**/dist/**
-**/coverage/**
-**/bin/**
-**/mocks/**
-**/.git/**
-**/.env
-**/.env.*
-**/.env/**
-**/*.pem
-**/*.key
-**/*.p12
-**/*.pfx
-**/mock*.go
-**/*_mock_test.go
-/internal/transport/http/api/api.gen.go
-/internal/transport/http/api/openapi.yaml
-`,
-  infra: `# Closed corpus; keep aligned with scripts/openwiki-check.ts.
+const infraIgnore = `# Closed corpus; keep aligned with scripts/openwiki-check.ts.
 **
 !/AGENTS.md
 !/SUMMARY.md
@@ -191,8 +83,7 @@ const ignoreData = {
 **/__pycache__/**
 **/*.pyc
 **/*.pyo
-`,
-};
+`;
 afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
 function git(root: string, ...args: string[]) {
   const child = Bun.spawnSync(['git', '-c', 'core.hooksPath=/dev/null', ...args], { cwd: root });
@@ -209,12 +100,12 @@ function commit(root: string) {
 }
 function fixture() {
   const base = mkdtempSync(join(tmpdir(), 'wiki sources ')); roots.push(base);
-  const repos = Object.fromEntries(['docs', ...ids].map(id => {
+  const repos = Object.fromEntries((['docs', 'infra'] as const).map(id => {
     const root = join(base, id); mkdirSync(root);
     git(root, 'init', '-qb', 'main');
     git(root, 'config', 'user.name', 'Test'); git(root, 'config', 'user.email', 'test@example.invalid');
     write(root, 'AGENTS.md', 'source');
-    if (id !== 'docs') write(root, '.openwikiignore', ignoreData[id as typeof ids[number]]);
+    if (id === 'infra') write(root, '.openwikiignore', infraIgnore);
     write(root, 'scripts/openwiki-check.ts', `throw new Error('Platform code executed');`);
     const sourceCommit = commit(root);
     write(root, 'openwiki/quickstart.md', '# Wiki\n[Detail](detail.md)');
@@ -226,32 +117,41 @@ function fixture() {
     write(root, '.git/hooks/post-checkout', '#!/bin/sh\ntouch '+JSON.stringify(join(base, 'executed'))+'\n');
     chmodSync(join(root, '.git/hooks/post-checkout'), 0o755);
     return [id, { root, sourceCommit, wikiCommit }];
-  })) as Record<'docs' | typeof ids[number], { root: string; sourceCommit: string; wikiCommit: string }>;
+  })) as Record<'docs' | 'infra', { root: string; sourceCommit: string; wikiCommit: string }>;
   const output = join(base, 'snapshot');
-  const transport = async (id: typeof ids[number], url: string, bare: string) => {
+  const transport = async (id: 'infra', url: string, bare: string) => {
     if (url !== `https://github.com/Cringe-Driven-Development-Team/${id}.git`) throw new Error('Remote is not allowlisted');
     git(bare, 'fetch', '--no-tags', repos[id].root, 'refs/heads/main:refs/heads/main');
   };
   return { base, repos, output, transport };
 }
 
-test('three fixed main snapshots preserve checkpoint provenance and roundtrip offline', async () => {
+test('fetches only infra main and preserves checkpoint provenance offline', async () => {
   const f = fixture();
-  const snapshot = await preparePlatformWikis(f.output, f.transport);
-  expect(snapshot.map(x => x.source.id)).toEqual(['frontend', 'backend', 'infra']);
-  expect(snapshot[0]!.source.repositorySha).toBe(f.repos.frontend.wikiCommit);
-  expect(snapshot[0]!.source.sourceSha).toBe(f.repos.frontend.sourceCommit);
+  const fetchedIds: string[] = [];
+  const snapshot = await preparePlatformWikis(f.output, async (id, url, bare) => {
+    fetchedIds.push(id);
+    await f.transport(id, url, bare);
+  });
+  expect(fetchedIds).toEqual(['infra']);
+  expect(snapshot.map(wiki => wiki.source.id)).toEqual(['infra']);
+  expect(snapshot[0]!.source.repositorySha).toBe(f.repos.infra.wikiCommit);
+  expect(snapshot[0]!.source.sourceSha).toBe(f.repos.infra.sourceCommit);
   expect(snapshot[0]!.source.updatedAt).toBe('2026-10-31T13:53:00.000Z');
   expect(snapshot[0]!.source.freshness).toBe('fresh');
   expect(JSON.stringify(snapshot.map(x => x.source))).not.toContain(f.base);
   const manifest = JSON.parse(readFileSync(join(f.output, 'snapshot.json'), 'utf8'));
   expect(JSON.stringify(manifest)).not.toContain(f.base);
-  expect(relative(f.output, snapshot[0]!.wikiRoot)).toBe('frontend/openwiki');
+  expect(manifest.schemaVersion).toBe(1);
+  expect(manifest.wikis.map((wiki: { wikiRoot: string }) => wiki.wikiRoot)).toEqual(['infra/openwiki']);
+  expect(relative(f.output, snapshot[0]!.wikiRoot)).toBe('infra/openwiki');
   expect(existsSync(join(snapshot[0]!.wikiRoot, 'Claims'))).toBe(false);
   expect(existsSync(join(snapshot[0]!.wikiRoot, 'log.md'))).toBe(false);
   expect(existsSync(join(f.base, 'executed'))).toBe(false);
   for (const repo of Object.values(f.repos)) rmSync(repo.root, { recursive: true });
-  expect(await readPreparedPlatformWikis(f.output)).toEqual(snapshot);
+  const wikis = await readPreparedPlatformWikis(f.output);
+  expect(wikis.map(wiki => wiki.source.id)).toEqual(['infra']);
+  expect(wikis).toEqual(snapshot);
   expect(await readPreparedPlatformWikis(relative(process.cwd(), f.output))).toEqual(snapshot);
 });
 
@@ -277,26 +177,16 @@ test('docs rejects a shallow checkout missing its checkpoint commit and reads pr
 });
 
 const parity = {
-  frontend: {
-    stale: ['apps/client/src/main.ts', 'apps/bff/src/router.ts', '.github/workflows/check.yml', 'packages/schemas/package.json', 'openwiki/INSTRUCTIONS.md'],
-    fresh: ['apps/bff/src/go/client.ts', 'packages/schemas/src/zod.ts', 'apps/bff/.env', 'apps/client/dist/index.js', 'spec/openapi.json', 'openwiki/new.md'],
-  },
-  backend: {
-    stale: ['internal/app/run.go', 'cmd/main.go', '.github/workflows/check.yml', 'docs/apidog.md', 'openwiki/INSTRUCTIONS.md'],
-    fresh: ['internal/transport/http/api/api.gen.go', 'internal/transport/http/api/openapi.yaml', 'internal/mocks/session.go', 'internal/user/usecase/mock_fixture_test.go', 'internal/user/usecase/dependencies_mock_test.go', 'internal/config/.env', 'runtime-agent/src/main.py'],
-  },
-  infra: {
-    stale: ['pulumi/index.ts', 'ansible/site.yml', '.github/workflows/infra.yml', 'ansible/runtime/roles/runtime_agent/templates/agent.env.j2', 'openwiki/INSTRUCTIONS.md'],
-    fresh: ['ansible/inventory/group_vars/all/vars.yml', 'ansible/clouds.yaml.example', 'pulumi/Pulumi.prod.yaml', 'ansible/runtime/roles/runtime_agent/templates/agent.env', 'ansible/runtime/roles/runtime_agent/templates/agent.env.local', '.github/workflows/automation.yml', 'pulumi/sdks/selectel/index.ts', 'ansible/tests/__pycache__/test.pyc'],
-  },
+  stale: ['pulumi/index.ts', 'ansible/site.yml', '.github/workflows/infra.yml', 'ansible/runtime/roles/runtime_agent/templates/agent.env.j2', 'openwiki/INSTRUCTIONS.md'],
+  fresh: ['ansible/inventory/group_vars/all/vars.yml', 'ansible/clouds.yaml.example', 'pulumi/Pulumi.prod.yaml', 'ansible/runtime/roles/runtime_agent/templates/agent.env', 'ansible/runtime/roles/runtime_agent/templates/agent.env.local', '.github/workflows/automation.yml', 'pulumi/sdks/selectel/index.ts', 'ansible/tests/__pycache__/test.pyc'],
 };
-for (const id of ids) test(`${id} freshness agrees with the published checker corpus`, async () => {
-  const f = fixture(), repo = f.repos[id];
-  for (const [freshness, paths] of Object.entries(parity[id])) for (const path of paths) {
+test('infra freshness agrees with the published checker corpus', async () => {
+  const f = fixture(), repo = f.repos.infra;
+  for (const [freshness, paths] of Object.entries(parity)) for (const path of paths) {
     git(repo.root, 'reset', '--hard', repo.wikiCommit);
     write(repo.root, path, 'changed'); commit(repo.root);
     const snapshot = await preparePlatformWikis(f.output, f.transport);
-    expect(snapshot.find(x => x.source.id === id)!.source.freshness, path).toBe(freshness as 'fresh' | 'stale');
+    expect(snapshot[0]!.source.freshness, path).toBe(freshness as 'fresh' | 'stale');
   }
 });
 
@@ -315,8 +205,8 @@ test('unknown ancestry stays unknown with a diagnostic', async () => {
 
 for (const change of ['missing quickstart', 'missing checkpoint', 'bad date', 'bad sha', 'bad status', 'missing commit', 'blob commit', 'symlink', 'submodule', 'bad ignore']) {
   test(`rejects corrupt platform data: ${change}`, async () => {
-    const f = fixture(), root = f.repos.frontend.root;
-    const checkpoint = { status: 'complete', gitHead: f.repos.frontend.sourceCommit, updatedAt: '2026-10-31T13:53:00.000Z' };
+    const f = fixture(), repo = f.repos.infra, root = repo.root;
+    const checkpoint = { status: 'complete', gitHead: repo.sourceCommit, updatedAt: '2026-10-31T13:53:00.000Z' };
     if (change === 'missing quickstart') rmSync(join(root, 'openwiki/quickstart.md'));
     if (change === 'bad date') checkpoint.updatedAt = '2026-02-30T13:53:00.000Z';
     if (change === 'bad sha') checkpoint.gitHead = 'HEAD';
@@ -329,7 +219,7 @@ for (const change of ['missing quickstart', 'missing checkpoint', 'bad date', 'b
     if (change === 'missing checkpoint') rmSync(join(root, 'openwiki/.last-update.json'));
     if (change !== 'submodule') commit(root);
     if (change === 'submodule') {
-      git(root, 'update-index', '--add', '--cacheinfo', '160000', f.repos.frontend.sourceCommit, 'openwiki/submodule');
+      git(root, 'update-index', '--add', '--cacheinfo', '160000', repo.sourceCommit, 'openwiki/submodule');
       git(root, 'commit', '-qm', 'gitlink');
     }
     await expect(preparePlatformWikis(f.output, f.transport)).rejects.toThrow();
@@ -339,24 +229,23 @@ for (const change of ['missing quickstart', 'missing checkpoint', 'bad date', 'b
 
 test('a failed fetch preserves the previous complete snapshot', async () => {
   const f = fixture(); const before = await preparePlatformWikis(f.output, f.transport);
-  const failing = async (id: typeof ids[number], url: string, bare: string) => {
-    if (id === 'backend') throw new Error('fixture fetch failed');
-    await f.transport(id, url, bare);
-  };
+  const failing = async () => { throw new Error('fixture fetch failed'); };
   await expect(preparePlatformWikis(f.output, failing)).rejects.toThrow('fixture fetch failed');
   expect(await readPreparedPlatformWikis(f.output)).toEqual(before);
 });
 
-for (const change of ['missing', 'page', 'path escape', 'freshness', 'provenance', 'symlink']) test(`offline reader rejects invalid snapshot: ${change}`, async () => {
+for (const change of ['missing', 'page', 'path escape', 'freshness', 'provenance', 'symlink', 'extra wiki']) test(`offline reader rejects invalid snapshot: ${change}`, async () => {
   const f = fixture(); await preparePlatformWikis(f.output, f.transport);
   const manifestPath = join(f.output, 'snapshot.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const infra = manifest.wikis[0];
   if (change === 'missing') rmSync(manifestPath);
-  if (change === 'page') rmSync(join(f.output, 'frontend/openwiki/quickstart.md'));
-  if (change === 'path escape') { manifest.wikis[0].wikiRoot = '../frontend/openwiki'; writeFileSync(manifestPath, JSON.stringify(manifest)); }
-  if (change === 'freshness') { manifest.wikis[0].source.freshness = 'maybe'; writeFileSync(manifestPath, JSON.stringify(manifest)); }
-  if (change === 'provenance') { manifest.wikis[0].source.sourceSha = 'a'.repeat(40); writeFileSync(manifestPath, JSON.stringify(manifest)); }
-  if (change === 'symlink') { rmSync(join(f.output, 'frontend/openwiki/detail.md')); symlinkSync(join(f.repos.frontend.root, 'AGENTS.md'), join(f.output, 'frontend/openwiki/detail.md')); }
+  if (change === 'page') rmSync(join(f.output, 'infra/openwiki/quickstart.md'));
+  if (change === 'path escape') { infra.wikiRoot = '../infra/openwiki'; writeFileSync(manifestPath, JSON.stringify(manifest)); }
+  if (change === 'freshness') { infra.source.freshness = 'maybe'; writeFileSync(manifestPath, JSON.stringify(manifest)); }
+  if (change === 'provenance') { infra.source.sourceSha = 'a'.repeat(40); writeFileSync(manifestPath, JSON.stringify(manifest)); }
+  if (change === 'symlink') { rmSync(join(f.output, 'infra/openwiki/detail.md')); symlinkSync(join(f.repos.infra.root, 'AGENTS.md'), join(f.output, 'infra/openwiki/detail.md')); }
+  if (change === 'extra wiki') { manifest.wikis.push(infra); writeFileSync(manifestPath, JSON.stringify(manifest)); }
   await expect(readPreparedPlatformWikis(f.output)).rejects.toThrow();
 });
 
@@ -368,7 +257,7 @@ test('checkpoint SHA must name a commit object itself, not an annotated tag', as
 });
 
 test('platform commits with unverifiable ancestry publish unknown with a diagnostic', async () => {
-  const f = fixture(), repo = f.repos.frontend;
+  const f = fixture(), repo = f.repos.infra;
   git(repo.root, 'checkout', '-qb', 'other', repo.sourceCommit);
   write(repo.root, 'other.txt', 'different history'); const other = commit(repo.root);
   git(repo.root, 'checkout', '-q', 'main');
@@ -377,16 +266,16 @@ test('platform commits with unverifiable ancestry publish unknown with a diagnos
   try {
     const snapshot = await preparePlatformWikis(f.output, async (id, url, bare) => {
       await f.transport(id, url, bare);
-      if (id === 'frontend') git(bare, 'fetch', '--no-tags', repo.root, 'refs/heads/other:refs/heads/other');
+      git(bare, 'fetch', '--no-tags', repo.root, 'refs/heads/other:refs/heads/other');
     });
     expect(snapshot[0]!.source.freshness).toBe('unknown');
-    expect(diagnostic.mock.calls.flat().join(' ')).toMatch(/frontend.*ancestry/i);
+    expect(diagnostic.mock.calls.flat().join(' ')).toMatch(/infra.*ancestry/i);
   } finally { diagnostic.mockRestore(); }
 });
 
 test('NUL-delimited diff notices newline paths and a source moved into generated wiki', async () => {
-  const f = fixture(), repo = f.repos.frontend;
-  write(repo.root, 'apps/client/src/space and\nnewline.ts', 'code'); commit(repo.root);
+  const f = fixture(), repo = f.repos.infra;
+  write(repo.root, 'pulumi/space and\nnewline.ts', 'code'); commit(repo.root);
   expect((await preparePlatformWikis(f.output, f.transport))[0]!.source.freshness).toBe('stale');
   git(repo.root, 'reset', '--hard', repo.wikiCommit);
   git(repo.root, 'mv', 'AGENTS.md', 'openwiki/moved.md'); commit(repo.root);
