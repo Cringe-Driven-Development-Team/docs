@@ -6,7 +6,7 @@ import { readWikiProvenance } from './openwiki-workspace.ts';
 import { isWikiSourcePath } from './openwiki-source-path.ts';
 import type { Freshness, PreparedWiki, WikiId, WikiSource } from './openwiki-workspace.ts';
 
-const platformIds = ['frontend', 'backend', 'infra'] as const;
+const platformIds = ['infra'] as const;
 type PlatformId = typeof platformIds[number];
 type Transport = (id: PlatformId, url: string, bareRoot: string) => Promise<void>;
 const fullSha = /^[a-f0-9]{40}$/i;
@@ -103,7 +103,7 @@ async function preparePlatform(id: PlatformId, stage: string, transport: Transpo
   } finally { await rm(bare, { recursive: true, force: true }); }
 }
 
-/** Fetch only allowlisted main branches; publish all three completed sources together. */
+/** Fetch infra main and replace the snapshot only after validating it. */
 export async function preparePlatformWikis(snapshotDir: string, transport: Transport = fetchMain): Promise<PreparedWiki[]> {
   const output = resolve(snapshotDir);
   await mkdir(dirname(output), { recursive: true });
@@ -140,7 +140,7 @@ export async function readPreparedPlatformWikis(snapshotDir: string): Promise<Pr
   await requireDirectory(root);
   if (!(await lstat(join(root, 'snapshot.json'))).isFile()) throw new Error('Expected regular snapshot.json');
   const manifest = JSON.parse(await readFile(join(root, 'snapshot.json'), 'utf8'));
-  if (manifest?.schemaVersion !== 1 || !Array.isArray(manifest.wikis) || manifest.wikis.length !== 3) throw new Error('Invalid wiki snapshot manifest');
+  if (manifest?.schemaVersion !== 1 || !Array.isArray(manifest.wikis) || manifest.wikis.length !== platformIds.length) throw new Error('Invalid wiki snapshot manifest');
   const result: PreparedWiki[] = [];
   for (const [index, id] of platformIds.entries()) {
     const wiki = manifest.wikis[index];

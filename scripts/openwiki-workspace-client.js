@@ -1,5 +1,5 @@
 // Runs in the native client's lexical scope; shared URL rules live in workspace-lib.js.
-const wikiPalette = { docs: '#4FA8F0', frontend: '#A97FE0', backend: '#3FBFA0', infra: '#E0A63E' };
+const wikiPalette = { docs: '#4FA8F0', infra: '#E0A63E' };
 const wikiOrder = Object.keys(wikiPalette);
 let masterGraph = null;
 let activeWiki = null;

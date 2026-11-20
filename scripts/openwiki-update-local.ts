@@ -53,8 +53,8 @@ export async function runLocalUpdate(root: string, exec: Exec): Promise<"fresh" 
   };
   const git = async (args: string[], cwd = root) => run("git", args, cwd);
   const origin = (await git(["remote", "get-url", "origin"])).trim();
-  const repository = /^(?:https:\/\/github\.com\/|git@github\.com:)Cringe-Driven-Development-Team\/(docs|frontend|backend|infra)\.git$/.exec(origin)?.[1];
-  if (!repository) throw new Error("Unsupported origin: expected a Cringe-Driven-Development-Team docs, frontend, backend or infra repository.");
+  const repository = /^(?:https:\/\/github\.com\/|git@github\.com:)Cringe-Driven-Development-Team\/(docs|infra)\.git$/.exec(origin)?.[1];
+  if (!repository) throw new Error("Unsupported origin: expected a Cringe-Driven-Development-Team docs or infra repository.");
   const pushOrigins = (await git(["remote", "get-url", "--push", "--all", "origin"])).trim().split("\n");
   if (pushOrigins.length !== 1 || pushOrigins[0] !== origin) throw new Error("origin push URL must match its allowed fetch URL.");
   // Linked worktrees share this lock, including invocations from different branches.

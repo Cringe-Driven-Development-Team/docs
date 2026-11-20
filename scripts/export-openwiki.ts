@@ -16,7 +16,7 @@ export async function exportWikiVisualizer(
   const snapshot = options.snapshotDir ?? process.env.OPENWIKI_SOURCES_DIR;
   const platforms = snapshot !== undefined ? await readPreparedPlatformWikis(snapshot) : await preparePlatformWikis(join(root, '.openwiki-sources'));
   const wikis = [await prepareDocsWiki(root), ...platforms];
-  if (wikis.map(w => w.source.id).sort().join(',') !== 'backend,docs,frontend,infra') throw new Error('Publication requires exactly docs, frontend, backend, infra');
+  if (wikis.map(w => w.source.id).sort().join(',') !== 'docs,infra') throw new Error('Publication requires exactly docs and infra');
   const builtAt = new Date().toISOString();
   const graph = await buildWorkspaceGraph(wikis, builtAt);
   for (const wiki of wikis) if (!graph.nodes.some(node => node.wiki === wiki.source.id && node.page === 'quickstart')) throw new Error(`Missing ${wiki.source.id}/quickstart`);

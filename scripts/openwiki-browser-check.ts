@@ -41,8 +41,11 @@ async function main(args: string[]) {
       assert.equal((await page.request.get(new URL('../favicon.svg',base).href)).status(),200,'favicon under preview base');
       await page.locator('.wiki-page-provenance').waitFor({timeout:60000});
       assert.match(await page.locator('.wiki-page-provenance').innerText(), /docs\/openwiki\/quickstart.md/);
-      assert.equal(await page.locator('.wiki-source').count(),4);
+      assert.equal(await page.locator('.wiki-source').count(),2);
+      const filters = page.locator('#wiki-filters button');
+      assert.deepEqual(await filters.allTextContents(), ['Все', 'docs', 'infra']);
       const manifest = await (await page.request.get(base+'manifest.json')).json();
+      assert.deepEqual(manifest.sources.map((source: {id: string}) => source.id), ['docs', 'infra']);
       for (const source of manifest.sources) {
         const card = page.locator(`.wiki-source[data-wiki="${source.id}"]`);
         assert.equal(await card.locator('time').getAttribute('datetime'),source.updatedAt);
@@ -62,20 +65,33 @@ async function main(args: string[]) {
         assert.equal(await page.locator('#toggle-graph').getAttribute('aria-pressed'),'true');
         await page.locator('#toggle-graph').click();
       }
-      await page.locator('#wiki-filters [data-wiki="frontend"]').focus();
-      await page.locator('#wiki-filters [data-wiki="frontend"]').press('Enter');
-      assert.match(await page.locator('.wiki-page-provenance').innerText(), /frontend\/openwiki\/quickstart.md/);
-      assert.equal(await page.locator('#sidebar .sb-group').count(),1);
+      const provenance = page.locator('.wiki-page-provenance');
+      const docsFilter = page.getByRole('button', { name: 'docs', exact: true });
+      const infraFilter = page.getByRole('button', { name: 'infra', exact: true });
+      await docsFilter.click();
+      assert.equal(await docsFilter.getAttribute('aria-pressed'), 'true');
+      assert.match(await provenance.innerText(), /docs\/openwiki\/quickstart.md/);
+      assert.equal(await page.locator('#sidebar .sb-group').count(), 1);
+      await infraFilter.press('Enter');
+      assert.equal(await infraFilter.getAttribute('aria-pressed'), 'true');
+      assert.match(await provenance.innerText(), /infra\/openwiki\/quickstart.md/);
+      assert.equal(await page.locator('#sidebar .sb-group').count(), 1);
+      const allFilter = page.getByRole('button', { name: 'Все', exact: true });
+      await allFilter.click();
+      assert.equal(await allFilter.getAttribute('aria-pressed'), 'true');
+      assert.match(await provenance.innerText(), /infra\/openwiki\/quickstart.md/);
+      assert.equal(await page.locator('#sidebar .sb-group').count(), 2);
       if (fixture) {
-        await page.locator('.md a', {hasText:'Backend'}).click();
-        assert.match(await page.locator('.wiki-page-provenance').innerText(), /backend\/openwiki\/quickstart.md/);
-        assert.equal(await page.locator('#wiki-filters [data-wiki="backend"]').getAttribute('aria-pressed'),'true');
+        await infraFilter.click();
+        await page.locator('.md a', {hasText:/^docs$/}).click();
+        assert.match(await provenance.innerText(), /docs\/openwiki\/quickstart.md/);
+        assert.equal(await docsFilter.getAttribute('aria-pressed'), 'true');
         await page.goBack();
-        assert.match(await page.locator('.wiki-page-provenance').innerText(), /frontend\/openwiki\/quickstart.md/);
+        assert.match(await provenance.innerText(), /infra\/openwiki\/quickstart.md/);
         await page.goForward();
         await page.reload();
-        await page.locator('.wiki-page-provenance').waitFor();
-        assert.match(await page.locator('.wiki-page-provenance').innerText(), /backend\/openwiki\/quickstart.md/);
+        await provenance.waitFor();
+        assert.match(await provenance.innerText(), /docs\/openwiki\/quickstart.md/);
         await page.locator('.md a', {hasText:'Details'}).click();
         assert.match(page.url(), /page=details#section/);
         await page.locator('.mermaid svg').waitFor();
@@ -83,7 +99,7 @@ async function main(args: string[]) {
         assert.equal(await page.locator('.md script, .md [onerror]').count(),0);
       }
       const graph = await (await page.request.get(base+'graph.json')).json();
-      for (const wiki of ['docs','frontend','backend','infra']) {
+      for (const wiki of ['docs', 'infra']) {
         await page.goto(base+`?wiki=${wiki}&page=index`);
         await page.locator('.md a', {hasText:/^architecture$/i}).click();
         const route = new URL(page.url());

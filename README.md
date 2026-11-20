@@ -31,7 +31,7 @@ Pages экспортирует уже обновлённую wiki после р�
 Карту владельцев пакетов подтверждают зависимости и CI на конкретном SHA;
 маршруты — в [контексте проекта](https://docs.cellestial.ru/documentation/project-context).
 
-### Общий поиск по четырём wiki
+### Работа с OpenWiki
 
 В той же среде, где запускается агент (например, WSL), установи OpenWiki и интеграцию:
 
@@ -40,21 +40,25 @@ npm install -g openwiki@0.7.2
 openwiki integrations install codex   # или: openwiki integrations install claude
 ```
 
-Держи рядом клоны организации `Cringe-Driven-Development-Team` с именами
-[`docs`](https://github.com/Cringe-Driven-Development-Team/docs),
-[`frontend`](https://github.com/Cringe-Driven-Development-Team/frontend),
-[`backend`](https://github.com/Cringe-Driven-Development-Team/backend),
-[`infra`](https://github.com/Cringe-Driven-Development-Team/infra); учебные копии не подходят.
-Из их общего каталога:
+Для локального workspace CDD держи рядом клоны организации
+`Cringe-Driven-Development-Team`. Workspace объединяет
+[`docs`](https://github.com/Cringe-Driven-Development-Team/docs) и
+[`infra`](https://github.com/Cringe-Driven-Development-Team/infra).
+Запусти команды из общего каталога.
 
 ```bash
-for repo in docs frontend backend infra; do (cd "$repo" && git remote get-url origin); done
-openwiki link                         # Create workspace → CDD → выбрать четыре wiki → Finish
-for repo in docs frontend backend infra; do (cd "$repo" && openwiki workspace current); done
+for repo in docs infra; do (cd "$repo" && git remote get-url origin); done
+openwiki link
 ```
 
-Workspace хранится локально в `~/.openwiki`, в Git не попадает. Если wiki входит в
-несколько пространств, выбери нужное из её каталога: `openwiki workspace use CDD`.
+При создании выбери **Create workspace**, введи `CDD`, отметь wiki `docs` и
+`infra` и закончи настройку. Если `CDD` уже есть, выбери его в `openwiki link`,
+открой **Edit wikis**, сними отметки `frontend` и `backend`, оставь `docs` и
+`infra`, затем выбери **Save workspace** и **Finish** в списке пространств.
+Проверить выбор можно командой `openwiki workspace current` в каждом из двух клонов.
+Если wiki входит в несколько пространств, выбери нужное из её каталога командой
+`openwiki workspace use CDD`. Workspace хранится локально в `~/.openwiki`.
+
 После установки интеграции перезапусти агента. Для поиска он вызывает `openwiki_search`,
 затем `openwiki_read` с ID wiki из результата; поиск нужен по задаче, а не при каждом старте.
 
@@ -68,14 +72,16 @@ Workspace хранится локально в `~/.openwiki`, в Git не поп
 с тем же правилом остановки. Если wiki отсутствует, ищи в канонических документах
 и коде владельца. Планы будущих фич читай напрямую в [модулях](https://docs.cellestial.ru/modules/).
 Состояние прода прямо сейчас требует отдельного свидетельства; wiki не является мониторингом.
-`frontend-packages` находится по карте владельцев в `docs`, отдельная пятая wiki не требуется.
+По клиенту, BFF и API ищи в документации продукта и в README, руководствах и
+исходниках репозиториев `frontend` и `backend`. Владельцев пакетов найдёшь
+в [контексте проекта](https://docs.cellestial.ru/documentation/project-context).
 
 Актуальность wiki относится к процессу обновления и публикации. Для обслуживания
 локального workspace или явной диагностики можно обновить чистый checkout `main`
 и сверить wiki с её собственным `main`; это не обязательный шаг перед чтением:
 
 ```bash
-for repo in docs frontend backend infra; do
+for repo in docs infra; do
   git -C "$repo" fetch origin main
   git -C "$repo" switch main
   git -C "$repo" merge --ff-only origin/main
@@ -84,26 +90,26 @@ done
 ```
 
 `fetch` обновляет ссылки, но не файлы checkout, которые читает MCP. Если в клоне
-есть рабочая ветка или локальные правки, оставь их и создай отдельный checkout:
-`git -C frontend worktree add --detach ../frontend-main origin/main`
-(аналогично для других репозиториев). Через `openwiki link` выбери этот актуальный
-worktree вместо рабочего клона; при следующих обновлениях получи `main` через
-`fetch` и выполни `git -C frontend-main merge --ff-only origin/main`.
+есть рабочая ветка или локальные правки, используй отдельный worktree в
+игнорируемом каталоге `.worktrees/` внутри клона. Например, для `infra` выполни
+`git -C infra worktree add --detach .worktrees/openwiki-main origin/main`.
+Через `openwiki link` выбери этот worktree вместо рабочего клона. При следующих
+обновлениях получи `main` через `fetch` и выполни
+`git -C infra/.worktrees/openwiki-main merge --ff-only origin/main`.
 
 ### Обновление OpenWiki
 
-Из корня клона `docs` или его worktree владелец запускает:
+Владелец запускает команды из корня клона `docs`.
 
 ```bash
 bun run wiki:update-local
-bun run wiki:update-local --repo ../frontend
-bun run wiki:update-local --repo ../backend
 bun run wiki:update-local --repo ../infra
 ```
 
 Без аргумента обновляется репозиторий текущего каталога; путь `--repo` считается
-от текущего каталога, пути с пробелами заключай в кавычки.
-Допустимы только `docs`, `frontend`, `backend`, `infra` организации
+от текущего каталога. При запуске из worktree укажи соответствующий путь к
+`infra`, а путь с пробелами заключи в кавычки.
+Допустимы только `docs` и `infra` организации
 `Cringe-Driven-Development-Team` с `origin` вида
 `https://github.com/Cringe-Driven-Development-Team/<имя>.git` или
 `git@github.com:Cringe-Driven-Development-Team/<имя>.git`; адрес push должен
@@ -157,7 +163,7 @@ Runtime удаляется вместе с временным worktree. При �
 После проверок путей, полного checkpoint и staged-файлов updater создаёт generated-only
 коммит с разовым `git -c core.hooksPath=/dev/null commit`: временный worktree не
 содержит зависимостей владельца для formatter/check hooks. Это не меняет общую
-настройку Git и не устанавливает зависимости frontend/backend/infra. Результат
+настройку Git и не устанавливает зависимости выбранного репозитория. Результат
 проходит обязательный PR CI; исходные пути по-прежнему запрещены до коммита.
 
 В PR проверь исходный SHA, русские страницы, ссылки на канонические документы и результат
@@ -577,7 +583,7 @@ Push в ветку запускает workflow Pages на `main`. Тот соб�
 
 ### Общая публичная карта OpenWiki
 
-`/openwiki/` объединяет опубликованные wiki `docs`, `frontend`, `backend`, `infra`.
+`/openwiki/` объединяет опубликованные wiki `docs` и `infra`.
 Генерация содержимого остаётся ручной (`wiki:update-local`); Pages только читает
 готовые Markdown и checkpoint и автоматически публикует общий визуализатор.
 Локальные MCP workspace и соседние клоны для этой сборки не нужны.
@@ -589,8 +595,8 @@ bun run build
 bun run site
 ```
 
-`wiki:prepare` получает только публичные `main` трёх платформ, без их hooks,
-скриптов и зависимостей. `wiki:export` без `OPENWIKI_SOURCES_DIR` получает новый
+`wiki:prepare` считывает публичный `main` репозитория `infra` без запуска его
+hooks, скриптов и зависимостей. `wiki:export` без `OPENWIKI_SOURCES_DIR` получает новый
 снимок сам. Явно заданный повреждённый снимок останавливает сборку. Docker и
 Pages готовят снимок один раз; все превью используют его read-only, а wiki `docs`
 берут из собственной ветки. `SITE_BASE` и относительные assets сохраняют ссылки
@@ -601,9 +607,8 @@ Pages готовят снимок один раз; все превью испо�
 `sourceSha`, `repositorySha` прочитанных файлов, свежесть и время сборки доступны
 в `openwiki/manifest.json`. Устаревшая wiki отображается с предупреждением;
 непроверенная свежесть помечается отдельно. Код и wiki не подтверждают выкладку
-на прод. Без явных межрепозиторных wiki-ссылок граф имеет четыре компоненты.
+на прод. Связи между wiki в графе появляются при явных ссылках на их страницы.
 
-Для запуска Pages из платформ используется отдельный secret `DOCS_PAGES_TOKEN`
-(fine-grained: только `docs`, Actions write), настроенный владельцем в трёх
-репозиториях. Это право вызова workflow, а не вход сборки: токен не передаётся
-Docker или страницам. Чтение публичных wiki credentials не требует.
+Для запуска Pages из `infra` владелец настраивает в этом репозитории
+`DOCS_PAGES_TOKEN` с правом Actions write только для `docs`. Токен используется
+при вызове workflow. Сборка считывает публичные wiki без авторизации.
