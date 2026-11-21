@@ -6,6 +6,7 @@ do:
   iRedTea: front
   ManInTheCoat: front
 mentors: [YarikMix]
+pages: [redis-for-bff]
 subtasks:
   - title: "HTTP-клиент и типы Go"
     issues: [frontend#253]
