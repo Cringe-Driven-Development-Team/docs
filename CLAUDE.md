@@ -6,11 +6,3 @@
 
 - Хук `.claude/settings.json` после каждой правки запускает `module-graph check`.
 - Скиллы вызываются как `/<имя>`; Claude читает их копию в `.claude/skills/`, править — `.agents/skills/`.
-
-<!-- OPENWIKI:START -->
-
-## OpenWiki
-
-@AGENTS.md
-
-<!-- OPENWIKI:END -->

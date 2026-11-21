@@ -27,7 +27,7 @@ describe("workflows", () => {
 });
 
 for (const file of ["ci.yml", "pages.yml"]) {
-  test(`${file}: wiki build checkout includes the older checkpoint commit without persisted credentials`, () => {
+  test(`${file}: build checkout fetches full history without persisted credentials`, () => {
     const checkout = load(file).jobs.build?.steps?.find(step => String(step.uses).startsWith("actions/checkout@"));
     expect(checkout?.with).toMatchObject({ "fetch-depth": 0, "persist-credentials": false });
   });

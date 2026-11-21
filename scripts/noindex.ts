@@ -2,7 +2,7 @@ import { join } from "node:path";
 
 const NOINDEX = '<meta name="robots" content="noindex">';
 
-// Общий проход охватывает также HTML схем, OpenWiki и превью со старых веток.
+// Общий проход охватывает также HTML схем и превью веток.
 export async function addNoindex(dir: string): Promise<void> {
   for await (const name of new Bun.Glob("**/*.html").scan(dir)) {
     const path = join(dir, name);

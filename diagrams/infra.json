@@ -7,8 +7,8 @@
     {"tag":"Icon","id":"repo-infra","x":420,"y":200,"icon":"github","texts":[{"text":"infra · Pulumi / Ansible"}],"containerId":"github"},
     {"tag":"Activity","id":"infra-apply","x":420,"y":440,"width":160,"height":80,"texts":[{"text":"Actions · apply"}],"containerId":"github"},
     {"tag":"Icon","id":"repo-hooks","x":600,"y":620,"icon":"github","texts":[{"text":".github · интеграции"}],"containerId":"github"},
-    {"tag":"Icon","id":"docs-wiki","x":420,"y":800,"icon":"book","texts":[{"text":"4 wiki · Markdown"}],"containerId":"github"},
-    {"tag":"Activity","id":"docs-pages","x":600,"y":1040,"width":160,"height":80,"texts":[{"text":"Pages · экспорт wiki"}],"containerId":"github"},
+    {"tag":"Icon","id":"docs-source","x":420,"y":800,"icon":"book","texts":[{"text":"docs · Markdown"}],"containerId":"github"},
+    {"tag":"Activity","id":"docs-pages","x":600,"y":1040,"width":160,"height":80,"texts":[{"text":"Pages · VitePress"}],"containerId":"github"},
     {"tag":"Group","id":"selectel","x":920,"y":120,"width":720,"height":1360,"isContainer":true,"title":{"text":"Selectel · инфраструктура продукта","icon":"cloud"},"color":"blue"},
     {"tag":"Group","id":"state-project","x":960,"y":180,"width":620,"height":180,"isContainer":true,"title":{"text":"Отдельный проект состояния","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
     {"tag":"Icon","id":"state-bucket","x":1200,"y":240,"icon":"database","texts":[{"text":"S3 · Pulumi state"}],"containerId":"state-project"},
@@ -41,7 +41,7 @@
     {"tag":"Relationship","from":"hooks","to":"proxy","label":"HTTPS proxy"},
     {"tag":"Relationship","from":"proxy","to":"telegram","label":"уведомления","color":"red","lineStyle":"dotted"},
     {"tag":"Relationship","from":"restic","to":"backup-s3","label":"backup auxiliary"},
-    {"tag":"Relationship","from":"docs-wiki","to":"docs-pages","label":"Markdown","color":"black","lineStyle":"dashed"},
+    {"tag":"Relationship","from":"docs-source","to":"docs-pages","label":"Markdown","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"repo-hooks","to":"githubbot","label":"образ бота"},
     {"tag":"Relationship","from":"githubbot","to":"proxy","label":"HTTPS proxy"}
   ]

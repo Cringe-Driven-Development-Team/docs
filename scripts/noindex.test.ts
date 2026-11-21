@@ -8,7 +8,7 @@ test("noindex covers nested HTML and repeated builds without changing content or
   const dir = await mkdtemp(join(tmpdir(), "docs-noindex-"));
   const page = '<html><head><title>Docs</title></head><body><a href="/">Home</a></body></html>';
   const indexed = page.replace('</head>', '<meta name="robots" content="noindex"></head>');
-  const paths = ["index.html", "diagrams/example.html", "openwiki/index.html", "branches/old/index.html"];
+  const paths = ["index.html", "diagrams/example.html", "branches/old/index.html"];
   try {
     for (const path of paths) await Bun.write(join(dir, path), page);
     await Bun.write(join(dir, "redirect.html"), indexed);
