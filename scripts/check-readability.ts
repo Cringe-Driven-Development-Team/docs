@@ -1726,12 +1726,6 @@ async function checkPages(browser: Browser, url: (path: string) => string) {
       await page.screenshot({ path: join(artifacts, `${label}-final-${path.replaceAll('/', '-') || 'home'}-${width}.png`) });
     }
   }
-  await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
-  await page.evaluate(() => { (window as unknown as Record<string, unknown>).__wikiNavigation = true; });
-  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('.vp-doc a[href$="openwiki/"]')]);
-  assert.equal(await page.evaluate(() => (window as unknown as Record<string, unknown>).__wikiNavigation), undefined);
-  assert(new URL(page.url()).pathname.startsWith(`${SITE_BASE}openwiki/`));
-  console.log('PASS wiki uses full-document navigation within base; page types and images');
   await page.setViewport({ width: 1440, height: 1000 });
   await page.goto(url('modules/2/'), { waitUntil: 'networkidle0' });
   await page.waitForSelector('.graph-canvas canvas');
@@ -1983,7 +1977,7 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   await page.waitForFunction(() => document.querySelector('.vp-doc h1')?.textContent?.includes('Документация работающего продукта'));
   assert.match(await page.$eval('.vp-doc', el => el.textContent || ''), /Что реализовано в выложенном коде/);
   for (const hash of ['документация-работающего-продукта', 'что-подтверждено-на-проде', 'офлаин-режим',
-    'архитектура-безопасность-и-эксплуатация', 'где-находятся-планы-и-openwiki']) {
+    'архитектура-безопасность-и-эксплуатация', 'где-находятся-планы']) {
     await page.goto(url(`documentation/#${hash}`), { waitUntil: 'networkidle0' });
     await visibleHash();
     const target = `documentation/current-state#${hash}`;
@@ -2042,13 +2036,6 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
   assert(await page.$(`.diagram__links a[href="${SITE_BASE}contract.html"]`));
   for (const file of ['contract.html', 'contract.png']) assert.equal((await fetch(url(file))).status, 200);
   console.log('PASS architecture/context anchors, six removed CSRF routes, diagram landings and root HTML/PNG');
-  await page.goto(url('documentation/project-context'), { waitUntil: 'networkidle0' });
-  await page.evaluate(() => { (window as unknown as Record<string, unknown>).__hierarchy = true; });
-  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('.vp-doc a[href$="openwiki/"]')]);
-  assert.equal(await marker(), undefined);
-  assert.equal(new URL(page.url()).pathname, `${SITE_BASE}openwiki/`);
-  await page.waitForSelector('html[data-static-export="true"] .wiki-page-provenance');
-  assert.equal(await page.$$eval('.wiki-source', cards => cards.length), 4);
   await page.goto(url('documentation/'), { waitUntil: 'networkidle0' });
   await page.click('button[aria-label="Найти в документации"]');
   await page.waitForSelector('#localsearch-input', { visible: true });
@@ -2072,7 +2059,6 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     await expanded(true, frontendCaret); await tree();
   }
   console.log('PASS Frontend local search: session, build and packages content');
-  console.log('PASS static OpenWiki navigation and canonical local search');
   await context.close();
 }
 

@@ -99,12 +99,12 @@ test("every root diagram is on /documentation/architecture/ with a heading and a
   expect(headings).toEqual(ORDER);
 });
 
-test("config: three entrances keep architecture in documentation, no branch previews in the nav", () => {
+test("config: documentation and modules keep architecture in documentation, no branch previews in the nav", () => {
   const config = readFileSync("site/.vitepress/config.mts", "utf8");
   expect(config).toContain("link: '/documentation/architecture/'");
   const nav = config.split("nav: [")[1]?.split("],")[0] ?? "";
   expect([...nav.matchAll(/text: '([^']+)'/g)].map(match => match[1])).toEqual([
-    "OpenWiki", "Документация", "Модули",
+    "Документация", "Модули",
   ]);
   expect(nav).toContain("link: '/documentation/'");
   expect(config).not.toContain("link: '/diagrams/'");
@@ -118,7 +118,6 @@ test("config: three entrances keep architecture in documentation, no branch prev
   for (const link of ["/documentation/frontend/bff", "/documentation/architecture/", "/documentation/security/", "/documentation/project-context", "/modules/"]) {
     expect(documentation).toContain(`](${link})`);
   }
-  expect(documentation).toContain('href="../openwiki/" target="_self"');
   const observed = documentation.split("## Что подтверждено на проде")[1]?.split("## Что реализовано")[0] ?? "";
   for (const value of ['Accept: text/html', 'user: null', 'не устанавливает cookie', 'csrf_invalid',
     'UNAUTHORIZED', 'Content-Security-Policy', 'не проверялись']) expect(observed, value).toContain(value);

@@ -100,7 +100,6 @@ export default defineConfig({
     },
     themeConfig: {
       nav: [
-        { text: 'OpenWiki', link: '/openwiki/', target: '_self', activeMatch: '^/openwiki/' },
         { text: 'Документация', link: '/documentation/', activeMatch: '^/documentation/' },
         { text: 'Модули', link: '/modules/', activeMatch: '^/modules/' },
       ],
