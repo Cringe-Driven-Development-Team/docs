@@ -1,44 +1,47 @@
 ---
 type: security
-title: Проверка CSRF и сессии в гостевом BFF
-description: Наблюдаемые отказы 403 и 401 в гостевом tRPC-маршруте, bootstrap без cookie и ограничения свидетельства защиты BFF.
-tags: [security, csrf, bff, session]
+title: Граница BFF и проверки безопасности
+description: Гостевые проверки CSRF, сессии и CSP 9 ноября 2026 года, граница Go API и точки настройки в коде.
+tags: [security, csrf, csp, xss, bff, session]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-02T21:45:57.919Z
+    at: 2026-11-20T16:39:19.736Z
 sources:
   - id: openwiki-source-2ac22079c5a49104f7bb3896
     resource: repo://site/documentation/architecture/index.md
-  - id: openwiki-source-4f5bdd77990b98e5f7081f26
-    resource: repo://site/documentation/bff.md
-  - id: openwiki-source-05e5679509526baa1bbfcf58
-    resource: repo://site/documentation/csrf/index.md
-generated: { by: "codex", at: "2026-11-02T21:45:57.919Z" }
+  - id: openwiki-source-1a80ca3cbf75612a6a6f7bf8
+    resource: repo://site/documentation/current-state.md
+  - id: openwiki-source-ce98287df8bcc7af43c8a489
+    resource: repo://site/documentation/frontend/bff.md
+  - id: openwiki-source-2c46f27259ec845dd3569cd0
+    resource: repo://site/documentation/security/csp.md
+generated: { by: "codex", at: "2026-11-20T16:39:19.736Z" }
 ---
 
-# CSRF и сессия в гостевом BFF
+# Граница BFF и проверки безопасности
 
-Подробное свидетельство в `site/documentation/bff.md` относится к **31.10.2026, 13:11 UTC**, чистому Chrome и публичному сайту. Оно подтверждает гостевой bootstrap и два отказа tRPC. [Дата и сценарий](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/bff.md#L3-L19).
+## Что наблюдали на проде
 
-В срезе **01.11.2026** повторно получены `/login` — `200`, tRPC без CSRF-заголовка — `403`, с `X-CSRF: 1` без сессии — `401`. Версия BFF `baf512e9a7bd7e5452554cdc89baa20e24aa7a32` установлена по revision и digest живого контейнера; Go `6e1a0d81bc284e87aa4a9561d7b65eee835a26c3` проверен по образу и HTTP после выкладки. Это пересказ зафиксированного свидетельства, без новой проверки стенда. [Протокол и версии](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/architecture/index.md#L20-L42). Полное размещение — на странице [архитектуры](mvp.md).
+09.11.2026 в 04:19 МСК гостевой прогон зафиксировал HTML frontend/BFF `319e691b79f81e09dcffabc04941831a5f4b5930`; production CD подтвердил backend `06841d4765c28ad7e52bf5e36df3b72cb22c094e`. HTML формы входа имел `Cache-Control: private, no-store` и `user: null`, cookie гостю не устанавливалась. [Версии и наблюдения](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/current-state.md#L7-L26).
 
-## Как читать два отказа
+| Гостевая проверка | Результат |
+| --- | --- |
+| GET `/api/trpc/users.me` без `X-CSRF` | `403`, `csrf_invalid` |
+| Тот же GET с `X-CSRF: 1` | `401`, `UNAUTHORIZED`: процедуре нужна сессия |
+| POST процедуры `auth.login` с чужим `Origin` | `403`, `csrf_invalid` для запроса, указанного в протоколе |
+| Публичный `/api/v1/users/me` | `404` |
+| HTML `/login` | Блокирующий заголовок `Content-Security-Policy` |
 
-| Запрос из страницы входа | Наблюдение | Что подтверждает проверка |
-| --- | --- | --- |
-| `GET /api/trpc/users.me` без `X-CSRF` | `403`, `appCode: csrf_invalid` | Запрос отклонён проверкой CSRF |
-| Тот же GET с `X-CSRF: 1` | `401`, «Нет сессии» | После прохождения CSRF-проверки требуется сессия |
+POST подтверждает отказ для конкретного запроса с чужим Origin. Вход, регистрация, refresh, выход, операции с пользовательскими данными и исполнение в runtime остались за пределами прогона. [Результаты и границы](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/current-state.md#L17-L31).
 
-Это два независимых ограничения доступа: добавление заголовка не делает гостя авторизованным. HTML `/login` содержит `user: null`, cookie гостю не установлены. Эти результаты зафиксированы в [site/documentation/bff.md, строки 9–15](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/bff.md#L9-L15) и [сводке проверки](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/index.md#L11-L19).
+## Где проверять реализацию
 
-## Куда ведёт ссылка на реализацию
+На границе браузера `createContext` проверяет CSRF перед чтением сессии и вызовом Go. При допустимом RPC обязательным является `X-CSRF: 1`; для POST проверяется совпадение Origin, а присутствующий `Sec-Fetch-Site` должен быть `same-origin`. Прохождение проверки оставляет защищённой процедуре отдельную проверку сессии. Эти условия зафиксированы в срезе кода frontend 08.11.2026. [Условия RPC](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/bff.md#L31-L45), [context.ts на SHA среза](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/context.ts#L19-L42).
 
-Канонический документ указывает [frontend/apps/bff/src/context.ts, строки 25–31](https://github.com/Cringe-Driven-Development-Team/frontend/blob/dd3d11fbeebe5bf1e2b51fdd663a36d1829a4e64/apps/bff/src/context.ts#L25-L31) на фиксированном SHA frontend: CSRF проверяется перед чтением сессии, требуется `X-CSRF: 1`, а POST дополнительно проверяет `Origin` и `Sec-Fetch-Site`. Это описание кода по документу; **на проде испытаны только два GET из таблицы**. При генерации wiki текущий main frontend не читался. [Источник: site/documentation/bff.md, строки 40–48](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/bff.md#L40-L48).
+BFF держит сессию в HttpOnly-cookie и обращается к Go по приватной сети с сервисным ключом. На SHA выкладки frontend процедуры входа, регистрации и выхода управляют cookie, а слой сессии обновляет access token и повторяет запрос к Go. [Сессия и размещение](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/architecture/index.md#L45-L49), [HTML, tRPC и cookie](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/architecture/index.md#L123-L132), [реализация сессии в выпуске](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/current-state.md#L33-L44), [session.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/session/session.ts#L82).
 
-## Пределы вывода о безопасности
+BFF экранирует JSON bootstrap при встраивании в HTML. Экранирование относится к этому месту вывода; для содержимого блокнотов нужны безопасный DOM-вывод и изоляция HTML-результатов. [HTML-хендлер по срезу кода](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/frontend/bff.md#L22-L29), [границы защиты содержимого](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/security/csp.md#L131-L145), [html.ts на SHA среза](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/html.ts#L21-L134).
 
-Проверка не даёт свидетельств входа, регистрации, refresh и параллельных запросов, выхода, истечения сессии, работы с блокнотами и POST-защиты от чужого Origin. Из ответов двух гостевых GET нельзя вывести результаты этих сценариев или свойства авторизованной сессии. Участок BFF → Go имеет ссылки на исходники, но не подтверждён авторизованным продовым сценарием. [Граница проверки: site/documentation/bff.md, строки 46–57](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/bff.md#L46-L57).
+Caddy добавляет CSP на участке проксирования BFF, браузер использует её для ограничения источников ресурсов и действий страницы. Шаблон принадлежит infra, а в гостевом прогоне наблюдался режим применения заголовка. Этот результат не охватывает блокировки отдельных ресурсов в браузере и работу HTML-результатов вычислений. [Настройка политики](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/security/csp.md#L14-L24), [границы HTTP-сверки](https://github.com/Cringe-Driven-Development-Team/docs/blob/a5c67b9b2a49a54e40da55c5f6352abf1ded8f60/site/documentation/security/csp.md#L147-L159), [Caddyfile.j2](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/caddy/templates/Caddyfile.j2#L7-L47).
 
-Раздел `site/documentation/csrf/` явно помечен как история и не описывает текущую защиту; его механизм не используется здесь для объяснения гостевого BFF. [Статус раздела](https://github.com/Cringe-Driven-Development-Team/docs/blob/1a9e9ea19cb14507d6ac14b3707ca03b57dcbe2a/site/documentation/csrf/index.md#L1-L5).
-
-Для изменения защиты сначала найди [владельца реализации](../concepts/sources.md) и сверь его исходники; [карта документации](../quickstart.md) помогает выбрать нужную тему.
+[Архитектура запроса](mvp.md), [карта владельцев](../concepts/sources.md) и [навигация по wiki](../quickstart.md).
