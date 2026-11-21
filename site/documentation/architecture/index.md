@@ -77,8 +77,7 @@ Backend CI проверяет Go, runtime-agent и реальные Python/R ker
 Course-sync копирует `main` в учебные репозитории после проверок: у фронта — при
 push в `main`, у бэка — дополнительно при включённом `COURSE_SYNC_ENABLED`.
 
-Infra запускает проверки перед preview в PR и apply на `main`. Docs собирает
-Pages с сохранёнными wiki. Frontend-packages публикует npm-пакеты через OIDC,
+Infra запускает проверки перед preview в PR и apply на `main`. Docs публикует сайт через Pages. Frontend-packages публикует npm-пакеты через OIDC,
 static загружает общую статику в S3.
 
 Источники: [frontend CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/ci.yml#L1),
@@ -158,8 +157,7 @@ BFF не только пересылает запросы: `runtime.updates` с�
 Pulumi управляет облачными ресурсами, сетью, DNS, S3 и CDN; его state хранится в отдельном
 проекте. Ansible настраивает серверы, Compose и runtime-окружения. На auxiliary работают
 hooks, githubbot и Telegram proxy. Restic обслуживает данные auxiliary; это отдельный
-контур от PostgreSQL продукта. Документация и сохранённые OpenWiki публикуются через
-GitHub Pages; генерацию wiki владелец запускает отдельно.
+контур от PostgreSQL продукта. Документация публикуется через GitHub Pages.
 
 Источники: [Pulumi](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/index.ts#L1),
 [state](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/bootstrap/index.ts#L15),

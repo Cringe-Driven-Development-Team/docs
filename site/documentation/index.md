@@ -108,8 +108,8 @@ Cellestial — аналог Google Colab и Jupyter Notebook: веб-прило�
 
 </div>
 
-<div id="где-находятся-планы-и-openwiki">
+<div id="где-находятся-планы">
 
-[Где находятся планы и OpenWiki](/documentation/current-state#где-находятся-планы-и-openwiki) — границы планов и производного указателя.
+[Где находятся планы](/documentation/current-state#где-находятся-планы) — где смотреть статус реализации и результаты проверок.
 
 </div>

@@ -13,9 +13,6 @@
     "check": "bun scripts/check-colors.ts",
     "prepare": "bun scripts/install-hooks.ts",
     "modules:check": "module-graph check",
-    "wiki:prepare": "bun scripts/openwiki-sources.ts --output .openwiki-sources",
-    "wiki:check": "bun scripts/openwiki-check.ts",
-    "wiki:update-local": "bun scripts/openwiki-update-local.ts",
     "render": "bun scripts/docker.ts render",
     "render:native": "bun scripts/eraser.ts render -f html && bun scripts/eraser.ts render -f png",
     "index": "bun scripts/build-index.ts",
@@ -25,13 +22,11 @@
     "site:check": "bun scripts/check-site.ts",
     "warm": "bun scripts/warm-icons.ts",
     "build": "bun scripts/docker.ts build",
-    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run mermaid && bun run site:vitepress && bun run index && bun run wiki:export && bun scripts/noindex.ts && bun run site:check",
+    "build:native": "bun run validate && bun run check && bun run warm && bun run render:native && bun run mermaid && bun run site:vitepress && bun run index && bun scripts/noindex.ts && bun run site:check",
     "site": "bun scripts/docker.ts site",
     "site:native": "bun scripts/build-site.ts",
     "icons": "bun scripts/fetch-icons.ts",
-    "skills:sync": "bun scripts/skills-sync.ts",
-    "wiki:browser": "bun scripts/openwiki-browser-check.ts",
-    "wiki:export": "bun scripts/export-openwiki.ts"
+    "skills:sync": "bun scripts/skills-sync.ts"
   },
   "devDependencies": {
     "@eraserlabs/diagrams-cli": "0.1.0",
@@ -44,7 +39,6 @@
     "gray-matter": "4.0.3",
     "lefthook": "2.1.14",
     "mermaid": "^11",
-    "openwiki": "0.7.2",
     "typescript": "7.0.2",
     "vitepress": "2.0.0-alpha.21",
     "vitepress-plugin-group-icons": "1.8.1",

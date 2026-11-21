@@ -4,7 +4,6 @@
 // Спека: docs/superpowers/specs/2026-09-27-docker-render-design.md §5.
 // Использование: bun scripts/docker.ts <render|build|site> [args...]
 import { resolve } from "node:path";
-import { preparePlatformWikis, readPreparedPlatformWikis } from "./openwiki-sources.ts";
 import { createHash } from "node:crypto";
 import { spawnError } from "./eraser.ts";
 
@@ -39,13 +38,12 @@ export function dockerBuildArgs(tag: string): string[] {
   return ["docker", "build", "-t", tag, "."];
 }
 
-export function dockerRunArgs(tag: string, repoRoot: string, script: DockerScript, args: readonly string[], inputs: { snapshotDir?: string; gitCommonDir?: string } = {}): string[] {
+export function dockerRunArgs(tag: string, repoRoot: string, script: DockerScript, args: readonly string[], inputs: { gitCommonDir?: string } = {}): string[] {
   const inner = `bun install --frozen-lockfile && ${nativeCommand(script, args).map(shellQuote).join(" ")}`;
   return [
     "docker", "run", "--rm",
     "-v", `${repoRoot}:/work`,
     "-v", `${nodeModulesVolume(repoRoot)}:/work/node_modules`,
-    ...(inputs.snapshotDir ? ["-v", `${inputs.snapshotDir}:/openwiki-sources:ro`, "-e", "OPENWIKI_SOURCES_DIR=/openwiki-sources"] : []),
     ...(inputs.gitCommonDir ? ["-v", `${inputs.gitCommonDir}:${inputs.gitCommonDir}`] : []),
     "-w", "/work",
     tag,
@@ -74,7 +72,7 @@ export interface DockerDeps {
   readDockerfile: () => Promise<string>;
   cwd: string;
   log: (line: string) => void;
-  prepareInputs?: () => Promise<{ snapshotDir?: string; gitCommonDir?: string }>;
+  prepareInputs?: () => Promise<{ gitCommonDir?: string }>;
 }
 
 // Вся логика выбора пути и кодов выхода — здесь, на внедрённом runner'е; main() ниже её не содержит.
@@ -114,13 +112,10 @@ function spawnRunner(cmd: string[], quiet = false): number | "missing" {
 async function main(argv: string[]): Promise<number> {
   return runScript(argv, {
     prepareInputs: async () => {
-      const snapshotDir = resolve(process.env.OPENWIKI_SOURCES_DIR ?? ".openwiki-sources");
-      if (process.env.OPENWIKI_SOURCES_DIR !== undefined) await readPreparedPlatformWikis(snapshotDir);
-      else await preparePlatformWikis(snapshotDir);
       const git = Bun.spawnSync(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], { stdout: "pipe", stderr: "pipe" });
       if (git.exitCode !== 0) throw new Error("Cannot resolve docs Git directory");
       const common = git.stdout.toString().trim();
-      return { snapshotDir, ...(common === resolve(".git") ? {} : { gitCommonDir: common }) };
+      return common === resolve(".git") ? {} : { gitCommonDir: common };
     },
     run: spawnRunner,
     env: process.env,
