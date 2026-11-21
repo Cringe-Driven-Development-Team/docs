@@ -168,7 +168,9 @@ function stepFailure(step: string, outcome: Outcome): BuildResult {
 }
 
 export function previewBuildEnv(env: Record<string, string | undefined>, slug: string): Record<string, string | undefined> {
-  const clean = Object.fromEntries(Object.entries(env).filter(([key]) => !/(TOKEN|SECRET|PASSWORD|CREDENTIAL)/i.test(key)));
+  const clean = Object.fromEntries(Object.entries(env).filter(
+    ([key]) => !/(TOKEN|SECRET|PASSWORD|CREDENTIAL|(?:API|PRIVATE|ACCESS)[_-]?KEY)/i.test(key),
+  ));
   return { ...clean, SITE_BASE: branchSiteBase(slug) };
 }
 
@@ -179,7 +181,11 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
     return stepFailure("worktree", worktreeOutcome);
   }
   try {
-    const options = { cwd: dir, timeout: BRANCH_STEP_TIMEOUT_MS };
+    const options = {
+      cwd: dir,
+      timeout: BRANCH_STEP_TIMEOUT_MS,
+      env: previewBuildEnv(process.env, branch.slug),
+    };
     const installOutcome = run(["bun", "install", "--frozen-lockfile"], options);
     if (installOutcome !== "ok") return stepFailure("bun install", installOutcome);
     // Кэш иконок основной сборки: ветке не нужно заново качать те же SVG.
@@ -198,10 +204,7 @@ function buildBranch(branch: SluggedBranch, tmpRoot: string): BuildResult {
         console.error(`site: board snapshot not copied for ${branch.name}: ${errorMessage(error)}`);
       }
     }
-    const buildOutcome = run(["bun", "run", "build"], {
-      ...options,
-      env: previewBuildEnv(process.env, branch.slug),
-    });
+    const buildOutcome = run(["bun", "run", "build"], options);
     if (buildOutcome !== "ok") return stepFailure("bun run build", buildOutcome);
     if (!existsSync(join(dir, "dist", "index.html"))) return { status: "failed", failedStep: "dist" };
     try {

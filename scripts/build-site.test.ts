@@ -103,7 +103,15 @@ test("BOARD_SNAPSHOT is the ignored board snapshot path", () => {
 
 test('preview environment sets the branch base and filters credentials', async () => {
   const { previewBuildEnv } = await import('./build-site');
-  expect(previewBuildEnv({ PATH: '/bin', GH_TOKEN: 'fixture', API_PASSWORD: 'fixture' }, 'check')).toEqual({
+  const env = {
+    PATH: '/bin',
+    GH_TOKEN: 'fixture',
+    API_PASSWORD: 'fixture',
+    SERVICE_API_KEY: 'fixture',
+    SSH_PRIVATE_KEY: 'fixture',
+    AWS_ACCESS_KEY_ID: 'fixture',
+  };
+  expect(previewBuildEnv(env, 'check')).toEqual({
     PATH: '/bin',
     SITE_BASE: '/branches/check/',
   });
