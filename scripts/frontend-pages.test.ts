@@ -53,8 +53,17 @@ test("frontend: команды и требования запуска соотв
   const build = read("build");
   for (const value of ["Bun", "Turborepo", "Vite", "tsc --noEmit", "jsxImportSource", "SVGR", "Babel", "IDENTITY_API_URL", "WORKSPACE_API_URL", "SESSION_KEY", "APP_ORIGIN", "BFF_KEY", "GO_API_TLS_CA_FILE", "GO_API_TLS_CERT_FILE", "GO_API_TLS_KEY_FILE", "DEV_TUNNEL_SSH_HOST", "DEV_TUNNEL_BACKEND_HOST", "bun run dev:tunnel", "bun run preview"]) expect(build, value).toContain(value);
   const checks = read("checks");
-  for (const value of ["bun run check", "bun test scripts/release/test apps/bff/test", "bun run build", "contract:verify", "lefthook", "oxfmt", "oxlint", "Go", "If-Match"]) expect(checks, value).toContain(value);
+  for (const value of ["bun run check", "bun test scripts/release/test apps/bff/test", "bun run build", "contract:verify", "lefthook", "oxfmt", "oxlint", "Go"]) expect(checks, value).toContain(value);
   for (const value of ["CSS Modules", ".module.css", "clsx", "tokens.css", "global.css"]) expect(read("styles"), value).toContain(value);
+});
+
+test("frontend: проверка записи различает запрос браузера и вызов Go", () => {
+  const scenario = section(read("checks"), "Проверить изменение формы");
+  const saveStep = scenario.split("\n3. ")[1] ?? "";
+  expect(saveStep).toMatch(/Network[^.]*POST \/api\/cells\/update[^.]*JSON[^.]*`hash`[^.]*`source`/);
+  expect(saveStep).toMatch(/Ответ `200`[^.]*новый `hash`/);
+  expect(saveStep).toMatch(/`If-Match` BFF добавляет при вызове Go/);
+  expect(saveStep).toMatch(/Откройте[^.]*новой вкладке[^.]*сверьте[^.]*текст/);
 });
 
 test("frontend: источники для браузера и разработки закреплены на SHA со строками", () => {
