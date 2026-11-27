@@ -12,7 +12,7 @@ PostgreSQL хранит документ и применённые резуль�
 | Сессии, очереди, снимки и события | Go, runtime-таблицы PostgreSQL |
 | Журнал агента | SQLite на runtime-VPS. Локальная часть удаляется вместе с VPS. |
 | Переменные Python | Память процесса. Теряются с kernel. |
-| Рабочие файлы | Диск runtime-VPS для `/workspace` при штатном подключении. Файлы теряются вместе с VPS. `/tmp` находится в tmpfs и очищается при удалении контейнера. |
+| Рабочие файлы | Диск runtime-VPS для `/workspace` при штатном подключении. Файлы теряются вместе с VPS. Временные тома очищаются при удалении контейнера. |
 
 Метаданные, содержимое, применённый вывод и собранная история остаются в PostgreSQL после удаления окружения.
 
@@ -45,7 +45,7 @@ Gateway принимает публичный HTTPS через Caddy и пере
 
 ## Изоляция kernel {#изоляция-kernel}
 
-Контейнер запускается от непривилегированного пользователя, с read-only root, ограничениями ресурсов и выделенной bridge-сетью. Дисковый workspace подключается отдельным bind mount. При работе агента без пути к дисковому workspace для `/workspace` предусмотрен tmpfs, а `/tmp` всегда в tmpfs. Firewall регулирует DNS и исходящий HTTP(S), блокирует внутренние назначения. Эти свойства описывают настройки исходников. [Контейнер](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L136), [сетевая политика](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/templates/firewall.nft.j2#L10).
+Контейнер запускается от непривилегированного пользователя, с read-only root, ограничениями ресурсов и выделенной bridge-сетью. Дисковый workspace подключается отдельным bind mount. Если в настройках агента путь к дисковому workspace не задан, `/workspace` размещается в tmpfs. `/tmp` используется как домашняя и временная директория, `/packages` — как пользовательский каталог для Python-пакетов. Оба размещаются в tmpfs. Firewall регулирует DNS и исходящий HTTP(S), блокирует внутренние назначения. Эти свойства описывают настройки исходников. [Контейнер](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L136), [сетевая политика](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/templates/firewall.nft.j2#L10).
 
 ## Лимиты {#limits}
 
@@ -59,7 +59,11 @@ Gateway принимает публичный HTTPS через Caddy и пере
 | Очередь агента | 100 ожидающих команд. [Допуск](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/session.py#L120-L140) |
 | Агент | 10 MiB сериализованного вывода, idle 900 с, старт kernel 120 с, ожидание interrupt 5 с по умолчанию. [Конфигурация](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/config.py#L20-L30) |
 | Контейнер | 1 GiB RAM, 1 CPU и 128 процессов. [Конфигурация](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L116-L136) |
-| Рабочие файлы | ФС workspace 5 GiB по умолчанию, файл до 3 GiB, tmpfs `/tmp` 64 MiB. [Настройка диска](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/defaults/main.yml#L36), [файл](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/config.py#L9-L10), [tmpfs](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L101-L107) |
+| Диск `/workspace` | ФС 5 GiB по умолчанию. [Настройка диска](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/defaults/main.yml#L36) |
+| `/workspace` без заданного пути к диску | tmpfs 256 MiB. [Резервный том](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L107) |
+| `/tmp` | tmpfs 256 MiB. [Размер и HOME](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L100-L136) |
+| `/packages` | tmpfs 512 MiB. [Размер и PYTHONUSERBASE](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L100-L136) |
+| Передача файла через API | До 3 GiB на один upload или download. Для более крупных файлов список убирает действие `download`. Запись из kernel ограничивается доступным местом в файловой системе. [Лимит передачи](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/config.py#L9-L10), [проверки API](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/workspace_transfers.py#L208-L248), [действия списка](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/workspace_listing.py#L24-L36) |
 
 ## Артефакты выпуска {#артефакты-выпуска}
 

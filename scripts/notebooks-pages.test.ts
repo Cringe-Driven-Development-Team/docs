@@ -162,3 +162,25 @@ test("свидетельства выкладки отделены от пров
   expect(rows).toHaveLength(4);
   for (const row of rows) expect(row).toMatch(/\| По исходникам .*\]\(\.\//);
 });
+
+test("повтор одиночного исполнения и пакета использует ключ соответствующей операции", () => {
+  const page = read("site/documentation/notebooks/execution.md");
+  expect(page).toMatch(/^\| `\/api\/runtime\/execute` \|[^\n]*`execution_id`[^\n]*прежн/m);
+  expect(page).toMatch(/^\| `\/api\/runtime\/execute-all` \|[^\n]*`request_id`[^\n]*прежн/m);
+});
+
+test("карточка восстановления предупреждает о потере черновика даже при статусе сохранения", () => {
+  const page = read("site/documentation/notebooks/editing.md");
+  const orphans = page.split("{#orphans}")[1];
+  expect(orphans).toContain("«Сохранено»");
+  expect(orphans).toContain("beforeunload");
+  expect(orphans).toMatch(/Скопируйте текст .*перед .*перезагрузкой/);
+});
+
+test("объём временных томов и лимит файлового API указаны отдельно", () => {
+  const page = read("site/documentation/notebooks/storage-and-infrastructure.md");
+  for (const [volume, size] of [["/tmp", 256], ["/workspace", 256], ["/packages", 512]] as const) {
+    expect(page).toMatch(new RegExp(`^\\| \`${volume}\`[^\\n]*${size} MiB`, "m"));
+  }
+  expect(page).toMatch(/^\| Передача файла через API \|[^\n]*3 GiB[^\n]*\bdownload\b/m);
+});

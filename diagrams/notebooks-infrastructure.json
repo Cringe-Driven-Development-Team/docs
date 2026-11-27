@@ -179,7 +179,16 @@
       "icon": "database",
       "texts": [
         {
-          "text": "/tmp · tmpfs"
+          "text": "tmpfs"
+        },
+        {
+          "text": "/tmp · 256 MiB"
+        },
+        {
+          "text": "/packages · 512 MiB"
+        },
+        {
+          "text": "Без диска: /workspace · 256 MiB"
         }
       ],
       "x": 1940,
@@ -230,6 +239,14 @@
           "color": "#1c1c1c"
         }
       ]
+    },
+    {
+      "tag": "Textbox",
+      "id": "file-api-limit",
+      "text": "Файловый API: до 3 GiB на upload или download.",
+      "x": 1840,
+      "y": 260,
+      "width": 620
     },
     {
       "tag": "Icon",

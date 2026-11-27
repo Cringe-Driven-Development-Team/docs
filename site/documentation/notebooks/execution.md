@@ -36,14 +36,14 @@ Go может сообщить `STOPPED` или `FAILED` и освободить
 
 ## Приём и доставка команды {#command}
 
-Go принимает новое исполнение в `READY`, сверяет исходник и сохраняет команду. Batch принимает упорядоченный набор code-ячеек одной транзакцией. Дальнейшая правка ячейки уже принятую команду не меняет. Повтор того же `request_id` с теми же параметрами возвращает прежнюю попытку. [Одиночный приём](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/adapters/postgres/executions.go#L20), [пакетный приём](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/adapters/postgres/batch.go#L24), [доставка](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/usecase/worker.go#L356-L420).
+Go принимает новое исполнение в `READY`, сверяет исходник и сохраняет команду. Batch принимает упорядоченный набор code-ячеек одной транзакцией. Дальнейшая правка ячейки уже принятую команду не меняет. Повтор с теми же параметрами возвращает прежнюю попытку или пакет. Используйте исходный ключ соответствующей команды. [Одиночный приём](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/adapters/postgres/executions.go#L113-L146), [пакетный приём](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/adapters/postgres/batch.go#L46-L93), [доставка](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/usecase/worker.go#L356-L420).
 
 ### Команды и ответы {#команды-и-ответы}
 
 | HTTP POST BFF | Go относительно `/runtime-sessions/{id}` | Действие |
 | --- | --- | --- |
-| `/api/runtime/execute` | `POST /executions` | Поставить одну команду |
-| `/api/runtime/execute-all` | `POST /executions/batch` | Поставить список команд |
+| `/api/runtime/execute` | `POST /executions` | Поставить одну команду. Повтор с тем же `execution_id` и теми же параметрами возвращает прежнее исполнение. |
+| `/api/runtime/execute-all` | `POST /executions/batch` | Поставить список команд. Повтор с тем же `request_id` и тем же пакетом возвращает прежний набор ID. |
 | `/api/runtime/interrupt` | `POST /kernel/interrupt` | Прервать текущее выполнение и продолжить очередь |
 | `/api/runtime/stop-executions` | `POST /executions/stop` | Прервать текущее выполнение и отменить оставшуюся очередь, сохранив окружение |
 | `/api/runtime/stop` | `POST /stop` | Завершить окружение |

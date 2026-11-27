@@ -115,6 +115,11 @@ test('current notebook infrastructure has no S3 migration path', () => {
   expect(JSON.stringify(doc)).toContain('подготовленным образом');
   expect(edgePairs(doc)).toEqual(expect.arrayContaining(['go-api>postgres', 'kernel>workspace']));
   expect(edgePairs(doc)).not.toContain('agent>postgres');
+  const nodes = indexById(doc);
+  expect(JSON.stringify(nodes.tmpfs)).toContain('/tmp · 256 MiB');
+  expect(JSON.stringify(nodes.tmpfs)).toContain('/workspace · 256 MiB');
+  expect(JSON.stringify(nodes.tmpfs)).toContain('/packages · 512 MiB');
+  expect(JSON.stringify(nodes['file-api-limit'])).toContain('до 3 GiB на upload или download');
   expect(JSON.stringify(doc)).toContain('6862183');
   const storage = readFileSync('site/documentation/notebooks/storage-and-infrastructure.md', 'utf8');
   const section = storage.split('### S3')[1]?.split('\n##')[0] ?? '';

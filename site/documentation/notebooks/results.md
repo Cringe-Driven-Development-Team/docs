@@ -12,7 +12,7 @@
 
 ## Применение к ячейке {#projection}
 
-Go сверяет ID code-ячейки, `source_version` и наличие более новой принятой попытки. Перемещение ячейки или правка соседней сохраняют версию её исходника. Правка и возврат прежнего текста создают новую версию, поэтому старый результат не восстанавливается. [Защита от новой попытки](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/adapters/postgres/events.go#L204), [проверка версии](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/results.go#L65-L81), [обновление source](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/editing.go#L107-L151).
+Go сверяет ID code-ячейки, `source_version` и наличие более новой принятой попытки. Перемещение ячейки или правка соседней сохраняют версию её исходника. Правка и возврат прежнего текста создают новую версию, поэтому старый результат не восстанавливается. [Защита от новой попытки](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/adapters/postgres/events.go#L164-L171), [проверка версии](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/results.go#L65-L81), [обновление source](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/editing.go#L107-L151).
 
 | Projection | Что означает |
 | --- | --- |
