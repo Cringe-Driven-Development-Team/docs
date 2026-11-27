@@ -61,7 +61,7 @@ test('contract separates code-first BFF and spec-first Go', () => {
 
 test('CI separates checks and publishing', () => {
   const doc = readDiagram('ci'), nodes = indexById(doc);
-  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['frontend-ci>frontend-release', 'backend-ci>backend-image', 'packages-release>npm']));
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['frontend-ci>frontend-release', 'backend-ci>backend-image', 'service-checks>backend-image', 'packages-release>npm']));
   for (const id of ['frontend-course-sync', 'backend-course-sync', 'static-upload', 'docs-pages']) expect(nodes[id], id).toBeDefined();
   expect(nodes['fe-drift']).toBeUndefined();
   expect(nodes['backend-drift']).toBeUndefined();
@@ -96,6 +96,8 @@ test('CI publishes frontend Releases on main and keeps backend event gates', () 
   expect(status?.tag).toBe('Textbox');
   if (status?.tag !== 'Textbox') throw new Error('CI scope must explain publication conditions');
   expect(status.text).not.toContain('PRODUCTION_ENABLED');
+  expect(status.text).toContain('Release v2 для services');
+  expect(doc.connections.find(e => e.from === 'backend-ci' && e.to === 'backend-image')?.label).toBe('services');
   expect(doc.connections.find(e => e.to === 'frontend-release')?.label).toBe('push main');
   expect(doc.connections.find(e => e.to === 'frontend-course-sync')?.label).toBe('push main');
   expect(doc.connections.find(e => e.to === 'backend-course-sync')?.label).toBe('main · flag');

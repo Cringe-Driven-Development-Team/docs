@@ -165,7 +165,9 @@ test("release diagrams link to published workflow and operating instructions", (
   const page = readFileSync(PAGE, "utf8");
   const ci = page.split("{#ci}")[1]?.split("\n## ")[0] ?? "";
   const cd = page.split("{#cd}")[1]?.split("\n## ")[0] ?? "";
-  expect(ci).toContain("/.github/workflows/ci.yml#L234-L304");
+  expect(ci).toContain("73ac7e02f2ad04fec7e6227a2e1f022b33d41994/.github/workflows/ci.yml#L331-L360");
+  expect(ci).toContain("`services`");
+  expect(cd).toContain("В последней подтверждённой выкладке монолита backend");
   expect(cd).toContain("release_tag");
   expect(cd).toContain("/deployments/7970701489)");
   expect(cd).toContain("da8cdc6da73cd12abcc8b562f4aafed3efedd5da/ansible/deploy-backend.yml");
