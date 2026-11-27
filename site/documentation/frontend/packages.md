@@ -1,169 +1,61 @@
----
-title: Командные пакеты
----
-
 # Командные пакеты
 
-Клиент использует учебные библиотеки команды из npm; их исходники живут в
-`frontend-packages`. Ниже — версии приложения, публичные точки импорта и путь от
-правки библиотеки до обновления клиента. Внутренние механизмы разобраны в
-[рендеринге](./rendering), [роутинге](./routing) и [состоянии](./state).
+Установленные версии `@cdd-team/*` смотри в `bun.lock` приложения. Исходники и выпуск пакетов принадлежат [frontend-packages](https://github.com/Cringe-Driven-Development-Team/frontend-packages). Таблица ниже сверена с кодом [выложенной версии фронтенда](./bff#bff-проверенная-часть). [Lockfile выложенного фронтенда](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/bun.lock#L79-L97).
 
-Срез приложения — 08.11.2026, `frontend`
-[`ea123518d624521f999e884ff32ddec0a5bf6bfa`](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/package.json#L13-L30).
-Это чтение кода, не новый прогон продукта на проде. Процесс выпуска отдельно сверен
-с `frontend-packages/main` на ту же дату:
-[`f4d2bd02fcc127e5603bbe09874242b071def7ba`](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/README.md#L53-L79).
-Этот SHA не заменяет исходники старых версий из таблицы.
+## Что установлено в приложении {#что-установлено-в-приложении}
 
-## Что установлено в приложении
-
-В `package.json` записаны допустимые диапазоны, например `^1.7.1`, а
-[bun.lock](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/bun.lock#L282-L298)
-фиксирует конкретное разрешение и integrity архива. Ниже каждая версия сопоставлена
-с одноимённым тегом и `version` в манифесте на SHA этого тега. Ссылка в последнем
-столбце ведёт на полный SHA, а не на изменяемую ветку.
-Имя тега составляется из имени пакета без scope и версии: `react-v1.7.1`,
-`router-v0.1.0`, `zustand-v1.0.1`, `clsx-v0.1.0`,
-`vite-plugin-bff-html-v0.2.1` соответственно.
-
-| Пакет | Версия в lockfile | SHA |
+| Пакет | Версия | Где используется |
 | --- | --- | --- |
-| `@cdd-team/react` | `1.7.1` | [f4d2bd0](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/package.json#L1-L30) |
-| `@cdd-team/router` | `0.1.0` | [bda991c](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/package.json#L1-L44) |
-| `@cdd-team/zustand` | `1.0.1` | [4652b21](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/4652b210db7bf9fcdbbdf96539b412201a1bec85/packages/zustand/package.json#L1-L45) |
-| `@cdd-team/clsx` | `0.1.0` | [bda991c](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/clsx/package.json#L1-L25) |
-| `@cdd-team/vite-plugin-bff-html` | `0.2.1` | [5be3456](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/5be3456bc9df61efebef6902ac5ebe157a307c60/packages/vite-plugin-bff-html/package.json#L1-L47) |
+| `@cdd-team/react` | `1.7.1` | Рендеринг и JSX. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/package.json#L14-L43). |
+| `@cdd-team/router` | `0.1.0` | SPA-маршруты. Peer React `^1.7.0`, зависимость clsx `^0.1.0`. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/package.json#L20-L48). |
+| `@cdd-team/zustand` | `1.0.1` | Сторы. Peer React `^1.2.1` помечен `optional` для входа `/vanilla`. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/4652b210db7bf9fcdbbdf96539b412201a1bec85/packages/zustand/package.json#L16-L48). |
+| `@cdd-team/clsx` | `0.1.0` | Собирает строку классов. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/clsx/package.json#L16-L42), [CSS Modules](./styles#modules). |
+| `@cdd-team/http-client` | `0.1.1` | Браузер → BFF и BFF → Go. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/packages/http-client/package.json#L1-L28), [клиент BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L153-L189), [клиент Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/go/request.ts#L1-L10). |
+| `@cdd-team/serialize-javascript` | `0.1.1` | BFF сериализует JSON bootstrap через `serializeJsonForHtml`. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/packages/serialize-javascript/package.json#L1-L28), [вызов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L21-L46). |
+| `@cdd-team/vite-plugin-bff-html` | `0.2.1` | Инструменты сборки, peer Vite `^8.3.3`. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/5be3456bc9df61efebef6902ac5ebe157a307c60/packages/vite-plugin-bff-html/package.json#L18-L47). |
+| `@cdd-team/vite-plugin-mkcert` | `0.1.1` | Локальный HTTPS. [Манифест версии](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/packages/vite-plugin-mkcert/package.json#L1-L23). |
+| `@cdd-team/oxlint-plugin-jsdoc` | `0.1.2` | Проверка JSDoc. [Зависимость](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/package.json#L28-L36), [подключение](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/oxlint.config.ts#L1-L10). |
 
-Отдельно корневой тулинг устанавливает `@cdd-team/oxlint-plugin-jsdoc` `0.1.2`:
-[зависимость](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/package.json#L34-L43),
-[lockfile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/bun.lock#L282-L286),
-тег `oxlint-plugin-jsdoc-v0.1.2` →
-[манифест ecd57a1](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/ecd57a1f6e5a10c6b2a253a9d635136d14b81b18/packages/oxlint-plugin-jsdoc/package.json#L1-L47).
-Его загружает [oxlint](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/oxlint.config.ts#L1-L6),
-а не браузер. Плагин HTML тоже работает в инструментах разработки; подробности — в
-[сборке](./build#transforms). Каталог владельца шире фактических зависимостей
-приложения: наличие `@cdd-team/openapi` у владельца не делает его частью клиента.
+Диапазоны зависимостей заданы в манифестах, например `^0.1.1` для общего клиента. Фактическая версия и integrity архива закреплены в `bun.lock`. [Манифест клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/package.json#L12-L26), [манифест BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/package.json#L16-L21), [lockfile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/bun.lock#L79-L97).
 
-Тег и манифест подтверждают срез исходников. Тег сам по себе не подтверждает
-публикацию в npm; таблица фиксирует разрешение зависимостей приложения, а не
-результат нового аудита registry или каждого release workflow.
+## Импорт и совместимость {#импорт-и-совместимость}
 
-## Импорт и совместимость
+Публичные точки импорта задаёт `exports`. Например, TypeScript берёт типы общего HTTP-клиента из `dist/index.d.mts`, а сборщик берёт реализацию из `dist/index.mjs`. Для JSX предусмотрены `/jsx-runtime` и `/jsx-dev-runtime`. Перед обновлением пакета проверь `peerDependencies` по манифестам версий из таблицы. [Экспорт HTTP-клиента](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/packages/http-client/package.json#L14-L25), [экспорты React](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/package.json#L14-L43), [настройка JSX](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/tsconfig.json#L5-L10), [преобразования при сборке](./build#transforms).
 
-`exports` задаёт публичные точки входа. У этих пакетов `import` ведёт в
-`dist/*.mjs`, а `types` — в `dist/*.d.mts`; импортировать внутренний `src` из
-репозитория владельца вместо установленного пакета не нужно.
+## npm и workspace {#npm-и-workspace}
 
-| Пакет | Публичный импорт и применение | Условия установленной версии |
-| --- | --- | --- |
-| React | `@cdd-team/react`: `createRoot`, hooks и типы; `/jsx-runtime` и `/jsx-dev-runtime` для automatic JSX | `peerDependencies` не объявлены; [exports](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/packages/react/package.json#L14-L43) |
-| Router | `@cdd-team/router`: `createRouter`, `RouterProvider`, `Link`, `Outlet` | Обязательный peer React `^1.7.0`; обычная зависимость clsx `^0.1.0`; [манифест](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/package.json#L20-L48) |
-| Zustand | `@cdd-team/zustand`: `create`, `useStore`, `useShallow`; `/vanilla`: `createStore` без React | Peer React `^1.2.1` помечен `optional`: vanilla работает без него, React-вход использует React приложения; [exports и peer](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/4652b210db7bf9fcdbbdf96539b412201a1bec85/packages/zustand/package.json#L16-L48), [README vanilla](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/4652b210db7bf9fcdbbdf96539b412201a1bec85/packages/zustand/README.md#L46-L64) |
-| clsx | `@cdd-team/clsx`: `clsx` собирает строку из классов, массивов и условий | Нет зависимостей и peers; [манифест](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/clsx/package.json#L16-L42), [пример](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/clsx/README.md#L10-L24) |
-| BFF HTML plugin | `@cdd-team/vite-plugin-bff-html`: `bffHtml`; также экспортирует `/package.json` | Peer Vite `^8.3.3`; [манифест](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/5be3456bc9df61efebef6902ac5ebe157a307c60/packages/vite-plugin-bff-html/package.json#L18-L47) |
-| JSDoc plugin | `@cdd-team/oxlint-plugin-jsdoc`, также `/package.json` | Peer oxlint `>=1.86.0`; [exports и peer](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/ecd57a1f6e5a10c6b2a253a9d635136d14b81b18/packages/oxlint-plugin-jsdoc/package.json#L18-L47) |
-
-Peer — условие к окружению потребителя: Router и React-вход Zustand должны работать
-с подходящим React приложения. В выбранном lockfile React `1.7.1` удовлетворяет
-обоим диапазонам. Похожее имя и API учебной библиотеки не переносят на неё все
-гарантии оригинальных React, TanStack Router или Zustand.
-
-Реальные места использования —
-[createRoot и RouterProvider](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/main.tsx#L1-L14),
-[createRouter и Register](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/router.ts#L1-L11),
-[стор тоста](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/toast.ts#L1-L10),
-[clsx в кнопке](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/components/Button/Button.tsx#L39-L46)
-и [bffHtml в dev-конфиге](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/vite.config.dev.ts#L63-L80).
-JSX runtime выбирается через
-[tsconfig](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/tsconfig.json#L5-L10);
-классы и `className` объясняют [стили](./styles#modules).
-
-## npm и workspace
-
-`@cdd-team/*` в таблице — внешние для монорепы приложения версии npm.
-Внутренние `@cdd/client`, `@cdd/bff`, `@cdd/schemas` связываются локально через
-Bun workspaces: [объявление каталогов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/package.json#L1-L8)
-и [разрешения workspace в lockfile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/bun.lock#L294-L298).
-
-Клиент ссылается на `@cdd/bff` как `workspace:*`; BFF так же зависит от
-`@cdd/schemas`. Эти приватные пакеты экспортируют локальный TypeScript:
-[типы BFF и список страниц](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/package.json#L1-L23),
-[схемы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/packages/schemas/package.json#L1-L14).
-Изменение workspace-кода доступно внутри этого checkout; выпуск библиотеки в
-`frontend-packages` сам по себе не обновляет приложение и его `bun.lock`.
+`@cdd-team/*` устанавливаются из npm. Приватные `@cdd/client`, `@cdd/bff` и `@cdd/schemas` живут в workspace приложения. Клиент подключает `@cdd/bff` через `workspace:*` и берёт оттуда контракт маршрутов. Клиент и BFF используют общие ручные проверки из `@cdd/schemas`. [Список workspace](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/package.json#L1-L8), [зависимости клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/package.json#L12-L26), [экспорт BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/package.json#L1-L8), [экспорт общих проверок](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/packages/schemas/package.json#L1-L13).
 
 ## Выпуск и обновление приложения {#release}
 
 <DiagramSection>
 
-У владельца каждый пакет имеет свою версию и changelog. `release-please` ведёт
-общий release PR, затем создаёт теги и GitHub Releases; отдельный publish job
-работает только с `paths_released`. Это подтверждают
-[конфигурация manifest-режима](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/release-please-config.json#L1-L19)
-и [release workflow](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/.github/workflows/release.yml#L15-L82).
-Схема отделяет появление тега от доступности npm-версии, а обновление клиента —
-от выпуска библиотеки. При ошибке или неподтверждённой публикации сначала
-разбирают результат выпуска у владельца.
+1. Измени пакет в workspace владельца. `release-please` готовит release PR, после его слияния создаёт теги и GitHub Releases. [Порядок выпуска](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/README.md#L76-L83).
+2. Publish job собирает пакеты и проверяет тот же SHA, на котором запускает публикацию. `verify:packages` переносит npm-архивы в отдельное окружение и устанавливает их вне workspace. Затем workflow прогоняет интеграционные тесты. [Шаги workflow](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/.github/workflows/release.yml#L33-L61), [проверка переноса архивов](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/scripts/verify-packages.ts#L163-L225).
+3. Publish job передаёт `paths_released` скрипту, который публикует эти пакеты в npm. Проверь точную версию через `npm view`; если её нет, проверь `release-report.json` соответствующей попытки. Тег фиксирует состояние исходников. [Публикация и отчёт](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/.github/workflows/release.yml#L62-L89), [проверка registry](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/scripts/publish-released.ts#L78-L109), [команда npm view](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/scripts/publish-released.ts#L128-L144).
+4. Обнови зависимость в приложении и выполни `bun install`. Проверь diff манифеста и `bun.lock`, затем запусти [проверки приложения](./checks#tools) и затронутый сценарий. [Команды фронтенда](https://github.com/Cringe-Driven-Development-Team/frontend/blob/bfab8a485c78412a814b3765d10ef83a6267deed/package.json#L11-L26).
 
 <template #diagram>
 
 ```mermaid
-%% Flowchart: выпуск владельца и отдельное обновление потребителя.
 flowchart TB
-    change["Правка пакета в main"]
-    releasePr["release-please: release PR"]
-    change --> releasePr
-    releasePr --> tags["Merge: теги и GitHub Releases"]
-    tags --> verify["Сборка, архивы, интеграция"]
-    verify --> publish["npm publish: paths_released"]
-    publish --> visible{"Версия видна в npm?"}
-    visible -->|Нет| investigate["Проверить отчёт выпуска"]
-    visible -->|Да| update["Обновить зависимость и bun.lock клиента"]
-    update --> checks["Проверки приложения и сценария"]
-    classDef decision fill:#fef3c7,stroke:#b45309,color:#374151
-    classDef success fill:#a7f3d0,stroke:#047857,color:#374151
-    class visible decision
-    class checks success
+    W["Пакет в workspace"] --> R["release-please: release PR и тег"]
+    R --> C["Сборка и проверка архива вне workspace"]
+    C --> P["npm publish: paths_released"]
+    P --> V{"Версия видна в npm?"}
+    V -->|Нет| E["Проверить release-report.json"]
+    V -->|Да| F["Обновить версию и bun.lock приложения"]
 ```
 
 </template>
 
 </DiagramSection>
 
-1. Правку библиотеки с `feat:`/`fix:` вливают в `main` владельца. CI проверяет release
-   PR; после его слияния `release-please` создаёт теги. Правила версий и коммитов —
-   в [README владельца](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/README.md#L59-L79).
-   Плагин `node-workspace` обновляет зависимые диапазоны peers; текущий
-   [release manifest](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/.release-please-manifest.json#L1-L9)
-   уже содержит Zustand `1.0.7`, Router `0.2.0` и clsx `0.1.1`. Они не описывают
-   установленный клиент из первой таблицы.
-2. Publish job собирает пакеты, проверяет npm-архивы установкой вне workspace и
-   выполняет интеграционные тесты. Для публикации по OIDC он ставит Node и npm;
-   сборка и проверки работают через Bun —
-   [шаги job](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/.github/workflows/release.yml#L33-L89).
-3. Скрипт публикует только выпущенные пути в порядке зависимостей: React, clsx,
-   Zustand, Router, затем остальные выпущенные пакеты. Уже видимую точную версию
-   пропускает, ошибка `npm publish` останавливает следующие публикации. После
-   успешной команды ждёт видимость точной версии через `npm view` и пишет
-   `release-report.json`; неподтверждённая версия завершает CLI с ошибкой —
-   [порядок](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/scripts/publish-released.ts#L4-L22),
-   [публикация и статусы](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/scripts/publish-released.ts#L82-L111),
-   [registry-проверка и код выхода](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/scripts/publish-released.ts#L133-L169).
-4. В приложении обновляют нужную зависимость, проверяют peers, changelog и миграцию,
-   выполняют `bun install`, проверяют diff `package.json` и `bun.lock`. Затем
-   запускают `bun run check`, `bun run test` и `bun run build`, проверяют затронутый
-   пользовательский сценарий. Границы автоматических проверок — в
-   [проверке изменений](./checks#tools). Одна зелёная сборка библиотеки не проверяет
-   её интеграцию с текущим клиентом.
+28.11.2026 в 00:02:59 MSK (UTC+03:00) `npm view @cdd-team/http-client@0.1.1 gitHead` и `npm view @cdd-team/serialize-javascript@0.1.1 gitHead` вернули одну ревизию, `872ffb6e01c13473867adfa6247e4e2d192f1c1b`. [Манифест HTTP-клиента](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/packages/http-client/package.json#L1-L10), [манифест сериализации](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/packages/serialize-javascript/package.json#L1-L10).
 
-## Что проверить в понимании
 
-- Почему `^1.7.1` в manifest и `1.7.1` в lockfile отвечают на разные вопросы?
-  Диапазон допускает версии, lockfile фиксирует выбранный архив.
-- Где искать реализацию Router этого приложения? На SHA тега `router-v0.1.0`,
-  а не в сегодняшнем `main` владельца.
-- Почему Release в GitHub недостаточно? Теги появляются до publish job; нужны
-  результат публикации и видимость точной версии в npm.
-- Обновится ли клиент после merge release PR библиотеки? Нет: приложение отдельно
-  обновляет зависимость и lockfile, проверяет peers и своё поведение.
+### Переход HTTP-клиента и сериализатора на npm
+
+Оба пакета работали как `workspace:*` на frontend `2e27346f12034a086b41abcf3a140d4ce94274e1`. Из этого SHA исходники перенесли в frontend-packages. Там проверили npm-архивы в отдельном checkout приложения с отключёнными локальными копиями. [Манифест BFF на исходном SHA](https://github.com/Cringe-Driven-Development-Team/frontend/blob/2e27346f12034a086b41abcf3a140d4ce94274e1/apps/bff/package.json#L16-L20), [локальная проверка frontend#284](https://github.com/Cringe-Driven-Development-Team/frontend/pull/284), [перенос и проверка архивов](https://github.com/Cringe-Driven-Development-Team/frontend-packages/pull/71).
+
+После публикации `0.1.1` коммит `c164cae793455704719825ab56e2ca365f708c23` переключил приложение на npm и удалил локальные копии. `@cdd/schemas` остался во frontend. [Подключение npm-пакетов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/c164cae793455704719825ab56e2ca365f708c23/apps/bff/package.json#L16-L20), [проверка установки и удаления локальных копий](https://github.com/Cringe-Driven-Development-Team/frontend/pull/285).

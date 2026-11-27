@@ -634,10 +634,10 @@ test("текущий BFF отделяет наблюдение прода от �
   for (const title of ["Что наблюдается на проде", "Релизы и граница доказательства", "Где искать реализацию", "Что ещё нужно проверить"]) {
     expect(md).toContain(`### ${title}`);
   }
-  expect(md).toContain("31.10.2026");
-  expect(md).toContain("403");
-  expect(md).toContain("401");
-  expect(md).toContain("не проверен авторизованным сценарием на проде");
+  const observation = md.split('### Что наблюдается на проде')[1]?.split('###')[0] ?? '';
+  for (const value of ['27.11.2026', 'MSK', 'https://cellestial.ru/login', 'id="bootstrap"', 'b1baf996fb6753d1a62eab6f874d03dca30faadc']) expect(observation, value).toContain(value);
+  expect(md).toContain("8118066244");
+  expect(md).toContain("в этом наблюдении не запускались");
   expect(md).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
   for (const link of md.matchAll(/https:\/\/github\.com\/[^)\s]+\/blob\/([^/]+)\//g)) {
     expect(link[1]).toMatch(/^[a-f0-9]{40}$/);
