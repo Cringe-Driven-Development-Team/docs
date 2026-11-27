@@ -18,7 +18,7 @@
       "id": "bff",
       "x": 840,
       "y": 0,
-      "width": 900,
+      "width": 1140,
       "height": 840,
       "isContainer": true,
       "color": "blue",
@@ -53,31 +53,22 @@
     },
     {
       "tag": "Icon",
-      "id": "trpc-adapter",
+      "id": "route",
       "x": 980,
       "y": 140,
       "icon": "code",
       "texts": [
         {
-          "text": "Адаптер tRPC"
+          "text": "Маршрут HTTP API"
         }
       ],
       "containerId": "bff"
     },
     {
-      "tag": "Textbox",
-      "id": "form-415",
-      "x": 1340,
-      "y": 140,
-      "width": 340,
-      "text": "**415 UNSUPPORTED_MEDIA_TYPE**\n\nurlencoded / plain\nДо createContext; вход не выполнен.",
-      "containerId": "bff"
-    },
-    {
       "tag": "Icon",
       "id": "csrf-check",
-      "x": 980,
-      "y": 400,
+      "x": 1220,
+      "y": 140,
       "icon": "shield",
       "texts": [
         {
@@ -89,10 +80,10 @@
     {
       "tag": "Textbox",
       "id": "csrf-403",
-      "x": 1340,
-      "y": 400,
+      "x": 1620,
+      "y": 140,
       "width": 340,
-      "text": "**403 csrf_invalid**\n\nMultipart без X-CSRF.\nGo не вызывается; сессия не создаётся.",
+      "text": "**403 csrf_invalid**\n\nНет `X-CSRF`. Сессия и тело не читаются.",
       "containerId": "bff"
     },
     {
@@ -131,24 +122,16 @@
     },
     {
       "tag": "Textbox",
-      "id": "attacker-policy",
+      "id": "login-policy",
       "x": 0,
       "y": 340,
       "width": 700,
-      "text": "**Цель атакующего**\n\nПередать свои логин и пароль в браузере жертвы.\nПрежняя сессия жертвы не нужна."
-    },
-    {
-      "tag": "Textbox",
-      "id": "unprotected-case",
-      "x": 0,
-      "y": 520,
-      "width": 700,
-      "text": "**Если бы вход не защищался**\n\nБраузер получил бы сессию атакующего.\nЖертва могла бы сохранить данные в его аккаунте.\nЭто гипотеза, а не результат текущего запроса."
+      "text": "**Публичный маршрут**\n\nВход доступен без прежней сессии и проходит общую проверку CSRF."
     },
     {
       "tag": "Legend",
       "id": "legend",
-      "x": 1780,
+      "x": 2020,
       "y": 0,
       "width": 340,
       "entries": [
@@ -176,27 +159,21 @@
       "tag": "Relationship",
       "from": "attack-code",
       "to": "client",
-      "label": "Чужие учётные данные"
+      "label": "Запрос входа"
     },
     {
       "tag": "Relationship",
       "from": "client",
-      "to": "trpc-adapter",
-      "label": "POST /api/trpc/auth.login",
+      "to": "route",
+      "label": "POST /api/auth/login",
       "color": "orange",
       "lineStyle": "solid"
     },
     {
       "tag": "Relationship",
-      "from": "trpc-adapter",
-      "to": "form-415",
-      "label": "urlencoded / plain"
-    },
-    {
-      "tag": "Relationship",
-      "from": "trpc-adapter",
+      "from": "route",
       "to": "csrf-check",
-      "label": "multipart/form-data"
+      "label": "До сессии и входа"
     },
     {
       "tag": "Relationship",

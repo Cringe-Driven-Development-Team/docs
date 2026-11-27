@@ -32,10 +32,13 @@ test('security: CSP объясняет действующую политику �
   expect(md).toContain('Content-Security-Policy');
   for (const name of ['default-src', 'script-src', 'style-src', 'img-src',
     'font-src', 'connect-src', 'manifest-src', 'worker-src', 'base-uri',
-    'form-action', 'frame-ancestors']) expect(md).toContain(name);
+    'form-action', 'frame-src', 'frame-ancestors']) expect(md).toContain(name);
+  expect(md).toContain("| `style-src` | `* data: blob: 'unsafe-inline'` |");
+  expect(md).toContain("| `frame-src` | `'self'` |");
+  expect(md).toContain("| `connect-src` | `'self'` и `private_files_upload_origin` |");
   expect(md.match(/^## .+$/gm)).toEqual([
     '## Где задаётся политика', '## Действующие директивы',
-    '## Как браузер проверяет ресурс', '## Границы защиты', '## Источники и проверка',
+    '## Как браузер проверяет ресурс', '## Источники и проверка', '## Границы защиты',
   ]);
   expect(md.match(/^```mermaid$/gm)).toHaveLength(2);
   expect(md.match(/<DiagramSection>/g)).toHaveLength(2);
@@ -58,14 +61,15 @@ test('security: CSRF описывает проверки BFF и границу G
     'csrf_invalid', 'HttpOnly', 'SameSite=Lax', 'X-BFF-Key', 'Bearer']) expect(md).toContain(name);
   expect(md).toMatch(/Sec-Fetch-Site[^\n]*отсутств/);
   expect(md).toContain('до чтения сессии');
+  expect(md).toContain('GET /api/users/me');
+  expect(md).toContain('POST /api/auth/login');
+  expect(md).toContain('400 BAD_REQUEST');
 });
 
 test('security: XSS связывает bootstrap и текстовый DOM без обещания санации', () => {
   const md = read('xss');
-  for (const name of ['serialize-javascript', 'isJSON', 'JSON.parse', 'textContent',
-    'createTextNode', 'nodeValue', '1.7.0', 'innerHTML', 'href', 'HttpOnly']) expect(md).toContain(name);
-  expect(md).toMatch(/не (является|выполняет).*санац/);
-  expect(md).toContain('не проверены');
+  for (const name of ['serializeJsonForHtml', 'script#bootstrap', 'JSON.parse', 'textContent',
+    'createTextNode', 'nodeValue', 'innerHTML', 'srcdoc', 'sandbox', 'HttpOnly']) expect(md).toContain(name);
 });
 
 test('security: ровно по одной встроенной Mermaid в CSRF и XSS', () => {

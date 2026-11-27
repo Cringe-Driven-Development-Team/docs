@@ -152,7 +152,7 @@
       "tag": "Relationship",
       "from": "client",
       "to": "csrf-check",
-      "label": "Простой GET /api/trpc/users.me",
+      "label": "Простой GET /api/users/me",
       "color": "orange",
       "lineStyle": "solid"
     },

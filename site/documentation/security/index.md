@@ -1,22 +1,15 @@
 # Безопасность
 
-Защита приложения распределена между браузером, BFF и Go. Браузер обращается к BFF
-на домене приложения; BFF управляет сессией и вызывает Go от имени пользователя.
-Две отдельные задачи — не принять подделанный запрос с чужого сайта и не исполнить
-пользовательский текст как код страницы.
+Браузер ограничивает использование cookie и загрузку ресурсов. BFF проверяет происхождение запросов, сессию и входные данные. Клиент выводит текст в DOM и изолирует HTML-результаты вычислений. [Обработка API](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L174-L200), [cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/cookies.ts#L1-L4), [вывод](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/pages/NotebookPage/Output.tsx#L178-L215).
 
 ## Разделы
 
-- [CSRF](/documentation/security/csrf) — как BFF проверяет запросы, к которым браузер может приложить cookie сессии.
-- [XSS](/documentation/security/xss) — как данные безопасно попадают в bootstrap и отображаются в интерфейсе.
-- [CSP](/documentation/security/csp) — как Caddy задаёт политику и браузер ограничивает источники ресурсов приложения.
+| Если нужно разобраться | Где искать |
+| --- | --- |
+| При каких заголовках BFF примет запрос с cookie | [CSRF](/documentation/security/csrf) |
+| Как передать данные через bootstrap и отобразить содержимое блокнота | [XSS](/documentation/security/xss) |
+| Какие ресурсы и действия разрешает браузер на странице приложения | [CSP](/documentation/security/csp) |
 
 ## Границы защиты
 
-Cookie сессии недоступна JavaScript благодаря `HttpOnly`. Это ограничивает чтение
-секрета сессии, но не мешает браузеру отправлять cookie в запросах. Поэтому нужны
-отдельные проверки CSRF. Исполняющийся на странице вредоносный JavaScript может
-действовать от имени пользователя даже без чтения cookie — это задача защиты от XSS.
-
-Подробности реализации, источники и границы проверки приведены на страницах CSRF, XSS и CSP.
-Размещение компонентов описано в [архитектуре](/documentation/architecture/).
+`HttpOnly` ограничивает чтение cookie из JavaScript. Браузер по-прежнему может приложить её к запросу. Проверки CSRF ограничивают запросы с других сайтов, безопасный вывод и CSP снижают риск исполнения постороннего кода в приложении. Go проверяет доступ к конкретной операции при вызове от BFF. [Сессия](/documentation/frontend/session), [граница BFF и Go](/documentation/security/csrf#граница-bff-и-go).
