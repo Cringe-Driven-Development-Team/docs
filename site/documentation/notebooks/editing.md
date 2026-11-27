@@ -1,121 +1,73 @@
-# Открытие, редактирование и сохранение
+# Открытие, редактирование и сохранение {#открытие-редактирование-и-сохранение}
 
-Редактор держит подтверждённый сервером снимок отдельно от локального текста. Записи идут последовательно с проверкой hash: подтверждение одной операции задаёт редакцию для следующей.
+Текст появляется в ячейке сразу. Запись считается подтверждённой, когда очередь получает или восстанавливает ожидаемый серверный снимок с актуальным `hash`. Источники и статус проверки приведены в [обзоре](./#существенные-разрывы). [Черновики и подтверждение](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L308-L331), [подтверждение](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L402-L427), [восстановление](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L521-L623).
 
-::: info Проверено по коду
-Срез 08.11.2026, frontend/BFF `0606aa6`, backend `a46aa8e`. [Полные SHA и границы проверки](./). Продовый сценарий не проверялся.
-:::
+## Загрузка блокнота {#загрузка-блокнота}
 
-## Загрузка блокнота
-
-`loadNotebook` параллельно читает metadata, content и active session. Очередь загружается затем, только если сессия принадлежит открытому блокноту. Сессия другого блокнота возвращается без её очереди. Любая ошибка чтения отклоняет весь агрегат; пустые успешные данные вместо ошибки не подставляются. Metadata и runtime не образуют одну транзакцию с content, но hash и cells поступают из одного снимка content. [BFF loader](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/bff/src/notebook.ts#L9), [чтение PostgreSQL](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/notebook.go#L145).
-
-Первое открытие использует однократный HTML bootstrap, переход внутри SPA — тот же loader через `notebooks.get`, если подходящего bootstrap нет. При 404/BAD_REQUEST открывается страница 404; при иной ошибке доступно повторение загрузки. [HTML](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/bff/src/html.ts#L91), [страница](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L188).
-
-## Ячейки и ввод
-
-У ячейки стабильный `id`; положение задаётся индексом с нуля. Можно создать code/markdown в конце или между ячейками, сдвинуть вверх/вниз, удалить в том числе последнюю. Созданная ячейка появляется и получает фокус после ответа сервера. Удаление снимает её черновик только после успеха. Структурные действия блокируются при другой структурной операции, конфликте или ошибке сохранения. [Store](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L334), [серверные позиции](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/editing.go#L68).
-
-На desktop source редактируется в `textarea`, высота растёт по содержимому. Страница прокручивается вертикально, длинная строка code — горизонтально внутри редактора. Исполнение не блокирует ввод. При основном указателе `(pointer: coarse)` текст доступен для чтения/выделения, Markdown показывается как preview, изменение структуры и source недоступно, запуск остаётся доступен. Это проверка типа указателя, а не ширины экрана. При переходе в coarse уже набранное отправляется в общую очередь сохранения. [Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L162), [touch](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/utils/touch.ts#L3).
-
-### Python
-
-Это собственный текстовый редактор с tokenizer, а не Monaco или языковой сервер. Под прозрачным textarea расположен декоративный слой подсветки. Он различает keywords, strings, numbers, comments и имя после `def`; не исполняет ввод и не проверяет его корректность. F-string подсвечивается целиком как строка, soft keywords отдельно не выделяются. В forced-colors декоративный слой скрывается, текст textarea становится видимым. [Tokenizer](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/modules/python/tokenize.ts#L19), [CSS](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.module.css#L103).
-
-| Клавиша | Действие |
+| Открытие | Загрузка |
 | --- | --- |
-| Tab | Пробелы до следующей позиции, кратной четырём; для выделения — отступ строк |
-| Shift+Tab | Снять до четырёх пробелов или табуляцию |
-| Enter | Повторить отступ, углубить после Python-двоеточия вне строки/комментария |
-| Backspace в ведущих пробелах | Вернуться к предыдущей позиции отступа |
-| Esc, затем Tab / Shift+Tab | Перевести фокус за пределы редактора |
+| URL | BFF проверяет сессию и адрес, загружает блокнот и кладёт его в HTML bootstrap. Гость перенаправляется на вход. [HTML BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L49-L142) |
+| SPA | Страница однократно использует подходящий preload, иначе вызывает `/api/notebooks/get`. После ухода ответ не меняет страницу. [NotebookPage](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L218-L287) |
 
-Операции используют штатную историю отмены через `execCommand`, с fallback для изменения выделения. Автокомплита и инспектора переменных в этом UI нет. [Обработчики](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L42), [отступы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/indentation.ts#L75), [панель страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L346).
+Отсутствующий или недоступный блокнот возвращает на главную. При сбое загрузки SPA предлагает повторить запрос. [Прямой URL](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L91-L142), [SPA](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L253-L272).
 
-### Markdown
+Общий загрузчик параллельно читает метаданные, содержимое и активную сессию. Дополнительный запрос очереди выполняется для сессии открытого блокнота. Ошибка чтения отклоняет агрегат. `hash` и `cells` приходят одним снимком содержимого. [BFF loader](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/notebook.ts#L23-L52), [запуск приложения](/documentation/frontend/startup).
 
-Существующая ячейка открывается в preview, новая — во вводе. Double-click/Enter включают редактирование; Shift+Enter, Esc или уход фокуса за пределы ячейки возвращают preview и инициируют flush. Переход в другое окно или диалог не закрывает режим. Preview строится из локального текста; oversized source остаётся во вводе. [Режимы Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/Cell/Cell.tsx#L157).
+## Ячейки и ввод {#ячеики-и-ввод}
 
-Собственный parser поддерживает заголовки, абзацы, списки, цитаты, fenced code, выделение, inline code и ссылки. Raw HTML остаётся текстом, дерево JSX состоит из разрешённых тегов. Ссылки допускают http/https и относительные адреса/якоря; опасные схемы и `//host` отвергаются. Внешние ссылки имеют `noopener noreferrer`. Fenced blocks `python`, `py`, `python3` получают ту же подсветку Python; углубление после двоеточия в Markdown действует только внутри такого блока. Это реализовано в интегрированном PR170, несмотря на более узкий старый scope #166. [Parser](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/modules/markdown/parse.ts#L4), [рендер](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/modules/markdown/Markdown.tsx#L19), [PR170](https://github.com/Cringe-Driven-Development-Team/frontend/pull/170). Наличие этих мер не подтверждает завершение [XSS-регресса #35](https://github.com/Cringe-Driven-Development-Team/frontend/issues/35).
+Ячейка имеет стабильный ID и индекс с нуля. Можно вставить code или Markdown, переместить и удалить ячейку. Интерфейс применяет структурную операцию после подтверждения и блокирует новые структурные действия на время записи структуры или конфликта. [Действия store](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L348-L427).
 
-## Лимит source
+### Python {#python}
 
-Для code и markdown предел — **65536 байт UTF-8**, не символов. Clipboard paste берёт только `text/plain`: из лимита вычитается незаменённый остаток, вставляемый фрагмент сокращается по границе Unicode. Если не помещается ничего, текст и выделение не меняются. Уведомление показывает количество вставленных Unicode code points, поэтому его числа не равны байтам. [Подготовка paste](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/snapshot.ts#L22), [вставка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L86).
+Code редактируется в `textarea` с отдельным слоем подсветки. Изменение отступа поддерживает Tab и Shift+Tab, Enter продолжает отступ, Backspace в ведущих пробелах сокращает его до предыдущего уровня. Esc, затем Tab или Shift+Tab переводят фокус из редактора. При основном указателе `coarse` исходник доступен для чтения и выделения. [Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/components/Cell/Cell.tsx#L42-L210), [отступы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/components/Cell/indentation.ts#L75), [компоненты и ввод](/documentation/frontend/rendering#клавиатура-и-touch).
 
-Другой путь ввода может превысить предел: весь draft остаётся локально с `tooLarge`, PATCH не отправляется до сокращения. Серверный 413 означает отказ, а не обрезание; он переводится в ошибку сохранения и проверку серверного снимка. Это отдельный случай от локального tooLarge. [Store](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L277), [HTTP ошибки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/bff/src/errors.ts#L26), [backend limit](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/usecase/editing.go#L11).
+### Markdown {#markdown}
 
-<DiagramSection>
+Enter или двойной клик открывают ввод. Shift+Enter, Esc или выход фокуса из ячейки возвращают предпросмотр и инициируют сохранение. Preview строится из текущего локального текста. Исходный HTML показывается текстом. Python-блоки с метками `python`, `py` и `python3` получают подсветку. [Режимы Cell](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/components/Cell/Cell.tsx#L150-L250), [Markdown](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/modules/markdown/Markdown.tsx#L19), [обработка недоверенных данных](/documentation/security/xss).
+
+## Лимит source {#лимит-source}
+
+Предел для code и Markdown — **65 536 байт UTF-8** на ячейку. При вставке из буфера учитывается текст за пределами выделения, а вставляемый фрагмент сокращается по границе Unicode. Ввод сверх предела остаётся черновиком с `tooLarge` до сокращения. Серверный HTTP 413 означает отказ записи. [Расчёт вставки и правка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L290-L331), [подсчёт байтов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/snapshot.ts#L22-L39), [предел Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/usecase/contract.go#L14-L18).
 
 ## Очередь сохранения {#save-queue}
 
-Store держит `confirmed {hash,cells}` и `drafts`. После ввода ждёт 500 мс; blur, завершение IME и подготовка запуска вызывают flush. Во время composition сохранение не запускается. Операции выполняются по одной, ожидающие update схлопываются к актуальному тексту. Поздний ответ удаляет draft только если он всё ещё равен отправленному; новое редактирование остаётся локальным. Поколение открытого блокнота защищает от ответов прежней страницы. [Очередь и ack](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L374), [ввод](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L277).
+1. Ввод меняет `drafts` отдельно от `confirmed {hash, cells}`. Автосохранение ждёт 500 мс. Blur, завершение IME и подготовка запуска вызывают flush. Во время composition отправка ждёт завершения ввода.
+2. Очередь выполняет одну запись за раз и объединяет ожидающие обновления source. Каждая отправка берёт актуальный подтверждённый `hash`.
+3. После ответа обновляется `confirmed`. Если во время запроса набран новый текст, он остаётся в `drafts`. Смена поколения блокнота отсекает поздние ответы предыдущей страницы.
 
-<template #diagram>
+[Автосохранение](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L16-L18), [ввод](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L308-L347), [подтверждение](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L402-L427), [отправка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L485-L517), [flush](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L798), [состояние клиента](/documentation/frontend/state#saving).
 
-```mermaid
-sequenceDiagram
-    %% Сохранение: последовательная запись и явное разрешение конфликта
-    actor User as Пользователь
-    participant Draft as Draft / save queue
-    participant BFF
-    participant Go as Go / PostgreSQL
-    User->>Draft: Изменить source
-    Note over Draft: Debounce / flush, одна запись за раз
-    Draft->>BFF: cells.update(hash, cellId, source)
-    BFF->>Go: PATCH с If-Match
-    alt Редакция актуальна
-        Go-->>BFF: hash + cell
-        BFF-->>Draft: Подтверждение
-        Note over Draft: Следующая запись с новым hash
-    else Конфликт редакции
-        Go-->>BFF: 409 notebook_conflict
-        BFF-->>Draft: Приостановить очередь
-        Draft->>BFF: Прочитать свежий блокнот
-        BFF->>Go: GET content и сведения страницы
-        Go-->>BFF: Свежие данные
-        BFF-->>Draft: Свежий снимок
-        User->>Draft: Выбрать серверный или свой текст
-        Note over Draft: Свой текст записывается с новым hash<br/>запуск требует нового действия
-    end
-```
+### Запросы BFF и Go {#запросы-bff-и-go}
 
-</template>
+Браузер передаёт `notebookId` и `hash` без кавычек в JSON. BFF подставляет идентификаторы в путь Go и добавляет сильный `If-Match` со значением в кавычках. [HTTP-маршруты](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/cells.ts#L14-L45), [формирование заголовка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/go/api.ts#L55-L59), [адаптер Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/go/api.ts#L193-L244).
 
-Эта очередь сохраняет документ. Серверная очередь исполнения независима: конфликт редактирования не отменяет уже принятые исполнения.
+| HTTP POST BFF | Операция Go относительно `/notebooks/{id}/content/cells` | Подтверждение |
+| --- | --- | --- |
+| `/api/cells/create` | `POST` с `kind, source, index?` | `201 {hash,cell}` |
+| `/api/cells/update` | `PATCH /{cell_id}` с `source` | `200 {hash,cell}` |
+| `/api/cells/move` | `POST /{cell_id}/move` с `index` | `200 {hash}` |
+| `/api/cells/delete` | `DELETE /{cell_id}` | `200 {hash}` |
 
-</DiagramSection>
+[Обработчики Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/delivery/http/editing.go#L53-L184).
 
-### Запросы BFF и Go
+## Hash и результат исполнения {#revision}
 
-Каждая процедура принимает `notebookId` и `hash` без HTTP-кавычек. BFF добавляет ровно один сильный `If-Match`, переносит идентификаторы в URL и удаляет их из body. [Router](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/bff/src/router/cells.ts#L11), [HTTP adapter](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/bff/src/go/api.ts#L86).
+`hash` — непрозрачная редакция содержимого. Go проверяет её под блокировкой строки блокнота. Изменение source или структуры меняет редакцию, повтор актуального no-op её сохраняет. Правка code source сбрасывает вывод этой ячейки. [Транзакция](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/editing.go#L16-L64), [правка source](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/editing.go#L107-L155).
 
-| Процедура | Дополнительный ввод | Go `/notebooks/{id}/content/cells` | Подтверждение |
-| --- | --- | --- | --- |
-| `cells.create` | `kind, source, index?` | POST | 201 `{hash,cell}` |
-| `cells.update` | `cellId, source` | PATCH `/{cell_id}` | 200 `{hash,cell}` |
-| `cells.move` | `cellId, index` | POST `/{cell_id}/move` | 200 `{hash}` |
-| `cells.delete` | `cellId` | DELETE `/{cell_id}` | 200 `{hash}` |
+На описанной ревизии Go запись одного результата сохраняет прежний `hash`. Отдельный SHA-256 исходника нужен при [подготовке запуска](./execution#подготовка-запуска), а серверный `source_version` защищает [проекцию](./results#projection). [Запись результата](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/results.go#L40-L109).
 
-Backend проверяет владельца и revision под блокировкой строки. Одинаковые конкурентные редакции дают один успех и один 409. Даже no-op сначала проверяет hash; актуальный повтор того же source или move на своё место редакцию не меняет. Реальное изменение code source сбрасывает только его outputs/count/truncated; move и соседние результаты сохраняются. [Транзакции](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/editing.go#L38), [source](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/editing.go#L107).
+## Ошибки записи и конфликт {#ошибки-записи-и-конфликт}
 
-## Hash и результаты {#revision}
+| Ситуация | Действие очереди |
+| --- | --- |
+| Таймаут, сетевой сбой, 5xx или недостоверный ответ | Перечитывает снимок. Уже применённое изменение считается подтверждённым. Прежняя структура допускает один автоматический повтор, иной снимок открывает конфликт. |
+| Определённый отказ, например 413 | Перечитывает текущую версию. При прежней структуре оставляет черновик и ошибку записи, при расхождении открывает конфликт. |
+| `409 notebook_conflict` или исчезновение цели | Приостанавливает очередь, снимает ожидающие структурные операции и загружает свежий снимок. |
 
-`hash` блокнота — непрозрачная UUID revision. ETag содержит её в кавычках. SHA-256 source для запуска — другой идентификатор, вычисляемый по UTF-8 коду конкретной ячейки.
+[Сверка и retry](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L521-L646), [загрузка конфликта](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L647-L686).
 
-::: warning Разрыв реализации и контракта
-[Apidog main](https://vb78fyael1.apidog.io/45814238e0) (GET content, endpoint `45814238`, прочитан 08.11.2026) и [OpenAPI frontend](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/spec/openapi.json#L1225) требуют не менять hash при изменении только outputs/count/truncated. Однако backend при новом результате вызывает [publish](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/editing.go#L194) и генерирует новую revision; [публикация результата](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/results.go#L79). Frontend [applyResult](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L712) обновляет вывод без hash. Поэтому следующий source-save может получить 409 даже без чужой правки текста. Клиентский обход этого разрыва не реализован.
-:::
+После успешного чтения можно принять серверный снимок или повторно записать свой текст в сохранившиеся ячейки с новым `hash`. Закрытый диалог оставляет очередь на паузе. Для исполнения после разрешения конфликта заново нажмите запуск. [Выбор версии](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L688-L741), [подготовка команды](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/runtime.ts#L542-L583).
 
-## Ошибки записи и конфликт
+## Черновики удалённых ячеек {#orphans}
 
-При сети, timeout, 5xx или неожиданном ответе неизвестно, применена ли запись. Store перечитывает snapshot: совпадение с ожидаемым результатом означает успех; прежняя структура допускает один автоматический повтор неопределённой записи; иной снимок означает конфликт. После повторной ошибки нужен ручной retry. Для create проверяется единственная новая ячейка, чтобы не создавать дубль вслепую. Определённый отказ вроде 413 не получает такой автоматический повтор. [Reconciliation](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L481).
-
-При 409/NOT_FOUND очередь останавливается, старые структурные jobs снимаются, drafts сохраняются. Сначала загружается свежий блокнот; при ошибке чтения доступен повтор, выбор версии до успешного чтения закрыт. Вариант «Серверный» принимает snapshot и снимает локальные drafts/orphans. «Мой» последовательно сохраняет текст сохранившихся cell IDs с новым hash; force нет, возможен повторный конфликт. Закрытие диалога оставляет очередь на паузе. Run открывает диалог и не продолжается автоматически после выбора. [Конфликт](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L595), [выбор](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L632), [run](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/runtime.ts#L476).
-
-### Текст удалённой ячейки {#orphans}
-
-Если другая вкладка удалила ячейку, локальный source становится orphan, доступным для копирования; ячейка автоматически не воссоздаётся. **Оставшаяся ошибка #165:** общий статус и beforeunload не учитывают orphans. После сохранения остальных drafts возможен ложный успех «Ваш текст сохранён» при оставшемся orphan. Это воспроизводимое поведение кода, а не гарантия сохранности. [Store](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L617), [тост](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/Conflict.tsx#L92), [задача #165](https://github.com/Cringe-Driven-Development-Team/frontend/issues/165).
-
-Уход внутри SPA инициирует сохранение; несохранённый текст и orphans можно восстановить из Map памяти этой вкладки при возврате. Это не localStorage: закрытие вкладки теряет локальную память. При изменившемся серверном hash восстановление вызывает конфликт. [Память страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/stores/notebook/index.ts#L175), [beforeunload](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L241).
-
-Текущий dirty выделяется как ошибка, saving сразу показывает spinner, saved живёт четыре секунды. Нейтральное «Автосохранение…», задержки 700/200 мс и секунда тишины перед «Сохранено» — открытое [требование #172](https://github.com/Cringe-Driven-Development-Team/frontend/issues/172), а не текущий UX. [Статусы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/pages/NotebookPage/status.ts#L54).
+При выборе своего текста черновик отсутствующей ячейки попадает в `orphans`. Скопируйте текст из карточки восстановления в новую ячейку, затем закройте карточку. При переходах внутри SPA неподтверждённые данные остаются в памяти до возврата в блокнот. Перезагрузка страницы уничтожает эту копию. [Восстановление и удаление карточки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L688-L747), [снимки в памяти](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L184-L224).

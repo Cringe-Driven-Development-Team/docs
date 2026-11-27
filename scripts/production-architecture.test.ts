@@ -97,11 +97,25 @@ test('CI publishes frontend Releases on main and keeps backend event gates', () 
   expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main / manual');
 });
 
+test('notebook components keep durable storage behind Go', () => {
+  const doc = readDiagram('notebooks-components'), nodes = indexById(doc);
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining([
+    'client>caddy', 'caddy>bff', 'bff>go-api', 'go-api>postgres',
+    'go-api>provisioner', 'provisioner>cloud', 'go-api>agent', 'agent>kernel',
+  ]));
+  expect(doc.connections.filter(edge => edge.to === 'postgres').map(edge => edge.from)).toEqual(['go-api']);
+  expect(nodes['postgres']?.containerId).toBe('services');
+  expect(nodes['kernel']?.containerId).toBe('runtime');
+});
+
 test('current notebook infrastructure has no S3 migration path', () => {
   const doc = readDiagram('notebooks-infrastructure');
   expect(edgePairs(doc)).toContain('go-api>postgres');
   expect(JSON.stringify(doc)).not.toMatch(/offline migration|01\.11\.2026|08\.11\.2026/);
   expect(JSON.stringify(doc)).toContain('подготовленным образом');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['go-api>postgres', 'kernel>workspace']));
+  expect(edgePairs(doc)).not.toContain('agent>postgres');
+  expect(JSON.stringify(doc)).toContain('6862183');
   const storage = readFileSync('site/documentation/notebooks/storage-and-infrastructure.md', 'utf8');
   const section = storage.split('### S3')[1]?.split('\n##')[0] ?? '';
   expect(section).toContain('архив');

@@ -6,9 +6,9 @@
       "title": {
         "text": "Облачный API"
       },
-      "x": 560,
+      "x": 505,
       "y": 980,
-      "width": 300,
+      "width": 355,
       "height": 240,
       "color": "green",
       "isContainer": true
@@ -16,7 +16,7 @@
     {
       "tag": "Textbox",
       "id": "evidence",
-      "text": "Устройство backend 06841d4 / frontend 319e691 · 09.11.2026",
+      "text": "Исходники: Go 3532ca9 · frontend b1baf99",
       "x": 0,
       "y": 0,
       "width": 1020
@@ -174,7 +174,7 @@
     {
       "tag": "Textbox",
       "id": "temporary",
-      "text": "Kernel: переменные и временные файлы",
+      "text": "Kernel: переменные процесса и рабочие файлы runtime-VPS",
       "x": 1660,
       "y": 900,
       "width": 360
@@ -218,13 +218,13 @@
       "tag": "Relationship",
       "from": "caddy",
       "to": "bff",
-      "label": "HTML / tRPC"
+      "label": "HTML и HTTP /api/*"
     },
     {
       "tag": "Relationship",
       "from": "bff",
       "to": "go-api",
-      "label": "Запросы от имени пользователя"
+      "label": "HTTP /api/v1"
     },
     {
       "tag": "Relationship",

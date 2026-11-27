@@ -3,7 +3,7 @@
     {
       "tag": "Textbox",
       "id": "evidence",
-      "text": "Backend 06841d4 / infra a59f858 · 09.11.2026. Сетевая изоляция runtime отдельно не проверена.",
+      "text": "Исходники: Go 3532ca9 · infra 6862183. Сетевая изоляция runtime по коду.",
       "x": 0,
       "y": 0,
       "width": 1000
@@ -115,7 +115,7 @@
       "x": 1800,
       "y": 80,
       "width": 740,
-      "height": 1180,
+      "height": 1440,
       "color": "blue",
       "isContainer": true
     },
@@ -179,7 +179,7 @@
       "icon": "database",
       "texts": [
         {
-          "text": "tmpfs"
+          "text": "/tmp · tmpfs"
         }
       ],
       "x": 1940,
@@ -189,7 +189,7 @@
     {
       "tag": "Textbox",
       "id": "firewall",
-      "text": "Firewall: DNS к resolver, HTTP(S) наружу; внутренние назначения закрыты",
+      "text": "Firewall: DNS к resolver и HTTP(S) наружу. Внутренние назначения закрыты.",
       "x": 1840,
       "y": 180,
       "width": 620
@@ -197,7 +197,7 @@
     {
       "tag": "Textbox",
       "id": "storage-boundary",
-      "text": "PostgreSQL — постоянное хранилище блокнотов. Архивный S3 bucket вне рабочего пути приложения.",
+      "text": "PostgreSQL: метаданные, ячейки, вывод и история.",
       "x": 900,
       "y": 1100,
       "width": 600
@@ -230,6 +230,19 @@
           "color": "#1c1c1c"
         }
       ]
+    },
+    {
+      "tag": "Icon",
+      "id": "workspace",
+      "icon": "database",
+      "texts": [
+        {
+          "text": "Диск VPS · /workspace"
+        }
+      ],
+      "x": 2300,
+      "y": 1340,
+      "containerId": "runtime"
     }
   ],
   "connections": [
@@ -251,7 +264,7 @@
       "tag": "Relationship",
       "from": "bff",
       "to": "go-api",
-      "label": "Приватная сеть"
+      "label": "mTLS через прокси"
     },
     {
       "tag": "Relationship",
@@ -282,6 +295,12 @@
       "from": "kernel",
       "to": "tmpfs",
       "label": "Временные файлы"
+    },
+    {
+      "tag": "Relationship",
+      "from": "kernel",
+      "to": "workspace",
+      "label": "Bind mount"
     }
   ]
 }
