@@ -77,6 +77,8 @@ flowchart TB
 3. По diff спеки вручную обнови DTO и карту операций в `packages/schemas/src/types.ts`, вызовы Go и проверки в `go/responses.ts`, а при изменении ограничений входа также `packages/schemas/src/validate.ts`. Typecheck сверяет код с написанными типами. Соответствие типов и ограничений OpenAPI проверяют по diff. [Правила изменения типов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/bfab8a485c78412a814b3765d10ef83a6267deed/docs/api-contract.md#L10-L33).
 4. Выполни `bun run contract:verify` для побайтового сравнения по SHA из манифеста. Проверь изменённый сценарий [на реальном Go](./checks#mock-boundary) с настройками выбранного checkout. На `frontend/main` BFF требует `IDENTITY_API_URL` и `WORKSPACE_API_URL` с префиксом `/api/v1`. [Проверка копии](https://github.com/Cringe-Driven-Development-Team/frontend/blob/bfab8a485c78412a814b3765d10ef83a6267deed/scripts/openapi/backend.ts#L64-L87), [проверка переменных в main](https://github.com/Cringe-Driven-Development-Team/frontend/blob/bfab8a485c78412a814b3765d10ef83a6267deed/apps/bff/src/env.ts#L15-L49), [настройка реального Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/bfab8a485c78412a814b3765d10ef83a6267deed/docs/api-contract.md#L72-L96).
 
+<span id="что-проверить-в-понимании"></span>
+
 ## BFF: проверенная часть {#bff-проверенная-часть}
 
 ### Что наблюдается на проде {#что-наблюдается-на-проде}

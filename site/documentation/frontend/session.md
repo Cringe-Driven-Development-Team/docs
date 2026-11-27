@@ -12,6 +12,8 @@ BFF хранит пару токенов Go в зашифрованной HttpOn
 2. При отказе Go `401` по access BFF обновляет токены и повторяет операцию один раз. Для прикладного `401`, распознанного обработчиком, исход передаётся без refresh. Повторный отказ по access или `401` при refresh завершает сессию. [Повтор и обработка refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L82-L97), [сброс cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L124-L138), [запрос refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/refresh.ts#L40-L68).
 3. Вне смены сессии `UNAUTHORIZED` защищённого запроса вызывает `onSessionLost`: приложение переходит в гостевой режим и направляет на `/login`. Во время ожидания смены клиент возвращает ошибку вызывающему коду и учитывает отказ при завершении самой смены. Для сетевого сбоя, `BAD_GATEWAY` и `FORBIDDEN` эта реакция не запускается. [Решение клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L235-L293), [переход ко входу](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/main.tsx#L33-L38).
 
+<span id="что-проверить-в-понимании"></span>
+
 ## Смена сессии и поздние ответы {#switching}
 
 <DiagramSection>

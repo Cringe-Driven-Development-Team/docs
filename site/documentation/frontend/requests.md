@@ -64,6 +64,8 @@ const user = await api(
 | `kind: 'abort'` | Запрос отменён вызывающим кодом. [Разбор отказа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L164-L177). |
 | `BAD_GATEWAY`, `kind: 'network'` или `kind: 'protocol'` | Различай отказ Go, сетевой сбой и ответ вне протокола. Для сбоя записи проверь [состояние блокнота](./state#saving). [Ошибки Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/errors.ts#L79-L125), [ошибки клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L153-L189). |
 
+<span id="что-проверить-в-понимании"></span>
+
 ## Проверка запросов {#проверка-через-существующие-моки}
 
 В DevTools сопоставь метод и путь, статус и JSON ошибки. Для записи или отзыва сессии проверь изменившееся состояние [на реальном Go](./checks#mock-boundary). Этот справочник описывает код выложенного фронтенда. Наблюдение гостевого HTML приведено в [проверенной части BFF](./bff#bff-проверенная-часть).

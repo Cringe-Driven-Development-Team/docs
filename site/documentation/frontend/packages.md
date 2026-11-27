@@ -26,6 +26,8 @@
 
 `@cdd-team/*` устанавливаются из npm. Приватные `@cdd/client`, `@cdd/bff` и `@cdd/schemas` живут в workspace приложения. Клиент подключает `@cdd/bff` через `workspace:*` и берёт оттуда контракт маршрутов. Клиент и BFF используют общие ручные проверки из `@cdd/schemas`. [Список workspace](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/package.json#L1-L8), [зависимости клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/package.json#L12-L26), [экспорт BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/package.json#L1-L8), [экспорт общих проверок](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/packages/schemas/package.json#L1-L13).
 
+<span id="что-проверить-в-понимании"></span>
+
 ## Выпуск и обновление приложения {#release}
 
 <DiagramSection>
