@@ -14,9 +14,12 @@ function edgePairs(doc: DiagramDoc): string[] {
 test('deployment places backend on VPS2', () => {
   const doc = readDiagram('deployment'), nodes = indexById(doc);
   expect(['caddy', 'bff'].map(id => nodes[id]?.containerId)).toEqual(['gateway', 'gateway']);
-  expect(['go-api', 'postgres', 'redis'].map(id => nodes[id]?.containerId)).toEqual(['vps2', 'vps2', 'vps2']);
-  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>caddy', 'caddy>bff', 'bff>go-api', 'go-api>postgres', 'go-api>redis']));
+  expect(['api-proxy', 'go-api', 'postgres', 'redis'].map(id => nodes[id]?.containerId)).toEqual(['vps2', 'vps2', 'vps2', 'vps2']);
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>caddy', 'caddy>bff', 'bff>api-proxy', 'api-proxy>go-api', 'go-api>postgres', 'go-api>redis']));
   expect(edgePairs(doc)).not.toContain('client>go-api');
+  expect(edgePairs(doc)).not.toContain('bff>go-api');
+  expect(doc.connections.find(e => e.to === 'api-proxy')?.label).toBe('mTLS');
+  expect(JSON.stringify(nodes.verification)).toContain('Go 3532ca9 (последний успешный CD)');
   expect(nodes['s3-notebooks']).toBeUndefined();
   expect(edgePairs(doc)).toEqual(expect.arrayContaining(['go-api>s3-avatars', 'client>s3-avatars', 'go-api>agent', 'agent>kernel']));
   expect(doc.connections.find(e => e.to === 'redis')?.label).toContain('сессии');
@@ -30,6 +33,7 @@ test('infra separates service roles', () => {
   if (status?.tag !== 'Textbox') throw new Error('runtime-status must describe verification limits');
   expect(status.text).toContain('OpenStack');
   expect(status.text).toContain('не проверен');
+  expect(JSON.stringify(nodes['infra-revision'])).toContain('b8f6d2d8');
   expect(edgePairs(readDiagram('infra'))).toContain('githubbot>proxy');
 });
 
@@ -46,6 +50,7 @@ test('browser calls BFF, BFF calls Go', () => {
 
 test('contract separates code-first BFF and spec-first Go', () => {
   const doc = readDiagram('contract');
+  expect(JSON.stringify(indexById(doc)['contract-scope'])).toContain('входы BFF и ответы Go');
   expect(edgePairs(doc)).toEqual(expect.arrayContaining([
     'backend-openapi>spec-snapshot', 'spec-snapshot>go-types', 'bff-router>bff-paths',
     'client>bff-router', 'bff-router>bff-go-client', 'bff-go-client>go-api',

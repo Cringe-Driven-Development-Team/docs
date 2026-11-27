@@ -207,7 +207,7 @@ test('frontend: входные страницы не отрицают реали
   for (const path of ['site/documentation/index.md', 'site/documentation/notebooks/index.md']) {
     const md = readFileSync(path, 'utf8');
     expect(md).not.toMatch(/UI поиска[^.]*отсутствует|UI[^.]*пока отсутствует|UI поиска не реализован/);
-    expect(md).toContain('не новый прогон');
+    expect(md).toContain(path.includes('/notebooks/') ? 'не новый прогон' : 'код поиска');
   }
   const notebooks = readFileSync('site/documentation/notebooks/index.md', 'utf8');
   expect(notebooks).toContain(`frontend/blob/${FRONTEND_SHA}/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L322-L346`);

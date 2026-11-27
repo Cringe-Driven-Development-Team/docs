@@ -2,7 +2,7 @@
   "entities": [
     {"tag":"Group","id":"github","x":260,"y":0,"width":1380,"height":700,"isContainer":true,"title":{"text":"GitHub · исходники и владельцы","icon":"github"},"color":"purple"},
     {"tag":"Group","id":"repo-frontend","x":300,"y":60,"width":600,"height":580,"isContainer":true,"title":{"text":"frontend · Bun workspaces","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
-    {"tag":"Icon","id":"client-source","x":360,"y":160,"icon":"typescript","texts":[{"text":"apps/client"}],"containerId":"repo-frontend"},
+    {"tag":"Icon","id":"client-source","x":500,"y":160,"icon":"typescript","texts":[{"text":"apps/client"}],"containerId":"repo-frontend"},
     {"tag":"Icon","id":"bff-source","x":680,"y":160,"icon":"server","texts":[{"text":"apps/bff"}],"containerId":"repo-frontend"},
     {"tag":"Icon","id":"schemas","x":680,"y":420,"icon":"file-code","texts":[{"text":"packages/schemas"}],"containerId":"repo-frontend"},
     {"tag":"Group","id":"repo-packages","x":1040,"y":60,"width":540,"height":580,"isContainer":true,"title":{"text":"frontend-packages · библиотеки / Vite plugin","icon":"github"},"color":"purple","containerId":"github","styleMode":"plain"},
@@ -17,7 +17,7 @@
     {"tag":"Icon","id":"bff","x":680,"y":1000,"icon":"server","texts":[{"text":"BFF · Bun.serve"}],"containerId":"runtime"},
     {"tag":"Icon","id":"go-api","x":1400,"y":1000,"icon":"go","texts":[{"text":"Go API"}],"containerId":"runtime"},
     {"tag":"Icon","id":"html-template","x":1040,"y":1000,"icon":"file-code","texts":[{"text":"HTML-шаблон из образа"}],"containerId":"runtime"},
-    {"tag":"Icon","id":"cdn-release","x":360,"y":1240,"icon":"cloud","texts":[{"text":"CDN · JS / CSS"}],"containerId":"runtime"},
+    {"tag":"Icon","id":"cdn-release","x":500,"y":1240,"icon":"cloud","texts":[{"text":"CDN · JS / CSS"}],"containerId":"runtime"},
     {"tag":"Textbox","id":"scope","x":300,"y":1480,"width":1320,"text":"CSR: BFF передаёт начальные данные в JSON bootstrap; компоненты рендерятся в браузере. PWA-файлы — с origin, JS/CSS приложения — с CDN. Общий HTTP-клиент и сериализатор bootstrap поставляются из npm."},
     {"tag":"Legend","id":"legend","x":2200,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]},
     {"tag":"Icon","id":"pwa-files","x":1040,"y":1240,"icon":"file-code","texts":[{"text":"SW / manifest / offline"}],"containerId":"runtime"}

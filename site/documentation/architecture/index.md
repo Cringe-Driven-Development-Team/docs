@@ -4,63 +4,40 @@ aside: false
 
 # Архитектура работающего сервиса {#архитектура-mvp}
 
-Cellestial — SPA с клиентским рендерингом и отдельным BFF. Браузер получает HTML и
-начальные данные от BFF, затем обращается к нему через tRPC. BFF вызывает Go API;
-блокноты и результаты исполнения хранятся в PostgreSQL, сессии авторизации — в Redis,
-аватары — в S3. Код пользователя выполняется в отдельном окружении runtime.
+Cellestial обслуживает браузер через Caddy и BFF. BFF отдаёт HTML и HTTP API, а Go на backend хранит блокноты и управляет окружениями для вычислений. [Маршруты BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/app.ts#L30-L66), [подключение Go-модулей](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/app/app.go#L108-L136).
 
-**Проверка 09.11.2026, 03:37 МСК.** Выпуски frontend и backend совпадают с их `main`
-на момент сверки. Версии подтверждены журналами production CD; выпуск frontend
-дополнительно проверен по HTML с публичного сайта.
-
-| Компонент | Версия | Подтверждение |
+| Компонент | Версия | Свидетельство |
 | --- | --- | --- |
-| Клиент и BFF | [`319e691`](https://github.com/Cringe-Driven-Development-Team/frontend/commit/319e691b79f81e09dcffabc04941831a5f4b5930) | [CD](https://github.com/Cringe-Driven-Development-Team/frontend/actions/runs/42538007203): образ, healthy, HTML и CDN; `/login` сейчас отдаёт ассеты этого SHA |
-| Go API | [`06841d4`](https://github.com/Cringe-Driven-Development-Team/backend/commit/06841d4765c28ad7e52bf5e36df3b72cb22c094e) | [CD](https://github.com/Cringe-Driven-Development-Team/backend/actions/runs/42536140424/job/128901944399): digest работающего контейнера, healthy, внутренний HTTP и запрос через BFF |
-| Инфраструктура | [`a59f858`](https://github.com/Cringe-Driven-Development-Team/infra/commit/a59f8584386810b0b94f5fb23cb72c7ff906f6d7) | [Production apply](https://github.com/Cringe-Driven-Development-Team/infra/actions/runs/42532217133) завершён успешно |
+| Клиент и BFF | [`b1baf996`](https://github.com/Cringe-Driven-Development-Team/frontend/commit/b1baf996fb6753d1a62eab6f874d03dca30faadc) | [Production Deployment 8118066244](https://api.github.com/repos/Cringe-Driven-Development-Team/frontend/deployments/8118066244/statuses) получил `success` 27.11.2026 в 19:45:23 UTC. Гостевой HTML `/login` 28.11.2026 в 02:18:48 МСК (UTC+03:00) содержал ассеты этого выпуска. [HTTP-проверки](/documentation/current-state#что-подтверждено-на-проде) |
+| Go API | [`3532ca9`](https://github.com/Cringe-Driven-Development-Team/backend/commit/3532ca97dc2c9d0f84aa999eae85918e76907aa7) | [Production Deployment 7970701489](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/7970701489/statuses) получил последний подтверждённый `success` 21.11.2026 в 23:09:55 UTC. [Попытка 8116451615](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/8116451615/statuses) для `cc4ea079` завершилась 27.11.2026 в 18:10:47 UTC ошибкой внешней проверки BFF. Активная ревизия Go после этой попытки не установлена. [Лог CD](https://github.com/Cringe-Driven-Development-Team/backend/actions/runs/46046649107) |
+| Инфраструктура | [`b8f6d2d8`](https://github.com/Cringe-Driven-Development-Team/infra/commit/b8f6d2d81410f70ec5af642cb486d37b0b0f5412) | [Production apply 46079576340](https://github.com/Cringe-Driven-Development-Team/infra/actions/runs/46079576340) завершился 27.11.2026 в 23:15:53 UTC |
 
-Публичные HTTP-проверки: `/login`, `/sw.js`, `/manifest.webmanifest` и `/offline.html`
-возвращают `200`; `users.me` без `X-CSRF` — `403`, с `X-CSRF: 1` без сессии — `401`.
-Ответ с HTML содержит `Cache-Control: private, no-store` и действующую CSP.
-
-::: info Граница проверки
-Прямой SSH при этой сверке недоступен; образ и health бэка подтверждены последним CD.
-Авторизованные сценарии блокнотов и аватаров, создание и исполнение runtime-сессии,
-сетевая изоляция runtime и восстановление из backup отдельно не проверены.
-Схемы показывают устройство выложенного кода и конфигурации, а не результаты этих сценариев.
-:::
+Схемы опираются на исходники этих ревизий и конфигурацию. Авторизованные сценарии, запуск runtime, изоляция и восстановление резервных копий не проверены. [Границы наблюдений](/documentation/current-state), [безопасность](/documentation/security/).
 
 ## Доступ к серверам {#server-access}
 
-| Машина | Роль | Домен | Подключение |
-| --- | --- | --- | --- |
-| VPS1 | gateway: Caddy и BFF | `cellestial.ru` | Прямой SSH |
-| VPS2 | backend: Go API, PostgreSQL, Redis | Публичного домена нет | По приватной сети через VPS1 |
-| VPS3 | auxiliary: служебные интеграции | `hooks.cellestial.ru` | Прямой SSH |
+| Сервер | Роль | Домен |
+| --- | --- | --- |
+| VPS1 | gateway, Caddy и BFF | `cellestial.ru` |
+| VPS2 | backend, Go API, PostgreSQL и Redis | Приватная сеть, SSH через VPS1 |
+| VPS3 | auxiliary, служебные интеграции | `hooks.cellestial.ru` |
 
-Для входа нужен пользователь `deploy` и личный авторизованный SSH-ключ.
-Адреса и команды — в [скилле cellestial-ops](https://github.com/Cringe-Driven-Development-Team/agent-plugins-private/blob/main/plugins/cellestial-ops/skills/cellestial-ops/SKILL.md)
-в приватном репозитории команды. Доступ к GitHub не выдаёт доступ к серверам.
+Для SSH нужен личный ключ и пользователь `deploy`. Доступом управляет команда эксплуатации. [Правила SSH и доступ к VPS2](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/README.md#L209-L211). Устройство серверов задают [стек infra](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/pulumi/index.ts#L12-L30) и [Compose](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/roles/app/templates/compose.yml.j2#L1-L25).
 
 ## Размещение компонентов {#deployment}
 
-Caddy принимает HTTPS на gateway и передаёт запросы BFF. BFF обращается к Go по
-приватной сети с сервисным ключом; Go API, PostgreSQL и Redis не доступны браузеру
-напрямую. PostgreSQL и Redis работают на backend VPS, а служебные интеграции — на auxiliary.
+Caddy принимает HTTPS и передаёт BFF HTML, `/api/*` и запросы к публичным файлам. BFF вызывает Go API с сервисным ключом через mTLS-прокси на VPS2 по приватной сети. Go API обращается к PostgreSQL, Redis и S3. [Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/roles/caddy/templates/Caddyfile.j2#L53-L75), [Compose](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/roles/app/templates/compose.yml.j2#L75-L117), [TLS и ключ BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/go/fetch.ts#L13-L26).
 
 | Данные | Хранилище и путь |
 | --- | --- |
 | Пользователи, блокноты, ячейки, результаты и история исполнения | Go → PostgreSQL |
-| Сессии авторизации и лимиты попыток входа/2FA | Go → Redis |
-| Аватары | Go → S3; браузер читает `avatars.cellestial.ru` |
-| JS/CSS выбранного выпуска | Браузер → CDN релизов → S3 релизов |
-| Общие изображения и шрифты | Браузер → CDN статики → S3 статики |
+| Сессии авторизации и лимиты попыток | Go → Redis |
+| Аватары | Go → S3. Браузер читает через `avatars.cellestial.ru` |
+| JS/CSS выпуска | Браузер → CDN релизов → S3 релизов |
+| Общие картинки и шрифты | Браузер → CDN статики → S3 статики |
 | Service worker, manifest, иконки и офлайн-комплект | Браузер → Caddy → BFF |
 
-Источники: [Compose](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/app/templates/compose.yml.j2#L1),
-[Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/caddy/templates/Caddyfile.j2#L26),
-[подключение хранилищ](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L87),
-[публичный домен аватаров](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/index.ts#L683).
+[Хранилища Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/app/app.go#L92-L136), [файлы BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/public.ts#L3-L27), [CDN и бакеты](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/pulumi/index.ts#L33-L59).
 
 <Diagram name="deployment" />
 
@@ -77,7 +54,7 @@ Backend CI проверяет Go, runtime-agent и kernel. Для монолит
 
 Infra запускает проверки перед preview в PR и apply на `main`. Docs публикует сайт
 через Pages. Frontend-packages публикует npm-пакеты через OIDC, static загружает
-общую статику в S3. [Infra](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/.github/workflows/infra.yml#L89-L216), [npm](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/.github/workflows/release.yml#L15-L43), [static](https://github.com/Cringe-Driven-Development-Team/static/blob/0cf8f4329408b9c7d970fbf30b5bd54e9f99d267/.github/workflows/ci.yml#L19-L53), [Pages](https://github.com/Cringe-Driven-Development-Team/docs/blob/8b12ddbb1ba47be5381181f1b334833f94b6fdf5/.github/workflows/pages.yml#L3-L29).
+общую статику в S3. [Infra](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/.github/workflows/infra.yml#L89-L216), [npm](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/.github/workflows/release.yml#L15-L43), [static](https://github.com/Cringe-Driven-Development-Team/static/blob/0cf8f4329408b9c7d970fbf30b5bd54e9f99d267/.github/workflows/ci.yml#L19-L53), [Pages](https://github.com/Cringe-Driven-Development-Team/docs/blob/8b12ddbb1ba47be5381181f1b334833f94b6fdf5/.github/workflows/pages.yml#L3-L29).
 
 <Diagram name="ci" />
 
@@ -101,110 +78,52 @@ Go на VPS2 через gateway и проверяет образ, health кон�
 
 ## Фронтенд {#frontend}
 
-Монорепозиторий frontend объединяет `apps/client`, `apps/bff` и `packages/schemas`.
-Клиент — компонентная SPA на командных React/router/zustand. Страницы и компоненты
-отделены от общих сторов и API-транспорта; локальное состояние остаётся в компонентах.
-Исходники библиотек и Vite BFF HTML plugin находятся в frontend-packages.
+BFF вставляет bootstrap в HTML. Клиент читает данные до первого рендера, заполняет сторы и запускает SPA через `createRoot`. После запуска запросы браузера идут в HTTP API BFF. Клиент и BFF входят в один выпуск. [HTML и bootstrap](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L107-L141), [запуск клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/main.tsx#L15-L39), [маршрутизация API](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/app.ts#L30-L66).
 
-Рендеринг — CSR: BFF вставляет JSON bootstrap в HTML-шаблон, а браузер заполняет
-сторы и строит интерфейс через `createRoot`. BFF управляет сессией в HttpOnly-cookie,
-обслуживает tRPC и вызывает Go. HTML-шаблон и публичные PWA-файлы входят в образ BFF;
-JS/CSS приложения загружаются с CDN своего выпуска.
-
-Источники: [зависимости клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/client/package.json#L1),
-[запуск](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/client/src/main.tsx#L16),
-[bootstrap](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/html.ts#L21),
-[сессия](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/session/session.ts#L1),
-[публичные файлы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/public.ts#L3).
-Подробнее — [устройство frontend](/documentation/frontend/) и [BFF](/documentation/frontend/bff).
+[Архитектура frontend](/documentation/frontend/architecture), [BFF](/documentation/frontend/bff), [сессия](/documentation/frontend/session), [командные пакеты](/documentation/frontend/packages).
 
 <Diagram name="frontend" />
 
-## Контракт и генерация {#contract}
+## Контракт HTTP {#contract}
 
-Браузер и BFF связаны типизированными процедурами tRPC. BFF и Go связаны HTTP-контрактом
-OpenAPI из Apidog: Orval генерирует fetch-client и Zod-схемы BFF, oapi-codegen — Go-код
-и встроенную спецификацию. Генераторы работают с экспортированным snapshot.
-Backend Contract drift повторяет генерацию и проверяет расхождение с репозиторием.
+| Граница | Источник контракта |
+| --- | --- |
+| Браузер → BFF, `/api/*` | Объявления `route({...})` в BFF. Клиент импортирует выведенный тип `BffPaths`. [Маршруты и типы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L9-L90), [экспорт](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/types.ts#L1-L13) |
+| Выложенный BFF → Go, `/api/v1` | Копия [`spec/openapi.json` в backend](https://github.com/Cringe-Driven-Development-Team/backend/blob/947a19ccf4319a621007b2900aa8e620ca27762b/spec/openapi.json#L1-L15) на SHA из [манифеста выпуска](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/spec/contract-source.json#L1-L5). Этот SHA определяет копию контракта, а активный образ Go проверяется через выкладку |
+| Разработка на проверенных `main` владельцев | [`spec/identity/openapi.json`](https://github.com/Cringe-Driven-Development-Team/backend/blob/29e5ef56133c6fc42cd2cce3b5ecb379b457c6b8/spec/identity/openapi.json#L1-L15) и [`spec/workspace/openapi.json`](https://github.com/Cringe-Driven-Development-Team/backend/blob/29e5ef56133c6fc42cd2cce3b5ecb379b457c6b8/spec/workspace/openapi.json#L1-L15) принадлежат backend. Frontend [скачивает и сверяет копию по SHA](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/openapi/backend.ts#L50-L87) |
 
-BFF не только пересылает запросы: `runtime.updates` собирает состояние сессии, очередь,
-события и результаты нескольких исполнений в один ответ браузеру. Клиент получает
-обновления опросом этой процедуры; потокового SSR здесь нет.
-
-Источники: [Orval](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/orval.config.ts#L1),
-[tRPC context](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/context.ts#L1),
-[runtime.updates](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/src/router/runtime.ts#L59),
-[опрос](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/client/src/stores/runtime.ts#L271),
-[backend drift](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/.github/workflows/contract-drift.yml#L1).
+В HTTP-границах действуют ручные проверки входов BFF и ответов Go. По изменению OpenAPI команда frontend обновляет TypeScript-типы, вызовы и проверки. [Обновление спеки и интеграционная проверка](/documentation/frontend/bff#apidog-orval-и-схемы), [валидаторы маршрутов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L174-L200), [проверка ответа Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/go/errors.ts#L45-L79).
 
 <Diagram name="contract" />
 
 ## Инфраструктура {#infra}
 
-Pulumi управляет облачными ресурсами, сетью, DNS, S3 и CDN; его state хранится в отдельном
-проекте. Ansible настраивает серверы, Compose и runtime-окружения. На auxiliary работают
-hooks, githubbot и Telegram proxy. Restic обслуживает данные auxiliary; это отдельный
-контур от PostgreSQL продукта. Документация публикуется через GitHub Pages.
+Pulumi задаёт сеть, серверы, DNS, S3 и CDN в Selectel. State хранится в S3 отдельного проекта. Ansible настраивает серверы, Compose и окружения runtime. [Стек](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/pulumi/index.ts#L12-L23), [проект state](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/pulumi/bootstrap/index.ts#L15-L24), [apply](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/.github/workflows/infra.yml#L89-L216), [подготовка runtime-VPS](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/README.md#L799-L808).
 
-Источники: [Pulumi](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/index.ts#L1),
-[state](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/bootstrap/index.ts#L15),
-[auxiliary Compose](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/hooks/templates/compose.yml.j2#L1),
-[backup auxiliary](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/restic_backup/templates/restic-backup.service.j2#L3).
+На auxiliary работают hooks, githubbot и Telegram proxy. Restic сохраняет резервные копии auxiliary в выделенный S3-бакет. [Compose auxiliary](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/roles/hooks/templates/compose.yml.j2#L19-L66), [Restic](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/roles/restic_backup/templates/restic-backup.service.j2#L3-L16), [бакет auxiliary](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/pulumi/auxiliary.ts#L125-L138).
 
 <Diagram name="infra" />
 
 ## Блокноты: компоненты {#notebooks-components}
 
-Go разделён на HTTP delivery, сценарии usecase, domain и адаптеры. Notebook repository
-работает с PostgreSQL: `notebooks` хранит метаданные и редакцию, `notebook_cells` —
-исходники и порядок, `notebook_cell_data` — outputs, execution count и attachments.
-Редактирование и запись результатов выполняются транзакционно. Redis обслуживает
-авторизацию, S3 — аватары; в пути чтения и сохранения блокнота S3 не участвует.
-
-Runtime-сессии и история исполнения также сохраняются в PostgreSQL. Go provisioner
-создаёт окружение через OpenStack и настраивает его Ansible. Go передаёт команды
-runtime-agent, который управляет Jupyter/kernel; переменные и временные файлы живут
-в окружении исполнения.
-
-Источники: [сборка зависимостей](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L101),
-[хранение блокнотов](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/docs/notebook-editing.md#L53),
-[provisioning](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/docs/runtime-provisioning.md#L1).
-Подробнее — [блокноты](/documentation/notebooks/).
+Go хранит метаданные, ячейки, результаты и записи runtime-сессий в PostgreSQL. Изменения исходников и структуры двигают редакцию содержимого. Запись отдельного результата в рассмотренной ревизии Go сохраняет текущий `hash`. [Редакция содержимого](/documentation/notebooks/editing#revision), [транзакция результата](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/results.go#L40-L109), [слои и хранилища](/documentation/notebooks/storage-and-infrastructure).
 
 <Diagram name="notebooks-components" />
 
 ## Блокноты: инфраструктура {#notebooks-infrastructure}
 
-Runtime-VPS создаётся для сессии отдельно от backend VPS. Подготовленный образ содержит
-Docker, nginx, nftables и окружение агента; Ansible проверяет версию образа и применяет
-настройки конкретной сессии. Go обращается к nginx по mTLS, nginx — к агенту на loopback.
-Агент хранит служебное состояние в SQLite на хосте и запускает kernel в контейнере
-с ограничениями ресурсов, read-only root и временными файловыми системами.
-
-Постоянные данные блокнотов остаются в PostgreSQL. Notebook bucket сохранён в infra как
-архив вне рабочего пути приложения.
-
-Источники: [runtime playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/site.yml#L1),
-[проверка образа и firewall](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/roles/runtime_host/tasks/main.yml#L1),
-[nginx/mTLS](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/roles/runtime_host/templates/nginx-agent.conf.j2#L1),
-[архивный бакет](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/inventory/group_vars/all/vars.yml#L60).
-Подробнее — [хранение и изоляция](/documentation/notebooks/storage-and-infrastructure).
+Go создаёт runtime-VPS по сессии через OpenStack и настраивает его Ansible. Команды идут через nginx с mTLS к локальному runtime-agent. Агент управляет kernel-контейнером с ограничениями ресурсов. Постоянные результаты хранятся в PostgreSQL. [Провайдер Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtime/adapters/openstack/provider.go#L49), [прокси агента](https://github.com/Cringe-Driven-Development-Team/infra/blob/b8f6d2d81410f70ec5af642cb486d37b0b0f5412/ansible/runtime/roles/runtime_host/templates/nginx-agent.conf.j2#L8), [контейнер kernel](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L96-L136). [Окружение и запуск](/documentation/notebooks/execution), [размещение, изоляция и лимиты](/documentation/notebooks/storage-and-infrastructure), [ответы и вывод ячеек](/documentation/notebooks/results).
 
 <Diagram name="notebooks-infrastructure" />
 
 ## Выпуск фронта {#frontend-release-lifecycle}
 
-Готовый комплект в GitHub Releases связывает файлы S3/CDN и образ GHCR. Ручной CD
-создаёт отдельный production Deployment и проверяет результат переключения BFF.
-Пример из GitHub за 27.11.2026, источники и команды приведены в
-[разделе выкаток](/documentation/frontend/releases/).
+GitHub Release связывает ассеты S3/CDN и образ GHCR. Отдельный production Deployment фиксирует исход CD после Health check. [Процесс, пример и команды](/documentation/frontend/releases/).
 
 <Diagram name="frontend-release-lifecycle" />
 
 ## Доставка фронта {#frontend-release-delivery}
 
-Браузер получает HTML и API через Caddy/BFF, JS/CSS выпуска — через CDN/S3.
-Образ GHCR скачивается при выкатке. Подробнее о файлах и идентификаторах —
-[состав выпуска](/documentation/frontend/releases/artifacts).
+Браузер получает HTML и API через Caddy/BFF, JS/CSS выпуска — через CDN/S3. Образ GHCR скачивается при выкатке. [Файлы и идентификаторы выпуска](/documentation/frontend/releases/artifacts).
 
 <Diagram name="frontend-release-delivery" />

@@ -11,7 +11,7 @@
     {"tag":"Icon","id":"spec-snapshot","x":1180,"y":160,"icon":"file-code","texts":[{"text":"spec/openapi.json · копия по SHA"}],"containerId":"frontend"},
     {"tag":"Icon","id":"backend-openapi","x":1640,"y":160,"icon":"swagger","texts":[{"text":"spec/openapi.json · исходник"}],"containerId":"backend"},
     {"tag":"Icon","id":"go-api","x":1640,"y":380,"icon":"go","texts":[{"text":"Go API"}],"containerId":"backend"},
-    {"tag":"Textbox","id":"contract-scope","x":280,"y":620,"width":1240,"text":"BFF проверяет входы и ответы Go вручную. По diff OpenAPI обновляют DTO, вызовы и валидаторы. Браузер и BFF используют @cdd-team/http-client со своими транспортами. BFF экранирует JSON bootstrap через @cdd-team/serialize-javascript."},
+    {"tag":"Textbox","id":"contract-scope","x":280,"y":620,"width":1240,"text":"BFF вручную проверяет входы BFF и ответы Go. По diff OpenAPI обновляют DTO, вызовы и валидаторы. Браузер и BFF используют @cdd-team/http-client со своими транспортами. BFF экранирует JSON bootstrap через @cdd-team/serialize-javascript."},
     {"tag":"Legend","id":"legend","x":1980,"y":0,"width":340,"entries":[{"text":"GitHub","color":"#c43dcf"},{"text":"Пользовательский трафик","color":"#c38424"},{"text":"Прочие связи","color":"#1c1c1c"}]}
   ],
   "connections": [
