@@ -97,7 +97,7 @@ test('внешний GET: HTML обрабатывается отдельно, г
 test('вход: публичный маршрут проходит общую проверку CSRF', () => {
   const doc = read('login');
   expect(edgeText(doc, 'client', 'route')).toContain('POST /api/auth/login');
-  expect(nodeText(doc, 'login-policy')).toContain('Публичный маршрут');
+  expect(nodeText(doc, 'login-policy')).toMatch(/без прежней сессии[\s\S]*в чужом аккаунте/);
 });
 
 test('XSS: при выполнении кода в origin остаются проверки сессии и входа', () => {

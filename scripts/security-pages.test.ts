@@ -26,6 +26,12 @@ test('security: обзор ведёт к трём существующим по�
   }
 });
 
+test('security: пример проверки прав в Go ссылается на закреплённый исходник', () => {
+  const md = read('index');
+  expect(md).toContain('ревизию контракта');
+  expect(md).toMatch(/backend\/blob\/[a-f0-9]{40}\/internal\/notebook\/adapters\/postgres\/notebook\.go#L\d+/);
+});
+
 test('security: CSP объясняет действующую политику и два этапа её применения', () => {
   const md = read('csp');
   expect(md).not.toMatch(/\bTODO\b/);
@@ -64,6 +70,13 @@ test('security: CSRF описывает проверки BFF и границу G
   expect(md).toContain('GET /api/users/me');
   expect(md).toContain('POST /api/auth/login');
   expect(md).toContain('400 BAD_REQUEST');
+  expect(md).toMatch(/API GET и HEAD[^\n]*X-CSRF: 1/);
+  expect(md).toMatch(/HEAD для пути только с POST[^\n]*404[^\n]*до проверки CSRF/);
+
+  const login = md.split('{#login-csrf}')[1]!.split('\n### ')[0]!;
+  expect(login).toContain('в чужом аккаунте');
+  expect(login).toContain('даже без прежней сессии');
+  expect(login).toContain('#possible-csrf-vulnerabilities-in-login-forms');
 });
 
 test('security: XSS связывает bootstrap и текстовый DOM без обещания санации', () => {

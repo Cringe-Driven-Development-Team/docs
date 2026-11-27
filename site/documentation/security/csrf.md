@@ -10,21 +10,22 @@ BFF хранит зашифрованную сессию в `__Host-Http-session
 
 | Запрос | Условие приёма на этапе CSRF |
 | --- | --- |
-| API GET | `X-CSRF: 1`. Проверка не требует `Origin` и `Sec-Fetch-Site` |
+| API GET и HEAD для объявленного GET | `X-CSRF: 1`. Проверка не требует `Origin` и `Sec-Fetch-Site`. HEAD использует обработчик GET и возвращает ответ без тела |
 | API POST | `X-CSRF: 1`, точное совпадение `Origin` с `APP_ORIGIN`, `Sec-Fetch-Site` отсутствует или равен `same-origin` |
+| HEAD для пути только с POST, иной неподдерживаемый метод или неизвестный путь API | `404` до проверки CSRF |
 | Переход на страницу | GET или HEAD с `Accept: text/html` вне API обрабатывается отдельной веткой HTML |
 
-[Условия API](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L92-L108), [маршрутизация HTML](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/app.ts#L38-L59), [проверка APP_ORIGIN при запуске](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/env.ts#L15-L29).
+[Условия API](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L92-L108), [маршрутизация API и HTML](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/app.ts#L30-L59), [проверка APP_ORIGIN при запуске](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/env.ts#L15-L29).
 
 <DiagramSection>
 
-Для маршрута из таблицы порядок один. Сначала CSRF, затем сессия и доступ, после этого чтение и проверка входа. Обработчик получает проверенный вход. Если маршрут принимает тело, несовпадение его формата с объявленным даёт `415` на этапе чтения. [Чтение входа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L131-L163), [порядок проверок](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L174-L200).
+Для запроса, который попал в обработчик маршрута API, порядок один. Сначала CSRF, затем сессия и доступ, после этого чтение и проверка входа. Обработчик получает проверенный вход. Если маршрут принимает тело, несовпадение его формата с объявленным даёт `415` на этапе чтения. [Чтение входа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L131-L163), [порядок проверок](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L174-L200).
 
 <template #diagram>
 
 ```mermaid
 flowchart TD
-    A["Метод и путь найдены в таблице API"] --> B{"Заголовки допустимы?"}
+    A["BFF выбрал обработчик API"] --> B{"Заголовки допустимы?"}
     B -->|Нет| C["403 csrf_invalid"]
     B -->|Да| D{"Сессия и доступ"}
     D -->|Маршрут требует сессию, а её нет| E["401 UNAUTHORIZED"]
@@ -84,7 +85,7 @@ HTTPS-поддомен может относиться к тому же сайт
 
 ### Login CSRF {#login-csrf}
 
-Публичный `POST /api/auth/login` доступен без прежней сессии. CSRF-проверка защищает сам вход, который при успехе создаёт сессию. [Вход](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/auth.ts#L8-L16), [маршрут](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/auth.ts#L32-L39), [общие проверки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L174-L200).
+Публичный `POST /api/auth/login` доступен без прежней сессии. При успешном входе BFF создаёт сессию. Защита нужна даже без прежней сессии: если пользователю навязан вход под чужой учётной записью, он может по ошибке сохранить свои данные в чужом аккаунте. [Вход](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/auth.ts#L8-L16), [маршрут](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/auth.ts#L32-L39), [общие проверки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L174-L200), [OWASP о защите входа](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#possible-csrf-vulnerabilities-in-login-forms).
 
 <Diagram name="security/csrf-login" />
 
