@@ -162,3 +162,14 @@ test("current behavior points to documentation", () => {
   expect(context).toContain('](/documentation/architecture/#contract)');
   expect(readFileSync(PAGE, 'utf8')).toContain('{#contract}');
 });
+
+test("release diagrams link to published workflow and operating instructions", () => {
+  const page = readFileSync(PAGE, "utf8");
+  const ci = page.split("{#ci}")[1]?.split("\n## ")[0] ?? "";
+  const cd = page.split("{#cd}")[1]?.split("\n## ")[0] ?? "";
+  expect(ci).toContain("/.github/workflows/ci.yml#L234-L304");
+  expect(cd).toContain("release_tag");
+  for (const path of ["deployment", "rollback"]) {
+    expect(cd).toContain(`](/documentation/frontend/releases/${path})`);
+  }
+});

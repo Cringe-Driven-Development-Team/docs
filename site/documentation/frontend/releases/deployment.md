@@ -4,147 +4,61 @@ title: Выкатка
 
 # Выкатка {#release-deployment}
 
-CD вручную переключает production на уже собранный выпуск. Он не собирает приложение заново.
-Перед запуском проверьте наличие опубликованного Release и доступ к Actions командного
-репозитория. Для возврата к предку используйте [Rollback](./rollback), а не CD старого тега.
-[Основание описания](./#основание-описания).
+Запустите **CD** с ветки `main`, когда нужный выпуск опубликован. Операция считается подтверждённой после успешного Health check и записи `success` для целевого SHA в `production`. Нужны права на запуск и доступ к environment `production`. [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L3-L41), [условие успеха](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L138-L156).
 
 ## Какой выпуск будет выбран {#selection}
 
-Поле `release` необязательно. Пустое поле означает ближайший к вершине основной цепочки
-`main` опубликованный Release, исключая draft и prerelease. `Ready release` обновляет
-`origin/main` после ожидания очереди и просматривает first-parent историю. Учитываются все
-страницы каталога Releases; время публикации, порядок ответа API и метка Latest не задают выбор.
+| Поле `release` | Что выбирает CD |
+| --- | --- |
+| Тег `release-<полный SHA>` | Указанный опубликованный выпуск после проверки. |
+| Пустое | Первый опубликованный обычный Release при обходе first-parent истории обновлённого `origin/main`. |
 
-Для `A → B` будет выбран B, даже если A допубликовали позже. B содержит изменения A;
-отдельно выкатывать промежуточный выпуск не нужно. Если новый выпуск появился, пока CD
-ждал очередь, он может стать целью. Выбор фиксируется один раз; затем шаги используют его SHA,
-ID и digest. Если нужно выкатить именно просмотренный выпуск, укажите его полный тег.
-
-Непустое поле после удаления внешних пробелов выбирает точный `release-<полный SHA>`.
-Если выбранный выпуск повреждён, CD завершится ошибкой; исправный старый не подбирается.
-Реализация: [выбор Release](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/releases.ts#L382-L425) и
-[обновление main](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L50-L57).
+Выбор происходит после ожидания очереди. Смотрите тег и SHA в **Ready release**. Если кандидат отсутствует или его проверка не проходит, CD останавливается до изменений на сервере. Дата публикации и GitHub Latest в выбор не входят. Допустим тот же SHA или потомок последнего подтверждённого production. [Выбор](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/releases.ts#L370-L432), [направление](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/deployments.ts#L21-L38), [обновление main](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L55-L71).
 
 ## Запуск CD
 
-::: tabs
-== Через GitHub
+1. Откройте [Actions → CD](https://github.com/Cringe-Driven-Development-Team/frontend/actions/workflows/cd.yml), нажмите **Run workflow** и выберите `main`.
+2. Вставьте тег для точной цели или оставьте `release` пустым. Через GitHub CLI команда для точной цели выглядит так:
 
-1. Откройте [Actions → CD](https://github.com/Cringe-Driven-Development-Team/frontend/actions/workflows/cd.yml).
-2. Нажмите **Run workflow**, выберите ветку `main`.
-3. Оставьте `release` пустым для выбора по истории main либо вставьте полный тег из Releases.
-4. Нажмите **Run workflow** и откройте созданный запуск.
-5. После очереди прочитайте `Ready release`: в логе должны быть выбранные тег и ссылка на Release.
+   ```bash
+   release_tag='release-ВСТАВЬТЕ_ПОЛНЫЙ_SHA'
+   gh workflow run cd.yml --repo Cringe-Driven-Development-Team/frontend \
+     --ref main -f "release=$release_tag"
+   ```
 
-== Через CLI
+   Для выбора по истории `main` опустите параметр `-f`. [Вход workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L3-L9).
 
-Запустить с автоматическим выбором:
-
-```bash [Запуск CD]
-gh workflow run cd.yml --repo Cringe-Driven-Development-Team/frontend --ref main
-```
-
-Выбрать конкретный выпуск:
-
-```bash [CD конкретного выпуска]
-release_tag='release-ВСТАВЬТЕ_ПОЛНЫЙ_SHA'
-gh workflow run cd.yml --repo Cringe-Driven-Development-Team/frontend --ref main \
-  -f release="$release_tag"
-```
-
-Затем найдите свою попытку в Actions → CD по времени и инициатору. Успех команды dispatch
-означает постановку workflow на запуск, а не завершение выкатки.
-
-:::
-
-Workflow исполняет скрипты из checkout своего запуска; целевой SHA выпуска может отличаться
-от SHA workflow. Ansible берётся из актуального `infra/main`, а образ всегда выбирается по digest.
-[Checkout и запуск Ansible](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L43-L132).
-
-<DiagramSection>
+3. В новом run сравните SHA в **Ready release** с ожидаемой целью. Запомните ID из **Production record**. [Шаг выбора](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L55-L71), [запись попытки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L117-L124).
 
 ## Проверки и переключение
 
-До доступа к VPS проверяются immutable Release, тег, состав, суммы и источник CI,
-затем направление относительно последнего подтверждённого production, публичность точного
-GHCR digest и CDN-файлы. Тот же SHA допускается, обычный deploy должен идти к потомку;
-возврат к предку выполняет Rollback.
-
-<template #diagram>
-
-```mermaid
-%% Sequence: проверки до VPS, затем отдельная запись попытки и результат.
-sequenceDiagram
-    autonumber
-    actor operator as Оператор
-    participant cd as Actions / CD
-    participant sources as Releases, GHCR, CDN
-    participant history as Deployments
-    participant bff as Gateway / BFF
-    operator->>cd: Run workflow из main
-    cd->>cd: Очередь, выбор и фиксация выпуска
-    cd->>sources: Проверить Release и manifest
-    cd->>history: Прочитать подтверждённый production
-    cd->>cd: Проверить направление
-    cd->>sources: Проверить GHCR digest и CDN
-    cd->>history: Создать попытку in_progress
-    cd->>bff: Ansible: образ по digest и SHA
-    bff-->>cd: Switch BFF завершён
-    cd->>bff: Публичный Health check
-    alt Проверки прошли
-        cd->>history: success
-    else Проверки не прошли
-        cd->>history: failure
-        Note over cd,bff: Автоматического отката нет
-    end
-```
-
-</template>
-
-Схема показывает путь, на котором Switch BFF завершился. Если завершающий шаг записал статус,
-правило такое: успешный Health check → `success`; иначе успешный Switch BFF → `failure`;
-иначе → `error`. Оно действует и при отмене: отменённая после переключения проверка даёт
-`failure`, а отмена после успешной проверки не меняет её результат на `error`.
-Ошибка в Ansible не исключает частично выполненного переключения. Если завершающий шаг
-не записал статус, запись может остаться незавершённой. Ошибка до Production record
-вообще не создаёт production Deployment для этой попытки.
-[Создание и итог записи](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L110-L147).
-
-Ansible заранее скачивает и проверяет образ, переключает BFF, проверяет фактический digest,
-внутренний `/health` и доступ через Caddy. Go и БД этим playbook не откатываются.
-[deploy-bff.yml](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/deploy-bff.yml#L1-L43).
-
-</DiagramSection>
+| Шаг | Результат |
+| --- | --- |
+| Ready release, Check release direction | Проверены тег, immutable-комплект и происхождение выпуска, подтверждено направление по Git. [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L55-L71). |
+| Anonymous image check, Release check | Публичный GHCR digest доступен с нужной revision; HTML и связанные JS/CSS доступны на CDN. [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L72-L79), [проверки CDN](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/checks.ts#L32-L89). |
+| Production record, Switch BFF | Создан Deployment `in_progress`. Playbook из `main` infra обновил BFF на gateway и проверил запущенный образ и здоровье. [CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L80-L86), [запуск Ansible](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L117-L134), [playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/ansible/deploy-bff.yml#L1-L43). |
+| Health check, Production result | Проверен сайт, результат записан в тот же Deployment. После успешного результата идут обновление карточек и retention. [CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L138-L165). |
 
 ## Что проверяет Health check
 
-| Проверка | Ожидаемый результат |
+| Проба | Ожидаемый ответ |
 | --- | --- |
-| Гостевой `/login` | Один bootstrap с `user: null`, метка целевого SHA, `Cache-Control: private, no-store` |
-| JS/CSS из HTML | Каталог выбранного SHA, корректные MIME; JS доступен с нужным CORS |
-| `users.me` без сессии | HTTP 401 и tRPC `UNAUTHORIZED` |
-| Неизвестный `/api` | HTTP 404, ответ не HTML |
-| `auth.login` со случайными данными | HTTP 400, `BAD_REQUEST`, `appCode=invalid_credentials` |
+| `/login` без сессии | Метка выбранного SHA, ровно один bootstrap с `user: null`, `Cache-Control: private, no-store`. |
+| JS/CSS из HTML | Каталог выбранного SHA на CDN, корректный MIME и CORS для JS. |
+| `GET /api/users/me` без сессии | HTTP 401 и `UNAUTHORIZED`. |
+| `GET /api/unknown` | HTTP 404 без HTML. |
+| `POST /api/auth/login` со случайными данными | HTTP 400, `BAD_REQUEST`, `appCode=invalid_credentials`. |
 
-Последняя проба подтверждает путь BFF → Go и обработчик входа; пользователь и сессия не создаются.
-Она не проверяет успешный вход настоящего пользователя или все функции приложения.
-[Проверки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/checks.ts#L98-L181).
+[Реализация проб](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/checks.ts#L32-L60), [публичный Health check](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/checks.ts#L97-L184).
 
 ## Как подтвердить результат
 
-1. В своём Actions run проверьте `Ready release`, `Switch BFF`, `Health check` и `Production result`.
-2. Откройте [Deployments](https://github.com/Cringe-Driven-Development-Team/frontend/deployments),
-   окружение `production`: найдите попытку с нужным SHA и ссылкой на этот run.
-3. Для успешной выкатки итог Deployment — `success`. Проверьте сайт и нужный пользовательский
-   сценарий отдельно: автоматическая проба ограничена таблицей выше.
-4. Если итог `failure`/`error`, выясните стадию по [инструкции ошибок](./troubleshooting#diagnosis).
-   Повторный запуск — отдельная попытка с новой записью, даже если выпуск тот же.
+1. Проверьте **Health check** и **Production result** в Actions.
+2. Откройте [Deployments](https://github.com/Cringe-Driven-Development-Team/frontend/deployments), найдите запись `production` того же run и проверьте `success`, SHA и `image_ref` из manifest. Для автоматической сверки доступен API GitHub. [Запись и итог](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/deployments.ts#L166-L210).
+3. Отдельно проверьте **Update release issues**. Карточки выпуска переходят в `Done` после подтверждения, открытые задачи из отчёта закрываются как completed. Если шаг упал после записанного `success`, восстановите карточки по [исходному ID](./troubleshooting#reconcile-issues). [Статусы задач](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/docs/release.md#L305-L317), [условие обновления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L142-L156).
 
-Payload production связывает `image_ref`, `assets`, `action`, `run`, `release_id` и сведения
-отчёта. `release_id` — числовой ID API, а в поле CD вводится тег Release, не этот ID.
-[Запись Deployment](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/deployments.ts#L144-L190).
+Проверенный пример за 27.11.2026. Из [Release](https://github.com/Cringe-Driven-Development-Team/frontend/releases/tag/release-b1baf996fb6753d1a62eab6f874d03dca30faadc) с SHA `b1baf996fb6753d1a62eab6f874d03dca30faadc` перейдите в [CD run](https://github.com/Cringe-Driven-Development-Team/frontend/actions/runs/46049795274) и [Deployment 8116868408](https://api.github.com/repos/Cringe-Driven-Development-Team/frontend/deployments/8116868408/statuses). В 18:31:31 UTC Health check прошёл и попытка получила `success`. Карточки обработаны отдельным шагом в 18:32:56 UTC.
 
-После подтверждённого результата обновляются задачи и запускается retention. Их ошибка может
-сделать workflow красным, не отменив успешную выкатку: всегда смотрите конкретный упавший шаг
-и production-статус. [Порядок завершающих шагов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L137-L158).
+28.11.2026 в 02:09:07 МСК запрос `GET /login` с `Accept: text/html` и без cookie вернул метку
+`b1baf996fb6753d1a62eab6f874d03dca30faadc`, один гостевой bootstrap с `{"user":null}`
+и ссылки на CDN-каталог того же SHA. [Публичная страница](https://cellestial.ru/login), [заголовки и проверки в Health check](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/checks.ts#L119-L151).

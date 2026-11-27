@@ -4,141 +4,77 @@ title: Состав выпуска
 
 # Состав выпуска {#release-assets}
 
-Один Release соответствует одному полному SHA: тег `release-<40 hex>`, название
-`Frontend <короткий SHA>`. Он связывает клиентские файлы и образ BFF и позволяет скачать
-весь комплект со страницы GitHub. Версий вида `v1.2.3` у выпусков приложения нет.
-[Основание описания](./#основание-описания).
+Для воспроизводимой проверки скачайте четыре файла одного тега `release-<полный SHA>`. Выкладка использует точный образ из GHCR и файлы того же SHA из CDN. [Состав](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/releases.ts#L323-L351), [выкладка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L55-L79).
 
 ## Четыре файла Release
 
-| Asset | Что внутри | Для чего |
-| --- | --- | --- |
-| `frontend-dist.tar.gz` | Всё содержимое `apps/client/dist/` с относительными путями: HTML, JS/CSS, PWA | Скачать релизную сборку клиента |
-| `bff-image.tar.gz` | Gzip от `docker image save` опубликованного linux/amd64 образа | Загрузить тот же BFF-образ локально без обращения к GHCR |
-| `release.json` | SHA, ссылки, digest и сведения исходной сборки/публикации | Проверить состав и происхождение |
-| `SHA256SUMS` | SHA-256 трёх файлов выше | Проверить скачанные байты |
+| Файл | Что содержит |
+| --- | --- |
+| `frontend-dist.tar.gz` | Собранный клиент с относительными путями, включая HTML, JS/CSS и PWA. |
+| `bff-image.tar.gz` | Gzip от `docker image save` опубликованного образа Linux/amd64. |
+| `release.json` | Манифест выпуска с SHA коммита, образом, каталогом ассетов и происхождением. |
+| `SHA256SUMS` | SHA-256 трёх файлов из предыдущих строк. |
 
-Автоматические ссылки GitHub **Source code (zip/tar.gz)** скачивают исходники тега.
-Они не заменяют собранный клиент и образ BFF. Состав и проверка заданы
-[releases.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/releases.ts#L321-L347) и
-[справочником выпуска](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/docs/release.md#L47-L89).
+GitHub отдельно предлагает **Source code (zip/tar.gz)** для скачивания исходников. Скачиваемый комплект виден в [реальном Release](https://github.com/Cringe-Driven-Development-Team/frontend/releases/tag/release-b1baf996fb6753d1a62eab6f874d03dca30faadc). [Формирование архивов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/archives.ts#L21-L114), [правила проверки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/releases.ts#L323-L351).
 
 ## Как читать manifest
 
-| Поле `release.json` | Значение |
+| Поле | Значение |
 | --- | --- |
-| `sha` | Полный SHA коммита; совпадает с тегом Release и меткой образа |
-| `image_ref` | `ghcr.io/cringe-driven-development-team/bff@sha256:…` — точный образ |
-| `image_id` | Config digest конфигурации образа; не всегда совпадает с Docker `.Id` |
-| `assets` | Каталог `releases/<SHA>/` |
-| `ci_run`, `ci_run_attempt` | Ссылка на исходный push/main CI и номер попытки, подготовившей артефакты |
-| `publication_run` | Запуск, завершивший публикацию |
-| `notification.base_sha` | База отчёта о составе изменений или `null` |
-| `notification.report_url` | Ссылка на Summary отчёта или `null` |
-| `notification.run_attempt` | Номер попытки публикации |
+| `sha`, `assets` | Полный SHA коммита и каталог `releases/<SHA>/`. |
+| `image_ref`, `image_id` | Полный адрес образа с registry digest и config digest. |
+| `ci_run`, `ci_run_attempt` | Запуск и попытка CI, подготовившая артефакты. |
+| `publication_run` | Запуск, завершивший публикацию. |
+| `notification` | База отчёта, ссылка на его Summary и номер попытки публикации. База и ссылка могут быть `null`. |
 
-Тип и валидация — [manifest](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/releases.ts#L26-L36) и
-[проверка полей](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/releases.ts#L122-L160). Описание Release удобно человеку,
-но его можно редактировать; машина доверяет проверенному manifest и связанным объектам API.
+[Тип и проверка полей](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/releases.ts#L26-L36), [проверка manifest](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/releases.ts#L122-L162).
 
-## SHA, digest и checksum — разные идентификаторы
+## Идентификаторы {#sha-digest-и-checksum-—-разные-идентификаторы}
 
-| Значение | Что идентифицирует | Что с ним делать |
-| --- | --- | --- |
-| Git SHA | Коммит исходников | Найти код и тег `release-<SHA>` |
-| Тег образа `sha-<SHA>` | Имя в GHCR | Удобно найти образ; тег не заменяет digest |
-| Registry digest в `image_ref` | Манифест опубликованного образа | Именно его передать Docker/Ansible для выкатки |
-| Config digest / `image_id` | Конфигурацию образа | Сверить config архива; при проверке `docker load` учитывать image store |
-| SHA-256 в `SHA256SUMS` | Байты конкретного архива или manifest | Проверить скачанный файл |
+| Что сверять | Где |
+| --- | --- |
+| Git SHA | Тег Release и метка `org.opencontainers.image.revision` в образе. |
+| Registry digest | `image_ref` в manifest и образ в production Deployment. Тег GHCR `sha-<SHA>` годится для поиска. |
+| Config digest | `image_id` в manifest и конфигурация загруженного архива. |
+| SHA-256 файла | Локальные файлы и `SHA256SUMS`. В CD суммы больших архивов сверяются с digest файлов из API GitHub. |
 
-Не сравнивайте checksum архива с registry digest: это хеши разных объектов.
-При проверке Release CD не скачивает оба больших архива: он сверяет их digest из GitHub API
-с `SHA256SUMS`, скачивает и проверяет manifest, его источник CI и тег.
-[verifyRelease](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/releases.ts#L321-L347).
+[Проверка выпуска](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/releases.ts#L323-L351), [проверка архива образа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/archives.ts#L74-L114).
 
 ## Как скачать и проверить комплект {#download}
 
-Предусловие: выбран опубликованный Release из командного репозитория, есть место для
-архива образа и распаковки. Для CLI нужны `gh`, `sha256sum`, `tar`, `gzip`; для загрузки образа — Docker.
+1. Откройте [Releases](https://github.com/Cringe-Driven-Development-Team/frontend/releases), найдите нужный тег и сохраните четыре файла из **Assets** в пустой каталог. Для GitHub CLI используйте те же имена:
 
-::: tabs
-== Через GitHub
+   ```bash
+   release_tag='release-ВСТАВЬТЕ_ПОЛНЫЙ_SHA'
+   gh release download "$release_tag" --repo Cringe-Driven-Development-Team/frontend \
+     --pattern frontend-dist.tar.gz --pattern bff-image.tar.gz \
+     --pattern release.json --pattern SHA256SUMS
+   ```
 
-1. Откройте [Releases](https://github.com/Cringe-Driven-Development-Team/frontend/releases).
-2. Выберите нужный тег и раскройте **Assets**.
-3. Скачайте четыре файла из таблицы в одну новую папку. Не выбирайте вместо них Source code.
-4. Откройте терминал в этой папке и выполните проверку сумм ниже.
+2. В каталоге со скачанными файлами выполните `sha256sum -c SHA256SUMS`. Продолжайте после `OK` для всех трёх файлов.
+3. Распакуйте клиент через `mkdir dist && tar -xzf frontend-dist.tar.gz -C dist`. Образ импортируется локально командой `gunzip -c bff-image.tar.gz | docker load`. [Команды владельца](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/docs/release.md#L136-L142).
+4. Подставьте `sha` из `release.json` в команду:
 
-== Через CLI
+   ```bash
+   release_sha='ВСТАВЬТЕ_SHA_ИЗ_RELEASE_JSON'
+   docker image inspect "ghcr.io/cringe-driven-development-team/bff:sha-$release_sha" \
+     --format '{{.Id}} {{index .Config.Labels "org.opencontainers.image.revision"}}'
+   ```
 
-Подставьте полный тег со страницы Release. Новая пустая папка исключает смешивание выпусков.
+   Сверьте revision с SHA. В зависимости от Docker image store допустим `image_id` либо digest из `image_ref`. При расхождении сумм, ID или revision заново скачайте комплект и проверьте выбранный тег. [Проверка архива в CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/archives.ts#L91-L114).
 
-```bash [Скачивание выпуска]
-release_tag='release-ВСТАВЬТЕ_ПОЛНЫЙ_SHA'
-mkdir "$release_tag"
-cd "$release_tag"
-gh release download "$release_tag" --repo Cringe-Driven-Development-Team/frontend \
-  --pattern frontend-dist.tar.gz --pattern bff-image.tar.gz \
-  --pattern release.json --pattern SHA256SUMS
-```
-
-:::
-
-Проверка для обоих способов:
-
-```bash [Проверка скачанных файлов]
-sha256sum -c SHA256SUMS &&
-mkdir dist &&
-tar -xzf frontend-dist.tar.gz -C dist &&
-gunzip -c bff-image.tar.gz | docker load
-```
-
-Ожидайте `OK` для трёх файлов. При несовпадении остановитесь: не используйте повреждённый
-комплект. После `docker load` проверьте ID и метку образа. Метка revision должна совпадать
-с `sha` в `release.json`. Значение `.Id` зависит от хранилища Docker: допустимы
-`image_id` (config digest) или digest после `@` в `image_ref` (registry/index digest
-при containerd image store). Иное значение ID или другая revision означают несовпадение.
-Именно эти два варианта принимает [проверка архива в CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/archives.ts#L95-L112):
-
-```bash [Проверка загруженного образа]
-release_sha='ВСТАВЬТЕ_SHA_ИЗ_RELEASE_JSON'
-docker image inspect "ghcr.io/cringe-driven-development-team/bff:sha-$release_sha" \
-  --format '{{.Id}} {{index .Config.Labels "org.opencontainers.image.revision"}}'
-```
-
-`docker load` импортирует образ, но не запускает приложение и не изменяет production.
-Архив не включает production env и секреты. Локальный запуск BFF требует отдельной настройки;
-эти команды предназначены для проверки комплекта, не для восстановления прода.
+28.11.2026 в 02:07:55 МСК для [выпуска `b1baf996fb6753d1a62eab6f874d03dca30faadc`](https://github.com/Cringe-Driven-Development-Team/frontend/releases/tag/release-b1baf996fb6753d1a62eab6f874d03dca30faadc) GitHub CLI скачал четыре файла. `sha256sum -c SHA256SUMS` вернул `OK` для обоих архивов и `release.json`. В 02:09:52 МСК распаковка клиента и импорт образа прошли, `docker image inspect` вернул config digest и revision из манифеста.
 
 ## Как файлы доходят до браузера
 
 <Diagram name="frontend-release-delivery" />
 
-Caddy принимает запрос к `cellestial.ru`; BFF выдаёт HTML с bootstrap и меткой своего SHA.
-HTML ссылается на JS/CSS каталога этого выпуска в CDN. CDN берёт недостающие ресурсы из S3;
-S3 — источник байтов, CDN — слой доставки и кеширования. Указатель текущего production в S3
-не переключается: версию HTML определяет работающий BFF.
+Caddy передаёт запрос BFF. BFF отдаёт HTML с путями к JS/CSS из `releases/<SHA>/`; CDN получает эти файлы из S3. Публичные файлы PWA входят в образ и выдаются с origin приложения. [Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/ansible/roles/caddy/templates/Caddyfile.j2#L48-L59), [CDN и S3](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/pulumi/storage.ts#L162-L171), [сборка образа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/Dockerfile#L7-L18), [инфраструктура PWA](/documentation/offline/infrastructure).
 
-Образ берётся из GHCR только при выкладке. Штатный CD не распаковывает `bff-image.tar.gz`
-из GitHub Releases. Он использует manifest для выбора digest и Ansible для скачивания образа.
-[CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L50-L132),
-[Ansible](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/deploy-bff.yml#L1-L43).
-
-HTML и публичные PWA-файлы входят в BFF-образ; service worker обслуживается с origin приложения.
-JS/CSS приложения доставляются с CDN. Это разные маршруты:
-[Dockerfile](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/Dockerfile#L7-L17), [инфраструктура PWA](/documentation/offline/infrastructure).
-Бакет и CDN настраивает infra: [S3](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/index.ts#L409-L424) и
-[CDN-ресурс](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/pulumi/index.ts#L602-L624).
+Ansible получает образ по `image_ref` из GHCR. Архив образа в Release предназначен для скачивания и локальной проверки. [Playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/ansible/deploy-bff.yml#L1-L43).
 
 ## Что остаётся после очистки {#retention}
 
-После успешного CD retention сохраняет пять последних каталогов S3 по времени последней
-записи в каталог, а также ассеты последнего успешного production и предыдущего успешного
-с другим digest независимо от возраста. Это порядок очистки S3, не алгоритм выбора CD.
-Если последняя попытка production не `success`, очистка откладывается: контейнер мог переключиться.
-[retention](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/retention.ts#L1-L52).
+После подтверждённого CD в S3 остаются пять каталогов по времени последней записи и каталоги двух защищённых выпусков: последнего успешного production и предыдущего успешного с другим digest. При последней попытке без `success` очистка откладывается. [Retention](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/retention.ts#L1-L52), [защищённые выпуски](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/deployments.ts#L113-L128), [условие запуска](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L157-L165).
 
-Эта очистка не удаляет четыре файла GitHub Release и не является очисткой GHCR.
-Наличие архива не гарантирует, что старый выпуск ещё доступен для выкатки: при отсутствии
-CDN-файлов или образа CD остановится до VPS. Автоматического восстановления S3/GHCR
-из архивов в этом процессе нет. [Диагностика недоступного выпуска](./troubleshooting#diagnosis).
+Перед использованием старого выпуска проверьте доступность CDN-каталога и digest в GHCR отдельно от файлов Release. Retention удаляет только файлы в S3. Восстановление S3 или GHCR из архива требует отдельной операции. [Обработка недоступного выпуска](./troubleshooting#diagnosis).

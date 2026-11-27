@@ -59,6 +59,7 @@ test('CI separates checks and publishing', () => {
   expect(edgePairs(doc)).toEqual(expect.arrayContaining(['frontend-ci>frontend-release', 'backend-ci>backend-image', 'packages-release>npm']));
   for (const id of ['frontend-course-sync', 'backend-course-sync', 'static-upload', 'docs-pages']) expect(nodes[id], id).toBeDefined();
   expect(nodes['fe-drift']).toBeUndefined();
+  expect(nodes['backend-drift']).toBeUndefined();
   expect(JSON.stringify(doc)).not.toMatch(/current\.json|Argo|Coolify/);
 });
 
@@ -93,8 +94,8 @@ test('CI publishes frontend Releases on main and keeps backend event gates', () 
   expect(doc.connections.find(e => e.to === 'frontend-release')?.label).toBe('push main');
   expect(doc.connections.find(e => e.to === 'frontend-course-sync')?.label).toBe('push main');
   expect(doc.connections.find(e => e.to === 'backend-course-sync')?.label).toBe('main · flag');
-  expect(JSON.stringify(nodes['frontend-release'])).toContain('GitHub Release');
-  expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main / manual');
+  expect(JSON.stringify(nodes['frontend-release'])).toContain('Publish release');
+  expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main');
 });
 
 test('notebook components keep durable storage behind Go', () => {
@@ -133,4 +134,17 @@ test('infra preview and apply independently follow checks', () => {
   expect(edgePairs(doc)).not.toContain('infra-preview>infra-apply');
   expect(doc.connections.find(e => e.to === 'infra-preview')?.label).toBe('PR');
   expect(doc.connections.find(e => e.to === 'infra-apply')?.label).toBe('main / manual');
+});
+
+test('release lifecycle distinguishes the attempt outcome and task updates', () => {
+  const doc = readDiagram('frontend-release-lifecycle');
+  expect(edgePairs(doc)).toContain('production>issues');
+  expect(doc.connections.find(edge => edge.from === 'cd' && edge.to === 'production')?.label).toContain('Health check');
+  expect(doc.connections.find(edge => edge.to === 'issues')?.label).toBe('после success');
+});
+
+test('release delivery uses the BFF HTTP API', () => {
+  const doc = readDiagram('frontend-release-delivery');
+  expect(doc.connections.find(edge => edge.from === 'client' && edge.to === 'caddy')?.label).toBe('HTML и /api/*');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['caddy>bff', 'client>cdn', 'cdn>s3', 'image>bff']));
 });

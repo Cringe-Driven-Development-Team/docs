@@ -66,49 +66,37 @@ Caddy принимает HTTPS на gateway и передаёт запросы B
 
 ## Проверки CI {#ci}
 
-Frontend проверяет типы, линтер, тесты, сборку клиента/BFF и Docker-образ в PR,
-Merge Queue и `main`. После успешных проверок push в `main` публикует GitHub Release
-`release-<SHA>`: образ BFF по digest, ассеты в S3/CDN и описание комплекта выпуска.
-Публикация не выкатывает приложение и не зависит от `PRODUCTION_ENABLED`.
-Подробно: [CI и публикация выпуска](/documentation/frontend/releases/publication).
+Frontend запускает Check на PR, Merge Queue и push в `main`. После Check на push
+в `main` Publish release публикует GitHub Release, образ BFF по digest и ассеты
+в S3/CDN. Оператор запускает выкладку отдельно. [CI фронтенда](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/ci.yml#L3-L65), [CI и публикация выпуска](/documentation/frontend/releases/publication).
 
-Backend CI проверяет Go, runtime-agent и реальные Python/R kernels. На `main`
-или при ручном запуске публикует образы; `PRODUCTION_ENABLED` управляет только CD.
-Course-sync копирует `main` в учебные репозитории после проверок: у фронта — при
-push в `main`, у бэка — дополнительно при включённом `COURSE_SYNC_ENABLED`.
+Backend CI проверяет Go, runtime-agent и kernel. Для монолита образ приложения
+и Release публикуются на push в `main`; образ Python kernel публикуется также
+при ручном запуске. Course-sync копирует принятый `main` в учебные репозитории.
+У backend нужен флаг `COURSE_SYNC_ENABLED=true`. [Образ и выпуск монолита](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/ci.yml#L234-L304), [kernel](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/ci.yml#L137-L163), [course-sync backend](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/ci.yml#L306-L312), [course-sync frontend](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/ci.yml#L149-L162).
 
-Infra запускает проверки перед preview в PR и apply на `main`. Docs публикует сайт через Pages. Frontend-packages публикует npm-пакеты через OIDC,
-static загружает общую статику в S3.
-
-Источники: [frontend CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/ci.yml#L1),
-[backend CI](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/.github/workflows/ci.yml#L1),
-[infra](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/.github/workflows/infra.yml#L1),
-[npm](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/f4d2bd02fcc127e5603bbe09874242b071def7ba/.github/workflows/release.yml#L33),
-[static](https://github.com/Cringe-Driven-Development-Team/static/blob/a0cea30d81d00f2e7d915b7fa0c92a25851b4e87/.github/workflows/ci.yml#L19),
-[Pages](https://github.com/Cringe-Driven-Development-Team/docs/blob/24ac26396821dbb21a87ce0c377c59ea0a2ae118/.github/workflows/pages.yml#L1).
+Infra запускает проверки перед preview в PR и apply на `main`. Docs публикует сайт
+через Pages. Frontend-packages публикует npm-пакеты через OIDC, static загружает
+общую статику в S3. [Infra](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/.github/workflows/infra.yml#L89-L216), [npm](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/872ffb6e01c13473867adfa6247e4e2d192f1c1b/.github/workflows/release.yml#L15-L43), [static](https://github.com/Cringe-Driven-Development-Team/static/blob/0cf8f4329408b9c7d970fbf30b5bd54e9f99d267/.github/workflows/ci.yml#L19-L53), [Pages](https://github.com/Cringe-Driven-Development-Team/docs/blob/8b12ddbb1ba47be5381181f1b334833f94b6fdf5/.github/workflows/pages.yml#L3-L29).
 
 <Diagram name="ci" />
 
 ## Выкатка CD {#cd}
 
-Frontend CD запускается вручную. Оператор указывает тег Release; пустое поле
-выбирает ближайший опубликованный выпуск по first-parent истории обновлённого `main`
-после ожидания очереди. До выкладки проверяются
-комплект, digest образа и ассеты. Ansible обновляет BFF на gateway; затем проверяются
-работающий образ, HTML и CDN. Rollback выбирает существующий выпуск из истории
-production без пересборки. Инструкции: [выкатка](/documentation/frontend/releases/deployment)
-и [откат](/documentation/frontend/releases/rollback).
+Оператор запускает CD фронтенда из `main`. Тег выбирает конкретный Release.
+Пустое поле выбирает ближайший опубликованный выпуск по first-parent истории
+обновлённого `main` после ожидания очереди. CD проверяет комплект, образ и ассеты,
+затем Ansible переключает BFF. После Health check Actions сохраняет результат
+в production Deployment. Rollback выбирает существующий выпуск из истории.
+[CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L47-L165), [Rollback](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/rollback.yml#L48-L148), [выкатка](/documentation/frontend/releases/deployment), [откат](/documentation/frontend/releases/rollback).
 
-Backend CD после успешного push/main при `PRODUCTION_ENABLED=true` получает
-`backend@sha256:…` от CI. Ansible выкатывает этот digest на VPS2 через gateway,
-сверяет образ и health контейнера, внутренний HTTP и внешний запрос через BFF.
-Go применяет миграции PostgreSQL при старте. Откат приложения не откатывает БД.
-
-Источники: [frontend CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L1),
-[rollback](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/rollback.yml#L1),
-[backend CD](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/.github/workflows/cd.yml#L1),
-[проверки backend](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/deploy-backend.yml#L38),
-[миграции](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L77).
+Для монолита backend при push в `main` и `PRODUCTION_ENABLED=true` CI передаёт
+`release_tag` отдельному запуску CD. Тег определяет digest. Ansible обновляет
+Go на VPS2 через gateway и проверяет образ, health контейнера и HTTP. Go
+применяет миграции PostgreSQL при запуске. Эту цепочку подтверждает
+[Deployment 7970701489](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/7970701489/statuses)
+со статусом `success` 21.11.2026 в 23:09:55 UTC для SHA
+`3532ca97dc2c9d0f84aa999eae85918e76907aa7`. [Передача тега](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/ci.yml#L278-L304), [CD](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/cd.yml#L110-L136), [пробы Ansible](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/ansible/deploy-backend.yml#L62-L103), [миграции](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/app/app.go#L88-L90).
 
 <Diagram name="cd" />
 
@@ -209,7 +197,7 @@ Docker, nginx, nftables и окружение агента; Ansible провер
 
 Готовый комплект в GitHub Releases связывает файлы S3/CDN и образ GHCR. Ручной CD
 создаёт отдельный production Deployment и проверяет результат переключения BFF.
-Реализация сверена 09.11.2026; источники и границы проверки — в
+Пример из GitHub за 27.11.2026, источники и команды приведены в
 [разделе выкаток](/documentation/frontend/releases/).
 
 <Diagram name="frontend-release-lifecycle" />

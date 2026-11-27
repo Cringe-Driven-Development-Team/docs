@@ -781,3 +781,19 @@ test("перенесённые темы используют прямые ссы
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
   }
 });
+
+test("release and rollback links still land on operational steps", () => {
+  const releases = "site/documentation/frontend/releases";
+  const artifacts = readFileSync(`${releases}/artifacts.md`, "utf8");
+  const download = artifacts.split("{#download}")[1]?.split("\n## ")[0] ?? "";
+  const retention = artifacts.split("{#retention}")[1] ?? "";
+  const rollback = readFileSync(`${releases}/rollback.md`, "utf8");
+  const target = rollback.split("{#target}")[1]?.split("\n## ")[0] ?? "";
+  for (const value of ["gh release download", "sha256sum -c SHA256SUMS", "docker image inspect"]) {
+    expect(download).toContain(value);
+  }
+  for (const value of ["пять каталогов", "другим digest", "GHCR"]) expect(retention).toContain(value);
+  for (const value of ["Rollback target", "Предыдущий успешный Deployment", "Последний успешный Deployment", "8118066244"]) {
+    expect(target).toContain(value);
+  }
+});
