@@ -4,7 +4,7 @@ title: Выкатка
 
 # Выкатка {#release-deployment}
 
-Запустите **CD** с ветки `main`, когда нужный выпуск опубликован. Операция считается подтверждённой после успешного Health check и записи `success` для целевого SHA в `production`. Нужны права на запуск и доступ к environment `production`. [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L3-L41), [условие успеха](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L138-L156).
+Запустите **CD** с ветки `main`, когда нужный выпуск опубликован. Операция считается подтверждённой после успешного Health check и записи `success` для целевого SHA в `production`. Для ручного запуска нужен Write-доступ к `Cringe-Driven-Development-Team/frontend`. Для environment `production` настроено только ограничение ветки `main`. [Ручной запуск Actions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow), [защита environment](https://api.github.com/repos/Cringe-Driven-Development-Team/frontend/environments/production), [политика веток production](https://api.github.com/repos/Cringe-Driven-Development-Team/frontend/environments/production/deployment-branch-policies). [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L3-L41), [условие успеха](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L138-L156).
 
 ## Какой выпуск будет выбран {#selection}
 

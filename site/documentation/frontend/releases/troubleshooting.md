@@ -40,10 +40,12 @@ title: Ошибки и уведомления
 
 ## Восстановление карточек {#reconcile-issues}
 
+Для ручного запуска Reconcile release issues нужен Write-доступ к `Cringe-Driven-Development-Team/frontend`. [Ручной запуск Actions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
 1. В логе **Update release issues** узнайте, что не записалось. Проверьте доступ GitHub к проекту, наличие карточки и целевой опции Status. После успешного Close API карточка ещё может показывать прежний Status.
 2. Если CD или Rollback уже получил `success`, откройте [Actions → Reconcile release issues](https://github.com/Cringe-Driven-Development-Team/frontend/actions/workflows/reconcile-issues.yml). На ветке `main` передайте `deployment_id` **исходной успешной попытки**.
 3. Проверьте **Recover release issues** и Summary. Workflow восстановит актуальный эффект по исходному диапазону без новой сборки и выкатки. Если последняя попытка ещё не подтверждена, сначала восстановите production.
-4. Для сбоя карточек публикации повторите CI опубликованного SHA. [Workflow восстановления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/reconcile-issues.yml#L3-L44), [правила восстановления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/docs/release.md#L337-L374).
+4. Для сбоя карточек публикации [повторите исходный CI опубликованного SHA](./publication#retry). [Workflow восстановления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/reconcile-issues.yml#L3-L44), [правила восстановления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/docs/release.md#L337-L374).
 
 ## Что означает каждое сообщение
 

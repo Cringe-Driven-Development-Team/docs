@@ -94,9 +94,8 @@ Infra запускает проверки перед preview в PR и apply на
 `release_tag` отдельному запуску CD. Тег определяет digest. Ansible обновляет
 Go на VPS2 через gateway и проверяет образ, health контейнера и HTTP. Go
 применяет миграции PostgreSQL при запуске. Эту цепочку подтверждает
-[Deployment 7970701489](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/7970701489/statuses)
-со статусом `success` 21.11.2026 в 23:09:55 UTC для SHA
-`3532ca97dc2c9d0f84aa999eae85918e76907aa7`. [Передача тега](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/ci.yml#L278-L304), [CD](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/cd.yml#L110-L136), [пробы Ansible](https://github.com/Cringe-Driven-Development-Team/infra/blob/ab7c4e189a2e346244b420f675adec7ced43557c/ansible/deploy-backend.yml#L62-L103), [миграции](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/app/app.go#L88-L90).
+[Deployment 7970701489](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/7970701489), который записал SHA playbook в `payload.infra_sha`. [Статус попытки](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/7970701489/statuses) стал `success` 21.11.2026 в 23:09:55 UTC для SHA
+`3532ca97dc2c9d0f84aa999eae85918e76907aa7`. [Передача тега](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/ci.yml#L278-L304), [CD](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/.github/workflows/cd.yml#L110-L136), [пробы Ansible](https://github.com/Cringe-Driven-Development-Team/infra/blob/da8cdc6da73cd12abcc8b562f4aafed3efedd5da/ansible/deploy-backend.yml#L18-L72), [миграции](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/app/app.go#L88-L90).
 
 <Diagram name="cd" />
 

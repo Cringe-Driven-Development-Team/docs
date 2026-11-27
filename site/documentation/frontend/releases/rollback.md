@@ -4,7 +4,7 @@ title: Откат
 
 # Откат {#release-rollback}
 
-Запустите **Rollback** из `main`, чтобы восстановить подходящий подтверждённый выпуск из истории `production`. Перед запуском проверьте последнюю попытку, ожидаемый SHA и доступность [комплекта](./artifacts#retention). [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/rollback.yml#L3-L64).
+Запустите **Rollback** из `main`, чтобы восстановить подходящий подтверждённый выпуск из истории `production`. Перед запуском проверьте последнюю попытку, ожидаемый SHA и доступность [комплекта](./artifacts#retention). Для ручного запуска нужен Write-доступ к `Cringe-Driven-Development-Team/frontend`. [Ручной запуск Actions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow). [Workflow](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/rollback.yml#L3-L64).
 
 ## Как выбирается цель {#target}
 

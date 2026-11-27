@@ -169,6 +169,8 @@ test("release diagrams link to published workflow and operating instructions", (
   const cd = page.split("{#cd}")[1]?.split("\n## ")[0] ?? "";
   expect(ci).toContain("/.github/workflows/ci.yml#L234-L304");
   expect(cd).toContain("release_tag");
+  expect(cd).toContain("/deployments/7970701489)");
+  expect(cd).toContain("da8cdc6da73cd12abcc8b562f4aafed3efedd5da/ansible/deploy-backend.yml");
   for (const path of ["deployment", "rollback"]) {
     expect(cd).toContain(`](/documentation/frontend/releases/${path})`);
   }

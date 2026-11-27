@@ -797,3 +797,24 @@ test("release and rollback links still land on operational steps", () => {
     expect(target).toContain(value);
   }
 });
+
+test("release procedures distinguish merge approval, Actions access, and release permissions", () => {
+  const releases = "site/documentation/frontend/releases";
+  const publication = readFileSync(`${releases}/publication.md`, "utf8");
+  const queue = publication.split("{#merge-queue}")[1]?.split("\n### ")[0] ?? "";
+  for (const value of ["одобрения frontend-ментора", "разрешения обсуждений", "Merge when ready"]) {
+    expect(queue).toContain(value);
+  }
+
+  const retry = publication.split("{#retry}")[1]?.split("\n## ")[0] ?? "";
+  for (const value of ["Write-доступ", "Re-run failed jobs", "Re-run job", "исходном запуске CI", "правом управления Releases"]) {
+    expect(retry).toContain(value);
+  }
+  expect(publication.split("## Публикация готового комплекта")[1]?.split("\n## ")[0]).toContain("contents: write");
+
+  for (const file of ["deployment", "rollback", "troubleshooting"]) {
+    const page = readFileSync(`${releases}/${file}.md`, "utf8");
+    expect(page).toContain("Write-доступ");
+    expect(page).toContain("manually-run-a-workflow");
+  }
+});
