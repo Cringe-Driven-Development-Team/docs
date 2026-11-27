@@ -29,7 +29,7 @@ title: Офлайн-режим
 | `/offline.css` | Да |
 | `/onest-variable.woff2` | Да |
 | Персональный HTML BFF | Нет |
-| RPC / API | Нет |
+| Запросы к HTTP API BFF | Нет |
 | Манифест и иконки | Нет |
 | JS/CSS и остальные ассеты SPA | Нет |
 

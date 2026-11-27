@@ -6,7 +6,7 @@ const md = readFileSync("site/documentation/offline/index.md", "utf8");
 test("offline runtime: Cache Storage содержит только HTML, CSS и шрифт fallback", () => {
   for (const pattern of [
     /\| Персональный HTML BFF \| Нет \|/,
-    /\| RPC \/ API \| Нет \|/,
+    /\| Запросы к HTTP API BFF \| Нет \|/,
     /\| `\/offline\.html` \| Да \|/,
     /\| `\/offline\.css` \| Да \|/,
     /\| `\/onest-variable\.woff2` \| Да \|/,

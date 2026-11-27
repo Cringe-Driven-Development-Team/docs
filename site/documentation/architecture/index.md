@@ -12,7 +12,7 @@ Cellestial обслуживает браузер через Caddy и BFF. BFF о
 | Go API | [`3532ca9`](https://github.com/Cringe-Driven-Development-Team/backend/commit/3532ca97dc2c9d0f84aa999eae85918e76907aa7) | [Production Deployment 7970701489](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/7970701489/statuses) получил последний подтверждённый `success` 21.11.2026 в 23:09:55 UTC. [Попытка 8116451615](https://api.github.com/repos/Cringe-Driven-Development-Team/backend/deployments/8116451615/statuses) для `cc4ea079` завершилась 27.11.2026 в 18:10:47 UTC ошибкой внешней проверки BFF. Активная ревизия Go после этой попытки не установлена. [Лог CD](https://github.com/Cringe-Driven-Development-Team/backend/actions/runs/46046649107) |
 | Инфраструктура | [`b8f6d2d8`](https://github.com/Cringe-Driven-Development-Team/infra/commit/b8f6d2d81410f70ec5af642cb486d37b0b0f5412) | [Production apply 46079576340](https://github.com/Cringe-Driven-Development-Team/infra/actions/runs/46079576340) завершился 27.11.2026 в 23:15:53 UTC |
 
-Схемы опираются на исходники этих ревизий и конфигурацию. Авторизованные сценарии, запуск runtime, изоляция и восстановление резервных копий не проверены. [Границы наблюдений](/documentation/current-state), [безопасность](/documentation/security/).
+Схемы опираются на исходники и конфигурацию указанных ревизий. Для схемы инфраструктуры блокнотов использован более ранний снимок infra `6862183`. [Свидетельство выкладки](/documentation/notebooks/#существенные-разрывы). Авторизованные сценарии, запуск runtime, изоляция и восстановление резервных копий не проверены. [Границы наблюдений](/documentation/current-state), [безопасность](/documentation/security/).
 
 ## Доступ к серверам {#server-access}
 

@@ -23,7 +23,7 @@ test("frontend: прямой вход читает bootstrap до рендера
     expect(startup, value).toContain(value);
   }
   expect(startup).toMatch(/readBootstrap\(\)[\s\S]*initSession\(user\)[\s\S]*setPreloadedNotebook\(notebookPage\)[\s\S]*createRoot/);
-  expect(startup).toMatch(/BootstrapError[\s\S]*users\.me/);
+  expect(startup).toMatch(/^При `BootstrapError`[^\n]*\. Первый рендер и запасной вызов `users\.me` пропускаются\./m);
   for (const value of ['peekPreloadedNotebook(id)', 'takePreloadedNotebook(id)', 'один раз', 'notebooks.get', 'alive']) expect(startup, value).toContain(value);
 });
 
@@ -38,7 +38,7 @@ test("frontend: доступ к защищённому URL проверяетс�
 test("frontend: локальный ввод, подтверждение и поздний ответ описаны на границе стора", () => {
   const state = read("state");
   for (const value of ["confirmed", "drafts", "generation", "Map", "hash", "500 мс", "65 536", "IME", "409 notebook_conflict", "{#saving}"]) expect(state, value).toContain(value);
-  expect(state).toMatch(/черновик[^\n]*совпадает с отправленным/i);
+  expect(state).toContain("Стор удаляет черновик, только если он совпадает с отправленным текстом. Более свежий ввод остаётся в `drafts` для следующей записи.");
   expect(state).toMatch(/ответ[^\n]*другого блокнота/i);
   const editing = readFileSync("site/documentation/notebooks/editing.md", "utf8");
   for (const fragment of ["save-queue", "revision", "orphans"]) {

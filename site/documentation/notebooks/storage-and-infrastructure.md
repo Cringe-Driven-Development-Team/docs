@@ -30,6 +30,8 @@ Go читает компактные метаданные и сортирует 
 
 ## Размещение и сеть {#deployment}
 
+Схема и ссылки ниже опираются на снимок infra `6862183` от 27.11.2026, 22:11:43 UTC. Более поздний apply `b8f6d2d8` добавил в Caddy настройки сбора метрик. [Размещение после apply](/documentation/architecture/#deployment), [сравнение ревизий](https://github.com/Cringe-Driven-Development-Team/infra/compare/686218395ad12e5752af312d18f32efc508d55ea...b8f6d2d81410f70ec5af642cb486d37b0b0f5412).
+
 Gateway принимает публичный HTTPS через Caddy и передаёт запросы BFF. BFF обращается к Go через mTLS-прокси на приватной сети. Go и PostgreSQL находятся на backend-хосте. Отдельный nginx на runtime-VPS принимает mTLS от Go и передаёт запросы агенту на loopback. [Публичные маршруты](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/roles/caddy/templates/Caddyfile.j2#L27), [Compose и mTLS](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/roles/app/templates/compose.yml.j2#L76-L117), [прокси агента](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/templates/nginx-agent.conf.j2#L8).
 
 <Diagram name="notebooks-infrastructure" />
