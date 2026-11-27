@@ -10,12 +10,24 @@
 | --- | --- |
 | `GET /health` | `200 ok` для проверки процесса. |
 | Зарегистрированный метод и путь `/api/*` | Ответ обработчика маршрута. |
-| Неизвестный путь или метод API | JSON `404`. |
+| `HEAD` зарегистрированного `GET` | Bun выполняет тот же обработчик и отбрасывает тело ответа. |
+| `HEAD` маршрута API только с `POST`, неизвестный путь или метод API | JSON `404` из резервного обработчика. |
 | `/robots.txt` и публичные файлы | Ответ по записи в `routes`. |
 | Прочий `GET/HEAD` с `Accept: text/html` | Обработчик страниц. |
 | Остальные запросы | Текстовый `404`. |
 
-Для HTML BFF определяет страницу и пользователя, затем помещает DTO в `<script id="bootstrap" type="application/json">` через `HTMLRewriter`. Гостю доступны вход и регистрация, для других адресов он получает `302 /login`. Сбой Go при подготовке страницы даёт HTML `503`. Пакет `@cdd-team/serialize-javascript` экранирует JSON для элемента script. Браузер берёт текст элемента и разбирает его через `JSON.parse` до первого рендера. [HTML](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L21-L46), [доступ к страницам](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L73-L142), [чтение bootstrap](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/bootstrap.ts#L18-L40), [запуск клиента](./startup#первыи-html-от-bff).
+Для HTML BFF определяет страницу и пользователя, затем помещает DTO в `<script id="bootstrap" type="application/json">` через `HTMLRewriter`. Пакет `@cdd-team/serialize-javascript` экранирует JSON для элемента script. Браузер берёт текст элемента и разбирает его через `JSON.parse` до первого рендера. [HTML](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L21-L46), [чтение bootstrap](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/bootstrap.ts#L18-L40), [запуск клиента](./startup#первыи-html-от-bff).
+
+| Прямой запрос страницы | Ответ BFF |
+| --- | --- |
+| Гость открывает вход или регистрацию | `200` с гостевым bootstrap. |
+| Гость открывает любой другой адрес | `302 /login`. |
+| Вошедший открывает неизвестный URL, `/404`, отсутствующий или чужой блокнот либо блокнот с некорректным ID | `302` на `/`. |
+| Вошедший открывает свой блокнот | `200` с данными блокнота в bootstrap. |
+| Сессия завершилась при проверке в Go | Гостевой сценарий с удалением cookie сессии. |
+| Go временно недоступен или подготовка данных страницы завершается другим сбоем Go | HTML `503` без запуска приложения. BFF сохраняет сессию, включая новую cookie после успешного refresh. |
+
+[Правила доступа и обработка сбоев](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L73-L83), [редиректы и отправка cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L107-L141).
 
 ## Проверка входа и типы BFF {#rpc}
 
