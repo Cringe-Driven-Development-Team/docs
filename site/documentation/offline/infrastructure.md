@@ -4,89 +4,36 @@ title: Инфраструктура PWA
 
 # Инфраструктура PWA
 
-PWA-файлы Cellestial выпускаются вместе с клиентом и BFF. Браузер получает SW, офлайн-страницу,
-её CSS, манифест и иконки с `cellestial.ru`, а JS/CSS основной SPA — с CDN своего выпуска.
-Здесь показаны размещение, HTTP-раздача и путь CI/CD; механизм регистрации разобран в
-[сборке и регистрации SW](/documentation/offline/build-and-registration), поведение без сети —
-в [обзоре офлайн-режима](/documentation/offline/).
-
-<DiagramSection>
+Браузер получает Service Worker, офлайн-комплект, манифест и иконки с `cellestial.ru`. JS/CSS приложения загружаются с `cdn.cellestial.ru`, обычный шрифт приложения — с `static.cellestial.ru`. У офлайн-страницы собственная копия шрифта на origin. [Маршруты публичных файлов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/public.ts#L3-L18), [URL релизных ассетов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/vite.config.prod.ts#L6-L36), [шрифт приложения](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/index.html#L11-L17), [офлайн-шрифт](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/public/offline.css#L3-L8).
 
 ## Где лежат файлы
 
-У сборки клиента есть два пути публикации. Весь `apps/client/dist` попадает в S3-каталог
-`releases/<sha>/`, который служит источником CDN. Шаблон `index.html` и выбранные PWA-файлы
-также копируются в образ BFF вместе с серверным бандлом. Поэтому один файл может иметь копию
-и в бакете, и внутри образа; место хранения ещё не определяет URL запроса браузера.
-
-`index.html` сборки — неперсональный шаблон. BFF формирует из него HTML с bootstrap для
-конкретного запроса. Публичная копия шаблона в бакете не становится кешем персонального HTML.
-
-Пути подтверждают [загрузка dist в S3](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/scripts/release/upload.ts#L38-L74)
-и [состав образа BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/Dockerfile#L8-L12).
-Общая инфраструктура описана в [архитектуре сервиса](/documentation/architecture/).
-
-<template #diagram>
-
-```mermaid
-%% Flowchart: одна сборка клиента даёт две копии выбранных файлов.
-flowchart TB
-  clientBuild["Сборка клиента · SHA"] --> clientDist["dist клиента"]
-  clientDist -->|"весь каталог"| releaseBucket[("S3 · releases/SHA")]
-  clientDist -->|"шаблон + PWA-файлы"| bffImage["Образ BFF"]
-  serverBuild["Бандл сервера BFF"] --> bffImage
-  releaseBucket --> releaseCdn["CDN выпуска"]
-  bffImage --> appOrigin["Раздача через BFF"]
-  classDef artifact fill:#ddd6fe,stroke:#6d28d9,color:#374151
-  classDef delivery fill:#a7f3d0,stroke:#047857,color:#374151
-  class clientDist,bffImage,releaseBucket artifact
-  class releaseCdn,appOrigin delivery
-```
-
-</template>
-
-</DiagramSection>
-
-<DiagramSection>
+Сборка клиента формирует `apps/client/dist`. Загрузчик копирует весь каталог в S3 под `releases/<sha>/`. В образ BFF отдельно попадают серверный бандл, шаблон `index.html` и публичные файлы из таблицы ниже. Шаблон в образе используется для ответа HTML с bootstrap. [Загрузчик](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/scripts/release/upload.ts#L31-L74), [состав образа BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/Dockerfile#L8-L13), [заполнение bootstrap](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L22-L54).
 
 ## Откуда их получает браузер
 
-При доступной сети браузер обращается к двум публичным адресам. Caddy принимает HTTPS-запросы
-`cellestial.ru` и передаёт их BFF. BFF отдаёт файлы из явного списка до обработчика HTML
-с начальными данными пользователя. Релизные JS/CSS основной SPA браузер получает напрямую
-с `cdn.cellestial.ru`.
+<DiagramSection>
 
-В таблице пути `/...` относятся к `https://cellestial.ru`; строка CDN — к
-`https://cdn.cellestial.ru`.
+| Адрес | Путь | Назначение |
+| --- | --- | --- |
+| `cellestial.ru` | `/sw.js` | Скрипт Service Worker |
+| `cellestial.ru` | `/offline.html`, `/offline.css`, `/onest-variable.woff2` | Офлайн-комплект |
+| `cellestial.ru` | `/manifest.webmanifest` | Метаданные установки и запуска PWA |
+| `cellestial.ru` | `/pwa-192.png`, `/pwa-512.png`, `/pwa-maskable-512.png`, `/apple-touch-icon.png`, `/favicon.png` | Иконки |
+| `cdn.cellestial.ru` | `/releases/<sha>/assets/…` | JS/CSS и ассеты сборки SPA |
+| `static.cellestial.ru` | `/fonts/onest-variable.woff2` | Шрифт обычной SPA |
 
-| Файл сборки | Публичный путь | Кто отвечает | Назначение |
-| --- | --- | --- | --- |
-| `sw.js` | `/sw.js` | Caddy → BFF | Скрипт зарегистрированного SW |
-| `offline.html` | `/offline.html` | Caddy → BFF | Неперсональная подстановка при отказе навигации |
-| `offline.css` | `/offline.css` | Caddy → BFF | Стили отдельной офлайн-страницы |
-| `manifest.webmanifest` | `/manifest.webmanifest` | Caddy → BFF | Метаданные установки и запуска PWA |
-| PNG-иконки | `/pwa-192.png`, `/pwa-512.png`, `/pwa-maskable-512.png`, `/apple-touch-icon.png` | Caddy → BFF | Иконки приложения |
-| `assets/...` | `/releases/<sha>/assets/...` | CDN | JS/CSS основной SPA и её релизные ассеты |
-
-Состав задаёт [PUBLIC_FILES](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/src/public.ts#L7-L16),
-порядок обработки — [публичные маршруты BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/src/app.ts#L47-L56).
-Проксирование и HTTPS описаны в [шаблоне Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/adf48242b0aa5d43ae9e59e6c088c7a4a0185387/ansible/roles/caddy/templates/Caddyfile.j2#L18-L44).
-Это исследованная ревизия конфигурации infra; её фактическая выкладка этим чтением кода не подтверждается.
+Публичные файлы из списка BFF обслуживаются отдельными GET-маршрутами без сессии и запроса к Go. HTML SPA формируется отдельно. [Список файлов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/public.ts#L7-L18), [HTTP-маршруты и заголовки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/app.ts#L47-L66), [ссылки в HTML](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/index.html#L8-L17), [production-конфигурация Vite](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/vite.config.prod.ts#L13-L36).
 
 <template #diagram>
 
 ```mermaid
-%% Flowchart: сетевые запросы выбирают origin приложения или CDN.
-flowchart TB
-  browser["Браузер"] -->|"cellestial.ru"| caddy["Caddy · HTTPS"]
-  caddy --> bff["BFF"]
-  bff -->|"публичные пути"| publicFiles["SW · offline HTML/CSS<br>манифест · иконки"]
-  bff -->|"навигация"| personalHtml["HTML с bootstrap"]
-  browser -->|"cdn.cellestial.ru<br>releases/SHA/assets"| cdnAssets["CDN · JS/CSS SPA"]
-  classDef public fill:#a7f3d0,stroke:#047857,color:#374151
-  classDef personal fill:#fed7aa,stroke:#c2410c,color:#374151
-  class publicFiles,cdnAssets public
-  class personalHtml personal
+flowchart TD
+  U["Браузер"] -->|"cellestial.ru"| B["BFF"]
+  B -->|"Навигация"| H["HTML с bootstrap"]
+  B -->|"Публичные GET"| P["SW, офлайн-комплект, манифест и иконки"]
+  U -->|"cdn.cellestial.ru"| C["JS/CSS из releases/SHA/assets"]
+  U -->|"static.cellestial.ru"| S["Шрифт SPA"]
 ```
 
 </template>
@@ -95,90 +42,33 @@ flowchart TB
 
 ## Origin, scope и заголовки
 
-Для регистрации SW нужен безопасный контекст. Скрипт и scope должны иметь тот же origin,
-что и регистрирующая страница. Поэтому наш адрес — `https://cellestial.ru/sw.js`, scope — `/`:
-основной CDN-префикс клиента его не меняет. Расположение скрипта в корне позволяет этот scope
-без расширяющего заголовка `Service-Worker-Allowed`.
-[Правила регистрации и scope — MDN](https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register).
+`/sw.js` регистрируется на origin страницы с областью действия `/`. Путь скрипта в корне уже допускает этот scope, расширяющий заголовок `Service-Worker-Allowed` не нужен. Для регистрации браузер должен получить JavaScript с подходящим MIME-типом в безопасном контексте. [Код регистрации](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/main.tsx#L39-L45), [правила регистрации SW](https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register).
 
-Раздача манифеста и иконок с origin — выбранное устройство проекта. У манифеста возможна
-загрузка с другого origin при соблюдении CORS; запрет регистрации чужого SW нельзя переносить
-на все PWA-файлы. [Манифест и CORS — W3C](https://www.w3.org/TR/appmanifest/).
-
-Корректный `Content-Type` позволяет браузеру распознать JS, CSS, манифест и изображения.
-На origin Caddy дополнительно задаёт `X-Content-Type-Options: nosniff`: браузер не должен
-угадывать тип вместо объявленного. Файл `sw.js`, случайно обслуженный HTML-обработчиком,
-не становится рабочим SW из-за успешного статуса 200.
-[Заголовок в конфигурации Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/adf48242b0aa5d43ae9e59e6c088c7a4a0185387/ansible/roles/caddy/templates/Caddyfile.j2#L19-L24).
-
-HTTP-кеш и Cache Storage управляются разными правилами. Отсутствие `Cache-Control` не означает
-`no-store` и не запрещает сохранение ответа SW. У нас список precache отдельно выбирает
-`offline.html` и `offline.css`; плагин добавляет манифест. Личные HTML/RPC в этот комплект
-не включены. [Настройки Workbox](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/client/vite/plugins.ts#L43-L62),
-[HTTP-политика Cache-Control — MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control).
+Политика CSP страницы разрешает загрузку SW и манифеста с origin. HTTP-кеш управляется заголовками ответа, а копии офлайн-комплекта в Cache Storage сохраняет обработчик установки SW. [CSP проекта](/documentation/security/csp), [обработчик установки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/sw/sw.ts#L3-L19).
 
 ## Что наблюдается на проде
 
-**04.11.2026, 17:46:43 UTC+3**: GET без авторизации на `cellestial.ru` и CDN выпуска.
-SHA из HTML: `007d8d4de7fa964947ffe1316c31726bbd386903`. Проверены восемь публичных файлов
-origin из списка BFF и реальные JS/CSS-чанки, указанные в HTML этого выпуска.
+**28.11.2026, 01:54:10–01:54:12 UTC+3.** Выполнены GET без сессии по адресам из таблицы. SHA приложения `b1baf996fb6753d1a62eab6f874d03dca30faadc` взят из URL чанков в HTML `/login`.
 
 | Ресурс | HTTP | Content-Type | Cache-Control |
 | --- | --- | --- | --- |
 | `/sw.js` | 200 | `text/javascript;charset=utf-8` | Не задан |
 | `/offline.html` | 200 | `text/html;charset=utf-8` | Не задан |
 | `/offline.css` | 200 | `text/css;charset=utf-8` | Не задан |
+| `/onest-variable.woff2` на origin | 200 | `font/woff2` | Не задан |
 | `/manifest.webmanifest` | 200 | `application/manifest+json` | Не задан |
-| Все четыре PNG из таблицы выше | 200 каждый | `image/png` | Не задан |
-| JS/CSS с CDN выпуска | 200 каждый | `text/javascript; charset=utf-8` / `text/css; charset=utf-8` | `max-age=86400` |
+| Пять PNG на origin | 200 каждый | `image/png` | Не задан |
+| JS и CSS из HTML на CDN | 200 каждый | `text/javascript; charset=utf-8` и `text/css; charset=utf-8` | `max-age=86400` |
+| Шрифт SPA на `static.cellestial.ru` | 200 | `font/woff2` | `max-age=86400` |
 
-Во всех восьми ответах origin присутствовал `nosniff`, отсутствовал `Service-Worker-Allowed`.
-Действующая блокирующая политика, разрешения для файлов PWA и отдельная проверка
-заголовка описаны в [CSP проекта](/documentation/security/csp). Успешные GET файлов
-из этой проверки не доказывают работу PWA под текущей политикой.
-
-Уровни HTTP-политики различаются: загрузчик записывает в S3 для файлов кроме `index.html`
-метаданные `public, max-age=31536000, immutable`, а проверенные ответы CDN содержали
-`max-age=86400`. Метаданные объекта не заменяют измерение заголовка на выходе CDN.
-[Значения метаданных](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/scripts/release/s3.ts#L13-L15),
-[применение при загрузке](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/scripts/release/upload.ts#L63-L74).
-
-Полученный `offline.html` ссылался на `/offline.css`; в полученном CSS внешних `url(...)`
-не было. Этот прогон подтверждает раздачу файлов и заголовки. Установка PWA, работа без сети,
-авторизованные операции и обновление между выпусками здесь повторно не проверялись.
-Прежнее свидетельство гостевого офлайн-сценария и установки сохранено в
-[обзоре](/documentation/offline/) со своей датой и SHA.
+В ответе `/sw.js` отсутствовал `Service-Worker-Allowed`. Для файлов релиза загрузчик записывает в S3 `public, max-age=31536000, immutable`, для `index.html` — `no-cache`. Таблица фиксирует заголовки на публичном адресе. [Метаданные S3](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/scripts/release/s3.ts#L4-L7), [применение при загрузке](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/scripts/release/upload.ts#L61-L72).
 
 ## Как выпускается новая версия
 
-После Check на push в `main` CI публикует файлы клиента в S3/CDN, публичный BFF-образ
-в GHCR и GitHub Release с четырьмя Assets. HTML и публичные PWA-файлы входят в образ;
-ссылки на JS/CSS ведут в неизменяемый каталог `releases/<SHA>/`.
-[Состав выпуска и маршруты доставки](/documentation/frontend/releases/artifacts).
-
-Ручной CD выбирает опубликованный Release, проверяет manifest, образ и CDN, затем
-передаёт digest и SHA в Ansible из актуального `infra/main`. Переключение BFF возвращает
-HTML и PWA-файлы выбранного выпуска; обновление уже установленного service worker
-зависит от его жизненного цикла в браузере. Публикация файлов сама по себе не переключает BFF.
-[Выкатка и проверка результата](/documentation/frontend/releases/deployment).
-
-Этот процесс сверён с исходниками 09.11.2026:
-[CI](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/ci.yml#L39-L147),
-[CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L43-L147),
-[образ BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/apps/bff/Dockerfile#L7-L17),
-[Ansible](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/deploy-bff.yml#L1-L43).
-Новая выкатка и обновление установленной PWA здесь не проверялись; HTTP-наблюдения
-выше сохраняют собственную дату и SHA. Схемы и практические команды — в
-[разделе выкаток](/documentation/frontend/releases/).
+Публикация создаёт CDN-каталог нового SHA и образ BFF. После выкатки BFF выдаёт шаблон, `/sw.js` и офлайн-комплект выбранного выпуска. Установка в браузере зависит от проверки обновления SW и загрузки файлов. [Артефакты выпуска](/documentation/frontend/releases/artifacts), [выкатка](/documentation/frontend/releases/deployment), [обновление SW](/documentation/offline/build-and-registration).
 
 ## Как проверить раздачу
 
-1. Зафиксировать дату, время и SHA из HTML, затем проверять CDN-ассеты именно этого SHA.
-2. Получить публичные PWA-URL без сессии. Проверить статус и MIME-тип, особенно для SW:
-   ответ HTML вместо JS указывает на ошибку маршрутизации даже при статусе 200.
-3. Сравнить `Cache-Control` на origin и CDN с метаданными загрузчика. Отсутствие заголовка
-   записать явно; отдельно проверить состав precache и содержимое Cache Storage.
-4. Проверить origin и scope регистрации, а также фактический режим CSP. HTTP-заголовки,
-   зарегистрированный SW и успешно установленная PWA подтверждаются отдельными проверками.
-5. Для сценария без сети перейти к [проверке офлайн-режима](/documentation/offline/).
-   После удаления локального кеша или при первом визите офлайн-страница не гарантируется.
+1. Откройте `/login` с сетью в чистом контексте. Запишите дату, время и SHA из пути релизных JS/CSS в HTML.
+2. Запросите файлы по трём адресам из таблицы. Запишите HTTP-статус, `Content-Type` и `Cache-Control`. Для `/sw.js` проверьте, что пришёл JavaScript.
+3. Проверьте регистрацию, scope и Cache Storage по [инструкции запуска](/documentation/offline/build-and-registration). Повторите [гостевой сценарий без сети](/documentation/offline/).
