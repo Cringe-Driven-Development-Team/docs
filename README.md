@@ -69,6 +69,18 @@
 | [csrf-login](https://docs.cellestial.ru/security/csrf-login.html) | Login CSRF: привязка к аккаунту атакующего и фактические отказы входа |
 | [csrf-xss](https://docs.cellestial.ru/security/csrf-xss.html) | XSS внутри origin: запрос с HttpOnly-cookie проходит CSRF, авторизация сохраняется |
 
+[Хакатон](https://docs.cellestial.ru/documentation/hackathon/) — целевая система техподдержки к демо 28 ноября 2026 года. Исходники схем лежат в `diagrams/hackathon/`.
+
+| Схема | Что показывает |
+| --- | --- |
+| [Путь пользователя](https://docs.cellestial.ru/hackathon/journey.html) | Обращение из блокнота, ответ бота, передача оператору и история |
+| [Статусы](https://docs.cellestial.ru/hackathon/states.html) | Кто берёт обращение и как его завершить |
+| [Сервисы](https://docs.cellestial.ru/hackathon/services.html) | Путь запроса через BFF и Support к Identity, базе и модели |
+| [Обновление диалога](https://docs.cellestial.ru/hackathon/polling.html) | Отправка сообщения и чтение новых реплик по курсору |
+| [Загрузка вложения](https://docs.cellestial.ru/hackathon/upload.html) | Прямой PUT в S3, проверка и привязка к сообщению |
+| [Чтение вложения](https://docs.cellestial.ru/hackathon/download.html) | Проверка прав, превью и скачивание оригинала |
+| [Работа команды](https://docs.cellestial.ru/hackathon/handoffs.html) | Что должно заработать вместе к 13:30, 16:00 и 18:00 |
+
 Модуль №2 (`diagrams/modules/2/`) — план, а не прод: в «Архитектуру» не попадает, папка в `HIDDEN_FOLDERS`
 (`site/.vitepress/diagram-names.ts`), схема встраивается на страницу модуля через
 `<Diagram name="modules/2/<имя>" />`:

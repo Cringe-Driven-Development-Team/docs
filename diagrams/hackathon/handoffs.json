@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {"tag": "Activity", "id": "denis", "x": 0, "y": 0, "width": 180, "height": 60, "texts": [{"text": "Денис · iframe и BFF"}]},
+    {"tag": "Activity", "id": "valentin", "x": 300, "y": 0, "width": 180, "height": 60, "texts": [{"text": "Валентин · Support"}]},
+    {"tag": "Activity", "id": "first", "x": 140, "y": 160, "width": 180, "height": 60, "texts": [{"text": "13:30 · создать и прочитать"}]},
+    {"tag": "Activity", "id": "erofey", "x": 0, "y": 320, "width": 180, "height": 60, "texts": [{"text": "Ерофей · интерфейс"}]},
+    {"tag": "Activity", "id": "daria", "x": 540, "y": 320, "width": 180, "height": 60, "texts": [{"text": "Дарья · роль и бот"}]},
+    {"tag": "Activity", "id": "second", "x": 260, "y": 320, "width": 180, "height": 60, "texts": [{"text": "16:00 · диалог двух учёток"}]},
+    {"tag": "Activity", "id": "demo", "x": 260, "y": 500, "width": 180, "height": 60, "texts": [{"text": "18:00 · показ на стенде"}]},
+    {"tag": "Legend", "id": "legend", "x": 800, "y": 0, "width": 340, "entries": [{"text": "Прочие связи", "color": "#1c1c1c"}]}
+  ],
+  "connections": [
+    {"tag": "Relationship", "from": "denis", "to": "first"},
+    {"tag": "Relationship", "from": "valentin", "to": "first"},
+    {"tag": "Relationship", "from": "first", "to": "second"},
+    {"tag": "Relationship", "from": "erofey", "to": "second"},
+    {"tag": "Relationship", "from": "daria", "to": "second"},
+    {"tag": "Relationship", "from": "second", "to": "demo"}
+  ]
+}

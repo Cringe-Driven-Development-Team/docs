@@ -1,0 +1,17 @@
+{
+  "entities": [
+    {"tag": "Activity", "id": "new", "x": 0, "y": 0, "width": 180, "height": 60, "texts": [{"text": "Новое"}]},
+    {"tag": "Activity", "id": "requested", "x": 320, "y": 0, "width": 180, "height": 60, "texts": [{"text": "Запрошен оператор"}]},
+    {"tag": "Activity", "id": "claimed", "x": 320, "y": 160, "width": 180, "height": 60, "texts": [{"text": "Назначен оператор"}]},
+    {"tag": "Activity", "id": "active", "x": 320, "y": 320, "width": 180, "height": 60, "texts": [{"text": "В работе"}]},
+    {"tag": "Activity", "id": "closed", "x": 0, "y": 320, "width": 180, "height": 60, "texts": [{"text": "Завершено"}]},
+    {"tag": "Legend", "id": "legend", "x": 600, "y": 0, "width": 340, "entries": [{"text": "Прочие связи", "color": "#1c1c1c"}]}
+  ],
+  "connections": [
+    {"tag": "Relationship", "from": "new", "to": "requested", "label": "Позвать"},
+    {"tag": "Relationship", "from": "requested", "to": "claimed", "label": "Взять"},
+    {"tag": "Relationship", "from": "claimed", "to": "active", "label": "Первый ответ"},
+    {"tag": "Relationship", "from": "active", "to": "closed", "label": "Завершить"},
+    {"tag": "Relationship", "from": "new", "to": "closed", "label": "Помогло"}
+  ]
+}

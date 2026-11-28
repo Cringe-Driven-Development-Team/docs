@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {"tag": "Activity", "id": "notebook", "x": 240, "y": 0, "width": 180, "height": 60, "texts": [{"text": "Открыть поддержку в блокноте"}]},
+    {"tag": "Activity", "id": "tickets", "x": 240, "y": 140, "width": 180, "height": 60, "texts": [{"text": "Мои обращения"}]},
+    {"tag": "Activity", "id": "form", "x": 0, "y": 280, "width": 180, "height": 60, "texts": [{"text": "Новое обращение"}]},
+    {"tag": "Activity", "id": "bot", "x": 0, "y": 420, "width": 180, "height": 60, "texts": [{"text": "Ответ помощника"}]},
+    {"tag": "Activity", "id": "operator", "x": 300, "y": 420, "width": 180, "height": 60, "texts": [{"text": "Диалог с оператором"}]},
+    {"tag": "Activity", "id": "history", "x": 300, "y": 620, "width": 180, "height": 60, "texts": [{"text": "История обращения"}]},
+    {"tag": "Legend", "id": "legend", "x": 600, "y": 0, "width": 340, "entries": [{"text": "Прочие связи", "color": "#1c1c1c"}]}
+  ],
+  "connections": [
+    {"tag": "Relationship", "from": "notebook", "to": "tickets"},
+    {"tag": "Relationship", "from": "tickets", "to": "form", "label": "Создать"},
+    {"tag": "Relationship", "from": "form", "to": "bot"},
+    {"tag": "Relationship", "from": "bot", "to": "operator", "label": "Позвать"},
+    {"tag": "Relationship", "from": "bot", "to": "history", "label": "Помогло"},
+    {"tag": "Relationship", "from": "operator", "to": "history", "label": "Завершить"},
+    {"tag": "Relationship", "from": "tickets", "to": "history", "label": "Перечитать"}
+  ]
+}
