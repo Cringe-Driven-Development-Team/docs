@@ -1,0 +1,22 @@
+{
+  "entities": [
+    {"tag": "Activity", "id": "widget", "x": 0, "y": 80, "width": 180, "height": 60, "texts": [{"text": "Блокнот → iframe"}]},
+    {"tag": "Activity", "id": "desk", "x": 0, "y": 260, "width": 180, "height": 60, "texts": [{"text": "Админка оператора"}]},
+    {"tag": "Group", "id": "services", "x": 300, "y": 0, "width": 660, "height": 420, "isContainer": true, "color": "blue", "title": {"text": "Сервисы Cellestial"}},
+    {"tag": "Icon", "id": "bff", "x": 340, "y": 160, "icon": "server", "texts": [{"text": "BFF"}], "containerId": "services"},
+    {"tag": "Icon", "id": "support", "x": 580, "y": 160, "icon": "go", "texts": [{"text": "Support"}], "containerId": "services"},
+    {"tag": "Icon", "id": "identity", "x": 800, "y": 60, "icon": "server", "texts": [{"text": "Identity"}], "containerId": "services"},
+    {"tag": "Icon", "id": "pg", "x": 800, "y": 280, "icon": "database", "texts": [{"text": "PostgreSQL"}], "containerId": "services"},
+    {"tag": "Group", "id": "provider", "x": 520, "y": 480, "width": 220, "height": 180, "isContainer": true, "color": "green", "title": {"text": "Провайдер модели"}},
+    {"tag": "Icon", "id": "model", "x": 580, "y": 540, "icon": "cloud", "texts": [{"text": "ИИ-помощник"}], "containerId": "provider"},
+    {"tag": "Legend", "id": "legend", "x": 1000, "y": 0, "width": 340, "entries": [{"text": "Наша инфраструктура", "color": "#2866c4"}, {"text": "Внешние сервисы", "color": "#30a050"}, {"text": "Пайплайн и внешние системы, пунктир", "color": "#3a3a3a"}, {"text": "Прочие связи", "color": "#1c1c1c"}]}
+  ],
+  "connections": [
+    {"tag": "Relationship", "from": "widget", "to": "bff", "color": "black", "lineStyle": "dashed"},
+    {"tag": "Relationship", "from": "desk", "to": "bff", "color": "black", "lineStyle": "dashed"},
+    {"tag": "Relationship", "from": "bff", "to": "support", "label": "mTLS"},
+    {"tag": "Relationship", "from": "support", "to": "identity", "label": "Сессия"},
+    {"tag": "Relationship", "from": "support", "to": "pg", "label": "Запись"},
+    {"tag": "Relationship", "from": "support", "to": "model", "label": "Текст диалога"}
+  ]
+}

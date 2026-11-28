@@ -1807,7 +1807,8 @@ async function checkHierarchy(browser: Browser, url: (path: string) => string): 
     'documentation/frontend/releases/', 'documentation/frontend/releases/publication',
     'documentation/frontend/releases/artifacts', 'documentation/frontend/releases/deployment',
     'documentation/frontend/releases/rollback', 'documentation/frontend/releases/troubleshooting'];
-  const links = [...routes.slice(0, 2), ...frontendRoutes, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
+  const hackathonRoutes = ['documentation/hackathon/', 'documentation/hackathon/architecture', 'documentation/hackathon/demo'];
+  const links = [...routes.slice(0, 2), ...hackathonRoutes, ...frontendRoutes, 'documentation/offline/', 'documentation/offline/build-and-registration', 'documentation/offline/infrastructure', 'documentation/notebooks/', 'documentation/notebooks/editing', 'documentation/notebooks/execution', 'documentation/notebooks/results', 'documentation/notebooks/storage-and-infrastructure', ...routes.slice(2)].map(path => `${SITE_BASE}${path}`);
   const parent = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/security/"])`;
   const caret = `${parent} > .item > button.caret`;
   const frontendCaret = `.VPSidebarItem.collapsible.level-1:has(> .item > a[href="${SITE_BASE}documentation/frontend/"]) > .item > button.caret`;

@@ -17,6 +17,10 @@ const documentationSidebar = [
     items: [
       { text: 'Обзор продукта', link: '/documentation/' },
       { text: 'Что работает сейчас', link: '/documentation/current-state' },
+      { text: 'Хакатон', link: '/documentation/hackathon/', collapsed: true, items: [
+        { text: 'Как устроена поддержка', link: '/documentation/hackathon/architecture' },
+        { text: 'Команда и демо', link: '/documentation/hackathon/demo' },
+      ] },
       { text: 'Frontend', link: '/documentation/frontend/', collapsed: true, items: [
         { text: 'Архитектура', link: '/documentation/frontend/architecture' },
         { text: 'Роутинг', link: '/documentation/frontend/routing' },
