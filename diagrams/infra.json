@@ -1,9 +1,10 @@
 {
   "entities": [
+    {"tag":"Textbox","id":"infra-revision","x":0,"y":0,"width":1000,"text":"Конфигурация infra b8f6d2d8 · успешный production apply 27.11.2026."},
     {"tag":"Group","id":"workstation","x":0,"y":120,"width":260,"height":520,"isContainer":true,"title":{"text":"Рабочее место","icon":"laptop"},"color":"white"},
     {"tag":"Icon","id":"pulumi-cli","x":80,"y":200,"icon":"pulumi","texts":[{"text":"Pulumi CLI"}],"containerId":"workstation"},
     {"tag":"Icon","id":"ansible-cli","x":80,"y":440,"icon":"ansible","texts":[{"text":"Ansible CLI"}],"containerId":"workstation"},
-    {"tag":"Group","id":"github","x":360,"y":120,"width":440,"height":1160,"isContainer":true,"title":{"text":"GitHub · владельцы кода","icon":"github"},"color":"purple"},
+    {"tag":"Group","id":"github","x":360,"y":120,"width":440,"height":1160,"isContainer":true,"title":{"text":"GitHub","icon":"github"},"color":"purple"},
     {"tag":"Icon","id":"repo-infra","x":420,"y":200,"icon":"github","texts":[{"text":"infra · Pulumi / Ansible"}],"containerId":"github"},
     {"tag":"Activity","id":"infra-apply","x":420,"y":440,"width":160,"height":80,"texts":[{"text":"Actions · apply"}],"containerId":"github"},
     {"tag":"Icon","id":"repo-hooks","x":600,"y":620,"icon":"github","texts":[{"text":".github · интеграции"}],"containerId":"github"},
@@ -14,20 +15,20 @@
     {"tag":"Icon","id":"state-bucket","x":1200,"y":240,"icon":"database","texts":[{"text":"S3 · Pulumi state"}],"containerId":"state-project"},
     {"tag":"Group","id":"product-project","x":960,"y":440,"width":620,"height":480,"isContainer":true,"title":{"text":"Проект продукта · сеть / DNS / S3 / CDN","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
     {"tag":"Icon","id":"gateway","x":1000,"y":500,"icon":"server","texts":[{"text":"Gateway · Caddy / BFF"}],"containerId":"product-project"},
-    {"tag":"Icon","id":"vps2","x":1200,"y":500,"icon":"server","texts":[{"text":"VPS2 · Go / БД / Redis"}],"containerId":"product-project"},
+    {"tag":"Icon","id":"vps2","x":1200,"y":500,"icon":"server","texts":[{"text":"VPS2 · прокси / Go / БД / Redis"}],"containerId":"product-project"},
     {"tag":"Icon","id":"auxiliary","x":1400,"y":500,"icon":"server","texts":[{"text":"Auxiliary · интеграции"}],"containerId":"product-project"},
     {"tag":"Icon","id":"storage","x":1000,"y":760,"icon":"database","texts":[{"text":"S3 / CDN"}],"containerId":"product-project"},
-    {"tag":"Icon","id":"runtime-provider","x":1400,"y":760,"icon":"cloud","texts":[{"text":"Runtime · провайдер VPS"}],"containerId":"product-project"},
-    {"tag":"Group","id":"aux-services","x":960,"y":1000,"width":620,"height":420,"isContainer":true,"title":{"text":"Сервисы auxiliary","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
-    {"tag":"Icon","id":"hooks","x":1000,"y":1060,"icon":"bell","texts":[{"text":"Hooks · SQLite / outbox"}],"containerId":"aux-services"},
+    {"tag":"Icon","id":"runtime-provider","x":1400,"y":760,"icon":"cloud","texts":[{"text":"OpenStack · Runtime VPS"}],"containerId":"product-project"},
+    {"tag":"Group","id":"aux-services","x":960,"y":1000,"width":620,"height":420,"isContainer":true,"title":{"text":"VPS3","icon":"cloud"},"color":"blue","containerId":"selectel","styleMode":"plain"},
+    {"tag":"Icon","id":"hooks","x":1060,"y":1060,"icon":"bell","texts":[{"text":"Hooks · SQLite / outbox"}],"containerId":"aux-services"},
     {"tag":"Icon","id":"proxy","x":1240,"y":1060,"icon":"server","texts":[{"text":"Telegram proxy"}],"containerId":"aux-services"},
     {"tag":"Icon","id":"restic","x":1440,"y":1060,"icon":"database","texts":[{"text":"Restic · auxiliary"}],"containerId":"aux-services"},
     {"tag":"Group","id":"external","x":0,"y":800,"width":260,"height":240,"isContainer":true,"title":{"text":"Внешние сервисы","icon":"cloud"},"color":"green"},
     {"tag":"Icon","id":"telegram","x":80,"y":880,"icon":"telegram","texts":[{"text":"Telegram"}],"containerId":"external"},
     {"tag":"Icon","id":"backup-s3","x":1200,"y":760,"icon":"database","texts":[{"text":"S3 backup auxiliary"}],"containerId":"product-project"},
-    {"tag":"Textbox","id":"runtime-status","x":920,"y":1540,"width":720,"text":"Runtime: Go создаёт VPS через OpenStack и настраивает Ansible. Сквозной запуск и сетевая изоляция отдельно не проверены. Restic auxiliary не является backup PostgreSQL."},
+    {"tag":"Textbox","id":"runtime-status","x":920,"y":1540,"width":720,"text":"Go создаёт VPS через OpenStack и настраивает Ansible. Сквозной запуск и сетевая изоляция отдельно не проверены. Restic сохраняет данные auxiliary."},
     {"tag":"Legend","id":"legend","x":1760,"y":0,"width":340,"entries":[{"text":"Наша инфраструктура","color":"#2866c4"},{"text":"GitHub","color":"#c43dcf"},{"text":"Внешние сервисы","color":"#30a050"},{"text":"Рабочее место","color":"#242424"},{"text":"Пайплайн и внешние системы, пунктир","color":"#3a3a3a"},{"text":"Алерты и уведомления, точки","color":"#bd413a"},{"text":"Прочие связи","color":"#1c1c1c"}]},
-    {"tag":"Icon","id":"githubbot","x":1000,"y":1260,"icon":"bell","texts":[{"text":"githubbot"}],"containerId":"aux-services"}
+    {"tag":"Icon","id":"githubbot","x":1100,"y":1260,"icon":"bell","texts":[{"text":"githubbot"}],"containerId":"aux-services"}
   ],
   "connections": [
     {"tag":"Relationship","from":"pulumi-cli","to":"repo-infra","label":"код стека"},
@@ -36,12 +37,12 @@
     {"tag":"Relationship","from":"ansible-cli","to":"gateway","label":"playbook"},
     {"tag":"Relationship","from":"infra-apply","to":"product-project","label":"Pulumi / Ansible","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"vps2","to":"runtime-provider","label":"runtime"},
-    {"tag":"Relationship","from":"repo-hooks","to":"hooks","label":"образ сервиса"},
+    {"tag":"Relationship","from":"repo-hooks","to":"hooks"},
     {"tag":"Relationship","from":"auxiliary","to":"hooks","label":"Compose"},
     {"tag":"Relationship","from":"hooks","to":"proxy","label":"HTTPS proxy"},
     {"tag":"Relationship","from":"proxy","to":"telegram","label":"уведомления","color":"red","lineStyle":"dotted"},
     {"tag":"Relationship","from":"restic","to":"backup-s3","label":"backup auxiliary"},
-    {"tag":"Relationship","from":"docs-source","to":"docs-pages","label":"Markdown","color":"black","lineStyle":"dashed"},
+    {"tag":"Relationship","from":"docs-source","to":"docs-pages","color":"black","lineStyle":"dashed"},
     {"tag":"Relationship","from":"repo-hooks","to":"githubbot","label":"образ бота"},
     {"tag":"Relationship","from":"githubbot","to":"proxy","label":"HTTPS proxy"}
   ]

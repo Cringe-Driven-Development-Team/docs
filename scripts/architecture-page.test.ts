@@ -10,8 +10,8 @@ test("server access identifies roles without publishing addresses", () => {
   const page = readFileSync(PAGE, "utf8");
   const section = page.split("{#server-access}")[1]?.split("\n## ")[0] ?? "";
   for (const value of ["VPS1", "gateway", "cellestial.ru", "VPS2", "backend",
-    "VPS3", "auxiliary", "hooks.cellestial.ru", "deploy", "личный", "приватном",
-    "https://github.com/Cringe-Driven-Development-Team/agent-plugins-private/blob/main/plugins/cellestial-ops/skills/cellestial-ops/SKILL.md"]) {
+    "VPS3", "auxiliary", "hooks.cellestial.ru", "deploy", "личный", "команда эксплуатации",
+    "/ansible/README.md#L209-L211"]) {
     expect(section, value).toContain(value);
   }
   expect(section).toMatch(/VPS2[^\n]+через VPS1/);
@@ -77,14 +77,14 @@ test('module sidebar collapses module 2 and expands module 3 by default', () => 
 test('production evidence distinguishes configuration from scenarios', () => {
   const page = readFileSync(PAGE, 'utf8');
   const intro = page.split('\n## ')[0]!;
-  for (const value of ['Архитектура работающего сервиса', '{#архитектура-mvp}', '09.11.2026', '03:37 МСК',
-    '319e691b79f81e09dcffabc04941831a5f4b5930', '06841d4765c28ad7e52bf5e36df3b72cb22c094e',
-    '42538007203', '42536140424', '42532217133', 'Прямой SSH', 'HTTP-проверки']) {
+  for (const value of ['Архитектура работающего сервиса', '{#архитектура-mvp}', '28.11.2026', '02:18:48 МСК',
+    'b1baf996fb6753d1a62eab6f874d03dca30faadc', '3532ca97dc2c9d0f84aa999eae85918e76907aa7',
+    '8118066244', '7970701489', '8116451615', '46079576340', 'b8f6d2d81410f70ec5af642cb486d37b0b0f5412']) {
     expect(intro, value).toContain(value);
   }
-  expect(intro).toMatch(/runtime[\s\S]*не проверен/);
-  expect(intro).toMatch(/Авторизованн[\s\S]*не проверен/);
-  expect(page).not.toMatch(/01\.11\.2026|baf512e9|6e1a0d81|Историческ|исторический срез/);
+  expect(intro).toMatch(/8116451615[^\n]*ошибкой внешней проверки[^\n]*Активная ревизия Go после этой попытки не установлена/);
+  expect(intro).toMatch(/Авторизованные сценарии, запуск runtime[^\n]*не проверены/);
+  expect(page).not.toMatch(/319e691|06841d4|a59f858|Orval|tRPC/);
   expect(page).not.toMatch(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
   expect(page).not.toContain('{{');
 });
@@ -119,16 +119,14 @@ test("config: documentation and modules keep architecture in documentation, no b
     expect(documentation).toContain(`](${link})`);
   }
   const observed = documentation.split("## Что подтверждено на проде")[1]?.split("## Что реализовано")[0] ?? "";
-  for (const value of ['Accept: text/html', 'user: null', 'не устанавливает cookie', 'csrf_invalid',
-    'UNAUTHORIZED', 'Content-Security-Policy', 'не проверялись']) expect(observed, value).toContain(value);
-  expect(documentation).toContain('09.11.2026, 04:19 МСК');
-  expect(documentation).toContain('319e691b79f81e09dcffabc04941831a5f4b5930');
-  expect(documentation).toContain('06841d4765c28ad7e52bf5e36df3b72cb22c094e');
+  for (const value of ['28.11.2026, 02:18:48–02:18:49 МСК', 'UTC+03:00', 'b1baf996fb6753d1a62eab6f874d03dca30faadc',
+    'Accept: text/html', 'user: null', 'не устанавливает cookie', 'csrf_invalid', 'UNAUTHORIZED', 'Content-Security-Policy']) expect(observed, value).toContain(value);
+  expect(observed).not.toMatch(/запуск ячейки|сохранение блокнота|вход выполнен|POST /);
   expect(documentation).toContain('## Что реализовано в выложенном коде');
   expect(documentation).toContain('PostgreSQL');
-  expect(documentation).toContain('действующую блокирующую политику Caddy');
-  expect(documentation).toContain('повторно не проверяли');
-  expect(documentation).not.toMatch(/31\.10\.2026|остаются.*планом|CSP пока обозначен как TODO/);
+  expect(documentation).toContain('Версия активного Go после этой попытки не установлена');
+  const offline = documentation.split("## Офлайн-режим")[1]?.split("\n## ")[0] ?? "";
+  for (const value of ['01:53:53–01:53:55 МСК', 'Chrome Headless', 'b1baf996', 'ERR_INTERNET_DISCONNECTED', 'Повторить']) expect(offline).toContain(value);
 
 });
 
@@ -161,4 +159,40 @@ test("current behavior points to documentation", () => {
   expect(context).toContain("](/documentation/current-state)");
   expect(context).toContain('](/documentation/architecture/#contract)');
   expect(readFileSync(PAGE, 'utf8')).toContain('{#contract}');
+});
+
+test("release diagrams link to published workflow and operating instructions", () => {
+  const page = readFileSync(PAGE, "utf8");
+  const ci = page.split("{#ci}")[1]?.split("\n## ")[0] ?? "";
+  const cd = page.split("{#cd}")[1]?.split("\n## ")[0] ?? "";
+  expect(ci).toContain("73ac7e02f2ad04fec7e6227a2e1f022b33d41994/.github/workflows/ci.yml#L331-L360");
+  expect(ci).toContain("`services`");
+  expect(cd).toContain("В последней подтверждённой выкладке монолита backend");
+  expect(cd).toContain("release_tag");
+  expect(cd).toContain("/deployments/7970701489)");
+  expect(cd).toContain("da8cdc6da73cd12abcc8b562f4aafed3efedd5da/ansible/deploy-backend.yml");
+  for (const path of ["deployment", "rollback"]) {
+    expect(cd).toContain(`](/documentation/frontend/releases/${path})`);
+  }
+});
+
+test("contract section identifies the source by revision and links to its owners", () => {
+  const contract = readFileSync(PAGE, 'utf8').split('{#contract}')[1]?.split('\n## ')[0] ?? '';
+  expect(contract).toContain('BffPaths');
+  for (const [sha, file] of [
+    ['947a19ccf4319a621007b2900aa8e620ca27762b', 'spec/openapi.json'],
+    ['29e5ef56133c6fc42cd2cce3b5ecb379b457c6b8', 'spec/identity/openapi.json'],
+    ['29e5ef56133c6fc42cd2cce3b5ecb379b457c6b8', 'spec/workspace/openapi.json'],
+  ]) expect(contract).toContain(`/backend/blob/${sha}/${file}#L`);
+  expect(contract).toContain('](/documentation/frontend/bff#apidog-orval-и-схемы)');
+  const owners = readFileSync('site/documentation/project-context.md', 'utf8');
+  expect(owners).toContain('](https://github.com/Cringe-Driven-Development-Team/frontend-packages)');
+});
+
+test("product overview links to agreed scenarios and interface designs", () => {
+  const overview = readFileSync('site/documentation/index.md', 'utf8');
+  for (const link of ['/modules/2/tracks/file-exec', '/modules/2/tracks/file-exec/contract', '/modules/2/tracks/file-search', '/documentation/current-state']) expect(overview).toContain(`](${link})`);
+  for (const node of ['398-52000', '398-52073', '398-52150', '398-52417', '398-52526', '496-14596', '398-52575', '398-52618', '398-52636', '398-52651', '496-16027']) expect(overview).toContain(`?node-id=${node}`);
+  expect(overview).toContain('временная недоступность и несовместимость фронта и бэка');
+  expect(overview).not.toMatch(/Apidog[^\n]*hash|вопрос не объявлен решённым/);
 });

@@ -130,3 +130,57 @@ test("последовательности сохранения и исполн�
   }
   expect(contract.match(/sequenceDiagram/g)).toHaveLength(2);
 });
+
+test("статусы правки и исполнения имеют разные основания", () => {
+  const root = "site/documentation/notebooks";
+  const overview = read(`${root}/index.md`);
+  const editing = read(`${root}/editing.md`);
+  const results = read(`${root}/results.md`);
+  for (const [outcome, evidence] of [
+    ["Локальный черновик", "drafts"],
+    ["Подтверждение записи", "hash"],
+    ["Сохранённый результат исполнения", "projection: applied"],
+  ] as const) {
+    expect(overview).toMatch(new RegExp(`^\\| ${outcome} \\|[^\\n]*${evidence}`, "m"));
+  }
+  expect(overview).toContain("7970701489");
+  expect(overview).toContain("8116451615");
+  expect(overview).toContain("ревизия контракта");
+  expect(editing).toContain("запись одного результата сохраняет прежний");
+  expect(results).toContain("](/documentation/security/xss)");
+});
+
+test("свидетельства выкладки отделены от проверки сценариев блокнота", () => {
+  const overview = read("site/documentation/notebooks/index.md");
+  const deployments = overview.split("| Компонент | Ревизия и свидетельство |")[1]?.split("| Сценарий |")[0] ?? "";
+  const scenarios = overview.split("| Сценарий | Статус и основание |")[1]?.split("\n\n")[0] ?? "";
+  expect(deployments).toMatch(/Frontend и BFF.*8118066244.*19:45:23 UTC.*01:13:43 МСК.*bootstrap/);
+  expect(deployments).toMatch(/Go и агент.*7970701489.*sha256:[a-f0-9]{64}.*8116451615.*ошибкой/);
+  expect(deployments).toMatch(/Инфраструктура.*686218395ad12e5752af312d18f32efc508d55ea.*22:11:43 UTC.*success/);
+  expect(deployments).toMatch(/OpenAPI.*ревизия контракта.*spec\/contract-source\.json#L/);
+  const rows = scenarios.split("\n").filter((line) => /^\| [А-Я]/.test(line));
+  expect(rows).toHaveLength(4);
+  for (const row of rows) expect(row).toMatch(/\| По исходникам .*\]\(\.\//);
+});
+
+test("повтор одиночного исполнения и пакета использует ключ соответствующей операции", () => {
+  const page = read("site/documentation/notebooks/execution.md");
+  expect(page).toMatch(/^\| `\/api\/runtime\/execute` \|[^\n]*`execution_id`[^\n]*прежн/m);
+  expect(page).toMatch(/^\| `\/api\/runtime\/execute-all` \|[^\n]*`request_id`[^\n]*прежн/m);
+});
+
+test("карточка восстановления предупреждает о потере черновика даже при статусе сохранения", () => {
+  const page = read("site/documentation/notebooks/editing.md");
+  const orphans = page.split("{#orphans}")[1];
+  expect(orphans).toContain("«Сохранено»");
+  expect(orphans).toContain("beforeunload");
+  expect(orphans).toMatch(/Скопируйте текст .*перед .*перезагрузкой/);
+});
+
+test("объём временных томов и лимит файлового API указаны отдельно", () => {
+  const page = read("site/documentation/notebooks/storage-and-infrastructure.md");
+  for (const [volume, size] of [["/tmp", 256], ["/workspace", 256], ["/packages", 512]] as const) {
+    expect(page).toMatch(new RegExp(`^\\| \`${volume}\`[^\\n]*${size} MiB`, "m"));
+  }
+  expect(page).toMatch(/^\| Передача файла через API \|[^\n]*3 GiB[^\n]*\bdownload\b/m);
+});

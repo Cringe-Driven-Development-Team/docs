@@ -5,7 +5,7 @@
       "id": "vps",
       "x": 620,
       "y": 0,
-      "width": 1000,
+      "width": 1460,
       "height": 820,
       "isContainer": true,
       "color": "blue",
@@ -18,7 +18,7 @@
       "id": "bff",
       "x": 660,
       "y": 60,
-      "width": 620,
+      "width": 1080,
       "height": 700,
       "isContainer": true,
       "color": "blue",
@@ -36,7 +36,7 @@
       "icon": "code",
       "texts": [
         {
-          "text": "JS атакующего в нашем origin"
+          "text": "JavaScript на origin приложения"
         }
       ]
     },
@@ -54,13 +54,13 @@
     },
     {
       "tag": "Icon",
-      "id": "trpc-adapter",
+      "id": "route",
       "x": 740,
       "y": 160,
       "icon": "code",
       "texts": [
         {
-          "text": "Адаптер tRPC"
+          "text": "Маршрут HTTP API"
         }
       ],
       "containerId": "bff"
@@ -86,7 +86,7 @@
       "icon": "user",
       "texts": [
         {
-          "text": "Сессия и входные данные"
+          "text": "Сессия и доступ"
         }
       ],
       "containerId": "bff"
@@ -94,7 +94,7 @@
     {
       "tag": "Icon",
       "id": "go-api",
-      "x": 1460,
+      "x": 1920,
       "y": 420,
       "icon": "go",
       "texts": [
@@ -119,7 +119,7 @@
       "x": 0,
       "y": 360,
       "width": 540,
-      "text": "**Условие сценария**\n\nЕсли JavaScript уже исполняется в нашем origin,\nон действует как код приложения."
+      "text": "Если JavaScript уже исполняется в origin приложения, действуют правила запросов этого origin."
     },
     {
       "tag": "Textbox",
@@ -127,7 +127,7 @@
       "x": 0,
       "y": 540,
       "width": 540,
-      "text": "**Запрос без чтения cookie**\n\nJS ставит `X-CSRF: 1`, `credentials: same-origin`.\nБраузер добавляет HttpOnly-cookie.\nOrigin и Fetch Metadata соответствуют приложению."
+      "text": "Браузер может приложить HttpOnly-cookie.\n\nДоступ к операции проверяется в BFF."
     },
     {
       "tag": "Textbox",
@@ -135,13 +135,13 @@
       "x": 700,
       "y": 580,
       "width": 250,
-      "text": "CSRF проходит.\n\nНужна отдельная защита от XSS: bootstrap и вывод текста.",
+      "text": "Проверки CSRF учитывают origin запроса. Для безопасности вывода используются отдельные механизмы.",
       "containerId": "bff"
     },
     {
       "tag": "Textbox",
       "id": "go-policy",
-      "x": 1340,
+      "x": 1800,
       "y": 620,
       "width": 240,
       "text": "Go проверяет токены и права на операцию.",
@@ -150,7 +150,7 @@
     {
       "tag": "Legend",
       "id": "legend",
-      "x": 1660,
+      "x": 2120,
       "y": 0,
       "width": 340,
       "entries": [
@@ -167,6 +167,19 @@
           "color": "#1c1c1c"
         }
       ]
+    },
+    {
+      "tag": "Icon",
+      "id": "input",
+      "x": 1380,
+      "y": 420,
+      "icon": "user",
+      "texts": [
+        {
+          "text": "Проверка входа"
+        }
+      ],
+      "containerId": "bff"
     }
   ],
   "connections": [
@@ -179,16 +192,16 @@
     {
       "tag": "Relationship",
       "from": "client",
-      "to": "trpc-adapter",
-      "label": "POST /api/trpc/notebooks.create",
+      "to": "route",
+      "label": "POST /api/users/update-login",
       "color": "orange",
       "lineStyle": "solid"
     },
     {
       "tag": "Relationship",
-      "from": "trpc-adapter",
+      "from": "route",
       "to": "csrf-check",
-      "label": "JSON принят"
+      "label": "До чтения сессии"
     },
     {
       "tag": "Relationship",
@@ -198,35 +211,21 @@
     },
     {
       "tag": "Relationship",
-      "from": "session",
+      "from": "input",
       "to": "go-api",
-      "label": "HTTP · сессия и вход допустимы"
-    },
-    {
-      "tag": "Relationship",
-      "from": "go-api",
-      "to": "session",
-      "label": "Ответ Go"
-    },
-    {
-      "tag": "Relationship",
-      "from": "session",
-      "to": "client",
-      "label": "Ответ через BFF"
-    },
-    {
-      "tag": "Relationship",
-      "from": "client",
-      "to": "attack-code",
-      "label": "JS читает ответ",
-      "color": "orange",
-      "lineStyle": "solid"
+      "label": "Вход допустим → обработчик"
     },
     {
       "tag": "Relationship",
       "from": "session",
       "to": "unauthorized",
       "label": "Нет сессии"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "input",
+      "label": "Есть сессия"
     }
   ]
 }

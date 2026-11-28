@@ -4,96 +4,73 @@ title: Ошибки и уведомления
 
 # Ошибки и уведомления {#release-troubleshooting}
 
-Начните с конкретного Actions run и первого упавшего шага. Красный workflow, сообщение
-Telegram и состояние сайта показывают разные части одной операции. Не перезапускайте сборку
-только из-за отсутствующего сообщения. [Основание описания](./#основание-описания).
+Откройте первый упавший шаг Actions и найдите связанный production Deployment. Сбой после сохранённого `success` устраняйте на уровне упавшего шага. [Условия завершения CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L138-L165).
 
 ## Где искать свидетельства {#diagnosis}
 
-1. В [Actions](https://github.com/Cringe-Driven-Development-Team/frontend/actions) найдите
-   run по workflow, времени и инициатору; откройте лог первого упавшего шага и Summary.
-2. На [странице Release](https://github.com/Cringe-Driven-Development-Team/frontend/releases)
-   проверьте тег, статус публикации и четыре файла. Для деталей используйте `release.json`.
-3. В [production Deployments](https://github.com/Cringe-Driven-Development-Team/frontend/deployments)
-   найдите попытку того же run: её целевой SHA может отличаться от SHA запуска workflow.
-4. Для сбоя после начала переключения проверьте сайт и обратитесь к ответственному за BFF;
-   лог события не заменяет наблюдение фактической версии и нужного сценария.
+1. В [Actions](https://github.com/Cringe-Driven-Development-Team/frontend/actions) откройте лог первого упавшего шага и Summary.
+2. Сверьте тег и `release.json` в [Releases](https://github.com/Cringe-Driven-Development-Team/frontend/releases). Целевой SHA берите из **Ready release** или **Rollback target**.
+3. Найдите [production Deployment](https://github.com/Cringe-Driven-Development-Team/frontend/deployments) по run и сверьте статус, целевой SHA и digest. При сбое после начала переключения проверьте фактическую версию сайта и логи BFF. [Запись попытки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/deployments.ts#L166-L210).
 
-| Симптом | Что проверить | Следующий шаг |
-| --- | --- | --- |
-| Check зелёный, выпуска нет | Событие PR/merge queue или push/main; был ли Publish release и завершился ли он | Для PR это штатно; у main изучить publish job и очередь |
-| Publish release упал, есть draft | Наличие `release.json`, первый упавший шаг, доступность S3/GHCR | Восстановление по [инструкции публикации](./publication#retry) |
-| Ready release отвергает выпуск | Published/immutable, тег, четыре asset, суммы, provenance исходного CI | Исправить причину публикации; не отключать проверки и не подбирать другой выпуск молча |
-| Anonymous image check упал | Существует ли digest, публичен ли package bff, совпадает ли revision | Проверить публикацию/видимость GHCR; повторить после устранения причины |
-| Release check упал | Доступность CDN HTML/JS/CSS, MIME, CORS, путь выбранного SHA | Проверить файлы и CDN; до VPS эта проверка не переключает BFF |
-| Switch BFF упал | Последнее выполненное действие Ansible, запущенный образ, состояние Caddy/BFF | Возможна частичная выкатка; установить фактическое состояние, затем повтор или Rollback |
-| Health check упал после Switch BFF | Какая публичная проба не совпала с ожиданием | Новый BFF уже мог работать; исправить зависимость/контракт или выполнить штатный Rollback |
-| Production success, workflow красный | Не упали ли board/retention после подтверждения | Исправлять конкретный завершающий шаг; не объявлять выкатку несостоявшейся |
-| Старый Release скачивается, CD/rollback его отвергает | Есть ли его CDN-каталог и GHCR digest | Архивы не восстанавливаются автоматически; выбрать доступную цель в рамках штатного процесса |
-| Rollback target остановился | Незавершённая попытка, нет подходящего success, неоднозначный digest | Установить состояние последней попытки; не обходить ошибку ручным старым CD |
+| Шаг или симптом | Диагностика и восстановление |
+| --- | --- |
+| Check прошёл, выпуска нет | Проверьте событие. Publish release запускается после Check на push в `main`. Для сбоя публикации используйте [повтор](./publication#retry). |
+| Ready release или Rollback target | Сверьте тег, immutable-комплект, provenance или историю цели. При незавершённой попытке выясните её итог. |
+| Anonymous image check | Проверьте доступность заявленного digest без учётных данных, видимость пакета и метку ревизии. Повторите после устранения причины. |
+| Release check | Проверьте HTML и JS/CSS соответствующего каталога CDN, MIME и CORS. Исправьте доступность перед повтором. |
+| Switch BFF | Найдите последнее действие Ansible, проверьте образ и состояние BFF/Caddy. После диагностики повторите CD либо выполните [Rollback](./rollback). |
+| Health check | Найдите несовпавшую [публичную пробу](./deployment#что-проверяет-health-check). Проверьте её зависимость. Если нужен возврат к подтверждённому выпуску, проверьте [цель Rollback](./rollback#target). |
+| Production result | Сверьте лог записи и статусы Deployment. Если `success` отсутствует, установите фактическое состояние до следующей операции. |
+| Update release issues после `success` | Исправьте ошибку GitHub API или карточек и выполните [восстановление](#reconcile-issues). |
+| Retention после `success` | Проверьте лог и доступность S3. Следующий подтверждённый CD снова запустит retention. |
+| Старый Release скачивается, но проверки его отвергают | Проверьте доступность образа GHCR и каталога CDN. [Правила хранения](./artifacts#retention). |
 
-Ожидаемые HTTP-коды перечислены в [Health check](./deployment#что-проверяет-health-check).
-Например, неверные данные входа должны дать 400 + `BAD_REQUEST` + `invalid_credentials`,
-а не 401: 401 ожидается у защищённого `users.me` без сессии.
-[Реальные пробы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/checks.ts#L98-L166).
+[Check и Publish release](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/ci.yml#L22-L121), [CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L55-L165), [выбор отката](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/deployments.ts#L54-L110).
 
 ## Почему функционал есть, а выкатка красная
 
-Переключение и подтверждение — разные шаги. После успешного Switch BFF ошибка публичного
-Health check записывает `failure`. Новый HTML и функционал могут уже быть доступны, но полный
-набор проверок не прошёл. Автоматического отката workflow не делает.
+| Запись production | Как читать |
+| --- | --- |
+| `failure` | Переключение прошло, публичные проверки не подтвердили результат. |
+| `error` | Проверка результата не завершилась успешно и Switch BFF не отмечен успешным. Возможна частичная смена версии. |
+| Записи нет | Workflow остановился до Production record. |
+| `success` | Публичные пробы прошли и результат записан. Проверьте карточки и retention при красном workflow. |
 
-`error` означает, что проверка результата не подтвердилась на пути ошибки/отмены;
-это не обещание, что сервер остался нетронутым. При сбое до Production record записи попытки
-ещё нет. Точные условия видны в [Production result](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L137-L147).
+[Условие Production result](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/cd.yml#L117-L165).
+
+## Восстановление карточек {#reconcile-issues}
+
+Для ручного запуска Reconcile release issues нужен Write-доступ к `Cringe-Driven-Development-Team/frontend`. [Ручной запуск Actions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
+1. В логе **Update release issues** узнайте, что не записалось. Проверьте доступ GitHub к проекту, наличие карточки и целевой опции Status. После успешного Close API карточка ещё может показывать прежний Status.
+2. Если CD или Rollback уже получил `success`, откройте [Actions → Reconcile release issues](https://github.com/Cringe-Driven-Development-Team/frontend/actions/workflows/reconcile-issues.yml). На ветке `main` передайте `deployment_id` **исходной успешной попытки**.
+3. Проверьте **Recover release issues** и Summary. Workflow восстановит актуальный эффект по исходному диапазону без новой сборки и выкатки. Если последняя попытка ещё не подтверждена, сначала восстановите production.
+4. Для сбоя карточек публикации [повторите исходный CI опубликованного SHA](./publication#retry). [Workflow восстановления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/.github/workflows/reconcile-issues.yml#L3-L44), [правила восстановления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/docs/release.md#L337-L374).
 
 ## Что означает каждое сообщение
 
-| Сообщение | Событие/источник | Что оно подтверждает |
+| Сообщение | Источник | Что проверить |
 | --- | --- | --- |
-| PR поставлен в очередь | `pull_request.enqueued` | PR ждёт merge queue, а не production |
-| Выпуск готов | `release.published` после проверки потребителем | Опубликован готовый комплект, не выкатка |
-| Начало выкатки/отката | `deployment_status` для production | Создана попытка операции |
-| Успех/ошибка выкатки | Итог той же попытки production | Результат проверки операции |
-| Ошибка до production-записи | Fallback по `workflow_job.completed` | Workflow упал до записи результата выкатки |
+| PR в очереди | `pull_request.enqueued` | Check кандидата в Actions. |
+| Выпуск готов | `release.published` после проверки webhook | Тег и assets в Release. Кнопка «Выкатить» открывает workflow CD. |
+| Начало и итог выкатки или отката | `deployment_status` | Статусы одной попытки `production`. |
+| Ошибка до записи результата | `workflow_job.completed` | Первый упавший шаг Actions. |
 
-Готовность и результат отправляет [webhook-сервис](https://github.com/Cringe-Driven-Development-Team/.github/blob/372930293656411505315fb09d271c97ab904b13/services/webhook-alerts/README.md#L853-L875),
-а не отдельный Actions sender. SQLite хранит состояние обработки/дедупликации;
-повторная доставка события не должна превращаться в повторную выкатку.
-
-Кнопка «Выкатить» открывает страницу workflow, но не запускает его автоматически.
-«Релиз и файлы» ведёт на Release; «Логи выкатки» — на Actions run.
-Тег из ready-сообщения удобен для точного выбора, но поле CD можно оставить пустым.
-[Карточки и ключи попыток](https://github.com/Cringe-Driven-Development-Team/.github/blob/372930293656411505315fb09d271c97ab904b13/services/webhook-alerts/README.md#L944-L957),
-[необязательный input CD](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/.github/workflows/cd.yml#L3-L10).
+[Обработчик и события](https://github.com/Cringe-Driven-Development-Team/.github/blob/372930293656411505315fb09d271c97ab904b13/services/webhook-alerts/README.md#L853-L875), [карточки и ссылки](https://github.com/Cringe-Driven-Development-Team/.github/blob/372930293656411505315fb09d271c97ab904b13/services/webhook-alerts/README.md#L944-L957). Сведения о канале уведомлений сверены по инструкции владельца.
 
 ## Почему список задач большой
 
-Для публикации база отчёта — предыдущий опубликованный first-parent предок.
-Для deploy — последний подтверждённый production перед текущей попыткой.
-После нескольких неудачных проверок эта база может долго оставаться прежней, хотя контейнер
-уже переключался. Поэтому список задач не является списком отсутствующего на сайте функционала.
-Для rollback отчёт показывает изменения между целью отката и предыдущим подтверждённым выпуском.
-[Базы отчёта](https://github.com/Cringe-Driven-Development-Team/frontend/blob/319e691b79f81e09dcffabc04941831a5f4b5930/scripts/release/report.ts#L232-L285).
+| Операция | База отчёта |
+| --- | --- |
+| Публикация | Предыдущий опубликованный first-parent предок. |
+| CD | Последний подтверждённый production. Серия неуспешных попыток оставляет базу прежней. |
+| Rollback | Изменения между целью отката и предыдущим подтверждённым production. |
 
-Отчёт связывает коммиты, PR и задачи; это не проверка каждой функции в браузере.
-Если чтение состава не удалось, сообщение/описание отмечает неполный отчёт.
-Ошибка отчёта не делает проверенные файлы другого состава и не требует их пересборки.
+При неполном отчёте смотрите ошибку сбора состава в Summary. Успех сборки, проверки сайта и записи карточек подтверждается соответствующими шагами. [Расчёт диапазона](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/scripts/release/report.ts#L235-L285), [частичные ошибки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/68ffe99600f8ea66765972c6bf963c47aafad626/docs/release.md#L337-L344).
 
 ## Release есть, а ready в Telegram нет
 
-1. Убедитесь, что это published Release с полным комплектом, а не draft или только зелёный Check.
-2. В [настройках webhook организации](https://github.com/organizations/Cringe-Driven-Development-Team/settings/hooks)
-   проверьте подписку на Releases (`release`) и delivery события `release.published` для нужного выпуска.
-   Настройки доступны администраторам; у webhook, созданного OAuth-приложением, изменение
-   подписки может выполняться через создавшее его приложение/API.
-3. Проверьте ответ delivery. Успешный приём HTTP ещё не доказывает отправку Telegram:
-   дальше событие проверяет и обрабатывает worker сервиса на VPS3.
-4. Ответственный за webhook сверяет включение worker, логи, очередь и границу release-контракта
-   в SQLite по [инструкции сервиса](https://github.com/Cringe-Driven-Development-Team/.github/blob/372930293656411505315fb09d271c97ab904b13/services/webhook-alerts/README.md#L958-L975).
-   До установки границы ready не отправляется; более ранние публикации отсекаются.
-5. Повтор доставки или изменение границы выполняйте только после установления причины и
-   оценки возможного повторного сообщения. Не сбрасывайте дедупликацию ради диагностики.
-
-Пересобирать исправный выпуск для получения уведомления не нужно. Эта инструкция описывает
-проверку канала сообщений; она не запускает CD и не подтверждает текущую доступность сайта.
+1. Проверьте, что тег опубликован и содержит [полный комплект](./artifacts).
+2. В [настройках webhook организации](https://github.com/organizations/Cringe-Driven-Development-Team/settings/hooks) проверьте подписку `release` и delivery `release.published`. Нужны права администратора либо доступ через создавшее webhook приложение.
+3. После успешного приёма HTTP проверьте очередь и логи worker webhook-сервиса на VPS3. Сверьте границу release-контракта в SQLite: до установки границы ready не отправляется, публикации до неё отсекаются.
+4. После устранения причины проверьте доставку исходного события по [инструкции владельца](https://github.com/Cringe-Driven-Development-Team/.github/blob/372930293656411505315fb09d271c97ab904b13/services/webhook-alerts/README.md#L958-L972).

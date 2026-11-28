@@ -4,203 +4,84 @@ title: Офлайн-режим
 
 # Офлайн-режим
 
-Как получаются файлы и подключается SW, разобрано на странице
-[Сборка и регистрация SW](/documentation/offline/build-and-registration).
-Размещение, HTTP-раздача и выпуск описаны в
-[инфраструктуре PWA](/documentation/offline/infrastructure).
-
-При повторном открытии Cellestial без сети браузер показывает заранее сохранённую неперсональную
-офлайн-страницу. Личные данные и редактор без сервера недоступны. Здесь объясняется, где хранится
-Service Worker (SW), чем отличаются три механизма хранения и что подтверждено на проде.
-
-<DiagramSection>
-
-## Где хранится Service Worker
-
-После установки браузер сохраняет **регистрацию и код SW** во внутреннем хранилище браузерного
-профиля. Регистрация связывает origin, scope и URL скрипта. Это не файл приложения в `localStorage`
-и не запись, которую наш код добавляет в Cache Storage. Конкретное размещение файлов на диске —
-внутреннее устройство браузера, а не API приложения.
-
-Сохранённый SW и выполняющийся контекст — разные вещи. Браузер может остановить контекст между
-событиями, а затем запустить его снова из сохранённого кода. Новое открытие вкладки не требует
-переустановки SW с нуля. Переменные остановленного контекста при этом не становятся постоянным
-хранилищем. [Хранение регистрации и время жизни контекста — Chromium](https://chromium.googlesource.com/chromium/src/+/main/docs/security/service-worker-security-faq.md).
-
-<template #diagram>
-
-```mermaid
-%% Flowchart: регистрация сохраняется независимо от запускаемого контекста.
-flowchart TB
-  storedWorker[("Сохранены регистрация и код SW")]
-  runningWorker["Браузер запускает контекст для события"]
-  stoppedWorker["Контекст остановлен"]
-  storedWorker -->|"нужно обработать событие"| runningWorker
-  runningWorker -->|"браузер может завершить после работы"| stoppedWorker
-  stoppedWorker -->|"новое событие · запуск из сохранённого кода"| runningWorker
-  storedWorker -.->|"регистрация остаётся"| stoppedWorker
-  classDef stored fill:#ddd6fe,stroke:#6d28d9,color:#374151
-  class storedWorker stored
-```
-
-</template>
-
-SW нужен безопасный контекст: HTTPS или допустимый локальный адрес разработки. Origin и scope
-определяют управляемые страницы. Установка PWA в отдельное окно и установка SW — самостоятельные
-процессы: наличие значка установки ещё не доказывает готовность офлайн-режима.
-[Условия регистрации — MDN](https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register).
-
-</DiagramSection>
-
-<DiagramSection>
-
-## Три механизма хранения
-
-| Механизм | Что хранит | Кто управляет | Где смотреть в DevTools |
-| --- | --- | --- | --- |
-| HTTP-кеш | Полученные по HTTP ресурсы и сведения об их свежести | Браузер по HTTP-правилам, включая `Cache-Control` | Network: источник ответа и заголовки |
-| Установленный Service Worker | Регистрацию, scope и установленный код SW | Браузер через Service Worker API | Application → Service workers |
-| Cache Storage | Именованные кеши с парами Request / Response | Страница или SW через Cache API; у нас — сгенерированный SW | Application → Cache storage |
-
-<template #diagram>
-
-```mermaid
-%% Flowchart: три независимых механизма одного браузерного профиля.
-flowchart TB
-  browserProfile["Браузерный профиль для origin"]
-  browserProfile --> httpCache[("HTTP-кеш")]
-  browserProfile --> workerStore[("Установленный SW")]
-  browserProfile --> responseCaches[("Cache Storage")]
-  headers["Правила HTTP"] -.-> httpCache
-  workerApi["Service Worker API"] -.-> workerStore
-  cacheApi["Cache API из страницы или SW"] -.-> responseCaches
-  classDef store fill:#ddd6fe,stroke:#6d28d9,color:#374151
-  class httpCache,workerStore,responseCaches store
-```
-
-</template>
-
-В Cache Storage ключом служит запрос, а значением — сохранённый ответ с телом и заголовками.
-Записи не обновляются и не удаляются по правилам HTTP-кеша автоматически. Даже
-`Cache-Control: no-store` не заменяет явного запрета сохранять личный ответ через Cache API.
-Браузер и пользователь могут удалить локальные данные; постоянную сохранность обещать нельзя.
-[Cache API — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Cache),
-[HTTP-кеш — MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching).
-
-</DiagramSection>
-
-## Disable cache и обновление SW
-
-Флажок **Network → Disable cache** отключает использование обычного HTTP-кеша при открытых
-DevTools. Он **не удаляет** установленный SW и записи Cache Storage. Поэтому отключённый HTTP-кеш
-совместим с уже существующей регистрацией и сохранённой офлайн-страницей.
-[Отключение HTTP-кеша — Chrome DevTools](https://developer.chrome.com/docs/devtools/network/reference).
-
-Использование установленного SW и проверка новой версии — отдельные операции. Браузер проверяет
-обновления, в том числе при навигации в scope. Если содержимое скрипта изменилось, начинается
-установка новой версии. Отсутствие строки `sw.js` в конкретном списке Network само по себе
-не доказывает ни отсутствие регистрации, ни отсутствие фоновых проверок.
-[Обновления SW — Chrome](https://developer.chrome.com/docs/workbox/service-worker-lifecycle).
-
-Для проверки последовательно:
-
-1. Открой **Application → Service workers**: проверь URL, scope, активную версию и управление страницей.
-2. В **Cache storage** отдельно проверь сохранённые ответы. Сам `sw.js` там искать не нужно.
-3. Для отладки обновлений включи **Update on reload**. Это специальный режим жизненного цикла,
-   который повторно получает и устанавливает SW при перезагрузках; после проверки выключи его.
-4. При проверке офлайна отключай сеть также для запросов самого SW. Во время описанного ниже прогона
-   сеть была отключена для страницы и контекста SW; отсутствие сети у одной страницы не считалось
-   доказательством отказа запросов воркера.
-
-**Unregister** удаляет регистрацию SW, а очистка **Cache storage** удаляет сохранённые ответы.
-Это разные действия. Для полного сброса данных выбранного сайта есть **Clear storage**.
-[Инструменты проверки PWA — Chrome DevTools](https://developer.chrome.com/docs/devtools/progressive-web-apps).
-
-<DiagramSection>
+При сетевом отказе во время открытия или перезагрузки страницы Cellestial показывает «Нет подключения к интернету» по исходному адресу, если браузер успел активировать Service Worker (SW) и сохранить офлайн-комплект. Для уже открытой страницы потеря сети сама по себе не запускает навигацию. [Обработка навигации](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/sw/sw.ts#L37-L52), [обработка потери сети в приложении](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/connection.ts#L34-L57).
 
 ## Как работает Cellestial
 
-**Актуализация комплекта 04.11.2026:** состав публичных файлов и precache ниже описан по коду
-`007d8d4de7fa964947ffe1316c31726bbd386903`. Прежний браузерный прогон 02.11.2026 на другом SHA
-сохранён отдельно в разделе проверки; эта редактура не означает его повторения.
+<DiagramSection>
 
-Клиент остаётся SPA с server bootstrap: BFF формирует HTML с начальными данными до первого рендера,
-а JS/CSS приходят с CDN. Полный запуск редактора офлайн здесь не обещается. В коде проверенного
-выпуска выбрана отдельная страница, которой не нужны сессия, bootstrap и файлы SPA.
+| Ситуация | Что произойдёт |
+| --- | --- |
+| Первый визит без сети | Браузер ещё не установил SW и показывает собственную ошибку сети |
+| Открытие или перезагрузка после установки, получен сетевой ответ | SW возвращает этот ответ, включая HTTP 404 или 503 |
+| Открытие или перезагрузка после установки, сетевой отказ | SW возвращает сохранённый `/offline.html`. При отсутствии записи возвращает `Response.error()` |
+| Сеть пропала в уже открытой вкладке | Уже отрисованный экран может оставаться видимым. Сохранение через BFF требует сетевого ответа с подтверждением. Офлайн-комплект не хранит данные блокнота |
 
-BFF публично отдаёт `/sw.js`, `/offline.html`, `/offline.css` и манифест перед обработчиком
-персонального HTML:
-[список файлов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/src/public.ts#L7-L16),
-[порядок маршрутов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/bff/src/app.ts#L47-L56).
+Запись ячейки идёт через BFF. Пока результат сохранения не подтверждён, оставьте вкладку открытой. Черновики хранятся в памяти вкладки, и перезагрузка их сбрасывает. [Запрос на запись](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L433-L447), [применение ответа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L492-L503), [хранение черновиков](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/notebook/index.ts#L184-L194).
 
-| Ресурс | В Cache Storage | Поведение реализованного SW |
-| --- | --- | --- |
-| Персональный HTML BFF | Нет | Навигация через сеть; при сетевом отказе — неперсональная подстановка |
-| RPC / API | Нет | Ответы не сохраняются, HTML офлайн-страницы вместо RPC не возвращается |
-| `offline.html` | Да | Заранее сохраняется при установке SW |
-| `offline.css` | Да | Стили офлайн-страницы сохраняются вместе с ней |
-| `manifest.webmanifest` | Да | Плагин добавляет публичный манифест в precache |
-| JS/CSS и остальные ассеты SPA | Нет | Обычная загрузка с CDN; HTTP-кеш рассматривается отдельно |
+В открытой SPA потеря сети показывает предупреждение. Сигнал `online` запускает запрос к BFF, а предупреждение снимается после полного HTTP-ответа. Тогда появляется тост «Соединение восстановлено». [Предупреждение в макете](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/layouts/RootLayout.tsx#L8-L21), [проверка соединения](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/connection.ts#L16-L20), [запрос и обработка ответа](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/connection.ts#L30-L56).
 
-Для навигации используется **NetworkOnly** с офлайн-подстановкой при отказе сети. Полученный
-HTTP-ответ, включая `503`, остаётся ответом сервера: статус ошибки и сетевой отказ различаются.
-Правила заданы в [конфигурации сборки SW](https://github.com/Cringe-Driven-Development-Team/frontend/blob/007d8d4de7fa964947ffe1316c31726bbd386903/apps/client/vite/plugins.ts#L43-L62).
+«Повторить» на офлайн-странице заново открывает текущий адрес. Страница загружает отдельный CSS, который использует локальную копию Onest. [HTML офлайн-страницы](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/public/offline.html#L5-L8), [ссылка «Повторить»](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/public/offline.html#L81-L86), [шрифт](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/public/offline.css#L3-L8).
+
+| Ресурс | Сохраняется в Cache Storage SW |
+| --- | --- |
+| `/offline.html` | Да |
+| `/offline.css` | Да |
+| `/onest-variable.woff2` | Да |
+| Персональный HTML BFF | Нет |
+| Запросы к HTTP API BFF | Нет |
+| Манифест и иконки | Нет |
+| JS/CSS и остальные ассеты SPA | Нет |
+
+Офлайн-комплект создаётся при установке. Для обычных запросов приложения (включая API) SW не вызывает `respondWith`. [Список файлов и установка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/sw/sw.ts#L3-L19), [условие перехвата GET](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/sw/sw.ts#L37-L50).
 
 <template #diagram>
 
 ```mermaid
-%% Flowchart: подстановка применяется к отказу навигации, а не к статусу HTTP.
-flowchart TB
-  navigation["Навигация под управлением SW"] --> networkOnly["NetworkOnly · запрос BFF"]
-  networkOnly --> gotResponse{"Получен HTTP-ответ?"}
-  gotResponse -->|"да · включая 503"| serverResponse["Показать ответ сервера"]
-  gotResponse -->|"нет · сетевой отказ"| savedPage{"offline.html есть в Cache Storage?"}
-  savedPage -->|"да"| offlineResponse["Офлайн-страница под исходным URL"]
-  savedPage -->|"нет"| unavailable["Офлайн-показ не гарантирован"]
-  classDef decision fill:#fef3c7,stroke:#b45309,color:#374151
-  classDef success fill:#a7f3d0,stroke:#047857,color:#374151
-  classDef error fill:#fecaca,stroke:#b91c1c,color:#374151
-  class gotResponse,savedPage decision
-  class serverResponse,offlineResponse success
-  class unavailable error
+flowchart TD
+  N["Навигация под контролем SW"] --> F["Выполнить fetch"]
+  F -->|"Получен HTTP-ответ"| R["Вернуть ответ"]
+  F -->|"fetch отклонён"| C{"Есть offline.html в Cache Storage?"}
+  C -->|"Да"| H["Показать офлайн-страницу<br>по исходному адресу"]
+  C -->|"Нет"| E["Вернуть сетевую ошибку"]
 ```
 
 </template>
 
-В уже открытой SPA отказ соединения показывает предупреждение поверх текущего экрана. По коду
-выпуска его снимает только полностью полученный ответ BFF; событие `online` запускает проверку,
-а переход к доступному BFF показывает краткий тост «Соединение восстановлено».
-[Учёт состояния соединения](https://github.com/Cringe-Driven-Development-Team/frontend/blob/e3b327f58f8ef929afe0403ed7c7487abba2c48d/apps/client/src/stores/connection.ts#L16-L50).
-
 </DiagramSection>
+
+## Где хранится Service Worker
+
+Браузер хранит регистрацию для origin и scope отдельно от вкладок. Закрытие вкладки само по себе не удаляет регистрацию. Браузер может выгружать контекст SW между событиями. [Жизненный цикл Service Worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API).
+
+## Три механизма хранения
+
+| Механизм | Что хранит |
+| --- | --- |
+| HTTP-кеш | Сетевые ответы по HTTP-политике, например чанки клиента |
+| Регистрация SW | Скрипт SW и область действия |
+| Cache Storage | Пары `Request` / `Response`, которыми управляет SW, в Cellestial это офлайн-комплект |
+
+[Обзор Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API), [офлайн-комплект Cellestial](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/sw/sw.ts#L3-L19).
+
+## Disable cache и обновление SW
+
+Chrome DevTools → Network → Disable cache отключает HTTP-кеш при открытых DevTools. Для проверки установленного SW и Cache Storage используйте Application. Update on reload меняет обычный порядок проверки обновлений, поэтому при проверке поведения пользователя оставьте этот флажок выключенным. [Справка Chrome DevTools](https://developer.chrome.com/docs/devtools/progressive-web-apps#service-workers). В Cellestial новую версию комплекта задаёт `CACHE_NAME`. [Сборка и активация](/documentation/offline/build-and-registration).
 
 ## Проверка на проде
 
-**02.11.2026, 01:46 UTC+3**, Chrome на Ubuntu, чистый браузерный профиль, гостевой сценарий
-на [cellestial.ru](https://cellestial.ru). SHA из HTML:
-`e3b327f58f8ef929afe0403ed7c7487abba2c48d`.
+**28.11.2026, 01:53:53–01:53:55 UTC+3**, Chrome Headless 154.0.8037.57, чистые контексты без сессии. SHA из URL чанков в HTML `/login` — `b1baf996fb6753d1a62eab6f874d03dca30faadc`. Сеть отключалась отдельно у вкладки и SW, HTTP-кеш был отключён.
 
-| Сценарий | Наблюдение |
+| Действие | Результат |
 | --- | --- |
-| Открытие с сетью | Форма входа отрисована; `/sw.js` активен, scope `/`, страница имеет controller |
-| Проверка Cache Storage | Только `offline.html` и `manifest.webmanifest` с ревизиями precache |
-| Манифест | Chrome не сообщил ошибок манифеста и критериев установки |
-| Сеть отключена у страницы и SW, повторное открытие `/login` | Офлайн-страница под тем же URL; ноль скриптов и внешних ресурсов |
-| Сеть восстановлена, нажато «Повторить» | Форма входа снова отрисована |
+| В новом контексте отключить сеть и открыть `/login` | `ERR_INTERNET_DISCONNECTED` |
+| Открыть `/login` с сетью и дождаться контроллера | Форма «Вход», контроллер `https://cellestial.ru/sw.js`, scope `https://cellestial.ru/`. В `cellestial-offline-v1` три файла из таблицы выше |
+| Отключить сеть, открытая вкладка остаётся без перезагрузки | Форма «Вход» остаётся на экране |
+| Перезагрузить `/login` | URL сохранён. SW вернул HTML, CSS и шрифт со статусом 200. Заголовок «Нет подключения к интернету», шрифт Onest доступен |
+| Включить сеть и нажать «Повторить» | Снова открылась форма входа по `/login` |
 
-Отдельно **02.11.2026, 00:28 UTC+3**, на том же SHA: в графическом Chrome подтверждён нативный
-диалог Install. Результат выбора — `accepted`; приложение открылось отдельным окном,
-`display-mode: standalone` подтвердился, окно управлялось `https://cellestial.ru/sw.js`.
-Временный профиль и созданные для проверки файлы интеграции с ОС удалены.
+Адреса и HTTP-проверка файлов приведены в [инфраструктуре PWA](/documentation/offline/infrastructure).
 
 ## Границы проверки
 
-- Проверен гостевой сценарий Chrome на Ubuntu. Safari, iOS, Android и другие браузеры этим прогоном не подтверждены.
-- Авторизованные операции, данные блокнотов и доступность Go API здесь не проверялись.
-- Обновление между двумя продовыми выпусками и тост восстановления соединения этим гостевым
-  прогоном не проверялись; выше их устройство описано по коду конкретного SHA.
-- Первый визит без сети, удаление регистрации или кеша, незавершённая установка SW не гарантируют офлайн-страницу.
-- Офлайн-страница не предоставляет личные данные и не ставит действия пользователя в очередь.
-
-Учебный замысел и вопросы для самостоятельной реализации сохранены в
-[треке второго модуля](/modules/2/tracks/offline).
+Авторизованное сохранение, доступность Go, предупреждение о сети и тост восстановления, установка приложения как PWA, обновление между выпусками и другие браузеры, включая Safari, в этом прогоне не проверялись. При удалении Cache Storage без сети активный SW вернёт ошибку при отсутствии записи fallback. [Обработка отсутствующего файла](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/sw/sw.ts#L45-L50).

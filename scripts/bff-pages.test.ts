@@ -634,10 +634,10 @@ test("текущий BFF отделяет наблюдение прода от �
   for (const title of ["Что наблюдается на проде", "Релизы и граница доказательства", "Где искать реализацию", "Что ещё нужно проверить"]) {
     expect(md).toContain(`### ${title}`);
   }
-  expect(md).toContain("31.10.2026");
-  expect(md).toContain("403");
-  expect(md).toContain("401");
-  expect(md).toContain("не проверен авторизованным сценарием на проде");
+  const observation = md.split('### Что наблюдается на проде')[1]?.split('###')[0] ?? '';
+  for (const value of ['27.11.2026', 'MSK', 'https://cellestial.ru/login', 'id="bootstrap"', 'b1baf996fb6753d1a62eab6f874d03dca30faadc']) expect(observation, value).toContain(value);
+  expect(md).toContain("8118066244");
+  expect(md).toContain("в этом наблюдении не запускались");
   expect(md).not.toMatch(/\b\d{1,3}(?:\.\d{1,3}){3}\b/);
   for (const link of md.matchAll(/https:\/\/github\.com\/[^)\s]+\/blob\/([^/]+)\//g)) {
     expect(link[1]).toMatch(/^[a-f0-9]{40}$/);
@@ -779,5 +779,42 @@ test("перенесённые темы используют прямые ссы
   ]) {
     expect(readFileSync(source!, "utf8"), link).toContain(`](${link})`);
     expect(readFileSync(target!, "utf8"), heading).toContain(heading!);
+  }
+});
+
+test("release and rollback links still land on operational steps", () => {
+  const releases = "site/documentation/frontend/releases";
+  const artifacts = readFileSync(`${releases}/artifacts.md`, "utf8");
+  const download = artifacts.split("{#download}")[1]?.split("\n## ")[0] ?? "";
+  const retention = artifacts.split("{#retention}")[1] ?? "";
+  const rollback = readFileSync(`${releases}/rollback.md`, "utf8");
+  const target = rollback.split("{#target}")[1]?.split("\n## ")[0] ?? "";
+  for (const value of ["gh release download", "sha256sum -c SHA256SUMS", "docker image inspect"]) {
+    expect(download).toContain(value);
+  }
+  for (const value of ["пять каталогов", "другим digest", "GHCR"]) expect(retention).toContain(value);
+  for (const value of ["Rollback target", "Предыдущий успешный Deployment", "Последний успешный Deployment", "8118066244"]) {
+    expect(target).toContain(value);
+  }
+});
+
+test("release procedures distinguish merge approval, Actions access, and release permissions", () => {
+  const releases = "site/documentation/frontend/releases";
+  const publication = readFileSync(`${releases}/publication.md`, "utf8");
+  const queue = publication.split("{#merge-queue}")[1]?.split("\n### ")[0] ?? "";
+  for (const value of ["одобрения frontend-ментора", "разрешения обсуждений", "Merge when ready"]) {
+    expect(queue).toContain(value);
+  }
+
+  const retry = publication.split("{#retry}")[1]?.split("\n## ")[0] ?? "";
+  for (const value of ["Write-доступ", "Re-run failed jobs", "Re-run job", "исходном запуске CI", "правом управления Releases"]) {
+    expect(retry).toContain(value);
+  }
+  expect(publication.split("## Публикация готового комплекта")[1]?.split("\n## ")[0]).toContain("contents: write");
+
+  for (const file of ["deployment", "rollback", "troubleshooting"]) {
+    const page = readFileSync(`${releases}/${file}.md`, "utf8");
+    expect(page).toContain("Write-доступ");
+    expect(page).toContain("manually-run-a-workflow");
   }
 });

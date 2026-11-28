@@ -4,84 +4,35 @@ title: Роутинг
 
 # Роутинг
 
-Роутер выбирает страницу по URL, проверяет клиентский статус сессии и помещает
-страницу в общий макет. Здесь разобран код frontend на 08.11.2026, SHA
-`ea123518d624521f999e884ff32ddec0a5bf6bfa`; это не новый прогон на проде.
-Путь первого HTML и начальных данных описан в [запуске приложения](./startup).
+У страницы два входа. Прямой запрос HTML обрабатывает BFF по `PAGES`. Переход внутри SPA обрабатывает `@cdd-team/router` по клиентскому дереву. Добавляйте путь в обе точки. Правила ниже подтверждены исходниками выложенной ревизии. [Таблица страниц](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/pages.ts#L1-L18), [дерево клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/routeTree.ts#L1-L14).
 
-## PAGES и дерево маршрутов
+<span id="что-проверить-в-понимании"></span>
 
-Список `PAGES` — общий модуль клиента и BFF. Он задаёт пути, по которым BFF
-распознаёт прямой запрос HTML; клиент использует те же значения как `path`.
-Поэтому новая страница начинается с `PAGES`, а затем получает маршрут в дереве.
-См. [pages.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/pages.ts#L1-L16).
+## Добавить страницу {#pages-и-дерево-маршрутов}
 
-| Ветка дерева | URL | Компонент |
-| --- | --- | --- |
-| `root → _guest → login/register` | `/login`, `/register` | Общий `AuthPage` на `_guest` |
-| `root → _auth → index` | `/` | `NotebooksPage` |
-| `root → _auth → notebook` | `/notebooks/$notebookId` | `NotebookPage` |
-| `root → _auth → profile` | `/profile` | `ProfilePage` |
-| `root → notFound` | `/404` | `NotFoundPage` |
-
-`_guest` и `_auth` — идентификаторы обёрток без сегмента URL. Их вложенность
-видна в [routeTree.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/routes/routeTree.ts#L9-L14).
-Единственный [router.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/router.ts#L1-L11)
-создаёт роутер и регистрирует его тип для проверки путей и параметров TypeScript.
-
-Корневой маршрут показывает `RootLayout`: в его единственном `main` расположен
-`Outlet`, рядом — общие Toast и Snackbar. `Outlet` находит следующий совпавший
-маршрут; обёртка без компонента также продолжает вывод через `Outlet`.
-При переходе между входом и регистрацией остаётся общий `AuthPage`.
-См. [макет](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/layouts/RootLayout.tsx#L8-L26),
-[guest.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/routes/guest.ts#L8-L30)
-и [Outlet в router 0.1.0](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/components.tsx#L31-L84).
+1. Добавьте путь в `PAGES` в `apps/bff/src/pages.ts`. Указывайте сегмент без начального слеша, как `profile`. [Таблица страниц](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/pages.ts#L3-L15)
+2. Создайте компонент в `apps/client/src/pages` и маршрут в `apps/client/src/routes`. Для защищённой страницы возьмите за образец `profileRoute`: укажите `path: PAGES.…`, компонент и родителя `authRoute`. Добавьте маршрут в `routeTree.ts` к его родителю. Типы роутера зарегистрированы в `router.ts`. [Маршрут профиля](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/profile.ts#L1-L11), [дерево](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/routeTree.ts#L9-L14), [регистрация типов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/router.ts#L1-L11)
+3. Для гостевого URL согласуйте правило BFF в `GUEST_PAGES` и ветку `_guest` клиента. Сейчас `_guest` рендерит общий `AuthPage` для входа и регистрации. [Список BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L49-L56), [ветка гостя](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/guest.ts#L7-L30)
+4. Запустите локальную разработку и проверьте адрес прямым открытием, ссылкой из приложения и кнопкой «Назад». Для защищённого маршрута повторите проверку с гостевой и действующей сессией. [Локальный запуск и проверки](./checks)
 
 ## Переход и история {#navigation}
 
 <DiagramSection>
 
-Схема сопоставляет выдачу документа и навигацию уже запущенного клиента.
-Показана ветка, где BFF выдал HTML; его перенаправления и HTML 503 описаны
-в [запуске приложения](./startup). Защита RPC остаётся отдельной серверной
-проверкой, как объяснено ниже.
-
-`Link` создаёт обычный `a` с вычисленным `href`. Клик основной кнопкой без
-модификаторов перехватывается и вызывает переход роутера; Ctrl/Meta-клик и
-открытие в другую вкладку остаются браузеру. Из обработчика используется
-`useNavigate`, например при переходе на `/404` после `NOT_FOUND` блокнота.
-См. [Link](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/components.tsx#L115-L182)
-и [NotebookPage](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L199-L254).
-
-Навигация собирает адрес, вызывает `history.pushState` или `replaceState`, затем
-загружает совпадения маршрутов. `replace: true` заменяет текущую запись, поэтому
-ошибочный адрес не добавляется ещё одной ступенью при таком перенаправлении.
-Back/Forward вызывают `popstate`: подписка истории заново запускает загрузку
-маршрутов. `pushState` сам `popstate` не генерирует — после него роутер вызывает
-загрузку явно. Полного запроса HTML при этих SPA-переходах нет.
-См. [commit](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/router.ts#L444-L449)
-и [браузерную историю](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/history.ts#L27-L52).
-
-Прямое открытие или reload сначала попадают в BFF. После выдачи HTML
-`RouterProvider` подключает роутер к истории; далее работают клиентские
-переходы. Сравнение загрузки данных при двух способах открытия — в
-[запуске приложения](./startup).
+Внутри SPA используйте `Link` или `navigate`. Роутер обновляет историю через `pushState` или `replaceState`, реагирует на `popstate` и вычисляет совпавшую ветку. Корневой макет показывает маршрут через `Outlet`. [История роутера](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/history.ts#L25-L48), [макет](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/layouts/RootLayout.tsx#L1-L23), [проверка ветки](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/auth.ts#L5-L12).
 
 <template #diagram>
 
 ```mermaid
-%% Flowchart: BFF обрабатывает документ; история SPA ведёт прямо в клиентское дерево.
 flowchart TD
-    direct(["Прямой URL или reload"]) --> bff["Проверки HTML в BFF"]
-    bff -->|HTML выдан| provider["RouterProvider подключает историю"]
-    link(["Link или useNavigate"]) --> history["history: pushState / replaceState"]
-    back(["Back / Forward"]) --> popstate["popstate"]
-    provider --> tree["Совпадения в дереве маршрутов"]
-    history --> tree
-    popstate --> tree
-    tree --> guard["beforeLoad: от корня к листу"]
-    guard -->|Маршрут разрешён| outlet["RootLayout → Outlet → страница"]
-    guard -->|redirect| history
+    url["Прямой URL"] --> bff["BFF: PAGES и сессия"]
+    bff -->|HTML| boot["Первый запуск"]
+    link["Link, navigate или Назад"] --> history["История браузера"]
+    history --> tree["Дерево маршрутов"]
+    boot --> tree
+    tree --> guard["beforeLoad"]
+    guard -->|Доступ есть| outlet["Outlet"]
+    guard -->|Редирект| login["Другой маршрут"]
 ```
 
 </template>
@@ -90,47 +41,14 @@ flowchart TD
 
 ## Параметры и 404
 
-`$notebookId` соответствует одному непустому сегменту. Router 0.1.0 декодирует
-его, а при построении URL кодирует переданный параметр; статические сегменты
-сравниваются без учёта регистра, завершающий слэш не меняет совпадение.
-См. [matchPath и interpolatePath](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/path.ts#L47-L99).
-`NotebookPage` получает строку через
-`useParams({ from: '/_auth/notebooks/$notebookId' })` и преобразует её в число.
-Совпадение пути ещё не доказывает существование блокнота и право доступа:
-это устанавливает запрос данных. [Чтение ID и ответ missing](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L199-L236).
+`$notebookId` сопоставляется с сегментом пути. При прямом запросе собственный блокнот загружается перед выдачей HTML. Для вошедшего пользователя неизвестный адрес, `/404`, некорректный ID, чужой или отсутствующий блокнот ведут на `/`. В SPA неизвестный адрес обрабатывает корневой маршрут, а ошибку загрузки блокнота — его страница. [Сопоставление](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/pages.ts#L20-L51), [решения BFF](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L68-L140), [корневой маршрут](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/root.tsx#L1-L23), [загрузка блокнота](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/pages/NotebookPage/NotebookPage.tsx#L242-L279).
 
-Неизвестный путь внутри SPA обрабатывает `notFoundComponent` корня: гостя
-перенаправляет на `/login`, вошедшего — на `/404` с заменой записи истории.
-Отсутствующий или чужой блокнот тоже ведёт на `/404`. Сам маршрут `/404`
-доступен обеим группам; HTTP-статус 404 при прямом открытии выставляет BFF,
-а клиентский переход только меняет экран и URL.
-См. [UnknownAddress](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/routes/root.tsx#L6-L24)
-и [notFoundRoute](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/routes/notFound.ts#L6-L11).
+## Доступ к защищённым страницам {#beforeload-и-защита-запросов}
 
-## beforeLoad и защита запросов
+| Вход | Что проверяется |
+| --- | --- |
+| Прямой запрос защищённой страницы | BFF проверяет сессию. Гость получает 302 на `/login`. |
+| Переход по защищённому маршруту SPA | Гостя `_auth` перенаправляет в `/login` через `beforeLoad`. |
+| Переход вошедшего пользователя на экран входа внутри SPA | `_guest` перенаправляет на `/`. |
 
-Перед загрузкой маршрутов роутер вызывает `beforeLoad` от корня к листу.
-`_auth` читает `useSessionStore.getState().status` и бросает `redirect` на
-`/login`, если пользователь гость. `_guest` отправляет вошедшего на `/`.
-Статус уже заполнен из bootstrap до первого рендера; отдельного запроса
-«проверить вход» здесь нет. См. [auth.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/routes/auth.ts#L5-L12),
-[guest.ts](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/routes/guest.ts#L12-L21)
-и [порядок beforeLoad](https://github.com/Cringe-Driven-Development-Team/frontend-packages/blob/bda991c58d01a88b119d910787a87966e31bfe0a/packages/router/src/router.ts#L379-L409).
-
-Эта проверка управляет интерфейсом. Серверная защита RPC проверяет сессию
-независимо от маршрута, а Go проверяет доступ к блокноту. Пользователь может
-вызвать запрос без перехода страницы, поэтому `beforeLoad` не заменяет
-серверную проверку. Граница подробно описана в
-[безопасности](/documentation/security/); точки BFF —
-[authedProcedure](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/trpc.ts#L52-L56).
-
-## Что проверить в понимании
-
-- Почему `_auth` отсутствует в адресной строке? Это `id` обёртки, а не `path`.
-- Почему Back снова выбирает страницу? Роутер слушает `popstate` через историю.
-- Почему совпавший URL блокнота не гарантирует доступ? Параметр выбирает ресурс,
-  а доступ проверяют серверные процедуры.
-
-Дальше — [компоненты и рендеринг](./rendering) и [управление состоянием](./state).
-
-Смена авторизации и защита от поздних ответов разобраны в [сессии](./session#switching).
+BFF проверяет допуск к защищённым HTTP-запросам независимо от навигации. [HTML и сессия](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/html.ts#L87-L140), [защищённая ветка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/auth.ts#L5-L12), [гостевая ветка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/routes/guest.ts#L7-L18), [смена сессии](./session#switching), [проверка HTTP-запроса](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/http.ts#L166-L200).

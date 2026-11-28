@@ -126,7 +126,7 @@
       "icon": "package",
       "texts": [
         {
-          "text": "Образ BFF"
+          "text": "BFF image · digest"
         }
       ]
     },
@@ -165,7 +165,7 @@
       "tag": "Relationship",
       "from": "client",
       "to": "caddy",
-      "label": "HTML и /api/trpc",
+      "label": "HTML и /api/*",
       "color": "orange",
       "lineStyle": "solid"
     },

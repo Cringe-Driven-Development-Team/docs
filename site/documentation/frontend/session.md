@@ -1,119 +1,69 @@
 # Сессия и авторизация
 
-Браузер хранит HttpOnly-cookie BFF, а access/refresh-токены Go остаются в серверном
-слое сессии. Страница объясняет её жизненный цикл и порядок запросов при входе и
-выходе. Транспорт — в [запросах](./requests), проверки границы — в [CSRF](/documentation/security/csrf).
+BFF хранит пару токенов Go в зашифрованной HttpOnly-cookie, обновляет её и выполняет защищённые вызовы Go. Браузер определяет начальный статус по bootstrap первого HTML. [Cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/cookies.ts#L1-L34), [шифрование](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/crypto.ts#L20-L65), [запуск клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/main.tsx#L18-L38).
 
-Срез реализации на 08.11.2026: frontend `ea123518d624521f999e884ff32ddec0a5bf6bfa`. Это не новый прогон
-продукта на проде; [исторические наблюдения BFF](./bff#bff-проверенная-часть)
-сохраняют свою дату и релизы.
+## Cookie и начальный статус {#cookie-и-начальныи-статус}
 
-## Cookie и начальный статус
+`__Host-Http-session` имеет атрибуты `Path=/; HttpOnly; Secure; SameSite=Lax`. BFF выставляет срок cookie по сроку refresh-токена. При просроченном refresh или ошибке расшифровки BFF считает запрос гостевым и удаляет cookie. По `user` из bootstrap клиент устанавливает `guest` или `authed` перед рендером. [Атрибуты](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/cookies.ts#L1-L34), [срок и чтение](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L99-L108), [разбор cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L141-L154), [инициализация стора](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/session.ts#L19-L34), [сторы до рендера](./startup#сторы-до-первого-рендера).
 
-Cookie `__Host-Http-session` содержит зашифрованные AES-256-GCM токены и сроки.
-Атрибуты — `Path=/`, `HttpOnly`, `Secure`, `SameSite=Lax`, без `Domain`;
-`Max-Age` рассчитан по сроку refresh. Клиент не читает cookie и не пишет токены
-в `localStorage`. Источники: [атрибуты cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/session/cookies.ts#L1-L35) и [шифрование и проверка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/session/crypto.ts#L1-L70).
+## Refresh и потеря сессии {#refresh-и-потеря-сессии}
 
-До первого рендера `initSession(user)` устанавливает `guest` или `authed` из
-проверенного bootstrap: стартового запроса `users.me` в браузере нет.
-Повреждённый bootstrap останавливает запуск, а не маскируется гостевым статусом.
-Подробности — в [инициализации сторов](./startup#сторы-до-первого-рендера).
-`beforeLoad` защищает переходы UI, а BFF независимо проверяет сессию каждой
-защищённой процедуры через `authedProcedure`. Источники: [initSession](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/session.ts#L25-L37) и [authedProcedure](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/trpc.ts#L51-L56).
+1. Перед вызовом Go `session.call` обновляет access, если до истечения менее 30 с. Вызовы refresh с одним токеном разделяют одну операцию в процессе BFF. Успех кешируется на 10 с, неудача сразу исключается из кеша. [Вызовы сессии](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L13-L16), [условия обновления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L82-L97), [refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/refresh.ts#L16-L20), [кеш refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/refresh.ts#L40-L68).
+2. При отказе Go `401` по access BFF обновляет токены и повторяет операцию один раз. Для прикладного `401`, распознанного обработчиком, исход передаётся без refresh. Повторный отказ по access или `401` при refresh завершает сессию. [Повтор и обработка refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L82-L97), [сброс cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/session.ts#L124-L138), [запрос refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/session/refresh.ts#L40-L68).
+3. Вне смены сессии `UNAUTHORIZED` защищённого запроса вызывает `onSessionLost`: приложение переходит в гостевой режим и направляет на `/login`. Во время ожидания смены клиент возвращает ошибку вызывающему коду и учитывает отказ при завершении самой смены. Для сетевого сбоя, `BAD_GATEWAY` и `FORBIDDEN` эта реакция не запускается. [Решение клиента](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L235-L293), [переход ко входу](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/main.tsx#L33-L38).
 
-## Refresh и потеря сессии
-
-В BFF `session.call` добавляет Bearer-токен и `X-Request-ID`. Когда до истечения
-access меньше 30 с, сначала делает refresh. Если Go отвечает `401`, BFF обновляет
-токены и повторяет вызов один раз; повторный `401` завершает сессию. `401` самого
-refresh тоже завершает сессию. Сетевой сбой, `5xx` или неправильный ответ Go
-не превращаются в гостя. Повреждённая cookie или истёкший refresh удаляются без
-обращения к Go. Источник: [порог обновления](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/session/session.ts#L13-L37) и [session.call и чтение cookie](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/session/session.ts#L78-L147).
-
-Одновременные refresh одного токена объединяются через `inflight` в одном процессе
-BFF; успешный результат кешируется ещё 10 с, неудачный сразу удаляется. Это не
-распределённая блокировка между процессами. Источник: [refreshTokens](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/session/refresh.ts#L15-L68).
-
-Транспорт клиента обрабатывает `UNAUTHORIZED` защищённого запроса через
-`onSessionLost`: `loseSession` и переход на `/login`. `FORBIDDEN`, `BAD_GATEWAY`
-и сбой сети сессию не завершают. `UNAUTHORIZED` входа не означает потерю уже
-существующей сессии; окончания `users.changePassword` и `auth.logoutAll`
-учитываются отдельно во время смены. Источники: [sessionLink](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/api/trpc.ts#L35-L133) и [реакция приложения](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/main.tsx#L18-L44).
+<span id="что-проверить-в-понимании"></span>
 
 ## Смена сессии и поздние ответы {#switching}
 
 <DiagramSection>
 
-`login`, `register`, `logout`, `logoutAll` и `changePassword` вызывают
-`switchSession`. Он ставит `closing`: новые защищённые запросы получают
-`SESSION_CHANGED`. Уже отправленные запросы `inflight` должны закончиться до
-запроса смены, чтобы их поздний `Set-Cookie` не перезаписал cookie новой сессии.
-После успеха увеличивается `generation`; ответ прежнего поколения не передаётся
-в интерфейс. Несколько смен выполняются по очереди.
-
-Если запрос во время ожидания получил `UNAUTHORIZED`, а смена затем не удалась,
-`lostWhileClosing` всё равно вызывает потерю сессии. Без такого отказа неуспешная
-смена оставляет прежнюю сессию. Источники: [switchSession](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/api/trpc.ts#L169-L208) и [тесты последовательностей на клиенте tRPC](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/test/session.test.ts#L54-L158).
+`switchSession` ставит вход, регистрацию, выход, выход со всех устройств и смену пароля в очередь. На время смены новые защищённые запросы получают `BffError` с `kind: 'session_changed'` (`SESSION_CHANGED` в коде). Клиент ждёт уже отправленные запросы и только затем выполняет смену. Поэтому браузер применяет их `Set-Cookie` до установки или удаления cookie самой сменой. [Учет запросов](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L197-L235), [очередь смен](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L248-L340).
 
 <template #diagram>
 
 ```mermaid
-%% Flowchart: drain old requests before changing the browser session.
-flowchart TD
-    change["switchSession"] --> closing["closing: новые запросы отклонены"]
-    closing --> inflight["Дождаться inflight и их Set-Cookie"]
-    inflight --> performChange["Вызвать смену сессии"]
-    performChange --> result{"Смена успешна?"}
-    result -->|Да| generation["generation увеличен"]
-    generation --> stale["Старый ответ: SESSION_CHANGED"]
-    result -->|Нет| lost{"Был UNAUTHORIZED?"}
-    lost -->|Да| guest["Потеря сессии"]
-    lost -->|Нет| previous["Прежняя сессия"]
-    classDef decision fill:#fef3c7,stroke:#b45309,color:#374151
-    class result,lost decision
+sequenceDiagram
+    participant UI as Интерфейс
+    participant C as Клиент API
+    participant B as BFF
+    C->>B: Защищённый запрос
+    UI->>C: switchSession
+    Note over C: Пауза новых защищённых запросов
+    B-->>C: Ответ, возможный Set-Cookie
+    C->>B: Запрос смены после завершения ожидания
+    B-->>C: Set-Cookie смены
 ```
 
 </template>
+
 </DiagramSection>
 
-## Выход в браузере
-
-`auth.logout` проходит CSRF, но не требует активной сессии. Вызов Go идёт мимо
-`session.call`: без refresh и повтора. При действующем access выполняется один
-`POST /auth/logout`; при истёкшем access Go не вызывается. BFF удаляет cookie
-при любом итоге Go и отвечает `{ browserSession: 'ended', serverRevocation }`.
-Это разделяет выход в браузере и подтверждение отзыва на сервере.
-Источники: [auth.logout](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/router/auth.ts#L19-L33) и [отзыв без refresh](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/bff/src/go/api.ts#L197-L209).
-
-| `serverRevocation` | Основание и сообщение клиенту |
+| Исход | Что происходит |
 | --- | --- |
-| `confirmed` | Go ответил `204` |
-| `unconfirmed` | Access истёк или Go ответил `4xx`; клиент показывает предупреждение |
-| `unknown` | Сеть, таймаут, Go `5xx` или неожиданный статус; клиент показывает предупреждение |
-| `not_requested` | Сессии не было, Go не вызывался |
+| Уже отправленный защищённый запрос успешно ответил во время ожидания смены | При совпадении `generation` DTO возвращается вызывающему коду. При несовпадении клиент возвращает ошибку `session_changed`. В обоих случаях запрос исключается из ожидаемых. |
+| Уже отправленный защищённый запрос получил `UNAUTHORIZED` во время ожидания смены | При совпадении поколения клиент помечает потерю сессии (`lostWhileClosing`) и возвращает исходную ошибку вызывающему коду. Решение о переходе в гостевой режим зависит от исхода смены. |
+| Смена успешна | Клиент увеличивает `generation` и применяет результат смены, в том числе после `UNAUTHORIZED` во время ожидания. |
+| Смена завершилась ошибкой | Ошибка возвращается вызывающему коду, прежняя сессия сохраняется при отсутствии отказа `UNAUTHORIZED`. |
+| Смена завершилась ошибкой после `UNAUTHORIZED` во время ожидания или при смене пароля либо выходе со всех устройств | Вызывается `onSessionLost`, ошибка смены возвращается вызывающему коду. |
 
-Любой успешный ответ `auth.logout` переводит стор в гостя. Сбой сети до ответа BFF
-или CSRF-отказ — не подтверждённый выход: клиент оставляет прежний статус и
-показывает ошибку. Исключение — потеря сессии во время ожидания, разобранная выше.
-Источник: [клиентский logout](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/session.ts#L114-L138).
+Очередь действует в экземпляре приложения. Гонки с параллельным HTML-запросом и другими вкладками отслеживает [frontend#142](https://github.com/Cringe-Driven-Development-Team/frontend/issues/142). [Проверка поколения](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L248-L284), [решение при смене](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/api/bff.ts#L295-L340).
 
-## Выход со всех устройств и смена пароля
+## Выход в браузере {#выход-в-браузере}
 
-`logoutAll` и `changePassword` используют защищённую процедуру и обычный слой
-сессии с refresh. Локальный переход в гостя при успехе следует за подтверждением
-Go. Для `logoutAll` `UNAUTHORIZED` означает потерю текущей сессии, но не подтверждает
-общий отзыв; сеть, `5xx` и S2S-сбой оставляют исход неизвестным.
-Источники: [клиентский logoutAll](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/session.ts#L140-L157) и [смена пароля](https://github.com/Cringe-Driven-Development-Team/frontend/blob/ea123518d624521f999e884ff32ddec0a5bf6bfa/apps/client/src/stores/session.ts#L98-L109).
+`POST /api/auth/logout` удаляет cookie при любом итоге обработчика и отвечает `{ browserSession: 'ended', serverRevocation }`. При действующем access BFF вызывает Go один раз без refresh и повторов. [Маршрут](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/auth.ts#L41-L52), [отзыв в Go](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/go/api.ts#L267-L283).
 
-Ожидание `inflight` защищает последовательность внутри одной вкладки. Гонки выхода
-с другими вкладками и параллельными HTML/RPC-запросами остаются ограничением
-[frontend#142](https://github.com/Cringe-Driven-Development-Team/frontend/issues/142).
-Кеш refresh сам по себе эту гонку не закрывает.
+| `serverRevocation` | Условие |
+| --- | --- |
+| `confirmed` | Go подтвердил отзыв ответом `204`. |
+| `unconfirmed` | Access истёк, вызова Go не было, либо Go ответил `4xx`. |
+| `unknown` | Сеть, таймаут, `5xx` или неожиданный статус Go. |
+| `not_requested` | Сессии не было. |
 
-## Что проверить в понимании
+При `unconfirmed` или `unknown` клиент показывает предупреждение. Сетевой сбой браузерного запроса или отказ CSRF оставляет выход неподтверждённым в интерфейсе. [Обработка результата](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/session.ts#L116-L144).
 
-- Почему браузер может знать пользователя, не имея доступа к токенам?
-- Когда `401` повторяется в BFF, а когда приводит к гостевому состоянию клиента?
-- Зачем до выхода дождаться `Set-Cookie` уже отправленных запросов?
-- Почему выход в браузере ещё не гарантирует отзыв сессии в Go?
+## Выход со всех устройств и смена пароля {#выход-со-всех-устроиств-и-смена-пароля}
+
+`POST /api/auth/logout-all` и `POST /api/users/change-password` удаляют cookie после успешного вызова Go. После получения успеха клиент устанавливает гостевой статус. Если Go отказал в операции, общая очередь применяет те же правила потери сессии, что и при других сменах. [Выход со всех устройств](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/auth.ts#L53-L63), [смена пароля](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/bff/src/router/users.ts#L20-L31), [клиент](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/session.ts#L102-L114), [обработка logoutAll](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/stores/session.ts#L150-L169).
+
+Выход и refresh описаны по коду выложенного SHA. Результат гостевого запроса доступен в [проверенной части BFF](./bff#bff-проверенная-часть).

@@ -14,9 +14,12 @@ function edgePairs(doc: DiagramDoc): string[] {
 test('deployment places backend on VPS2', () => {
   const doc = readDiagram('deployment'), nodes = indexById(doc);
   expect(['caddy', 'bff'].map(id => nodes[id]?.containerId)).toEqual(['gateway', 'gateway']);
-  expect(['go-api', 'postgres', 'redis'].map(id => nodes[id]?.containerId)).toEqual(['vps2', 'vps2', 'vps2']);
-  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>caddy', 'caddy>bff', 'bff>go-api', 'go-api>postgres', 'go-api>redis']));
+  expect(['api-proxy', 'go-api', 'postgres', 'redis'].map(id => nodes[id]?.containerId)).toEqual(['vps2', 'vps2', 'vps2', 'vps2']);
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>caddy', 'caddy>bff', 'bff>api-proxy', 'api-proxy>go-api', 'go-api>postgres', 'go-api>redis']));
   expect(edgePairs(doc)).not.toContain('client>go-api');
+  expect(edgePairs(doc)).not.toContain('bff>go-api');
+  expect(doc.connections.find(e => e.to === 'api-proxy')?.label).toBe('mTLS');
+  expect(JSON.stringify(nodes.verification)).toContain('Go 3532ca9 (последний успешный CD)');
   expect(nodes['s3-notebooks']).toBeUndefined();
   expect(edgePairs(doc)).toEqual(expect.arrayContaining(['go-api>s3-avatars', 'client>s3-avatars', 'go-api>agent', 'agent>kernel']));
   expect(doc.connections.find(e => e.to === 'redis')?.label).toContain('сессии');
@@ -30,6 +33,7 @@ test('infra separates service roles', () => {
   if (status?.tag !== 'Textbox') throw new Error('runtime-status must describe verification limits');
   expect(status.text).toContain('OpenStack');
   expect(status.text).toContain('не проверен');
+  expect(JSON.stringify(nodes['infra-revision'])).toContain('b8f6d2d8');
   expect(edgePairs(readDiagram('infra'))).toContain('githubbot>proxy');
 });
 
@@ -37,28 +41,30 @@ test('browser calls BFF, BFF calls Go', () => {
   const doc = readDiagram('frontend'), nodes = indexById(doc);
   expect(edgePairs(doc)).toEqual(expect.arrayContaining(['client>bff', 'bff>go-api']));
   expect(edgePairs(doc)).not.toContain('client>go-api');
-  expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff')?.label).toContain('/api/trpc');
+  expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff')?.label).toContain('/api/*');
   expect(doc.connections.find(e => e.from === 'bff' && e.to === 'go-api')?.label).toContain('/api/v1');
   expect(nodes['bff-plugin']?.containerId).toBe('repo-packages');
   expect(edgePairs(doc)).toContain('pwa-files>bff');
   for (const name of ['@cdd-team/react', '@cdd-team/router', '@cdd-team/zustand']) expect(JSON.stringify(doc)).toContain(name);
 });
 
-test('contract separates tRPC and OpenAPI', () => {
+test('contract separates code-first BFF and spec-first Go', () => {
   const doc = readDiagram('contract');
+  expect(JSON.stringify(indexById(doc)['contract-scope'])).toContain('входы BFF и ответы Go');
   expect(edgePairs(doc)).toEqual(expect.arrayContaining([
-    'apidog>orval', 'apidog>oapi-codegen', 'orval>bff-go-client', 'orval>zod-schemas',
+    'backend-openapi>spec-snapshot', 'spec-snapshot>go-types', 'bff-router>bff-paths',
     'client>bff-router', 'bff-router>bff-go-client', 'bff-go-client>go-api',
   ]));
-  expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff-router')?.label).toBe('/api/trpc');
+  expect(doc.connections.find(e => e.from === 'client' && e.to === 'bff-router')?.label).toBe('HTTP /api/*');
   expect(doc.connections.find(e => e.from === 'bff-go-client' && e.to === 'go-api')?.label).toBe('/api/v1');
 });
 
 test('CI separates checks and publishing', () => {
   const doc = readDiagram('ci'), nodes = indexById(doc);
-  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['frontend-ci>frontend-release', 'backend-ci>backend-image', 'packages-release>npm']));
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['frontend-ci>frontend-release', 'backend-ci>backend-image', 'service-checks>backend-image', 'packages-release>npm']));
   for (const id of ['frontend-course-sync', 'backend-course-sync', 'static-upload', 'docs-pages']) expect(nodes[id], id).toBeDefined();
   expect(nodes['fe-drift']).toBeUndefined();
+  expect(nodes['backend-drift']).toBeUndefined();
   expect(JSON.stringify(doc)).not.toMatch(/current\.json|Argo|Coolify/);
 });
 
@@ -90,11 +96,24 @@ test('CI publishes frontend Releases on main and keeps backend event gates', () 
   expect(status?.tag).toBe('Textbox');
   if (status?.tag !== 'Textbox') throw new Error('CI scope must explain publication conditions');
   expect(status.text).not.toContain('PRODUCTION_ENABLED');
+  expect(status.text).toContain('Release v2 для services');
+  expect(doc.connections.find(e => e.from === 'backend-ci' && e.to === 'backend-image')?.label).toBe('services');
   expect(doc.connections.find(e => e.to === 'frontend-release')?.label).toBe('push main');
   expect(doc.connections.find(e => e.to === 'frontend-course-sync')?.label).toBe('push main');
   expect(doc.connections.find(e => e.to === 'backend-course-sync')?.label).toBe('main · flag');
-  expect(JSON.stringify(nodes['frontend-release'])).toContain('GitHub Release');
-  expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main / manual');
+  expect(JSON.stringify(nodes['frontend-release'])).toContain('Publish release');
+  expect(doc.connections.find(e => e.from === 'backend-image' && e.to === 'go-image')?.label).toBe('push main');
+});
+
+test('notebook components keep durable storage behind Go', () => {
+  const doc = readDiagram('notebooks-components'), nodes = indexById(doc);
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining([
+    'client>caddy', 'caddy>bff', 'bff>go-api', 'go-api>postgres',
+    'go-api>provisioner', 'provisioner>cloud', 'go-api>agent', 'agent>kernel',
+  ]));
+  expect(doc.connections.filter(edge => edge.to === 'postgres').map(edge => edge.from)).toEqual(['go-api']);
+  expect(nodes['postgres']?.containerId).toBe('services');
+  expect(nodes['kernel']?.containerId).toBe('runtime');
 });
 
 test('current notebook infrastructure has no S3 migration path', () => {
@@ -102,6 +121,14 @@ test('current notebook infrastructure has no S3 migration path', () => {
   expect(edgePairs(doc)).toContain('go-api>postgres');
   expect(JSON.stringify(doc)).not.toMatch(/offline migration|01\.11\.2026|08\.11\.2026/);
   expect(JSON.stringify(doc)).toContain('подготовленным образом');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['go-api>postgres', 'kernel>workspace']));
+  expect(edgePairs(doc)).not.toContain('agent>postgres');
+  const nodes = indexById(doc);
+  expect(JSON.stringify(nodes.tmpfs)).toContain('/tmp · 256 MiB');
+  expect(JSON.stringify(nodes.tmpfs)).toContain('/workspace · 256 MiB');
+  expect(JSON.stringify(nodes.tmpfs)).toContain('/packages · 512 MiB');
+  expect(JSON.stringify(nodes['file-api-limit'])).toContain('до 3 GiB на upload или download');
+  expect(JSON.stringify(doc)).toContain('6862183');
   const storage = readFileSync('site/documentation/notebooks/storage-and-infrastructure.md', 'utf8');
   const section = storage.split('### S3')[1]?.split('\n##')[0] ?? '';
   expect(section).toContain('архив');
@@ -114,4 +141,17 @@ test('infra preview and apply independently follow checks', () => {
   expect(edgePairs(doc)).not.toContain('infra-preview>infra-apply');
   expect(doc.connections.find(e => e.to === 'infra-preview')?.label).toBe('PR');
   expect(doc.connections.find(e => e.to === 'infra-apply')?.label).toBe('main / manual');
+});
+
+test('release lifecycle distinguishes the attempt outcome and task updates', () => {
+  const doc = readDiagram('frontend-release-lifecycle');
+  expect(edgePairs(doc)).toContain('production>issues');
+  expect(doc.connections.find(edge => edge.from === 'cd' && edge.to === 'production')?.label).toContain('Health check');
+  expect(doc.connections.find(edge => edge.to === 'issues')?.label).toBe('после success');
+});
+
+test('release delivery uses the BFF HTTP API', () => {
+  const doc = readDiagram('frontend-release-delivery');
+  expect(doc.connections.find(edge => edge.from === 'client' && edge.to === 'caddy')?.label).toBe('HTML и /api/*');
+  expect(edgePairs(doc)).toEqual(expect.arrayContaining(['caddy>bff', 'client>cdn', 'cdn>s3', 'image>bff']));
 });

@@ -1,159 +1,88 @@
 # CSP
 
-CSP (Content Security Policy) ограничивает источники ресурсов и действия страницы
-в браузере. В Cellestial Caddy передаёт политику в заголовке `Content-Security-Policy`:
-браузер блокирует то, что она запрещает. Правила учитывают BFF на домене приложения,
-CDN выпусков, статику, аватарки и файлы PWA.
-
-Ниже описана конфигурация и отдельно приведены границы HTTP-проверки.
-CSP дополняет [защиту от XSS](/documentation/security/xss), ограничивая последствия
-внедрения кода в страницу.
+Caddy добавляет блокирующий `Content-Security-Policy` к гостевому HTML Cellestial. Браузер применяет эту политику при загрузке ресурсов и встраивании документов. Скрипты разрешены с CDN выпусков, политика стилей допускает встроенный CSS для HTML-результатов ячеек. [Шаблон Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/roles/caddy/templates/Caddyfile.j2#L3-L25).
 
 <DiagramSection>
 
 ## Где задаётся политика
 
-Политика принадлежит инфраструктуре: Ansible собирает её в `Caddyfile.j2`.
-Caddy проксирует запросы к BFF и через `header_down` добавляет CSP в его ответы.
-HTML формирует BFF, а применять ограничения будет браузер, получивший этот HTML.
-JS и CSS браузер запрашивает напрямую с CDN каталога выпуска.
-
-Домены берутся из `app_domain`, `frontend_cdn_domain`, `frontend_static_domain`
-и `avatars_public_domain`. В конфигурации `caddy_csp_report_only: false`, поэтому
-выбран блокирующий заголовок. Он добавляется на участке проксирования BFF;
-это не общее правило для любого ответа Caddy, например собственного `/health` → 404.
+Ansible подставляет домены и режим CSP в шаблон Caddy. При `caddy_csp_report_only: false` Caddy выставляет блокирующий заголовок через `header_down` на ответе от BFF. Обработчик Caddy для `/health` стоит отдельно от прокси. [Шаблон](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/roles/caddy/templates/Caddyfile.j2#L9-L57), [домены и режим](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/inventory/group_vars/all/vars.yml#L10-L25), [origin загрузки файлов и аватарок](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/inventory/group_vars/all/vars.yml#L62-L66).
 
 <template #diagram>
 
 ```mermaid
-%% Sequence: Caddy добавляет политику к HTML; браузер проверяет прямой запрос к CDN.
 sequenceDiagram
-    autonumber
-    participant browser as Браузер
-    participant caddy as Caddy
-    participant bff as BFF
-    participant cdn as CDN
-    browser->>caddy: Запрос HTML
-    caddy->>bff: Передать запрос
-    bff-->>caddy: HTML приложения
-    caddy-->>browser: HTML + Content-Security-Policy
-    browser->>browser: Проверить адрес ресурса по CSP
-    browser->>cdn: Разрешённый запрос JS или CSS
-    cdn-->>browser: Ответ с ресурсом
+    participant B as Браузер
+    participant C as Caddy
+    participant A as BFF
+    participant D as CDN
+    B->>C: GET /login за HTML
+    C->>A: Проксировать запрос
+    A-->>C: HTML страницы входа
+    C-->>B: HTML + Content-Security-Policy
+    B->>D: Скрипт выпуска, разрешённый script-src
 ```
 
 </template>
-
-[Сборка политики и добавление заголовка](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/caddy/templates/Caddyfile.j2#L7-L47),
-[домены и режим](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/inventory/group_vars/all/vars.yml#L10-L25),
-[домен аватарок](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/inventory/group_vars/all/vars.yml#L65).
 
 </DiagramSection>
 
 ## Действующие директивы
 
-`'self'` означает origin защищаемого документа — для страницы приложения это
-`https://cellestial.ru`, с учётом схемы, хоста и порта. Поддомены CDN, статики и аватарок
-перечисляются отдельно. Источники внутри одной директивы — альтернативы:
-достаточно совпадения с одним разрешённым источником.
+Таблица отражает заголовок ответа `GET /login`. В нём `'self'` означает origin `https://cellestial.ru`. CDN, статика, аватарки и хранилище загрузок имеют отдельные origin.
 
-| Директива | Значение | Зачем в Cellestial |
+| Директива | Источники | Что регулирует |
 | --- | --- | --- |
-| `default-src` | `'none'` | Запрещает загрузки, для которых нет разрешения в соответствующей fetch-директиве или её fallback. Например, `object-src` не задан, поэтому объекты запрещены |
-| `script-src` | `https://cdn.cellestial.ru` | Разрешает JS клиента с CDN выпусков. Обычный скрипт с origin приложения этим правилом не разрешён |
-| `style-src` | `'self'`<br>`https://cdn.cellestial.ru` | Разрешает CSS приложения с CDN и стили офлайн-страницы с origin |
-| `img-src` | `'self'`<br>`https://cdn.cellestial.ru`<br>`https://static.cellestial.ru`<br>`https://avatars.cellestial.ru`<br>`data:` | Разрешает изображения сборки, статику, аватарки, иконки PWA и встроенные SVG-иконки в CSS через `data:` |
-| `font-src` | `'self'`<br>`https://static.cellestial.ru` | Разрешает шрифты со статики и origin для офлайн-ресурсов |
-| `connect-src` | `'self'` | Разрешает клиентские `fetch`/XHR к BFF на домене приложения; не управляет серверными запросами BFF → Go |
-| `manifest-src` | `'self'` | Разрешает манифест PWA с origin приложения |
-| `worker-src` | `'self'` | Разрешает загрузку скрипта Service Worker с origin приложения |
-| `base-uri` | `'none'` | Запрещает менять базовый URL документа через `<base href>`, чтобы не перенаправить относительные адреса |
-| `form-action` | `'self'` | Ограничивает адрес отправки HTML-форм origin приложения |
-| `frame-ancestors` | `'none'` | Запрещает встраивать страницу Cellestial во фрейм, в том числе на том же origin |
+| `default-src` | `'none'` | Запрещает загрузки, когда применяется это запасное правило |
+| `script-src` | `https://cdn.cellestial.ru` | Подключает JS с CDN выпусков. Блокирует исполняемые inline-скрипты, обработчики событий в разметке и `eval()` |
+| `style-src` | `* data: blob: 'unsafe-inline'` | Допускает внешние и встроенные стили, включая CSS HTML-результата ячейки |
+| `img-src` | `'self'`<br>`https://cdn.cellestial.ru`<br>`https://static.cellestial.ru`<br>`https://avatars.cellestial.ru`<br>`data:` | Изображения приложения, CDN, статики и аватарок. `data:` используется для встроенных изображений |
+| `font-src` | `'self' https://static.cellestial.ru` | Шрифты приложения и офлайн-страницы |
+| `connect-src` | `'self'` и `private_files_upload_origin` | Запросы браузера к BFF и прямая загрузка файлов в хранилище |
+| `manifest-src` | `'self'` | Манифест PWA |
+| `worker-src` | `'self'` | Запуск Service Worker с origin приложения |
+| `base-uri` | `'none'` | Запрещает менять базовый URL через `<base href>` |
+| `form-action` | `'self'` | Ограничивает адрес отправки форм с этой страницы |
+| `frame-src` | `'self'` | Ограничивает источники документов, которые эта страница загружает во фреймы |
+| `frame-ancestors` | `'none'` | Запрещает встраивать саму страницу входа |
 
-Точные значения — из [конфигурации Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/roles/caddy/templates/Caddyfile.j2#L3-L20).
-`default-src` служит запасным правилом для загрузок; `base-uri`, `form-action`
-и `frame-ancestors` его не наследуют, поэтому заданы явно.
-[Правила fallback](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy#fallbacks),
-[base-uri](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/base-uri),
-[form-action](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/form-action),
-[frame-ancestors](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors).
-
-Разрешение `data:` относится только к изображениям: оно не разрешает скрипты или шрифты
-с таким URL. В политике нет `'unsafe-inline'`, nonce и хешей для встроенного кода:
-исполняемые inline-скрипты, HTML-обработчики вроде `onclick`, теги `<style>` и
-`style`-атрибуты в разметке не разрешены. Отсутствие `'unsafe-eval'` также запрещает
-`eval()` и подобное выполнение строк как JavaScript.
-[Ограничения скриптов](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/script-src),
-[ограничения стилей](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src).
-
-`worker-src 'self'` — отдельное разрешение для запуска worker, поэтому ему не требуется
-`'self'` в `script-src` страницы. Действия внутри worker регулируются политикой ответа
-его собственного скрипта. Устройство файлов и регистрации описано в
-[инфраструктуре PWA](/documentation/offline/infrastructure).
-[Назначение worker-src](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/worker-src),
-[CSP внутри workers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy#csp_in_workers).
+Для страниц `/embed/` шаблон выставляет `frame-ancestors 'self'`. Директивы `base-uri`, `form-action` и `frame-ancestors` заданы явно, потому что для них отсутствует запасное правило `default-src`. [Шаблон Caddy](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/roles/caddy/templates/Caddyfile.j2#L9-L25), [исключение для /embed/](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/roles/caddy/templates/Caddyfile.j2#L45-L57), [правила fallback](https://www.w3.org/TR/CSP3/#directive-fallback-list).
 
 <DiagramSection>
 
 ## Как браузер проверяет ресурс
 
-Для внешнего скрипта браузер применяет `script-src`. URL на `https://cdn.cellestial.ru`
-совпадает с разрешённым источником; посторонний HTTPS-домен — нет. Разрешение CSP
-позволяет продолжить загрузку, но не гарантирует успешный HTTP-ответ или исполнение:
-остаются сетевые ошибки и другие проверки браузера, например MIME и CORS для модулей.
+Разберись, какая директива относится к заблокированному запросу. Например, для JS выпуска из первого HTML проверь хост по `script-src`, для запроса браузера к API — по `connect-src`. При разрешённом источнике браузер продолжает загрузку и применяет остальные проверки ресурса. [Проверка загрузок в CSP](https://www.w3.org/TR/CSP3/#should-block-request).
 
 <template #diagram>
 
 ```mermaid
-%% Flowchart: проверка источника внешнего скрипта; разрешение CSP не равно успешной загрузке.
 flowchart TD
-    script["Страница подключает внешний скрипт"] --> source{"Источник —<br>https://cdn.cellestial.ru?"}
-    source -->|Да| permitted["Загрузка разрешена CSP"]
-    source -->|Нет| blocked["Браузер блокирует загрузку"]
-    permitted --> remaining["Сетевая загрузка<br>и другие проверки браузера"]
-    classDef decision fill:#fef3c7,stroke:#b45309,color:#374151
-    classDef success fill:#a7f3d0,stroke:#047857,color:#374151
-    classDef error fill:#fecaca,stroke:#b91c1c,color:#374151
-    class source decision
-    class permitted success
-    class blocked error
+    JS["Браузер загружает JS выпуска"] --> SRC{"Хост разрешён script-src?"}
+    SRC -->|cdn.cellestial.ru по HTTPS| PASS["Запрос проходит CSP"]
+    SRC -->|Источник отсутствует в script-src| BLOCK["Браузер блокирует запрос"]
 ```
 
 </template>
 
-Это иллюстрация действующего правила для внешнего скрипта. Для изображения браузер
-проверит `img-src`, а для запроса к API — `connect-src`; список разрешённых адресов
-у каждого типа свой.
-
 </DiagramSection>
-
-## Границы защиты
-
-CSP доверяет разрешённым источникам, но не проверяет безопасность кода на CDN
-и не санирует пользовательский Markdown или результаты вычислений. Для содержимого
-блокнота остаются необходимыми безопасный DOM-вывод и изоляция HTML-результатов.
-[XSS](/documentation/security/xss) и [результаты исполнения](/documentation/notebooks/results)
-описывают эти механизмы и границы их проверки.
-
-`frame-ancestors` отвечает за встраивание самой страницы Cellestial. Он не заменяет
-`sandbox` у iframe с результатом вычисления и не разрешает содержимое такого iframe.
-Работа HTML output под текущей политикой здесь не проверена.
-
-`form-action` ограничивает отправку форм с нашей страницы. Он не останавливает
-запрос с чужой страницы к нашему BFF: это задача [CSRF-защиты](/documentation/security/csrf).
-CSP также не мешает уже разрешённому JavaScript обращаться к BFF от имени пользователя.
 
 ## Источники и проверка
 
-Конфигурация сверена с `infra` на SHA `a59f8584386810b0b94f5fb23cb72c7ff906f6d7`.
-Это версия исходников, а не установленный по этой проверке SHA выкатки.
+1. Запроси гостевой HTML с заголовком `Accept: text/html`.
 
-**09.11.2026, 04:35 МСК (UTC+3):** GET без авторизации к `https://cellestial.ru/`
-вернул HTTP 404, `Content-Type: text/plain` и `Content-Security-Policy` со всеми
-значениями из таблицы. Проверка подтверждает передачу блокирующего заголовка
-на этом ответе. HTML приложения не получен, SHA его релиза не определён.
+   ```bash
+   curl -fsS -H 'Accept: text/html' -D headers.txt https://cellestial.ru/login -o login.html
+   ```
 
-Загрузка приложения, блокировки в браузере, авторизованные сценарии, HTML output
-и совместимость PWA с этой политикой в данном прогоне не проверялись. Схемы объясняют
-устройство по конфигурации; они не заменяют проверку пользовательского сценария.
+2. Сверь `Content-Type` и `Content-Security-Policy` в `headers.txt`. Проверь, что `login.html` содержит `id="bootstrap"`. SHA выпуска указан в путях JS и CSS под `/releases/` на CDN.
+
+28.11.2026 в 00:48:08 МСК (UTC+3) запрос вернул `200`, `Content-Type: text/html; charset=UTF-8` и блокирующий `Content-Security-Policy` из таблицы. HTML содержал гостевой bootstrap и ассеты выпуска `b1baf996fb6753d1a62eab6f874d03dca30faadc`.
+
+Происхождение правил прослеживается до [шаблона Caddy из infra на `c0f873c292d82e7c6e76c166e926996f676ed175`](https://github.com/Cringe-Driven-Development-Team/infra/blob/c0f873c292d82e7c6e76c166e926996f676ed175/ansible/roles/caddy/templates/Caddyfile.j2#L9-L57). SHA выкатки infra по HTTP-ответу не определяется.
+
+## Границы защиты
+
+- HTML-результат получает пустой `sandbox` при создании iframe. Встроенный CSS разрешён наблюдаемой политикой, а ограничения скриптов и форм внутри документа задаёт также `sandbox`. Авторизованный рендер в блокноте описан по коду. [Обработчик HTML-результата](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/pages/NotebookPage/Output.tsx#L255-L270), [способы вывода](/documentation/security/xss#текст-в-интерфеисе).
+- У Service Worker есть отдельный ответ на запрос скрипта. `worker-src` на странице определяет разрешение на запуск, а политику для действий внутри worker задаёт заголовок его ответа. [CSP в worker](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy#csp_in_workers), [инфраструктура PWA](/documentation/offline/infrastructure).
+- `form-action` определяет адрес, на который может отправить форму эта страница. Условия приёма входящего запроса определяет [CSRF-защита BFF](/documentation/security/csrf#проверки-bff).

@@ -18,8 +18,8 @@
       "id": "bff",
       "x": 840,
       "y": 0,
-      "width": 900,
-      "height": 820,
+      "width": 1140,
+      "height": 840,
       "isContainer": true,
       "color": "blue",
       "title": {
@@ -47,37 +47,28 @@
       "icon": "globe",
       "texts": [
         {
-          "text": "Браузер"
+          "text": "Браузер пользователя"
         }
       ]
     },
     {
       "tag": "Icon",
-      "id": "trpc-adapter",
+      "id": "route",
       "x": 980,
       "y": 140,
       "icon": "code",
       "texts": [
         {
-          "text": "Адаптер tRPC"
+          "text": "Маршрут HTTP API"
         }
       ],
       "containerId": "bff"
     },
     {
-      "tag": "Textbox",
-      "id": "form-415",
-      "x": 1340,
-      "y": 140,
-      "width": 340,
-      "text": "**415 UNSUPPORTED_MEDIA_TYPE**\n\n`application/x-www-form-urlencoded`\nили `text/plain`\n\nGo не вызывается.",
-      "containerId": "bff"
-    },
-    {
       "tag": "Icon",
       "id": "csrf-check",
-      "x": 980,
-      "y": 400,
+      "x": 1220,
+      "y": 140,
       "icon": "shield",
       "texts": [
         {
@@ -89,17 +80,17 @@
     {
       "tag": "Textbox",
       "id": "csrf-403",
-      "x": 1340,
-      "y": 400,
+      "x": 1620,
+      "y": 140,
       "width": 340,
-      "text": "**403 csrf_invalid**\n\nНет `X-CSRF`.\nGo не вызывается.",
+      "text": "**403 csrf_invalid**\n\nНет `X-CSRF`. Сессия и тело не читаются.",
       "containerId": "bff"
     },
     {
       "tag": "Icon",
       "id": "preflight-response",
       "x": 980,
-      "y": 680,
+      "y": 620,
       "icon": "server",
       "texts": [
         {
@@ -121,7 +112,7 @@
       "tag": "Icon",
       "id": "browser-blocked",
       "x": 400,
-      "y": 740,
+      "y": 760,
       "icon": "shield",
       "texts": [
         {
@@ -139,16 +130,16 @@
     },
     {
       "tag": "Textbox",
-      "id": "fallback-policy",
+      "id": "origin-policy",
       "x": 0,
-      "y": 920,
+      "y": 500,
       "width": 1660,
-      "text": "**Если бы CORS ошибочно разрешил поддомен:** POST всё равно встретит проверки BFF.\n\nЧужой `Origin` не равен `APP_ORIGIN`; `Sec-Fetch-Site: same-site` не равен `same-origin`.\nЭто резервная проверка, а не продолжение уже остановленного fetch."
+      "text": "Для POST BFF требует `Origin = APP_ORIGIN`.\n\n`Sec-Fetch-Site: same-site` не проходит проверку."
     },
     {
       "tag": "Legend",
       "id": "legend",
-      "x": 1780,
+      "x": 2020,
       "y": 0,
       "width": 340,
       "entries": [
@@ -181,22 +172,16 @@
     {
       "tag": "Relationship",
       "from": "client",
-      "to": "trpc-adapter",
-      "label": "POST формы к приложению",
+      "to": "route",
+      "label": "POST формы",
       "color": "orange",
       "lineStyle": "solid"
     },
     {
       "tag": "Relationship",
-      "from": "trpc-adapter",
-      "to": "form-415",
-      "label": "urlencoded / plain"
-    },
-    {
-      "tag": "Relationship",
-      "from": "trpc-adapter",
+      "from": "route",
       "to": "csrf-check",
-      "label": "multipart/form-data"
+      "label": "До сессии и входа"
     },
     {
       "tag": "Relationship",

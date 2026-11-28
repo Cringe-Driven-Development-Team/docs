@@ -5,7 +5,7 @@
       "id": "vps",
       "x": 580,
       "y": 0,
-      "width": 1000,
+      "width": 1460,
       "height": 740,
       "isContainer": true,
       "color": "blue",
@@ -18,7 +18,7 @@
       "id": "bff",
       "x": 620,
       "y": 60,
-      "width": 620,
+      "width": 1080,
       "height": 640,
       "isContainer": true,
       "color": "blue",
@@ -54,13 +54,13 @@
     },
     {
       "tag": "Icon",
-      "id": "trpc-adapter",
+      "id": "route",
       "x": 700,
       "y": 160,
       "icon": "code",
       "texts": [
         {
-          "text": "Адаптер tRPC"
+          "text": "Маршрут HTTP API"
         }
       ],
       "containerId": "bff"
@@ -86,7 +86,7 @@
       "icon": "user",
       "texts": [
         {
-          "text": "Сессия и входные данные"
+          "text": "Сессия и доступ"
         }
       ],
       "containerId": "bff"
@@ -94,7 +94,7 @@
     {
       "tag": "Icon",
       "id": "go-api",
-      "x": 1420,
+      "x": 1880,
       "y": 400,
       "icon": "go",
       "texts": [
@@ -141,7 +141,7 @@
     {
       "tag": "Textbox",
       "id": "go-policy",
-      "x": 1300,
+      "x": 1760,
       "y": 580,
       "width": 240,
       "text": "Go проверяет токены и права на операцию.",
@@ -150,7 +150,7 @@
     {
       "tag": "Legend",
       "id": "legend",
-      "x": 1620,
+      "x": 2080,
       "y": 0,
       "width": 340,
       "entries": [
@@ -167,6 +167,28 @@
           "color": "#1c1c1c"
         }
       ]
+    },
+    {
+      "tag": "Icon",
+      "id": "input",
+      "x": 1380,
+      "y": 400,
+      "icon": "user",
+      "texts": [
+        {
+          "text": "Проверка входа"
+        }
+      ],
+      "containerId": "bff"
+    },
+    {
+      "tag": "Textbox",
+      "id": "invalid-input",
+      "x": 1320,
+      "y": 600,
+      "width": 260,
+      "text": "**400 BAD_REQUEST**\n\nВход не прошёл проверку.",
+      "containerId": "bff"
     }
   ],
   "connections": [
@@ -179,16 +201,16 @@
     {
       "tag": "Relationship",
       "from": "client",
-      "to": "trpc-adapter",
-      "label": "POST /api/trpc/notebooks.create",
+      "to": "route",
+      "label": "POST /api/users/update-login",
       "color": "orange",
       "lineStyle": "solid"
     },
     {
       "tag": "Relationship",
-      "from": "trpc-adapter",
+      "from": "route",
       "to": "csrf-check",
-      "label": "JSON принят"
+      "label": "До чтения сессии"
     },
     {
       "tag": "Relationship",
@@ -198,15 +220,27 @@
     },
     {
       "tag": "Relationship",
-      "from": "session",
+      "from": "input",
       "to": "go-api",
-      "label": "HTTP · сессия и вход допустимы"
+      "label": "Вход допустим → обработчик"
     },
     {
       "tag": "Relationship",
       "from": "session",
       "to": "unauthorized",
       "label": "Нет сессии"
+    },
+    {
+      "tag": "Relationship",
+      "from": "session",
+      "to": "input",
+      "label": "Есть сессия"
+    },
+    {
+      "tag": "Relationship",
+      "from": "input",
+      "to": "invalid-input",
+      "label": "Неверный вход"
     }
   ]
 }

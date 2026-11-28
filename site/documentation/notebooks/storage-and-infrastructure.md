@@ -1,86 +1,72 @@
-# Хранение и инфраструктура блокнотов
+# Хранение и инфраструктура блокнотов {#хранение-и-инфраструктура-блокнотов}
 
-Документ и результаты живут в PostgreSQL. Go управляет отдельной VPS сессии; agent запускает kernel в контейнере, а рабочие файлы kernel временные. Потеря окружения не означает удаления сохранённых ячеек и outputs.
+PostgreSQL хранит документ и применённые результаты. Go управляет временной runtime-VPS, где агент запускает процесс kernel в контейнере. Переменные и рабочие файлы окружения имеют собственный срок жизни. [Схема ячеек](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/migrations/20261105120000_notebook_cells.sql#L1), [схема сессий](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/migrations/20261105080000_create_runtime_sessions.sql#L1), [тома kernel](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L136). [Ревизии и статус проверки](./#существенные-разрывы).
 
-::: info Проверено по коду
-08.11.2026: backend/agent `a46aa8e`, infra `7242521`, frontend/BFF `0606aa6`. [Полные SHA](./). Разделы S3 и подготовки runtime обновлены по коду 09.11.2026. Сквозной запуск и изоляция runtime на проде не проверены.
-:::
+## Владельцы данных {#владельцы-данных}
 
-## Владельцы данных
+| Данные | Владелец и срок хранения |
+| --- | --- |
+| Метаданные, редакция и preview | Go, PostgreSQL `notebooks` |
+| ID, порядок, source и его версия | Go, PostgreSQL `notebook_cells` |
+| Вывод, счётчик, сокращение и вложения ячеек | Go, PostgreSQL `notebook_cell_data` |
+| Сессии, очереди, снимки и события | Go, runtime-таблицы PostgreSQL |
+| Журнал агента | SQLite на runtime-VPS. Локальная часть удаляется вместе с VPS. |
+| Переменные Python | Память процесса. Теряются с kernel. |
+| Рабочие файлы | Диск runtime-VPS для `/workspace` при штатном подключении. Файлы теряются вместе с VPS. Временные тома очищаются при удалении контейнера. |
 
-| Данные | Владелец / хранение | Что сохраняется после остановки kernel |
-| --- | --- | --- |
-| Metadata, revision, preview, size | PostgreSQL `notebooks` | Сохраняются |
-| Cell ID, position, source, source_version | PostgreSQL `notebook_cells` | Сохраняются |
-| Outputs, count, truncated, attachments | PostgreSQL `notebook_cell_data` | Сохраняются применённые результаты |
-| Сессии, команды, события, snapshots и projection jobs | PostgreSQL runtime-таблицы | История доступна независимо от живого агента |
-| Admission и журнал агента | SQLite/state dir runtime-VPS | Доступны до удаления VPS; backend архивирует отдельно |
-| Переменные kernel | Память процесса | Теряются при новом kernel |
-| `/workspace`, `/tmp` | tmpfs контейнера | Теряются при уничтожении контейнера |
+Метаданные, содержимое, применённый вывод и собранная история остаются в PostgreSQL после удаления окружения.
 
-Источники: [cell schema](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/migrations/20261105120000_notebook_cells.sql#L1), [runtime schema](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/migrations/20261105080000_create_runtime_sessions.sql#L1), [agent journal](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/journal.py#L207), [container mounts](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/containers.py#L153).
+[Схема ячеек](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/migrations/20261105120000_notebook_cells.sql#L1), [runtime-таблицы](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/migrations/20261105080000_create_runtime_sessions.sql#L1), [журнал](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/journal.py#L40), [контейнер](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L136), [подготовка диска](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/tasks/workspace.yml#L34-L63).
 
-Сохранение source блокирует строку notebook, проверяет revision и меняет затронутые ячейки, размеры, preview и revision одной транзакцией. Тяжёлые outputs/attachments при source-save не читаются; content читается в read-only repeatable-read, поэтому hash соответствует ячейкам. Полная сборка ipynb нужна на import/export boundary, а не при каждом PATCH. [Editing repository](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/editing.go#L16), [content](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/adapters/postgres/notebook.go#L145).
+Правки берут блокировку строки блокнота и меняют затронутые данные в транзакции. Чтение содержимого возвращает ячейки и `hash` из одного согласованного снимка PostgreSQL. [Запись](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/editing.go#L16-L64), [чтение](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/notebook.go#L159-L198).
 
-### S3 {#s3-и-миграция}
+### S3 и архив {#s3-и-миграция}
 
-Блокноты и результаты хранятся в PostgreSQL; runtime-agent не пишет напрямую в таблицы блокнотов или S3. Notebook bucket остаётся в infra как архив вне рабочего пути API. S3 используется для аватаров. Источники на 09.11.2026: [подключение хранилищ](https://github.com/Cringe-Driven-Development-Team/backend/blob/06841d4765c28ad7e52bf5e36df3b72cb22c094e/internal/app/app.go#L101), [назначение бакета](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/inventory/group_vars/all/vars.yml#L60).
+Рабочий путь записей проходит через PostgreSQL. Исторический S3-архив блокнотов удалён из конфигурации инфраструктуры. S3 остаётся отдельным хранилищем других данных, например аватаров. [Руководство infra](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/README.md#L105-L112), [запись ячеек](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/editing.go#L16-L64).
 
-### Список блокнотов
+### Список блокнотов {#список-блокнотов}
 
-Backend читает компактные metadata, сортирует `updated_at DESC,id DESC`. Preview — первые шесть строк первой непустой code-ячейки, максимум 1024 Unicode code points; output-only save preview не меняет. `has_active_session` определяется одним запросом для списка, не опросом agent на каждую карточку. Однако frontend на этом SHA показывает одинаковый фиктивный PREVIEW_CODE и не отображает active badge: [#120](https://github.com/Cringe-Driven-Development-Team/frontend/issues/120) остаётся целью. [Preview backend](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/domain/preview.go#L5), [список](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/usecase/notebook.go#L20), [карточка frontend](https://github.com/Cringe-Driven-Development-Team/frontend/blob/0606aa6cb83b78a76f1e69816b2a6abd82dc20ee/apps/client/src/components/NotebookCard/NotebookCard.tsx#L14).
-
-<DiagramSection>
+Go читает компактные метаданные и сортирует по `updated_at DESC, id DESC`. Карточка показывает серверный preview и состояние по `has_active_session`. [Запрос списка](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/adapters/postgres/list.go#L13-L63), [карточка](https://github.com/Cringe-Driven-Development-Team/frontend/blob/b1baf996fb6753d1a62eab6f874d03dca30faadc/apps/client/src/components/NotebookCard/NotebookCard.tsx#L30-L71).
 
 ## Размещение и сеть {#deployment}
 
-Gateway содержит Caddy и BFF, backend-хост — Go API, PostgreSQL и Redis. Caddy направляет публичный трафик в BFF; Go API не является публичным upstream. BFF обращается к Go по приватной сети с сервисным ключом; PostgreSQL/Redis не публикуют host ports. [Caddy routes](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/roles/caddy/templates/Caddyfile.j2#L29), [Compose](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/roles/app/templates/compose.yml.j2#L76).
+Схема и ссылки ниже опираются на снимок infra `6862183` от 27.11.2026, 22:11:43 UTC. Более поздний apply `b8f6d2d8` добавил в Caddy настройки сбора метрик. [Размещение после apply](/documentation/architecture/#deployment), [сравнение ревизий](https://github.com/Cringe-Driven-Development-Team/infra/compare/686218395ad12e5752af312d18f32efc508d55ea...b8f6d2d81410f70ec5af642cb486d37b0b0f5412).
 
-<template #diagram>
+Gateway принимает публичный HTTPS через Caddy и передаёт запросы BFF. BFF обращается к Go через mTLS-прокси на приватной сети. Go и PostgreSQL находятся на backend-хосте. Отдельный nginx на runtime-VPS принимает mTLS от Go и передаёт запросы агенту на loopback. [Публичные маршруты](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/roles/caddy/templates/Caddyfile.j2#L27), [Compose и mTLS](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/roles/app/templates/compose.yml.j2#L76-L117), [прокси агента](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/templates/nginx-agent.conf.j2#L8).
 
 <Diagram name="notebooks-infrastructure" />
 
-</template>
+## Кто создаёт окружение {#кто-создает-окружение}
 
-Схема — срез кода, не проверка текущей сети. Agent доступен backend через nginx с mTLS, а сам слушает loopback. Nginx проверяет сертификат и CN backend, проксирует WebSocket без buffering. [Nginx agent](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/roles/runtime_host/templates/nginx-agent.conf.j2#L8).
+1. Pulumi создаёт общие ресурсы провайдера, включая сеть доступа для runtime.
+2. По запросу на запуск Go создаёт отдельную VPS через OpenStack, используя подготовленный образ.
+3. Go запускает Ansible для назначения сессии. Playbook сверяет версию образа, готовит дисковый workspace и проверяет артефакт агента.
+4. Агент получает конфигурацию сессии и поднимает контейнер kernel.
 
-</DiagramSection>
+[Ресурсы Pulumi](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/pulumi/runtime.ts#L70-L150), [провайдер Go](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtime/adapters/openstack/provider.go#L49), [запуск Ansible](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtime/adapters/ansible/runner.go#L79), [проверка образа и workspace](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/tasks/main.yml#L2-L17), [подготовка workspace](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/tasks/main.yml#L145-L146), [установка агента](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_agent/tasks/main.yml#L24), [контейнер](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L96-L136).
 
-## Кто создаёт окружение
+## Изоляция kernel {#изоляция-kernel}
 
-Pulumi готовит общую инфраструктуру: учётную запись provisioner, security group, SSH keypair, CA/клиентский сертификат и ключ шифрования runtime credentials. **Отдельные VPS создаёт Go через OpenStack**, не отдельный Pulumi resource на каждую сессию. Go создаёт порт, загрузочный том и сервер, затем запускает Ansible с назначением сессии и артефактами; временные файлы операции удаляются, SSH проверяет host key. [Общие ресурсы](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/pulumi/index.ts#L866), [OpenStack adapter](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtime/adapters/openstack/provider.go#L49), [Ansible runner](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtime/adapters/ansible/runner.go#L79).
+Контейнер запускается от непривилегированного пользователя, с read-only root, ограничениями ресурсов и выделенной bridge-сетью. Дисковый workspace подключается отдельным bind mount. Если в настройках агента путь к дисковому workspace не задан, `/workspace` размещается в tmpfs. `/tmp` используется как домашняя и временная директория, `/packages` — как пользовательский каталог для Python-пакетов. Оба размещаются в tmpfs. Firewall регулирует DNS и исходящий HTTP(S), блокирует внутренние назначения. Эти свойства описывают настройки исходников. [Контейнер](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L136), [сетевая политика](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/templates/firewall.nft.j2#L10).
 
-Runtime-VPS запускается из подготовленного образа с Docker, nginx, nftables и Python venv. Playbook ждёт SSH/Python и cloud-init, проверяет образ и применяет настройки сессии. Wheel агента сверяется по SHA-256; wheel и закреплённые зависимости переустанавливаются только при изменении. Повтор настройки того же назначения не перезапускает активного агента; чужое назначение отвергается. Источники на 09.11.2026: [playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/site.yml#L13), [образ](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/roles/runtime_host/tasks/main.yml#L1), [agent install](https://github.com/Cringe-Driven-Development-Team/infra/blob/a59f8584386810b0b94f5fb23cb72c7ff906f6d7/ansible/runtime/roles/runtime_agent/tasks/main.yml#L24).
+## Лимиты {#limits}
 
-## Изоляция kernel
+| Уровень | Значение в коде |
+| --- | --- |
+| Source | 65 536 байт UTF-8. [Лимит](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/usecase/contract.go#L14-L18) |
+| Документ | 1000 ячеек и 128 MiB сериализованного документа. [Лимиты](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/notebook/usecase/contract.go#L11-L18) |
+| JSON-запрос блокнота | 512 KiB. Импорт имеет собственную проверку. [Middleware](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/transport/http/middleware/body_limit.go#L14-L47) |
+| Очередь Go | 1000 незавершённых команд. [Лимит очереди](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/domain/batch.go#L7-L8) |
+| Timeout команды | По умолчанию 300 с. Допустимый диапазон 1–86 400 с. [Валидация](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/domain/models.go#L87-L95), [значение по умолчанию](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/internal/runtimesession/usecase/session.go#L57-L65) |
+| Очередь агента | 100 ожидающих команд. [Допуск](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/session.py#L120-L140) |
+| Агент | 10 MiB сериализованного вывода, idle 900 с, старт kernel 120 с, ожидание interrupt 5 с по умолчанию. [Конфигурация](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/config.py#L20-L30) |
+| Контейнер | 1 GiB RAM, 1 CPU и 128 процессов. [Конфигурация](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L116-L136) |
+| Диск `/workspace` | ФС 5 GiB по умолчанию. [Настройка диска](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/runtime/roles/runtime_host/defaults/main.yml#L36) |
+| `/workspace` без заданного пути к диску | tmpfs 256 MiB. [Резервный том](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L73-L107) |
+| `/tmp` | tmpfs 256 MiB. [Размер и HOME](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L100-L136) |
+| `/packages` | tmpfs 512 MiB. [Размер и PYTHONUSERBASE](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/containers.py#L100-L136) |
+| Передача файла через API | До 3 GiB на один upload или download. Для более крупных файлов список убирает действие `download`. Запись из kernel ограничивается доступным местом в файловой системе. [Лимит передачи](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/config.py#L9-L10), [проверки API](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/workspace_transfers.py#L208-L248), [действия списка](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/runtime-agent/src/runtime_agent/workspace_listing.py#L24-L36) |
 
-Agent создаёт один контейнер назначенной сессии на отдельном Docker bridge, без host mounts и опубликованных портов. Jupyter доступен агенту с одноразовым token. Kernel работает не от root, с read-only root filesystem, dropped capabilities и no-new-privileges. Запись разрешена только в tmpfs `/workspace` и `/tmp`. [Container setup](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/containers.py#L121).
+## Артефакты выпуска {#артефакты-выпуска}
 
-Runtime-VPS не получает floating IP. Security group допускает настройку и agent TLS от backend; firewall хоста отдельно контролирует исходящий трафик kernel. Разрешены DNS к заданному resolver и HTTP/HTTPS в публичный интернет после исключения внутренних, служебных и собственных инфраструктурных назначений. Новые kernel→host и межконтейнерные соединения запрещены, IPv6 закрыт. Правила проверяются до старта агента. Это механизм из исходников, а не результат сетевых проб или аудит изоляции. [Security group](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/pulumi/index.ts#L867), [firewall](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/roles/runtime_host/templates/firewall.nft.j2#L10), [проверка загрузки](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/roles/runtime_host/tasks/main.yml#L47).
-
-## Лимиты по уровням {#limits}
-
-| Уровень | Значение | Источник |
-| --- | --- | --- |
-| Документ | 1000 ячеек, 128 MiB компактного JSON целиком | [Notebook contract](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/usecase/contract.go#L12) |
-| Source | 65536 байт UTF-8, NUL/invalid UTF-8 отвергаются | [Editing validation](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/notebook/usecase/editing.go#L11) |
-| HTTP notebook | Body 512 KiB, включая chunked | [Body limit](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/transport/http/middleware/body_limit.go#L14) |
-| Backend queue | 1000 незавершённых команд с inspect | [Batch limit](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtimesession/domain/batch.go#L7) |
-| Agent queue | 100 ожидающих команд | [Agent admission](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/runtime.py#L157) |
-| Execute | По умолчанию 300 с, диапазон 1–86400 с | [Models](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtimesession/domain/models.go#L87) |
-| Output | По умолчанию 10 MiB сериализованного JSON на execution | [Agent config](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/config.py#L38) |
-| Idle / startup kernel / interrupt | 900 / 30 / 5 с по умолчанию | [Agent config](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/config.py#L38) |
-| Kernel container | 1 GiB RAM, 1 CPU, 128 процессов; swap сверх RAM не добавлен | [Containers](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/containers.py#L168) |
-| Kernel tmpfs | `/workspace` 256 MiB, `/tmp` 64 MiB | [Containers](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/containers.py#L178) |
-| Весь provisioning | 3 активных runtime, startup VPS 20 мин, Ansible 15 мин, drain 30 с, удаление 10 мин, reconcile 5 мин — defaults | [Backend runtime config](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/config/runtime.go#L107) |
-| Agent code | До 1048576 символов во внутреннем API; публичный source-limit 65536 байт строже | [Agent model](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/models.py#L25) |
-| Backend inspection | Timeout 5 с, до 200 переменных, preview до 200 Unicode code points; UI отсутствует | [Inspection](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/internal/runtimesession/domain/inspection.go#L35) |
-| Agent HTTP | Body 2 MiB; внешний nginx допускает 16 MiB, что не отменяет внутреннего лимита | [Agent API](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/src/runtime_agent/api.py#L61), [nginx](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/runtime/roles/runtime_host/templates/nginx-agent.conf.j2#L24) |
-
-Лимит контейнера не равен ёмкости VPS. Default config не подтверждает live env. Idle не останавливает активную команду лишь по истечении 15 минут; [условия idle и остановки](./execution).
-
-## Артефакты выпуска
-
-Backend CI собирает Python/R kernel images, передаёт digest refs в образ Go. Образ содержит wheel агента, checksum, requirements и systemd unit. Infra доставляет runtime playbook на backend и монтирует его read-only; рабочие каталоги операций writable. Поэтому local image name из Go defaults не описывает штатный release. [CI](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/.github/workflows/ci.yml#L105), [Dockerfile](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/build/main.Dockerfile#L16), [доставка playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/724252190e6758636626c70216391266f6ec5f31/ansible/roles/app/tasks/main.yml#L72).
-
-Python image основан на Python 3.13; requirements задают Jupyter server и ipykernel. Наличие готового NumPy/pandas/scikit-learn окружения отсюда не следует. Создание артефактов и декларация CD не подтверждают успешную выкладку исследованного SHA. [Python image](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/images/python.Dockerfile#L1), [requirements](https://github.com/Cringe-Driven-Development-Team/backend/blob/a46aa8e1ec4e169af194be6c6eb05f92af85656a/runtime-agent/requirements-kernel.in#L1).
+Образ Go содержит wheel агента, контрольную сумму и закреплённые зависимости. Playbook runtime поставляется через infra и монтируется в контейнер Go для подготовки новой VPS. Версии артефактов в успешной выкладке и текущий код окружения указаны в [свидетельствах](./#существенные-разрывы). [Dockerfile](https://github.com/Cringe-Driven-Development-Team/backend/blob/3532ca97dc2c9d0f84aa999eae85918e76907aa7/build/main.Dockerfile#L1-L31), [настройки backend](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/roles/app/templates/compose.yml.j2#L32-L74), [доставка playbook](https://github.com/Cringe-Driven-Development-Team/infra/blob/686218395ad12e5752af312d18f32efc508d55ea/ansible/roles/app/tasks/main.yml#L72).
